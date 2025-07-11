@@ -1,8 +1,6 @@
 package com.lomekwi.cine.content;
 
 import com.lomekwi.cine.pipeline.Processor;
-import com.lomekwi.cine.pipeline.Product;
-import com.lomekwi.cine.pipeline.decode.VideoDecoder;
 import com.lomekwi.cine.resource.Video;
 
 public class VideoClip implements Element {
@@ -16,17 +14,18 @@ public class VideoClip implements Element {
         this.duration = duration;
         this.start = start;
         this.source = source;
-        //source.incrementCount();
+
+        source.add(this);
     }
 
     @Override
     public Processor getNextProcessor() {
         //TODO:从源中获取解码器
-        return null;
+        return source.getDecoder();
     }
     @Override
     public void dispose() {
-        //source.decrementCount();
+        source.remove(this);
     }
 
     public long getInPoint() {

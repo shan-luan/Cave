@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 
 import java.util.Queue;
 
-public class SimpleManager implements Manager{
+public class SimpleScheduler implements Scheduler {
     @Override
     public void start(Queue<Product> initialProducts) {
         while (!initialProducts.isEmpty()) {
