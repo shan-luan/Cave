@@ -3,7 +3,7 @@ package com.lomekwi.cine.timeline.playback;
 import com.badlogic.gdx.Gdx;
 
 public class Playhead{
-    long time;
+    long time= 0L;
     boolean isPlaying;
     public void setPlaying(Boolean isPlaying){
         this.isPlaying=isPlaying;

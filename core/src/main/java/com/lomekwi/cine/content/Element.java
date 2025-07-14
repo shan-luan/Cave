@@ -6,4 +6,6 @@ public interface Element extends Product {
     public long getStart();
     public long getEnd();
     public void dispose();
+    public void setCurrentTime(long time);
+    public long getCurrentTime();
 }

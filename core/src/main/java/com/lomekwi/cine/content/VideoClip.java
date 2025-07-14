@@ -8,6 +8,7 @@ public class VideoClip implements Element {
     private final long duration;
     private final long start;
     private final Video source;
+    private long currentTime;
 
     public VideoClip(Video source, long inPoint, long duration, long start) {
         this.inPoint = inPoint;
@@ -40,5 +41,15 @@ public class VideoClip implements Element {
     @Override
     public long getEnd() {
         return start+ duration;
+    }
+
+    @Override
+    public void setCurrentTime(long time) {
+        this.currentTime = time;
+    }
+
+    @Override
+    public long getCurrentTime() {
+        return currentTime;
     }
 }
