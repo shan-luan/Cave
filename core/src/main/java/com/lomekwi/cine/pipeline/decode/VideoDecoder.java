@@ -50,7 +50,7 @@ public class VideoDecoder implements Processor {
         try {
             grabber.setTimestamp(target);
             Frame frame =grabber.grabImage();
-            collector.add(convert(frame,new PixmapProduct(frame.imageWidth, frame.imageHeight, Pixmap.Format.RGBA8888)));
+            collector.add(convert(frame,new PixmapProduct(frame.imageWidth, frame.imageHeight, Pixmap.Format.RGBA8888, videoClip)));
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }

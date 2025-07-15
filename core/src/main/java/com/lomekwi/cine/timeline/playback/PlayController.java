@@ -2,7 +2,7 @@ package com.lomekwi.cine.timeline.playback;
 
 import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.output.OutputDispatcher;
-import com.lomekwi.cine.output.Outputable;
+import com.lomekwi.cine.output.Outputter;
 import com.lomekwi.cine.pipeline.Product;
 import com.lomekwi.cine.pipeline.Scheduler;
 import com.lomekwi.cine.pipeline.SimpleScheduler;
@@ -23,10 +23,10 @@ public class PlayController {
     public PlayController(Timeline timeline) {
         this.timeline = timeline;
     }
-    public void addOutput(Class<? extends Product> productClass, Outputable output) {
+    public void addOutput(Class<? extends Product> productClass, Outputter output) {
         outputDispatcher.addOutput(productClass, output);
     }
-    public void removeOutput(Class<? extends Product> productClass, Outputable output) {
+    public void removeOutput(Class<? extends Product> productClass, Outputter output) {
         outputDispatcher.removeOutput(productClass, output);
     }
     //TODO:如果有性能问题就全改成并行流
