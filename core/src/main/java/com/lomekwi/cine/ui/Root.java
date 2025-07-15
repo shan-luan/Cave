@@ -1,6 +1,7 @@
 package com.lomekwi.cine.ui;
 
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.lomekwi.cine.Main;
 import com.lomekwi.cine.project.Project;
@@ -8,13 +9,13 @@ import com.lomekwi.cine.project.Project;
 public class Root implements ApplicationListener {
     private final Stage stage;
     private final Main main;
-    private final TestOutput testOutput;
 
     public Root(Main main) {
         this.main = main;
-        testOutput=new TestOutput(this);
+        TextureView textureView = new TextureView(getProject().getPlayController().getOutputDispatcher());
 
         stage = new Stage();
+        stage.addActor(textureView);
     }
 
     @Override
@@ -24,7 +25,8 @@ public class Root implements ApplicationListener {
 
     @Override
     public void render() {
-        testOutput.update();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        stage.draw();
     }
 
     @Override

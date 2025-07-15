@@ -1,6 +1,7 @@
 package com.lomekwi.cine;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.VideoClip;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.Video;
@@ -16,13 +17,14 @@ public class Main extends ApplicationAdapter {
         ui=new Root(this);
         ui.create();
         project.getTimeline().add(new Track());
-        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\oceans.mp4"),0,10_000_000,0));
-        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mkv\\Test.mkv"),0,10_000_000,5_000_000));
+        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\oceans.mp4"),0,5_000_000,2_000_000));
+        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mkv\\Test.mkv"),0,5_000_000, 0));
         project.getPlayController().start();
     }
 
     @Override
     public void render() {
+        ScreenUtils.clear(0f, 0f, 0f, 1f);
         ui.render();
         project.getPlayController().update();
     }
@@ -34,6 +36,7 @@ public class Main extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         ui.resize(width, height);
+        project.getPlayController().seek(0);
     }
     @Override
     public void pause() {

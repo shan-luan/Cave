@@ -1,14 +1,11 @@
 package com.lomekwi.cine.pipeline.decode;
 
-import com.badlogic.gdx.graphics.Pixmap;
 import com.lomekwi.cine.content.VideoClip;
 import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.pipeline.Product;
-import com.lomekwi.cine.pipeline.render.PixmapProduct;
 import com.lomekwi.cine.resource.Video;
 
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
@@ -19,12 +16,14 @@ import java.util.Queue;
 public class VideoDecoder implements Processor {
 
     private final FFmpegFrameGrabber grabber;
+    private final Pixels outputPixels;
 
     public VideoDecoder(Video video) {
         grabber = new FFmpegFrameGrabber(video.getPath());
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         try {
             grabber.start();
+            outputPixels = new Pixels(grabber.getImageWidth(), grabber.getImageHeight());
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }
@@ -36,6 +35,7 @@ public class VideoDecoder implements Processor {
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }
+        outputPixels.dispose();
     }
 
     @Override
@@ -48,23 +48,17 @@ public class VideoDecoder implements Processor {
         if(target > length)
             target = length;
         try {
-            grabber.setTimestamp(target);
+            //FIXME:每帧跳转太他妈的耗性能了，哪个傻逼想出来的主意
+            //grabber.setTimestamp(target);
             Frame frame =grabber.grabImage();
-            collector.add(convert(frame,new PixmapProduct(frame.imageWidth, frame.imageHeight, Pixmap.Format.RGBA8888, videoClip)));
+
+            outputPixels.setPixels((ByteBuffer) frame.image[0]);
+            collector.add(outputPixels);
+
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private PixmapProduct convert(Frame frame, PixmapProduct pixmap) {
-        if (frame == null || frame.image[0] == null) return null;
-        ByteBuffer frameBuffer = ((ByteBuffer) frame.image[0]).duplicate();
-        ByteBuffer pixmapBuffer = pixmap.getPixels();
-        pixmapBuffer.position(0);
-        frameBuffer.rewind();
-        pixmapBuffer.put(frameBuffer);
-        pixmapBuffer.flip();
-        return pixmap;
-    }
 
 }
