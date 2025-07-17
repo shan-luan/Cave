@@ -1,0 +1,1362 @@
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\Main.java 
+package com.lomekwi.cine;
+
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.utils.ScreenUtils;
+import com.lomekwi.cine.content.VideoClip;
+import com.lomekwi.cine.project.Project;
+import com.lomekwi.cine.resource.Video;
+import com.lomekwi.cine.timeline.Track;
+import com.lomekwi.cine.ui.Root;
+
+/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+public class Main extends ApplicationAdapter {
+    private Root ui;
+    private Project project=new Project();
+    @Override
+    public void create() {
+        ui=new Root(this);
+        ui.create();
+        project.getTimeline().add(new Track());
+        Video testVideo=new Video("C:\\Users\\Administrator\\Desktop\\168885122-1-192.mp4");
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,0,1_000_000,0,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,1_000_000,1_000_000,1_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,2_000_000,1_000_000,2_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,3_000_000,1_000_000,3_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,4_000_000,1_000_000,4_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,5_000_000,1_000_000,5_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,6_000_000,1_000_000,6_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,7_000_000,1_000_000,7_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,8_000_000,1_000_000,8_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,9_000_000,1_000_000,9_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,10_000_000,1_000_000,10_000_000,project.getPlayController().getPlayhead()));
+
+        project.getPlayController().start();
+    }
+
+    @Override
+    public void render() {
+        ScreenUtils.clear(0f, 0f, 0f, 1f);
+        ui.render();
+        project.getPlayController().update();
+    }
+
+    @Override
+    public void dispose() {
+        ui.dispose();
+    }
+    @Override
+    public void resize(int width, int height) {
+        ui.resize(width, height);
+        project.getPlayController().seek(0);
+    }
+    @Override
+    public void pause() {
+        ui.pause();
+    }
+    @Override
+    public void resume() {
+        ui.resume();
+    }
+    public Project getProject()
+    {
+        return project;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\content\Element.java 
+package com.lomekwi.cine.content;
+
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.timeline.playback.Playhead;
+
+public abstract class Element implements Product {
+    protected final long duration;
+    protected final long start;
+    protected final Playhead playhead;
+
+    protected Element(long duration,long start, Playhead playhead){
+        this.duration = duration;
+        this.start = start;
+        this.playhead = playhead;
+    }
+    public long getStart() {
+        return start;
+    }
+
+    public long getEnd() {
+        return start+ duration;
+    }
+    public abstract void dispose();
+
+    public Playhead getPlayhead() {
+        return playhead;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\content\VideoClip.java 
+package com.lomekwi.cine.content;
+
+import com.lomekwi.cine.pipeline.Processor;
+import com.lomekwi.cine.resource.Video;
+import com.lomekwi.cine.timeline.playback.PlayController;
+import com.lomekwi.cine.timeline.playback.Playhead;
+
+public class VideoClip extends Element {
+    private final long inPoint;
+    private final Video source;
+
+    public VideoClip(Video source, long inPoint, long duration, long start, Playhead playhead) {
+        super(duration, start,playhead);
+
+        this.inPoint = inPoint;
+        this.source = source;
+
+        source.add(this);
+
+    }
+
+    @Override
+    public Processor getNextProcessor() {
+        return source.getDecoder();
+    }
+    @Override
+    public void dispose() {
+        source.remove(this);
+    }
+
+    public long getInPoint() {
+        return inPoint;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\output\Outputable.java 
+package com.lomekwi.cine.output;
+
+import com.lomekwi.cine.pipeline.Processor;
+import com.lomekwi.cine.pipeline.Product;
+
+public interface Outputable extends Product{
+    default Processor getNextProcessor(){
+        return null;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\output\OutputDispatcher.java 
+package com.lomekwi.cine.output;
+
+import com.lomekwi.cine.pipeline.Product;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class OutputDispatcher {
+    private final Map<Class<? extends Product>, Set<Outputter>> outputs= new HashMap<>();
+    public void addOutput(Class<? extends Product> productClass, Outputter output){
+        outputs.computeIfAbsent(productClass, k -> new HashSet<>()).add(output);
+    }
+    public void removeOutput(Class<? extends Product> productClass, Outputter output){
+        outputs.computeIfPresent(productClass, (k, set) -> {
+            set.remove(output);
+            return set.isEmpty() ? null : set;
+        });
+    }
+    public void output(Product product){
+        Set<Outputter> outputSet = outputs.get(product.getClass());
+        if (outputSet != null) {
+            outputSet.forEach(output -> output.output((Outputable) product));
+        }
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\output\Outputter.java 
+package com.lomekwi.cine.output;
+
+import com.lomekwi.cine.pipeline.Product;
+
+public interface Outputter {
+    void output(Outputable outputable);
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\Processor.java 
+package com.lomekwi.cine.pipeline;
+
+import java.util.Queue;
+
+public interface Processor {
+    void process(Product product, Queue<Product> collector);
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\Product.java 
+package com.lomekwi.cine.pipeline;
+
+public interface Product {
+    Processor getNextProcessor();
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\Scheduler.java 
+package com.lomekwi.cine.pipeline;
+
+import java.util.Queue;
+
+public interface Scheduler {
+    void start(Queue<Product> initialProducts);
+    void setThreads(int threads);
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\SimpleScheduler.java 
+package com.lomekwi.cine.pipeline;
+
+import com.badlogic.gdx.Gdx;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
+public class SimpleScheduler implements Scheduler {
+    private final List<Product> returnProducts = new LinkedList<>();
+    @Override
+    public void start(Queue<Product> initialProducts) {
+        returnProducts.clear();
+        while (!initialProducts.isEmpty()) {
+            Product product = initialProducts.poll();
+            Processor processor = product.getNextProcessor();
+
+            if (processor != null) {
+                processor.process(product, initialProducts);
+            }else {
+                returnProducts.add(product);
+            }
+        }
+        initialProducts.addAll(returnProducts);
+    }
+
+    @Override
+    public void setThreads(int threads){
+        Gdx.app.error("Cine", "setThreads() is not supported");
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\decode\Pixels.java 
+package com.lomekwi.cine.pipeline.decode;
+
+import com.lomekwi.cine.pipeline.Processor;
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.pipeline.upload.TextureUploader;
+
+import java.nio.ByteBuffer;
+
+public class Pixels implements Product {
+    private ByteBuffer pixels;
+    private final int width;
+    private final int height;
+
+    public Pixels(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    @Override
+    public Processor getNextProcessor() {
+        return TextureUploader.INSTANCE;
+    }
+
+    public ByteBuffer getPixels() {
+        return pixels;
+    }
+
+    public void setPixels(ByteBuffer pixels) {
+        this.pixels = pixels;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+    public void dispose() {
+        TextureUploader.INSTANCE.remove(this);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\decode\VideoDecoder.java 
+package com.lomekwi.cine.pipeline.decode;
+
+import com.lomekwi.cine.content.VideoClip;
+import com.lomekwi.cine.pipeline.Processor;
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.resource.Video;
+
+import org.bytedeco.ffmpeg.global.avutil;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+
+import java.nio.ByteBuffer;
+import java.util.Queue;
+
+public class VideoDecoder implements Processor {
+
+    private final FFmpegFrameGrabber grabber;
+    private final Pixels outputPixels;
+    private VideoClip clip;
+
+    public VideoDecoder(Video video) {
+        grabber = new FFmpegFrameGrabber(video.getPath());
+        grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
+        try {
+            grabber.start();
+            outputPixels = new Pixels(grabber.getImageWidth(), grabber.getImageHeight());
+        } catch (FrameGrabber.Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void dispose() {
+        try {
+            grabber.close();
+        } catch (FrameGrabber.Exception e) {
+            throw new RuntimeException(e);
+        }
+        outputPixels.dispose();
+    }
+    //TODO:丢帧逻辑，当前调用频率高于帧率或低于帧率会出现不准确
+    @Override
+    public void process(Product product, Queue<Product> collector) {
+        VideoClip videoClip = (VideoClip) product;
+        long current = videoClip.getPlayhead().getTime();
+        long offset = current - videoClip.getStart();
+        long target = videoClip.getInPoint() + offset;
+
+        if (target > grabber.getLengthInTime()) {
+            target = grabber.getLengthInTime();
+        }
+
+        try {
+            if(clip!=videoClip || videoClip.getPlayhead().isSought()){
+                if(Math.abs(target-grabber.getTimestamp())>1000){
+                    grabber.setTimestamp(target);
+                }
+                clip = videoClip;
+            }
+            Frame frame = grabber.grabImage();
+            if (frame != null) {
+                outputPixels.setPixels((ByteBuffer) frame.image[0]);
+                collector.add(outputPixels);
+            }
+        } catch (FrameGrabber.Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\upload\TextureProduct.java 
+package com.lomekwi.cine.pipeline.upload;
+
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
+import com.lomekwi.cine.output.Outputable;
+
+public class TextureProduct extends Texture implements Outputable {
+    public TextureProduct (int width, int height, Pixmap.Format format) {
+        super(width, height, format);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\pipeline\upload\TextureUploader.java 
+package com.lomekwi.cine.pipeline.upload;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.lomekwi.cine.pipeline.Processor;
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.pipeline.decode.Pixels;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+
+public class TextureUploader implements Processor {
+    public static final TextureUploader INSTANCE = new TextureUploader();
+    private final Map<Pixels,TextureProduct> textures = new HashMap<>();
+    @Override
+    public void process(Product product, Queue<Product> collector) {
+        Pixels pixels = (Pixels) product;
+        TextureProduct texture = textures.computeIfAbsent(pixels,k -> new TextureProduct(pixels.getWidth(),pixels.getHeight(),Pixmap.Format.RGBA8888));
+        Gdx.gl.glBindTexture(GL20.GL_TEXTURE_2D, texture.getTextureObjectHandle());
+        Gdx.gl.glTexSubImage2D(GL20.GL_TEXTURE_2D, 0, 0, 0, pixels.getWidth(), pixels.getHeight(), GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, pixels.getPixels());
+        collector.add(texture);
+    }
+    public void remove(Pixels pixels) {
+        textures.get(pixels).dispose();
+        textures.remove(pixels);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\project\Project.java 
+package com.lomekwi.cine.project;
+
+import com.lomekwi.cine.timeline.Timeline;
+import com.lomekwi.cine.timeline.playback.PlayController;
+
+public class Project {
+    private final Timeline timeline=new Timeline();
+    private final PlayController playController=new PlayController(timeline);
+    public Timeline getTimeline(){
+        return timeline;
+    }
+    public PlayController getPlayController(){
+        return playController;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\resource\Media.java 
+package com.lomekwi.cine.resource;
+
+import com.lomekwi.cine.content.Element;
+
+public interface Media {
+    String getPath();
+    void dispose();
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\resource\Video.java 
+package com.lomekwi.cine.resource;
+
+import com.lomekwi.cine.content.VideoClip;
+import com.lomekwi.cine.pipeline.decode.VideoDecoder;
+
+import java.util.HashSet;
+import java.util.Set;
+
+//TODO:此类的意图是管理一个来自磁盘（或其它源）的视频的资源。可以根据请求获取多个解码器等资源。当被资源面板删除时通知clips无效化。
+public class Video implements Media{
+    private final String path;
+    private final VideoDecoder decoder;
+    private final Set<VideoClip> clips = new HashSet<>();
+
+    public Video(String path) {
+        this.path = path;
+        decoder = new VideoDecoder(this);
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void dispose() {
+        decoder.dispose();
+    }
+
+    public VideoDecoder getDecoder() {
+        return decoder;
+    }
+    public void add(VideoClip clip) {
+        clips.add(clip);
+    }
+
+    public void remove(VideoClip clip) {
+        clips.remove(clip);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\timeline\Timeline.java 
+package com.lomekwi.cine.timeline;
+
+import com.lomekwi.cine.pipeline.Product;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+
+public class Timeline {
+    private final List<Track> tracks = new ArrayList<>();
+    public void add(Track track) {
+        tracks.add(track);
+    }
+    public void remove(Track track) {
+        tracks.remove(track);
+    }
+    public void get(long time, Queue<Product> collector) {
+        tracks.forEach(track -> track.get(time, collector));
+    }
+    public Track getTrack(int index){
+        return tracks.get(index);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\timeline\Track.java 
+package com.lomekwi.cine.timeline;
+
+import com.lomekwi.cine.content.Element;
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.util.intervaltree.Interval;
+import com.lomekwi.cine.util.intervaltree.IntervalTree;
+
+import java.util.Queue;
+
+public class Track {
+    private final IntervalTree<Element> elements = new IntervalTree<>();
+    public void add(Element element) {
+        elements.addInterval(new Interval<>(element.getStart(), element.getEnd(), element));
+        elements.build();
+    }
+    public void get(long time, Queue<Product> collector) {
+        collector.addAll(elements.get(time));
+    }
+    public void remove(Element element) {
+        elements.removeInterval(new Interval<>(element.getStart(), element.getEnd(), element));
+        elements.build();
+        element.dispose();
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\timeline\playback\PlayController.java 
+package com.lomekwi.cine.timeline.playback;
+
+import com.lomekwi.cine.content.Element;
+import com.lomekwi.cine.output.OutputDispatcher;
+import com.lomekwi.cine.output.Outputter;
+import com.lomekwi.cine.pipeline.Product;
+import com.lomekwi.cine.pipeline.Scheduler;
+import com.lomekwi.cine.pipeline.SimpleScheduler;
+import com.lomekwi.cine.timeline.Timeline;
+
+import java.util.ArrayDeque;
+import java.util.Queue;
+
+public class PlayController {
+    private final Timeline timeline;
+
+    private final Playhead playhead= new Playhead();
+    private final Scheduler scheduler= new SimpleScheduler();
+    private final Queue<Product> collector= new ArrayDeque<>();
+    private final OutputDispatcher outputDispatcher= new OutputDispatcher();
+
+
+    public PlayController(Timeline timeline) {
+        this.timeline = timeline;
+    }
+    public void addOutput(Class<? extends Product> productClass, Outputter output) {
+        outputDispatcher.addOutput(productClass, output);
+    }
+    public void removeOutput(Class<? extends Product> productClass, Outputter output) {
+        outputDispatcher.removeOutput(productClass, output);
+    }
+    //TODO:如果有性能问题就全改成并行流
+    public void update() {
+        collector.clear();
+        playhead.update();
+        timeline.get(playhead.getTime(), collector);
+        scheduler.start(collector);
+        while (!collector.isEmpty()) {
+            Product product = collector.poll();
+            outputDispatcher.output(product);
+        }
+        playhead.resetSought();
+    }
+    public void start(){playhead.setPlaying(true);}
+    public void stop(){playhead.setPlaying(false);}
+    public void seek(long time){playhead.seek(time);}
+    public boolean isSought(){return playhead.isSought();}
+    public long getTime(){return playhead.getTime();}
+
+    public OutputDispatcher getOutputDispatcher() {
+        return outputDispatcher;
+    }
+    public Playhead getPlayhead() {
+        return playhead;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\timeline\playback\Playhead.java 
+package com.lomekwi.cine.timeline.playback;
+
+import com.badlogic.gdx.Gdx;
+
+public class Playhead{
+    private long time= 0L;
+    private  boolean isPlaying;
+    private boolean isSought;
+    protected void setPlaying(Boolean isPlaying){
+        this.isPlaying=isPlaying;
+    }
+    protected void seek(long time){
+        this.time=time;
+        isSought=true;
+    }
+    protected void update(){
+        if(isPlaying){
+            time+= (long) (Gdx.graphics.getDeltaTime()*1e6);
+        }
+    }
+    public long getTime(){
+        return time;
+    }
+
+    public boolean isSought() {
+        return isSought;
+    }
+    protected void resetSought(){
+        isSought=false;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\ui\Root.java 
+package com.lomekwi.cine.ui;
+
+import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.lomekwi.cine.Main;
+import com.lomekwi.cine.project.Project;
+
+public class Root implements ApplicationListener {
+    private final Stage stage;
+    private final Main main;
+
+    public Root(Main main) {
+        this.main = main;
+        TextureView textureView = new TextureView(getProject().getPlayController().getOutputDispatcher());
+        textureView.setScale(0.5f);
+
+        stage = new Stage();
+        stage.addActor(textureView);
+    }
+
+    @Override
+    public void create() {
+
+    }
+
+    @Override
+    public void render() {
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        stage.draw();
+    }
+
+    @Override
+    public void pause() {
+
+    }
+
+    @Override
+    public void resume() {
+
+    }
+
+    @Override
+    public void resize(int width, int height) {
+
+    }
+
+    @Override
+    public void dispose() {
+    }
+    public Project getProject(){
+        return main.getProject();
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\ui\TextureView.java 
+package com.lomekwi.cine.ui;
+
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.lomekwi.cine.output.OutputDispatcher;
+import com.lomekwi.cine.output.Outputable;
+import com.lomekwi.cine.output.Outputter;
+import com.lomekwi.cine.pipeline.upload.TextureProduct;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class TextureView extends Group implements Outputter {
+    public TextureView(OutputDispatcher outputDispatcher) {
+        outputDispatcher.addOutput(TextureProduct.class, this);
+    }
+    private final Map<TextureProduct, Image> textures= new HashMap<>();
+    @Override
+    public void output(Outputable outputable) {
+        TextureProduct texture = (TextureProduct) outputable;
+
+        Image img = textures.computeIfAbsent(texture, k -> {
+            Image newImage = new Image(texture);
+            addActor(newImage);
+            return newImage;
+        });
+
+        img.setVisible(true);
+        setDebug(true);
+    }
+
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+
+        super.draw(batch, parentAlpha);
+
+        for (Image img : textures.values()) {
+            img.setVisible(false);
+        }
+
+    }
+
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\util\LibgdxFrameConverter.java 
+package com.lomekwi.cine.util;
+
+import com.badlogic.gdx.graphics.Pixmap;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameConverter;
+
+import java.nio.ByteBuffer;
+
+/**
+ * A utility class for converting between {@link Pixmap} and {@link Frame}.
+ * The alpha channel is not converted and memory cannot be shared
+ *
+ * @author shan-luan
+ */
+public class LibgdxFrameConverter extends FrameConverter<Pixmap> {
+    /**
+     * Converts a {@link Pixmap} to a {@link Frame}.
+     *
+     * @param pixmap the Pixmap to convert,RGBA8888 format
+     * @return the converted Frame
+     */
+    @Override
+    public Frame convert(Pixmap pixmap) {
+        if (pixmap == null) return null;
+
+        Frame frame = new Frame(pixmap.getWidth(), pixmap.getHeight(), Frame.DEPTH_UBYTE, 3, pixmap.getWidth() * 3);
+
+        ByteBuffer pixmapBuffer = pixmap.getPixels().duplicate();
+        ByteBuffer frameBuffer = (ByteBuffer) frame.image[0];
+
+        int numPixels = pixmap.getWidth() * pixmap.getHeight();
+        for (int i = 0; i < numPixels; i++) {
+            byte r = pixmapBuffer.get();
+            byte g = pixmapBuffer.get();
+            byte b = pixmapBuffer.get();
+            pixmapBuffer.position(pixmapBuffer.position() + 1);
+
+            frameBuffer.put(b);
+            frameBuffer.put(g);
+            frameBuffer.put(r);
+        }
+
+        frameBuffer.flip();
+        return frame;
+    }
+
+    /**
+     * Converts a {@link Frame} to a {@link Pixmap}.
+     *
+     * @param frame the Frame to convert
+     * @return the converted Pixmap, RGBA8888 format
+     */
+    @Override
+    public Pixmap convert(Frame frame) {
+        if (frame == null || frame.image[0] == null) return null;
+        Pixmap pixmap = new Pixmap(frame.imageWidth, frame.imageHeight, Pixmap.Format.RGBA8888);
+        ByteBuffer frameBuffer = ((ByteBuffer) frame.image[0]).duplicate();
+        ByteBuffer pixmapBuffer = pixmap.getPixels();
+        pixmapBuffer.position(0);
+        frameBuffer.rewind();
+
+        int numPixels = frame.imageWidth * frame.imageHeight;
+        for (int i = 0; i < numPixels; i++) {
+            byte b = frameBuffer.get();
+            byte g = frameBuffer.get();
+            byte r = frameBuffer.get();
+
+            pixmapBuffer.put(r);
+            pixmapBuffer.put(g);
+            pixmapBuffer.put(b);
+            pixmapBuffer.put((byte) -1);// alpha always set to 255
+        }
+
+        pixmapBuffer.flip();
+        return pixmap;
+    }
+
+    /**
+     * Converts a {@link Frame} to a {@link Pixmap}.
+     * Available only when the format of the Frame is {@link org.bytedeco.ffmpeg.global.avutil
+     * #AV_PIX_FMT_RGBA}.
+     * Faster than {@link #convert(Frame)}
+     *
+     * @param frame the Frame to convert
+     * @return the converted Pixmap, RGBA8888 format
+     */
+    public Pixmap fastConvert(Frame frame) {
+        if (frame == null || frame.image[0] == null) return null;
+
+        Pixmap pixmap = new Pixmap(frame.imageWidth, frame.imageHeight, Pixmap.Format.RGBA8888);
+        ByteBuffer frameBuffer = ((ByteBuffer) frame.image[0]).duplicate();
+        ByteBuffer pixmapBuffer = pixmap.getPixels();
+        pixmapBuffer.position(0);
+        frameBuffer.rewind();
+        pixmapBuffer.put(frameBuffer);
+        pixmapBuffer.flip();
+        return pixmap;
+    }
+
+    public Pixmap fastConvert(Frame frame,Pixmap pixmap) {
+        if (frame == null || frame.image[0] == null) return null;
+        ByteBuffer frameBuffer = ((ByteBuffer) frame.image[0]).duplicate();
+        ByteBuffer pixmapBuffer = pixmap.getPixels();
+        pixmapBuffer.position(0);
+        frameBuffer.rewind();
+        pixmapBuffer.put(frameBuffer);
+        pixmapBuffer.flip();
+        return pixmap;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\util\Pair.java 
+package com.lomekwi.cine.util;
+
+import java.util.Objects;
+
+/**
+ * 一个不可变的包含两个泛型值的容器类
+ * @param <A> 第一个泛型类型
+ * @param <B> 第二个泛型类型
+ */
+public final class Pair<A, B> {
+    private final A first;
+    private final B second;
+
+    /**
+     * 构造函数
+     * @param first 第一个值
+     * @param second 第二个值
+     */
+    public Pair(A first, B second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    /**
+     * 获取第一个值
+     * @return 第一个值
+     */
+    public A getFirst() {
+        return first;
+    }
+
+    /**
+     * 获取第二个值
+     * @return 第二个值
+     */
+    public B getSecond() {
+        return second;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return Objects.equals(first, pair.first) &&
+            Objects.equals(second, pair.second);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(first, second);
+    }
+
+    @Override
+    public String toString() {
+        return "Pair{" + first + ", " + second + '}';
+    }
+
+    /**
+     * 静态工厂方法，方便创建实例
+     * @param first 第一个值
+     * @param second 第二个值
+     * @return 新的Pair实例
+     * @param <A> 第一个泛型类型
+     * @param <B> 第二个泛型类型
+     */
+    public static <A, B> Pair<A, B> of(A first, B second) {
+        return new Pair<>(first, second);
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\util\intervaltree\Interval.java 
+package com.lomekwi.cine.util.intervaltree;
+
+import java.util.Objects;
+
+/**
+ * The Interval class maintains an interval with some associated data
+ * @author Kevin Dolan
+ *
+ * @param <Type> The type of data being stored
+ */
+public class Interval<Type> implements Comparable<Interval<Type>> {
+
+	private long start;
+	private long end;
+	private Type data;
+
+	public Interval(long start, long end, Type data) {
+		this.start = start;
+		this.end = end;
+		this.data = data;
+	}
+
+	public long getStart() {
+		return start;
+	}
+
+	public void setStart(long start) {
+		this.start = start;
+	}
+
+	public long getEnd() {
+		return end;
+	}
+
+	public void setEnd(long end) {
+		this.end = end;
+	}
+
+	public Type getData() {
+		return data;
+	}
+
+	public void setData(Type data) {
+		this.data = data;
+	}
+
+	/**
+	 * @param time
+	 * @return	true if this interval contains time (invlusive)
+	 */
+	public boolean contains(long time) {
+		return time < end && time > start;
+	}
+
+	/**
+	 * @param other
+	 * @return	return true if this interval intersects other
+	 */
+	public boolean intersects(Interval<?> other) {
+		return other.getEnd() > start && other.getStart() < end;
+	}
+
+	/**
+	 * Return -1 if this interval's start time is less than the other, 1 if greater
+	 * In the event of a tie, -1 if this interval's end time is less than the other, 1 if greater, 0 if same
+	 * @param other
+	 * @return 1 or -1
+	 */
+	public int compareTo(Interval<Type> other) {
+		if(start < other.getStart())
+			return -1;
+		else if(start > other.getStart())
+			return 1;
+		else if(end < other.getEnd())
+			return -1;
+		else if(end > other.getEnd())
+			return 1;
+		else
+			return 0;
+	}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Interval<?> interval = (Interval<?>) o;
+        if (start != interval.start) return false;
+        if (end != interval.end) return false;
+        return Objects.equals(data, interval.data);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Long.hashCode(start);
+        result = 31 * result + Long.hashCode(end);
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        return result;
+    }
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\util\intervaltree\IntervalNode.java 
+package com.lomekwi.cine.util.intervaltree;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Map.Entry;
+
+/**
+ * The Node class contains the interval tree information for one single node
+ *
+ * @author Kevin Dolan
+ */
+public class IntervalNode<Type> {
+
+	private SortedMap<Interval<Type>, List<Interval<Type>>> intervals;
+	private long center;
+	private IntervalNode<Type> leftNode;
+	private IntervalNode<Type> rightNode;
+
+	public IntervalNode() {
+		intervals = new TreeMap<Interval<Type>, List<Interval<Type>>>();
+		center = 0;
+		leftNode = null;
+		rightNode = null;
+	}
+
+	public IntervalNode(List<Interval<Type>> intervalList) {
+
+		intervals = new TreeMap<Interval<Type>, List<Interval<Type>>>();
+
+		SortedSet<Long> endpoints = new TreeSet<Long>();
+
+		for(Interval<Type> interval: intervalList) {
+			endpoints.add(interval.getStart());
+			endpoints.add(interval.getEnd());
+		}
+
+		long median = getMedian(endpoints);
+		center = median;
+
+		List<Interval<Type>> left = new ArrayList<Interval<Type>>();
+		List<Interval<Type>> right = new ArrayList<Interval<Type>>();
+
+		for(Interval<Type> interval : intervalList) {
+			if(interval.getEnd() < median)
+				left.add(interval);
+			else if(interval.getStart() > median)
+				right.add(interval);
+			else {
+				List<Interval<Type>> posting = intervals.get(interval);
+				if(posting == null) {
+					posting = new ArrayList<Interval<Type>>();
+					intervals.put(interval, posting);
+				}
+				posting.add(interval);
+			}
+		}
+
+		if(left.size() > 0)
+			leftNode = new IntervalNode<Type>(left);
+		if(right.size() > 0)
+			rightNode = new IntervalNode<Type>(right);
+	}
+
+	/**
+	 * Perform a stabbing query on the node
+	 * @param time the time to query at
+	 * @return	   all intervals containing time
+	 */
+	public List<Interval<Type>> stab(long time) {
+		List<Interval<Type>> result = new ArrayList<Interval<Type>>();
+
+		for(Entry<Interval<Type>, List<Interval<Type>>> entry : intervals.entrySet()) {
+			if(entry.getKey().contains(time))
+				for(Interval<Type> interval : entry.getValue())
+					result.add(interval);
+			else if(entry.getKey().getStart() > time)
+				break;
+		}
+
+		if(time < center && leftNode != null)
+			result.addAll(leftNode.stab(time));
+		else if(time > center && rightNode != null)
+			result.addAll(rightNode.stab(time));
+		return result;
+	}
+
+	/**
+	 * Perform an interval intersection query on the node
+	 * @param target the interval to intersect
+	 * @return		   all intervals containing time
+	 */
+	public List<Interval<Type>> query(Interval<?> target) {
+		List<Interval<Type>> result = new ArrayList<Interval<Type>>();
+
+		for(Entry<Interval<Type>, List<Interval<Type>>> entry : intervals.entrySet()) {
+			if(entry.getKey().intersects(target))
+				for(Interval<Type> interval : entry.getValue())
+					result.add(interval);
+			else if(entry.getKey().getStart() > target.getEnd())
+				break;
+		}
+
+		if(target.getStart() < center && leftNode != null)
+			result.addAll(leftNode.query(target));
+		if(target.getEnd() > center && rightNode != null)
+			result.addAll(rightNode.query(target));
+		return result;
+	}
+
+	public long getCenter() {
+		return center;
+	}
+
+	public void setCenter(long center) {
+		this.center = center;
+	}
+
+	public IntervalNode<Type> getLeft() {
+		return leftNode;
+	}
+
+	public void setLeft(IntervalNode<Type> left) {
+		this.leftNode = left;
+	}
+
+	public IntervalNode<Type> getRight() {
+		return rightNode;
+	}
+
+	public void setRight(IntervalNode<Type> right) {
+		this.rightNode = right;
+	}
+
+	/**
+	 * @param set the set to look on
+	 * @return	  the median of the set, not interpolated
+	 */
+	private Long getMedian(SortedSet<Long> set) {
+		int i = 0;
+		int middle = set.size() / 2;
+		for(Long point : set) {
+			if(i == middle)
+				return point;
+			i++;
+		}
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(center + ": ");
+		for(Entry<Interval<Type>, List<Interval<Type>>> entry : intervals.entrySet()) {
+			sb.append("[" + entry.getKey().getStart() + "," + entry.getKey().getEnd() + "]:{");
+			for(Interval<Type> interval : entry.getValue()) {
+				sb.append("("+interval.getStart()+","+interval.getEnd()+","+interval.getData()+")");
+			}
+			sb.append("} ");
+		}
+		return sb.toString();
+	}
+
+}
+\r\n 
+File: C:\Cine\core\src\main\java\com\lomekwi\cine\util\intervaltree\IntervalTree.java 
+package com.lomekwi.cine.util.intervaltree;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * An Interval Tree is essentially a map from intervals to objects, which
+ * can be queried for all data associated with a particular interval of
+ * time
+ * @author Kevin Dolan
+ *
+ * @param <Type> the type of objects to associate
+ */
+public class IntervalTree<Type> {
+
+	private IntervalNode<Type> head;
+	private List<Interval<Type>> intervalList;
+	private boolean inSync;
+	private int size;
+
+	/**
+	 * Instantiate a new interval tree with no intervals
+	 */
+	public IntervalTree() {
+		this.head = new IntervalNode<Type>();
+		this.intervalList = new ArrayList<Interval<Type>>();
+		this.inSync = true;
+		this.size = 0;
+	}
+
+	/**
+	 * Instantiate and build an interval tree with a preset list of intervals
+	 * @param intervalList the list of intervals to use
+	 */
+	public IntervalTree(List<Interval<Type>> intervalList) {
+		this.head = new IntervalNode<Type>(intervalList);
+		this.intervalList = new ArrayList<Interval<Type>>();
+		this.intervalList.addAll(intervalList);
+		this.inSync = true;
+		this.size = intervalList.size();
+	}
+
+	/**
+	 * Perform a stabbing query, returning the associated data
+	 * Will rebuild the tree if out of sync
+	 * @param time the time to stab
+	 * @return	   the data associated with all intervals that contain time
+	 */
+	public List<Type> get(long time) {
+		List<Interval<Type>> intervals = getIntervals(time);
+		List<Type> result = new ArrayList<Type>();
+		for(Interval<Type> interval : intervals)
+			result.add(interval.getData());
+		return result;
+	}
+
+	/**
+	 * Perform a stabbing query, returning the interval objects
+	 * Will rebuild the tree if out of sync
+	 * @param time the time to stab
+	 * @return	   all intervals that contain time
+	 */
+	public List<Interval<Type>> getIntervals(long time) {
+		build();
+		return head.stab(time);
+	}
+
+	/**
+	 * Perform an interval query, returning the associated data
+	 * Will rebuild the tree if out of sync
+	 * @param start the start of the interval to check
+	 * @param end	the end of the interval to check
+	 * @return	  	the data associated with all intervals that intersect target
+	 */
+	public List<Type> get(long start, long end) {
+		List<Interval<Type>> intervals = getIntervals(start, end);
+		List<Type> result = new ArrayList<Type>();
+		for(Interval<Type> interval : intervals)
+			result.add(interval.getData());
+		return result;
+	}
+
+	/**
+	 * Perform an interval query, returning the interval objects
+	 * Will rebuild the tree if out of sync
+	 * @param start the start of the interval to check
+	 * @param end	the end of the interval to check
+	 * @return	  	all intervals that intersect target
+	 */
+	public List<Interval<Type>> getIntervals(long start, long end) {
+		build();
+		return head.query(new Interval<Type>(start, end, null));
+	}
+
+	/**
+	 * Add an interval object to the interval tree's list
+	 * Will not rebuild the tree until the next query or call to build
+	 * @param interval the interval object to add
+	 */
+	public void addInterval(Interval<Type> interval) {
+		intervalList.add(interval);
+		inSync = false;
+	}
+
+	/**
+	 * Add an interval object to the interval tree's list
+	 * Will not rebuild the tree until the next query or call to build
+	 * @param begin the beginning of the interval
+	 * @param end	the end of the interval
+	 * @param data	the data to associate
+	 */
+	public void addInterval(long begin, long end, Type data) {
+		intervalList.add(new Interval<Type>(begin, end, data));
+		inSync = false;
+	}
+
+	/**
+	 * Determine whether this interval tree is currently a reflection of all intervals in the interval list
+	 * @return true if no changes have been made since the last build
+	 */
+	public boolean inSync() {
+		return inSync;
+	}
+
+	/**
+	 * Build the interval tree to reflect the list of intervals,
+	 * Will not run if this is currently in sync
+	 */
+	public void build() {
+		if(!inSync) {
+			head = new IntervalNode<Type>(intervalList);
+			inSync = true;
+			size = intervalList.size();
+		}
+	}
+
+	/**
+	 * @return the number of entries in the currently built interval tree
+	 */
+	public int currentSize() {
+		return size;
+	}
+
+	/**
+	 * @return the number of entries in the interval list, equal to .size() if inSync()
+	 */
+	public int listSize() {
+		return intervalList.size();
+	}
+
+	@Override
+	public String toString() {
+		return nodeString(head,0);
+	}
+
+	private String nodeString(IntervalNode<Type> node, int level) {
+		if(node == null)
+			return "";
+
+		StringBuffer sb = new StringBuffer();
+		for(int i = 0; i < level; i++)
+			sb.append("\t");
+		sb.append(node + "\n");
+		sb.append(nodeString(node.getLeft(), level + 1));
+		sb.append(nodeString(node.getRight(), level + 1));
+		return sb.toString();
+	}
+
+    /**
+     * 移除指定的区间对象
+     * @param interval 要移除的区间对象
+     * @return 如果成功移除返回 true，如果区间不存在返回 false
+     */
+    public boolean removeInterval(Interval<Type> interval) {
+        boolean removed = intervalList.remove(interval);
+        if (removed) {
+            inSync = false; // 标记需要重建树
+        }
+        return removed;
+    }
+
+    /**
+     * 移除指定起止时间和数据的区间
+     * @param start 区间开始时间
+     * @param end   区间结束时间
+     * @param data  关联的数据
+     * @return 如果成功移除返回 true，如果区间不存在返回 false
+     */
+    public boolean removeInterval(long start, long end, Type data) {
+        return removeInterval(new Interval<>(start, end, data));
+    }
+}
+\r\n 

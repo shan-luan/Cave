@@ -1,6 +1,5 @@
 package com.lomekwi.cine.ui;
 
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.lomekwi.cine.output.OutputDispatcher;
@@ -26,19 +25,15 @@ public class TextureView extends Group implements Outputter {
             return newImage;
         });
 
-
         img.setVisible(true);
+        setDebug(true);
     }
 
     @Override
-    public void draw(Batch batch, float parentAlpha) {
-
-        super.draw(batch, parentAlpha);
-
+    public void reset() {
         for (Image img : textures.values()) {
             img.setVisible(false);
         }
-
     }
 
 }

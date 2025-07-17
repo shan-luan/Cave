@@ -17,8 +17,19 @@ public class Main extends ApplicationAdapter {
         ui=new Root(this);
         ui.create();
         project.getTimeline().add(new Track());
-        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\oceans.mp4"),0,5_000_000,2_000_000));
-        project.getTimeline().getTrack(0).add(new VideoClip(new Video("C:\\Users\\Administrator\\Desktop\\misc\\mkv\\Test.mkv"),0,5_000_000, 0));
+        Video testVideo=new Video("C:\\Users\\Administrator\\Desktop\\168885122-1-192.mp4");
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,0,1_000_000,0,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,1_000_000,1_000_000,1_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,2_000_000,1_000_000,2_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,3_000_000,1_000_000,3_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,4_000_000,1_000_000,4_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,5_000_000,1_000_000,5_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,6_000_000,1_000_000,6_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,7_000_000,1_000_000,7_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,8_000_000,1_000_000,8_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,9_000_000,1_000_000,9_000_000,project.getPlayController().getPlayhead()));
+        project.getTimeline().getTrack(0).add(new VideoClip(testVideo,10_000_000,1_000_000,10_000_000,project.getPlayController().getPlayhead()));
+
         project.getPlayController().start();
     }
 

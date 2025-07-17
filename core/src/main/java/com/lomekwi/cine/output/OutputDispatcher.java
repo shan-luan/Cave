@@ -24,4 +24,7 @@ public class OutputDispatcher {
             outputSet.forEach(output -> output.output((Outputable) product));
         }
     }
+    public void resetAll(){
+        outputs.values().forEach(s -> s.forEach(Outputter::reset));
+    }
 }

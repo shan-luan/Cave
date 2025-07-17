@@ -17,6 +17,7 @@ public class VideoDecoder implements Processor {
 
     private final FFmpegFrameGrabber grabber;
     private final Pixels outputPixels;
+    private VideoClip clip;
 
     public VideoDecoder(Video video) {
         grabber = new FFmpegFrameGrabber(video.getPath());
@@ -37,28 +38,32 @@ public class VideoDecoder implements Processor {
         }
         outputPixels.dispose();
     }
-
+    //TODO:丢帧逻辑，当前调用频率高于帧率或低于帧率会出现不准确
     @Override
     public void process(Product product, Queue<Product> collector) {
         VideoClip videoClip = (VideoClip) product;
-        long current = videoClip.getCurrentTime();
+        long current = videoClip.getPlayhead().getTime();
         long offset = current - videoClip.getStart();
         long target = videoClip.getInPoint() + offset;
-        long length = grabber.getLengthInTime();
-        if(target > length)
-            target = length;
+
+        if (target > grabber.getLengthInTime()) {
+            target = grabber.getLengthInTime();
+        }
+
         try {
-            //FIXME:每帧跳转太他妈的耗性能了，哪个傻逼想出来的主意
-            //grabber.setTimestamp(target);
-            Frame frame =grabber.grabImage();
-
-            outputPixels.setPixels((ByteBuffer) frame.image[0]);
-            collector.add(outputPixels);
-
+            if(clip!=videoClip || videoClip.getPlayhead().isSought()){
+                if(Math.abs(target-grabber.getTimestamp())>1000){
+                    grabber.setTimestamp(target);
+                }
+                clip = videoClip;
+            }
+            Frame frame = grabber.grabImage();
+            if (frame != null) {
+                outputPixels.setPixels((ByteBuffer) frame.image[0]);
+                collector.add(outputPixels);
+            }
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }
     }
-
-
 }

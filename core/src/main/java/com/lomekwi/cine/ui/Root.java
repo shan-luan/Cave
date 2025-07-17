@@ -13,6 +13,7 @@ public class Root implements ApplicationListener {
     public Root(Main main) {
         this.main = main;
         TextureView textureView = new TextureView(getProject().getPlayController().getOutputDispatcher());
+        textureView.setScale(0.5f);
 
         stage = new Stage();
         stage.addActor(textureView);
