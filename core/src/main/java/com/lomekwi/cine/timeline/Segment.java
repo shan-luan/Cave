@@ -4,7 +4,7 @@ import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.pipeline.Product;
 
-//TODO:用此类拆分现有的Element的时间区间部分逻辑，目前的Element可以删了
+//TODO:泛型似乎不必要，待删除
 public class Segment<T extends Element> implements Product {
     private final T element;
     private final long start;

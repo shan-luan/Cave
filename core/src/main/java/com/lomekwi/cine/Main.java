@@ -3,7 +3,6 @@ package com.lomekwi.cine;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
-import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.Video;
 import com.lomekwi.cine.timeline.Segment;
@@ -20,10 +19,20 @@ public class Main extends ApplicationAdapter {
         ui=new Root(this);
         ui.create();
         project.getTimeline().add();
-        Video testVideoFile =new Video("C:\\Users\\Administrator\\Desktop\\misc\\mkv\\Test.mkv");
-        Video testVideoFile2 =new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\oceans.mp4");
-        project.getTimeline().getTrack(0).add(new Segment<Clip<Video>>(new Clip<>(testVideoFile,0),0,10_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<Clip<Video>>(new Clip<>(testVideoFile2,10_000_000),10_000_000,20_000_000));
+        //测试
+        Video testVideoFile =new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\Oceans.mp4");
+        Clip<Video> clip1 =new Clip<>(testVideoFile, 10_000_000);
+        Clip<Video> clip2=new Clip<>(testVideoFile, 20_000_000);
+        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 0, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip2,1_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 3_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip2,4_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 5_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip2,6_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 7_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip2,8_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 9_000_001, 1_000_000));
+        project.getTimeline().getTrack(0).add(new Segment<>(clip2,10_000_001, 1_000_000));
 
 
         project.getPlayController().start();
@@ -40,6 +49,7 @@ public class Main extends ApplicationAdapter {
     public void dispose() {
         ui.dispose();
     }
+    //测试用
     @Override
     public void resize(int width, int height) {
         ui.resize(width, height);
