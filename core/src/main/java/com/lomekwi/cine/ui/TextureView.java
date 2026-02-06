@@ -9,7 +9,7 @@ import com.lomekwi.cine.pipeline.upload.TextureProduct;
 
 import java.util.HashMap;
 import java.util.Map;
-
+//FIXME:当删除VideoClip时，不会删除对应的Image，从而会导致内存泄漏
 public class TextureView extends Group implements Outputter {
     public TextureView(OutputDispatcher outputDispatcher) {
         outputDispatcher.addOutput(TextureProduct.class, this);
@@ -26,7 +26,6 @@ public class TextureView extends Group implements Outputter {
         });
 
         img.setVisible(true);
-        setDebug(true);
     }
 
     @Override

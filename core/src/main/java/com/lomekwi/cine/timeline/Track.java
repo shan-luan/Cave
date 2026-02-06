@@ -6,19 +6,28 @@ import com.lomekwi.cine.util.intervaltree.Interval;
 import com.lomekwi.cine.util.intervaltree.IntervalTree;
 
 import java.util.Queue;
-
+//TODO:把区间树改成arraylist，区间树实现不稳定
 public class Track {
-    private final IntervalTree<Element> elements = new IntervalTree<>();
-    public void add(Element element) {
-        elements.addInterval(new Interval<>(element.getStart(), element.getEnd(), element));
-        elements.build();
+    private final IntervalTree<Segment<?>> segments = new IntervalTree<>();
+    private final Timeline timeline;
+
+    public Track(Timeline timeline) {
+        this.timeline = timeline;
+    }
+
+    public void add(Segment<?> segment) {
+        segments.addInterval(new Interval<>(segment.getStart(), segment.getEnd(), segment));
+        segments.build();
+
+        timeline.onElementAdded(this, segment.getElement());
     }
     public void get(long time, Queue<Product> collector) {
-        collector.addAll(elements.get(time));
+        collector.addAll(segments.get(time));
     }
-    public void remove(Element element) {
-        elements.removeInterval(new Interval<>(element.getStart(), element.getEnd(), element));
-        elements.build();
-        element.dispose();
+    public void remove(Segment<?> segment) {
+        segments.removeInterval(new Interval<>(segment.getStart(), segment.getEnd(), segment));
+        segments.build();
+
+        timeline.onElementRemoved( this, segment.getElement());
     }
 }

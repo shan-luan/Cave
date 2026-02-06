@@ -1,6 +1,5 @@
 package com.lomekwi.cine.timeline.playback;
 
-import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.output.OutputDispatcher;
 import com.lomekwi.cine.output.Outputter;
 import com.lomekwi.cine.pipeline.Product;
