@@ -7,9 +7,9 @@ import java.util.HashMap;
 /**
  *媒体类，指代一个在磁盘中存在，占有编解码器的资源
  */
-public abstract class Media<T extends Media<T>> {
+public abstract class Media {
     private final String path;
-    protected Decoder<T> decoder;
+    protected Decoder decoder;
 
     public Media(String path) {
         this.path = path;
@@ -18,7 +18,7 @@ public abstract class Media<T extends Media<T>> {
     public String getPath() {
         return path;
     }
-    public Decoder<T> getDecoder(){
+    public Decoder getDecoder(){
         return decoder;
     };
 }

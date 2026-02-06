@@ -15,11 +15,11 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 //TODO:解码音频，音视频流同步
 //TODO:把“解码器”这一资源和无状态的解码逻辑(应该放在一个单例里)拆分
-public class VideoDecoder implements Decoder<Video> {
+public class VideoDecoder implements Decoder {
 
     private final FFmpegFrameGrabber grabber;
     private final Pixels outputPixels;
-    private Segment<Clip<Video>> currentSegment;
+    private Segment currentSegment;
 
     private final long lengthPerFrame;
     private final long length;
@@ -49,10 +49,11 @@ public class VideoDecoder implements Decoder<Video> {
 
     @Override
     //TODO:把这一堆东西拆成私有方法
-    public void process(Segment<Clip<Video>> segment, Queue<Product> collector) {
+    public void process(Product product, Queue<Product> collector) {
+        Segment segment = (Segment) product;
         long current = GlobalVars.getProject().getPlayController().getPlayhead().getTime();
         long offset = current - segment.getStart();
-        long target = segment.getElement().getInPoint() + offset;
+        long target = ((Clip<?>)segment.getElement()).getInPoint() + offset;
 
         if (target > length) {
             target = length;

@@ -4,19 +4,18 @@ import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.pipeline.Product;
 
-//TODO:泛型似乎不必要，待删除
-public class Segment<T extends Element> implements Product {
-    private final T element;
+public class Segment implements Product,Comparable<Long> {
+    private final Element element;
     private final long start;
     private final long duration;
 
-    public Segment(T element, long start, long duration) {
+    public Segment(Element element, long start, long duration) {
         this.element = element;
         this.start = start;
         this.duration = duration;
     }
 
-    public T getElement() {
+    public Element getElement() {
         return element;
     }
 
@@ -31,7 +30,11 @@ public class Segment<T extends Element> implements Product {
         return start + duration;
     }
     @Override
-    public Processor<?> getNextProcessor() {
+    public Processor getNextProcessor() {
         return element.getNextProcessor();
+    }
+    @Override
+    public int compareTo(Long o) {
+        return Long.compare(start, o);
     }
 }

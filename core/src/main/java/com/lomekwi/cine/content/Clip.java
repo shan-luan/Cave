@@ -1,13 +1,10 @@
 package com.lomekwi.cine.content;
 
-
 import com.lomekwi.cine.pipeline.Processor;
-import com.lomekwi.cine.pipeline.decode.Decoder;
 import com.lomekwi.cine.resource.Media;
-import com.lomekwi.cine.timeline.Segment;
 
 
-public class Clip<T extends Media<?>> extends Element{
+public class Clip<T extends Media> extends Element{
     private final T source;
     private final long inPoint;
 
@@ -25,7 +22,7 @@ public class Clip<T extends Media<?>> extends Element{
     }
 
     @Override
-    public Decoder<?> getNextProcessor() {
+    public Processor getNextProcessor() {
         return source.getDecoder();
     }
 }

@@ -8,6 +8,8 @@ import com.lomekwi.cine.resource.Video;
 import com.lomekwi.cine.timeline.Segment;
 import com.lomekwi.cine.ui.Root;
 
+import static com.lomekwi.cine.util.Units.*;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private Root ui;
@@ -21,18 +23,18 @@ public class Main extends ApplicationAdapter {
         project.getTimeline().add();
         //测试
         Video testVideoFile =new Video("C:\\Users\\Administrator\\Desktop\\misc\\mp4\\Oceans.mp4");
-        Clip<Video> clip1 =new Clip<>(testVideoFile, 10_000_000);
-        Clip<Video> clip2=new Clip<>(testVideoFile, 20_000_000);
-        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 0, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip2,1_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 3_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip2,4_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 5_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip2,6_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 7_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip2,8_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip1, 9_000_001, 1_000_000));
-        project.getTimeline().getTrack(0).add(new Segment<>(clip2,10_000_001, 1_000_000));
+        Clip<Video> clip1 =new Clip<>(testVideoFile, 10*SECOND);
+        Clip<Video> clip2=new Clip<>(testVideoFile, 20*SECOND);
+        project.getTimeline().getTrack(0).add(new Segment(clip1, 0, 1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip2,1*SECOND, 2*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip1, 3*SECOND,1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip2,4*SECOND, 1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip1, 5*SECOND,1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip2,6*SECOND, 1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip1, 7*SECOND,1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip2,8*SECOND, 1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip1, 9*SECOND,1*SECOND));
+        project.getTimeline().getTrack(0).add(new Segment(clip2,10*SECOND,1*SECOND));
 
 
         project.getPlayController().start();
