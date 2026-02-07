@@ -3,7 +3,7 @@ package com.lomekwi.cine.pipeline.decode;
 import com.lomekwi.cine.GlobalVars;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.pipeline.Product;
-import com.lomekwi.cine.resource.Video;
+import com.lomekwi.cine.resource.VdoRes;
 import com.lomekwi.cine.timeline.Seg;
 
 import org.bytedeco.ffmpeg.global.avutil;
@@ -29,7 +29,7 @@ public class VideoDecProc implements DecProc {
 
     private int j=0;
 
-    public VideoDecProc(Video video) {
+    public VideoDecProc(VdoRes video) {
         grabber = new FFmpegFrameGrabber(video.getPath());
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         try {

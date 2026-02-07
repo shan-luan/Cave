@@ -1,10 +1,10 @@
 package com.lomekwi.cine.content;
 
 import com.lomekwi.cine.pipeline.Processor;
-import com.lomekwi.cine.resource.Media;
+import com.lomekwi.cine.resource.MedRes;
 
 
-public class Clip<T extends Media> extends Element{
+public class Clip<T extends MedRes> extends Element{
     private final T source;
     private final long inPoint;
 

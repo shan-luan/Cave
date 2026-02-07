@@ -4,7 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
-import com.lomekwi.cine.resource.Video;
+import com.lomekwi.cine.resource.VdoRes;
 import com.lomekwi.cine.timeline.Seg;
 import com.lomekwi.cine.ui.Root;
 
@@ -22,9 +22,9 @@ public class Main extends ApplicationAdapter {
         ui.create();
         project.getTimeline().add();
         //测试
-        Video testVideoFile =new Video("C:\\Users\\Administrator\\Desktop\\168885122-1-192.mp4");
-        Clip<Video> clip1 =new Clip<>(testVideoFile, 10*SECOND);
-        Clip<Video> clip2=new Clip<>(testVideoFile, 20*SECOND);
+        VdoRes testVideoFile =new VdoRes("C:\\Users\\Administrator\\Desktop\\168885122-1-192.mp4");
+        Clip<VdoRes> clip1 =new Clip<>(testVideoFile, 10*SECOND);
+        Clip<VdoRes> clip2=new Clip<>(testVideoFile, 20*SECOND);
         project.getTimeline().getTrack(0).add(new Seg(clip1, 0, 1*SECOND));
         project.getTimeline().getTrack(0).add(new Seg(clip2,1*SECOND, 2*SECOND));
         project.getTimeline().getTrack(0).add(new Seg(clip1, 3*SECOND,1*SECOND));
