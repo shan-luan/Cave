@@ -4,7 +4,7 @@ import com.lomekwi.cine.GlobalVars;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.pipeline.Product;
 import com.lomekwi.cine.resource.Video;
-import com.lomekwi.cine.timeline.Segment;
+import com.lomekwi.cine.timeline.Seg;
 
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -14,19 +14,22 @@ import org.bytedeco.javacv.FrameGrabber;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 //TODO:解码音频，音视频流同步
-//TODO:把“解码器”这一资源和无状态的解码逻辑(应该放在一个单例里)拆分
-public class VideoDecoder implements Decoder {
+/*TODO:把“解码器”这一资源和无状态的解码逻辑(应该放在一个单例里)拆分
+ *详细设计:实现一个THREAD-LOCAL的，带队列的，非阻塞的，处理完后会进行回调的解码处理器(VideoDecodeProcessor)。解码器(VideoDecoder)资源管理由Video类中进行管理。
+ * 可以考虑附带deadline参数
+ */
+public class VideoDecProc implements DecProc {
 
     private final FFmpegFrameGrabber grabber;
     private final Pixels outputPixels;
-    private Segment currentSegment;
+    private Seg currentSeg;
 
     private final long lengthPerFrame;
     private final long length;
 
     private int j=0;
 
-    public VideoDecoder(Video video) {
+    public VideoDecProc(Video video) {
         grabber = new FFmpegFrameGrabber(video.getPath());
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         try {
@@ -50,10 +53,10 @@ public class VideoDecoder implements Decoder {
     @Override
     //TODO:把这一堆东西拆成私有方法
     public void process(Product product, Queue<Product> collector) {
-        Segment segment = (Segment) product;
+        Seg seg = (Seg) product;
         long current = GlobalVars.getProject().getPlayController().getPlayhead().getTime();
-        long offset = current - segment.getStart();
-        long target = ((Clip<?>)segment.getElement()).getInPoint() + offset;
+        long offset = current - seg.getStart();
+        long target = ((Clip<?>) seg.getElement()).getInPoint() + offset;
 
         if (target > length) {
             target = length;
@@ -63,7 +66,7 @@ public class VideoDecoder implements Decoder {
 
         try {
             Frame frame;
-            if(currentSegment != segment || GlobalVars.getProject().getPlayController().getPlayhead().isSought()){
+            if(currentSeg != seg || GlobalVars.getProject().getPlayController().getPlayhead().isSought()){
                 if(Math.abs(target-grabber.getTimestamp())>lengthPerFrame){
                     grabber.setTimestamp(target);
                     System.out.println((Math.abs(target-grabber.getTimestamp())-lengthPerFrame)/(double)lengthPerFrame+"(sought target:now target delta frame)");
@@ -74,7 +77,7 @@ public class VideoDecoder implements Decoder {
                         System.out.println("sought"+ i+"frame");
                     }
                 }
-                currentSegment = segment;
+                currentSeg = seg;
             }else if(target<nextFrameTime && outputPixels.getPixels()!=null) {
                 j++;
                 System.out.println("skipped"+j+"frame");

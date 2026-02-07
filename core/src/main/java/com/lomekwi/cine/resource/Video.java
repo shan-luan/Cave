@@ -1,13 +1,12 @@
 package com.lomekwi.cine.resource;
 
-import com.lomekwi.cine.pipeline.decode.Decoder;
-import com.lomekwi.cine.pipeline.decode.VideoDecoder;
+import com.lomekwi.cine.pipeline.decode.VideoDecProc;
 
 public class Video extends Media {
 
     public Video(String path) {
         super(path);
-        decoder = new VideoDecoder(this);
+        decProc = new VideoDecProc(this);
     }
 
 }

@@ -5,7 +5,7 @@ import com.lomekwi.cine.pipeline.Product;
 
 import java.util.Queue;
 
-public interface Decoder extends Processor,AutoCloseable  {
+public interface DecProc extends Processor,AutoCloseable  {
     @Override
     void process(Product product, Queue<Product> collector);
 }

@@ -8,38 +8,38 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 public class Track {
-    private final List<Segment> segments = new ArrayList<>();
+    private final List<Seg> segs = new ArrayList<>();
     private final Timeline timeline;
 
     public Track(Timeline timeline) {
         this.timeline = timeline;
     }
 
-    public void add(Segment segment) {
+    public void add(Seg seg) {
         //TODO:重叠检查未完成
         //TODO:需要确保自动补全Gap
-        int i = Collections.binarySearch(segments, segment.getStart());
+        int i = Collections.binarySearch(segs, seg.getStart());
         if(i < 0){
             i = -(i + 1);
         }
-        segments.add(i,segment);
+        segs.add(i, seg);
 
-        timeline.onElementAdded(this, segment.getElement());
+        timeline.onElementAdded(this, seg.getElement());
     }
     public void get(long time, Queue<Product> collector) {
         //FIXME:time超出边界时，不应返回最后一个元素
-        int i = Collections.binarySearch(segments, time);
+        int i = Collections.binarySearch(segs, time);
         if(i < 0){
             i = -(i+2);
         }
         System.out.println("get:"+i);
-        collector.add(segments.get(i));
+        collector.add(segs.get(i));
     }
     public void remove(long time) {
         //TODO:对Gap处理
-        Segment segment = segments.get(Collections.binarySearch(segments, time));
-        segments.remove(segment);
+        Seg seg = segs.get(Collections.binarySearch(segs, time));
+        segs.remove(seg);
 
-        timeline.onElementRemoved( this, segment.getElement());
+        timeline.onElementRemoved( this, seg.getElement());
     }
 }

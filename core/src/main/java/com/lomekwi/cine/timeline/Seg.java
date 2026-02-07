@@ -4,12 +4,12 @@ import com.lomekwi.cine.content.Element;
 import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.pipeline.Product;
 
-public class Segment implements Product,Comparable<Long> {
+public class Seg implements Product,Comparable<Long> {
     private final Element element;
     private final long start;
     private final long duration;
 
-    public Segment(Element element, long start, long duration) {
+    public Seg(Element element, long start, long duration) {
         this.element = element;
         this.start = start;
         this.duration = duration;

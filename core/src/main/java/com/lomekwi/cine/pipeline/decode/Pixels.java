@@ -2,7 +2,7 @@ package com.lomekwi.cine.pipeline.decode;
 
 import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.pipeline.Product;
-import com.lomekwi.cine.pipeline.upload.TextureUploader;
+import com.lomekwi.cine.pipeline.upload.TexUpldProc;
 
 import java.nio.ByteBuffer;
 
@@ -18,7 +18,7 @@ public class Pixels implements Product {
 
     @Override
     public Processor getNextProcessor() {
-        return TextureUploader.INSTANCE;
+        return TexUpldProc.INSTANCE;
     }
 
     public ByteBuffer getPixels() {
@@ -37,6 +37,6 @@ public class Pixels implements Product {
         return height;
     }
     public void dispose() {
-        TextureUploader.INSTANCE.remove(this);
+        TexUpldProc.INSTANCE.remove(this);
     }
 }
