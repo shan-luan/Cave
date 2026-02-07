@@ -6,12 +6,12 @@ import com.lomekwi.cine.pipeline.upload.TexUpldProc;
 
 import java.nio.ByteBuffer;
 
-public class Pixels implements Product {
+public class PixProd implements Product,AutoCloseable {
     private ByteBuffer pixels;
     private final int width;
     private final int height;
 
-    public Pixels(int width, int height) {
+    public PixProd(int width, int height) {
         this.width = width;
         this.height = height;
     }
@@ -36,7 +36,8 @@ public class Pixels implements Product {
     public int getHeight() {
         return height;
     }
-    public void dispose() {
+    @Override
+    public void close() {
         TexUpldProc.INSTANCE.remove(this);
     }
 }

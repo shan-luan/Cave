@@ -17,7 +17,11 @@ public class SimpleScheduler implements Scheduler {
             Processor processor = product.getNextProcessor();
 
             if (processor != null) {
-                processor.process(product, initialProducts);
+                try {
+                    processor.process(product, initialProducts);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }else {
                 returnProducts.add(product);
             }

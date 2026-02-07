@@ -3,97 +3,66 @@ package com.lomekwi.cine.pipeline.decode;
 import com.lomekwi.cine.GlobalVars;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.pipeline.Product;
-import com.lomekwi.cine.resource.VdoRes;
+import com.lomekwi.cine.resource.decoder.VdoDecRes;
+import com.lomekwi.cine.resource.media.VdoRes;
 import com.lomekwi.cine.timeline.Seg;
 
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
 //TODO:解码音频，音视频流同步
-/*TODO:把“解码器”这一资源和无状态的解码逻辑(应该放在一个单例里)拆分
- *详细设计:实现一个THREAD-LOCAL的，带队列的，非阻塞的，处理完后会进行回调的解码处理器(VideoDecodeProcessor)。解码器(VideoDecoder)资源管理由Video类中进行管理。
- * 可以考虑附带deadline参数
- */
+//TODO：把这一堆东西改成非阻塞的
 public class VideoDecProc implements DecProc {
+    private final static VideoDecProc instance=new VideoDecProc();
 
-    private final FFmpegFrameGrabber grabber;
-    private final Pixels outputPixels;
-    private Seg currentSeg;
+    public static VideoDecProc getInstance(){
+        return instance;
+    }
+    @Override
+    @SuppressWarnings("unchecked")
+    public void process(Product product, Queue<Product> collector) throws FrameGrabber.Exception {
 
-    private final long lengthPerFrame;
-    private final long length;
+        //TODO:把这一堆东西拆成私有方法
 
-    private int j=0;
+        final Seg seg = (Seg) product;
+        final Clip<VdoRes> clip = (Clip<VdoRes>) seg.getElement();
+        final VdoDecRes decoder = clip.getSource().getDecoder();
+        final long current = GlobalVars.getProject().getPlayController().getPlayhead().getTime();
+        final long offset = current - seg.getStart();
 
-    public VideoDecProc(VdoRes video) {
-        grabber = new FFmpegFrameGrabber(video.getPath());
-        grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
-        try {
-            grabber.start();
-            outputPixels = new Pixels(grabber.getImageWidth(), grabber.getImageHeight());
-        } catch (FrameGrabber.Exception e) {
-            throw new RuntimeException(e);
+        Frame output;
+
+        if(!decoder.isInitialized()){
+            decoder.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
+            decoder.start();
+            decoder.setBufferedProduct(new PixProd(decoder.getWidth(), decoder.getHeight()));
+            decoder.setCurrentSeg(seg);
         }
 
-        length = grabber.getLengthInTime();
-        lengthPerFrame = length / grabber.getLengthInVideoFrames();
-    }
+        final long target = Math.min((clip.getInPoint() + offset), decoder.getLengthInTime());
+        final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
 
-    @Override
-    public void close() throws FrameGrabber.Exception {
-        grabber.stop();
-        grabber.close();
-        outputPixels.dispose();
-    }
-
-    @Override
-    //TODO:把这一堆东西拆成私有方法
-    public void process(Product product, Queue<Product> collector) {
-        Seg seg = (Seg) product;
-        long current = GlobalVars.getProject().getPlayController().getPlayhead().getTime();
-        long offset = current - seg.getStart();
-        long target = ((Clip<?>) seg.getElement()).getInPoint() + offset;
-
-        if (target > length) {
-            target = length;
-        }
-
-        long nextFrameTime = grabber.getTimestamp() + lengthPerFrame;
-
-        try {
-            Frame frame;
-            if(currentSeg != seg || GlobalVars.getProject().getPlayController().getPlayhead().isSought()){
-                if(Math.abs(target-grabber.getTimestamp())>lengthPerFrame){
-                    grabber.setTimestamp(target);
-                    System.out.println((Math.abs(target-grabber.getTimestamp())-lengthPerFrame)/(double)lengthPerFrame+"(sought target:now target delta frame)");
-                    int i=0;
-                    while (grabber.getTimestamp()<target){
-                        grabber.grabImage();
-                        i++;
-                        System.out.println("sought"+ i+"frame");
-                    }
+        if(decoder.getCurrentSeg() != seg || GlobalVars.getProject().getPlayController().getPlayhead().isSought()){
+            if(Math.abs(target-decoder.getTimestamp())>decoder.getLengthPerFrame()){
+                decoder.seek(target);
+                while (decoder.getTimestamp()<target){
+                    decoder.grab();
                 }
-                currentSeg = seg;
-            }else if(target<nextFrameTime && outputPixels.getPixels()!=null) {
-                j++;
-                System.out.println("skipped"+j+"frame");
-                collector.add(outputPixels);
-                return;
             }
-            //调用process的速率比帧率要高很多，所以不太需要考虑跳过帧。即，不执行上面的返回缓存帧就相当于跳过帧。
-            //TODO:在抓取时间远小于目标时间时，靠上面的if不执行来补偿太慢（只相当于二倍速播放，在60fps调用、30fps视频下。）因此，考虑增加直接seek的逻辑
-            frame = grabber.grabImage();
-            j=0;
-            if (frame != null) {
-                outputPixels.setPixels((ByteBuffer) frame.image[0]);
-                collector.add(outputPixels);
-            }
-        } catch (FrameGrabber.Exception e) {
-            throw new RuntimeException(e);
+            decoder.setCurrentSeg(seg);
+        } else if(target<nextFrameTime && decoder.getBufferedProduct().getPixels()!=null) {
+            collector.add(decoder.getBufferedProduct());
+            return;
+        }
+        //调用process的速率比帧率要高很多，所以不太需要考虑跳过帧。即，不执行上面的返回缓存帧就相当于跳过帧。
+        //TODO:在抓取时间远小于目标时间时，靠上面的if不执行来补偿太慢（只相当于二倍速播放，在60fps调用、30fps视频下。）因此，考虑增加直接seek的逻辑
+        output = decoder.grab();
+        if (output != null) {
+            decoder.getBufferedProduct().setPixels((ByteBuffer) output.image[0]);
+            collector.add(decoder.getBufferedProduct());
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.lomekwi.cine.content;
 
 import com.lomekwi.cine.pipeline.Processor;
-import com.lomekwi.cine.resource.MedRes;
+import com.lomekwi.cine.resource.media.MedRes;
 
 
 public class Clip<T extends MedRes> extends Element{
@@ -23,6 +23,6 @@ public class Clip<T extends MedRes> extends Element{
 
     @Override
     public Processor getNextProcessor() {
-        return source.getDecoder();
+        return source.getNextProcessor();
     }
 }

@@ -1,0 +1,37 @@
+package com.lomekwi.cine.resource.decoder;
+
+import com.lomekwi.cine.pipeline.decode.PixProd;
+
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+
+public class VdoDecRes extends DecRes<PixProd>{
+    public VdoDecRes(String path) {
+        super(path);
+    }
+    public void setPixelFormat(int pixelFormat) {
+        grabber.setPixelFormat(pixelFormat);
+    }
+    @Override
+    public Frame grab() throws FFmpegFrameGrabber.Exception {
+        return grabber.grabImage();
+    }
+    public int getWidth() {
+        return grabber.getImageWidth();
+    }
+    public int getHeight() {
+        return grabber.getImageHeight();
+    }
+    public int getLengthInVideoFrames() {
+        return grabber.getLengthInVideoFrames();
+    }
+    public long getLengthInTime() {
+        return grabber.getLengthInTime();
+    }
+    public long getTimestamp() {
+        return grabber.getTimestamp();
+    }
+    public long getLengthPerFrame() {
+        return grabber.getLengthInTime() / grabber.getLengthInVideoFrames();
+    }
+}

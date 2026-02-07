@@ -4,7 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
-import com.lomekwi.cine.resource.VdoRes;
+import com.lomekwi.cine.resource.media.VdoRes;
 import com.lomekwi.cine.timeline.Seg;
 import com.lomekwi.cine.ui.Root;
 
