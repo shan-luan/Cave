@@ -6,4 +6,6 @@ public class Gap extends Seg {
     public Gap(long start, long duration) {
         super(None.INSTANCE, start, duration);
     }
+    @Override
+    public boolean isGap() {return true;}
 }

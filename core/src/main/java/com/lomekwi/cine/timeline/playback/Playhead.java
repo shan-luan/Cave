@@ -1,6 +1,7 @@
 package com.lomekwi.cine.timeline.playback;
 
 import com.badlogic.gdx.Gdx;
+import com.lomekwi.cine.util.Units;
 
 public class Playhead{
     private long time= 0L;
@@ -15,8 +16,9 @@ public class Playhead{
     }
     protected void update(){
         if(isPlaying){
-            time+= (long) (Gdx.graphics.getDeltaTime()*1e6);
+            time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
         }
+        System.out.println("time:"+time+" delta:"+Gdx.graphics.getDeltaTime());
     }
     public long getTime(){
         return time;

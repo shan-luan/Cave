@@ -1,6 +1,9 @@
 package com.lomekwi.cine;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
@@ -10,6 +13,12 @@ import com.lomekwi.cine.ui.Root;
 
 import static com.lomekwi.cine.util.Units.*;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.stream.IntStream;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private Root ui;
@@ -18,27 +27,42 @@ public class Main extends ApplicationAdapter {
     public void create() {
         GlobalVars.setProject(project);
 
-        ui=new Root(this);
+        ui = new Root(this);
         ui.create();
         project.getTimeline().add();
-        //测试
-        VdoRes testVideoFile =new VdoRes("C:\\Users\\Administrator\\Desktop\\168885122-1-192.mp4");
-        Clip<VdoRes> clip1 =new Clip<>(testVideoFile, 10*SECOND);
-        Clip<VdoRes> clip2=new Clip<>(testVideoFile, 20*SECOND);
-        project.getTimeline().getTrack(0).add(new Seg(clip1, 0, 1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip2,1*SECOND, 2*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip1, 3*SECOND,1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip2,4*SECOND, 1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip1, 5*SECOND,1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip2,6*SECOND, 1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip1, 7*SECOND,1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip2,8*SECOND, 1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip1, 9*SECOND,1*SECOND));
-        project.getTimeline().getTrack(0).add(new Seg(clip2,10*SECOND,1*SECOND));
 
+        // blame Android
+        FileHandle handle = Gdx.files.internal("oceans.mp4");
+        String videoPath = null;
+        try {
+            if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                File tmpFile = File.createTempFile("oceans", ".mp4");
+                tmpFile.deleteOnExit();
+                try (InputStream is = handle.read(); FileOutputStream os = new FileOutputStream(tmpFile)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, read);
+                    }
+                }
+                videoPath = tmpFile.getAbsolutePath();
+            } else {
+                videoPath = handle.path();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        VdoRes testVideoFile = new VdoRes(videoPath);
+
+        Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 15 * SECOND);
+        for(int i : IntStream.range(0, 30).toArray()) {
+            project.getTimeline().getTrack(0).add(new Seg(clip1, i*30*SECOND, 30 * SECOND));
+        }
 
         project.getPlayController().start();
     }
+
 
     @Override
     public void render() {

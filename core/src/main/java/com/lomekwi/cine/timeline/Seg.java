@@ -37,4 +37,5 @@ public class Seg implements Product,Comparable<Long> {
     public int compareTo(Long o) {
         return Long.compare(start, o);
     }
+    public boolean isGap(){return false;}
 }
