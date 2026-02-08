@@ -18,7 +18,6 @@ public class Playhead{
         if(isPlaying){
             time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
         }
-        System.out.println("time:"+time+" delta:"+Gdx.graphics.getDeltaTime());
     }
     public long getTime(){
         return time;

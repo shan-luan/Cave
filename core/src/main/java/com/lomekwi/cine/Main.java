@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.media.VdoRes;
+import com.lomekwi.cine.timeline.Gap;
 import com.lomekwi.cine.timeline.Seg;
 import com.lomekwi.cine.ui.Root;
 
@@ -19,6 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.IntStream;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private Root ui;
@@ -29,7 +33,7 @@ public class Main extends ApplicationAdapter {
 
         ui = new Root(this);
         ui.create();
-        project.getTimeline().add();
+        project.getTimeline().add().add();
 
         // blame Android
         FileHandle handle = Gdx.files.internal("oceans.mp4");
@@ -55,14 +59,18 @@ public class Main extends ApplicationAdapter {
 
         VdoRes testVideoFile = new VdoRes(videoPath);
 
-        Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 15 * SECOND);
+        Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 10 * SECOND);
+        Clip<VdoRes> clip2 = new Clip<>(testVideoFile, 13 * SECOND);
         for(int i : IntStream.range(0, 30).toArray()) {
-            project.getTimeline().getTrack(0).add(new Seg(clip1, i*30*SECOND, 30 * SECOND));
+            project.getTimeline().getTrack(0).add(new Seg(clip1, i*6*SECOND, 3 * SECOND));
+            project.getTimeline().getTrack(0).add(new Gap(i*6*SECOND+3 * SECOND, 3 * SECOND));
+            project.getTimeline().getTrack(1).add(new Gap(i*6*SECOND, 3 * SECOND));
+            project.getTimeline().getTrack(1).add(new Seg(clip2, i*6*SECOND+3 * SECOND, 3 * SECOND));
         }
+        System.out.println(project.getTimeline());
 
         project.getPlayController().start();
     }
-
 
     @Override
     public void render() {

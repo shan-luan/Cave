@@ -10,23 +10,24 @@ import java.util.Queue;
 public class Timeline {
     private final List<Track> tracks = new ArrayList<>();
     private final List<TimelineObserver> observers = new ArrayList<>();
-    public void add() {
+    public Timeline add() {
         Track track = new Track(this);
         tracks.add(track);
         observers.forEach(o -> o.onTrackAdded(track));
+        return this;
     }
-    public void remove(Track track) {
+    public Timeline remove(Track track) {
         tracks.remove(track);
         observers.forEach(o -> o.onTrackRemoved(track));
+        return this;
     }
-    public void get(long time, Queue<Product> collector) {
+    public Timeline get(long time, Queue<Product> collector) {
         tracks.forEach(track -> track.get(time, collector));
+        return this;
     }
     public Track getTrack(int index) {
         return tracks.get(index);
     }
-
-
     public void addObserver(TimelineObserver observer) {
         observers.add(observer);
     }
@@ -40,4 +41,14 @@ public class Timeline {
         observers.forEach(o -> o.onElementRemoved(track, element));
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Timeline:");
+        for (int i = 0; i < tracks.size(); i++) {
+            sb.append(System.lineSeparator());
+            sb.append("track#").append(i).append(":").append(tracks.get(i));
+        }
+        return sb.toString();
+    }
 }

@@ -10,6 +10,7 @@ import java.util.Queue;
 public class Track {
     private final List<Seg> segments = new ArrayList<>();
     private final Timeline timeline;
+    private int currentSegIndex = -1;
 
     public Track(Timeline timeline) {
         this.timeline = timeline;
@@ -33,6 +34,10 @@ public class Track {
             i = -(i+2);
         }
         collector.add(segments.get(i));
+        currentSegIndex = i;
+    }
+    protected Seg getByIndex(int deltaIndex){
+        return segments.get(currentSegIndex+deltaIndex);
     }
     public void remove(long time) {
         //TODO:对Gap处理
@@ -40,5 +45,17 @@ public class Track {
         segments.remove(seg);
 
         timeline.onElementRemoved( this, seg.getElement());
+    }
+    //for debug
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < segments.size(); i++) {
+            if(segments.get(i).isGap()){
+                sb.append("Gap#").append(i).append(":").append(segments.get(i));
+            }
+            sb.append("Seg#").append(i).append(":").append(segments.get(i));
+        }
+        return sb.toString();
     }
 }

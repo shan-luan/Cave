@@ -8,4 +8,8 @@ public class None extends Element{
     public Processor getNextProcessor() {
         return null;
     }
+    @Override
+    public String toString() {
+        return "N/A";
+    }
 }
