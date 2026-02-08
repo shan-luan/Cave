@@ -6,16 +6,15 @@ import com.lomekwi.cine.pipeline.Product;
 /**
  * 时间片段
  */
-public class Seg implements Product,Comparable<Long> {
+public class Seg implements Product {
     private final Element element;
     private final long start;
-    private final long duration;
+    protected Track track;
 
-
-    public Seg(Element element, long start, long duration) {
+    //TODO:让Track封装Seg的创建逻辑
+    public Seg(Element element, long start) {
         this.element = element;
         this.start = start;
-        this.duration = duration;
     }
 
     public Element getElement() {
@@ -27,23 +26,27 @@ public class Seg implements Product,Comparable<Long> {
     }
 
     public long getDuration() {
-        return duration;
+        return getEnd() - start;
     }
+
+    /**
+     * 如果抛出了IndexOutOfBoundsException，请检查track的最后一个元素，可能是Gap
+     */
     public long getEnd() {
-        return start + duration;
+        return (track.getByIndex(track.getIndexOf(this)+1)).getStart();
     }
     @Override
     public Processor getNextProcessor() {
         return element.getNextProcessor();
     }
-    @Override
-    public int compareTo(Long o) {
-        return Long.compare(start, o);
-    }
     public boolean isGap(){return false;}
 
     @Override
     public String toString() {
-        return "[s:"+start+" c:"+getElement()+" d:"+duration+"]";
+        return "[s:"+start+" c:"+getElement()+" d:"+getDuration()+"]";
+    }
+
+    protected void setTrack(Track track) {
+        this.track = track;
     }
 }

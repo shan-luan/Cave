@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.IntStream;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectRBTreeMap;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
@@ -62,11 +60,12 @@ public class Main extends ApplicationAdapter {
         Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 10 * SECOND);
         Clip<VdoRes> clip2 = new Clip<>(testVideoFile, 13 * SECOND);
         for(int i : IntStream.range(0, 30).toArray()) {
-            project.getTimeline().getTrack(0).add(new Seg(clip1, i*6*SECOND, 3 * SECOND));
-            project.getTimeline().getTrack(0).add(new Gap(i*6*SECOND+3 * SECOND, 3 * SECOND));
-            project.getTimeline().getTrack(1).add(new Gap(i*6*SECOND, 3 * SECOND));
-            project.getTimeline().getTrack(1).add(new Seg(clip2, i*6*SECOND+3 * SECOND, 3 * SECOND));
+            project.getTimeline().getTrack(0).add(new Seg(clip1, i*6*SECOND));
+            project.getTimeline().getTrack(0).add(new Gap(i*6*SECOND+3 * SECOND));
+            project.getTimeline().getTrack(1).add(new Gap(i*6*SECOND));
+            project.getTimeline().getTrack(1).add(new Seg(clip2, i*6*SECOND+3 * SECOND));
         }
+        project.getTimeline().getTrack(1).add(new Gap(180*SECOND));
         System.out.println(project.getTimeline());
 
         project.getPlayController().start();

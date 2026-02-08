@@ -8,7 +8,6 @@ dependencies {
   api "games.rednblack.miniaudio:miniaudio:$miniaudioVersion"
 
   api "org.bytedeco:javacv:$javacvVersion"
-  api "it.unimi.dsi:fastutil:$fastutilVersion"
 
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
