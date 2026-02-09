@@ -9,11 +9,10 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
-//TODO:缓存当前片段
 public class Track {
     private final RangeMap<@NonNull Long, @NonNull Element> elements = TreeRangeMap.create();
     private final Timeline timeline;
-
+    private Map.Entry<Range<@NonNull Long>, @NonNull Element> cache;
 
     public Track(Timeline timeline) {
         this.timeline = timeline;
@@ -26,10 +25,17 @@ public class Track {
             elements.put(Range.closedOpen(start, start + duration), element);
             element.setTrack(this);
         }
+        cache = null;
     }
 
     public Element get(long time) {
-        return elements.get(time);
+        if (cache == null || !cache.getKey().contains(time)) {
+            cache = elements.getEntry(time);
+        }
+        if(cache==null){
+            return null;
+        }
+        return cache.getValue();
     }
 
     public void remove(long time) {
@@ -37,8 +43,12 @@ public class Track {
         if (entry != null) {
             elements.remove(entry.getKey());
         }
+        cache = null;
     }
     public Map.Entry<Range<@NonNull Long>, Element> getEntry(long time){
-        return elements.getEntry(time);
+        if (cache == null || !cache.getKey().contains(time)) {
+            cache = elements.getEntry(time);
+        }
+        return cache;
     }
 }

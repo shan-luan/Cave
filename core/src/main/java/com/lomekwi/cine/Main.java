@@ -33,11 +33,11 @@ public class Main extends ApplicationAdapter {
         project.getTimeline().add().add();
 
         // blame Android
-        FileHandle handle = Gdx.files.internal("oceans.mp4");
+        FileHandle handle = Gdx.files.internal("test.mp4");
         String videoPath = null;
         try {
             if (Gdx.app.getType() == Application.ApplicationType.Android) {
-                File tmpFile = File.createTempFile("oceans", ".mp4");
+                File tmpFile = File.createTempFile("test", ".mp4");
                 tmpFile.deleteOnExit();
                 try (InputStream is = handle.read(); FileOutputStream os = new FileOutputStream(tmpFile)) {
                     byte[] buffer = new byte[8192];
@@ -62,7 +62,7 @@ public class Main extends ApplicationAdapter {
             project.getTimeline().getTrack(0).add(clip1, i*6*SECOND,3 * SECOND);
             project.getTimeline().getTrack(0).add(null,i*6*SECOND+3 * SECOND, 3 * SECOND);
             project.getTimeline().getTrack(1).add(null,i*6*SECOND * SECOND, 3 * SECOND);
-            project.getTimeline().getTrack(1).add(clip1, i*6*SECOND+3 * SECOND,3 * SECOND);
+            project.getTimeline().getTrack(1).add(clip2, i*6*SECOND+3 * SECOND,3 * SECOND);
         }
         System.out.println(project.getTimeline());
 
