@@ -15,6 +15,7 @@ import static com.lomekwi.cine.util.Units.*;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +55,12 @@ public class Main extends ApplicationAdapter {
             e.printStackTrace();
         }
 
-        VdoRes testVideoFile = new VdoRes(videoPath);
+        VdoRes testVideoFile;
+        try {
+            testVideoFile = new VdoRes(videoPath);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 10 * SECOND);
         Clip<VdoRes> clip2 = new Clip<>(testVideoFile, 13 * SECOND);
