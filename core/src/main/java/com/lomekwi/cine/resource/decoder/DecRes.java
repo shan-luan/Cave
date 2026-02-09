@@ -1,12 +1,13 @@
 package com.lomekwi.cine.resource.decoder;
 
+import com.google.common.collect.Range;
 import com.lomekwi.cine.pipeline.Product;
 import com.lomekwi.cine.resource.Resource;
-import com.lomekwi.cine.timeline.Seg;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
+import org.jspecify.annotations.NonNull;
 
 /**
  * 解码器类。不应该包含任何解码的具体逻辑，只包含状态和请求修改状态的方法。也不应该暴露内部可以被修改状态的字段，比如grabber。
@@ -14,7 +15,7 @@ import org.bytedeco.javacv.FrameGrabber;
  */
 public abstract class DecRes<P extends Product> implements Resource {
     protected final FFmpegFrameGrabber grabber;
-    protected Seg currentSeg;
+    protected Range<@NonNull Long> currentClipRange;
     protected P bufferedProd;
     protected boolean initialized;
 
@@ -34,11 +35,11 @@ public abstract class DecRes<P extends Product> implements Resource {
         grabber.stop();
         grabber.close();
     }
-    public void setCurrentSeg(Seg seg) {
-        currentSeg = seg;
+    public void setCurrentClipRange(Range<@NonNull Long> range) {
+        currentClipRange = range;
     }
-    public Seg getCurrentSeg() {
-        return currentSeg;
+    public Range<@NonNull Long> getCurrentClipRange() {
+        return currentClipRange;
     }
     public abstract Frame grab() throws FFmpegFrameGrabber.Exception;
     public void seek(long time) throws FFmpegFrameGrabber.Exception{

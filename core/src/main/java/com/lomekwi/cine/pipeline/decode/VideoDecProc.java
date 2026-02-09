@@ -1,18 +1,16 @@
 package com.lomekwi.cine.pipeline.decode;
 
-import com.badlogic.gdx.Application;
-import com.badlogic.gdx.Gdx;
+import com.google.common.collect.Range;
 import com.lomekwi.cine.GlobalVars;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.pipeline.Product;
 import com.lomekwi.cine.resource.decoder.VdoDecRes;
 import com.lomekwi.cine.resource.media.VdoRes;
-import com.lomekwi.cine.timeline.Seg;
-import com.lomekwi.cine.util.Units;
 
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
@@ -31,12 +29,11 @@ public class VideoDecProc implements DecProc {
     public void process(Product product, Queue<Product> collector) throws FrameGrabber.Exception {
 
         //TODO:把这一堆东西拆成私有方法
-
-        final Seg seg = (Seg) product;
-        final Clip<VdoRes> clip = (Clip<VdoRes>) seg.getElement();
+        final Clip<VdoRes> clip = (Clip<VdoRes>) product;
+        final Range<@NonNull Long> clipRange = GlobalVars.getCurrentElementRangeIn(clip.getTrack());
         final VdoDecRes decoder = clip.getSource().getDecoder();
         final long current = GlobalVars.getProject().getPlayController().getPlayhead().getTime();
-        final long offset = current - seg.getStart();
+        final long offset = current - clipRange.lowerEndpoint();
 
         Frame output;
 
@@ -44,13 +41,13 @@ public class VideoDecProc implements DecProc {
             decoder.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
             decoder.start();
             decoder.setBufferedProduct(new PixProd(decoder.getWidth(), decoder.getHeight()));
-            decoder.setCurrentSeg(seg);
+            decoder.setCurrentClipRange(clipRange);
         }
 
         final long target = Math.min((clip.getInPoint() + offset), decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
         //当片段改变或者seek时
-        if (decoder.getCurrentSeg() != seg || GlobalVars.getProject().getPlayController().getPlayhead().isSought()) {
+        if (!decoder.getCurrentClipRange().equals(clipRange) || GlobalVars.getProject().getPlayController().getPlayhead().isSought()) {
             //当时间差大于1帧，跳转
             System.out.println("new seg/play head sought");
             if (Math.abs(target - decoder.getTimestamp()) > decoder.getLengthPerFrame()) {
@@ -65,7 +62,7 @@ public class VideoDecProc implements DecProc {
                 }
                 //跳转结束
             }
-            decoder.setCurrentSeg(seg);
+            decoder.setCurrentClipRange(clipRange);
         } else if (target < nextFrameTime && decoder.getBufferedProduct().getPixels() != null) {
             collector.add(decoder.getBufferedProduct());
             return;

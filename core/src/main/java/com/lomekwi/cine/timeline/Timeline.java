@@ -22,7 +22,12 @@ public class Timeline {
         return this;
     }
     public Timeline get(long time, Queue<Product> collector) {
-        tracks.forEach(track -> track.get(time, collector));
+        tracks.forEach(track -> {
+            Element element=track.get(time);
+            if(element!=null){
+                collector.add(element);
+            }
+        });
         return this;
     }
     public Track getTrack(int index) {

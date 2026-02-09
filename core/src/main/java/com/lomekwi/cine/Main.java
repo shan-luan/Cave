@@ -8,11 +8,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.media.VdoRes;
-import com.lomekwi.cine.timeline.Gap;
-import com.lomekwi.cine.timeline.Seg;
 import com.lomekwi.cine.ui.Root;
 
 import static com.lomekwi.cine.util.Units.*;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,7 +28,6 @@ public class Main extends ApplicationAdapter {
     @Override
     public void create() {
         GlobalVars.setProject(project);
-
         ui = new Root(this);
         ui.create();
         project.getTimeline().add().add();
@@ -60,12 +59,11 @@ public class Main extends ApplicationAdapter {
         Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 10 * SECOND);
         Clip<VdoRes> clip2 = new Clip<>(testVideoFile, 13 * SECOND);
         for(int i : IntStream.range(0, 30).toArray()) {
-            project.getTimeline().getTrack(0).add(new Seg(clip1, i*6*SECOND));
-            project.getTimeline().getTrack(0).add(new Gap(i*6*SECOND+3 * SECOND));
-            project.getTimeline().getTrack(1).add(new Gap(i*6*SECOND));
-            project.getTimeline().getTrack(1).add(new Seg(clip2, i*6*SECOND+3 * SECOND));
+            project.getTimeline().getTrack(0).add(clip1, i*6*SECOND,3 * SECOND);
+            project.getTimeline().getTrack(0).add(null,i*6*SECOND+3 * SECOND, 3 * SECOND);
+            project.getTimeline().getTrack(1).add(null,i*6*SECOND * SECOND, 3 * SECOND);
+            project.getTimeline().getTrack(1).add(clip1, i*6*SECOND+3 * SECOND,3 * SECOND);
         }
-        project.getTimeline().getTrack(1).add(new Gap(180*SECOND));
         System.out.println(project.getTimeline());
 
         project.getPlayController().start();
