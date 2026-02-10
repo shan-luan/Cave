@@ -4,21 +4,21 @@ import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.resource.media.MedRes;
 
 
-public class Clip<T extends MedRes> extends Element{
+public abstract class Clip<T extends MedRes> extends Element{
     private final T source;
-    private final long inPoint;
+    private final long offset;
 
-    public Clip(T source, long inPoint) {
+    public Clip(T source, long offset) {
         this.source = source;
-        this.inPoint = inPoint;
+        this.offset = offset;
     }
 
     public T getSource() {
         return source;
     }
 
-    public long getInPoint() {
-        return inPoint;
+    public long getOffset() {
+        return offset;
     }
 
     @Override

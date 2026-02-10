@@ -62,22 +62,11 @@ public class Main extends ApplicationAdapter {
             throw new RuntimeException(e);
         }
 
-        Clip<VdoRes> clip1 = new Clip<>(testVideoFile, 10 * SECOND);
-        Clip<VdoRes> clip2 = new Clip<>(testVideoFile, 13 * SECOND);
-        for(int i : IntStream.range(0, 30).toArray()) {
-            project.getTimeline().getTrack(0).add(clip1, i*6*SECOND,3 * SECOND);
-            project.getTimeline().getTrack(0).add(null,i*6*SECOND+3 * SECOND, 3 * SECOND);
-            project.getTimeline().getTrack(1).add(null,i*6*SECOND * SECOND, 3 * SECOND);
-            project.getTimeline().getTrack(1).add(clip2, i*6*SECOND+3 * SECOND,3 * SECOND);
-        }
-        System.out.println(project.getTimeline());
-
         project.getPlayController().start();
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
         ui.render();
         project.getPlayController().update();
     }

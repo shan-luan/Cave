@@ -2,56 +2,118 @@ package com.lomekwi.cine.ui;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
-
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
+import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cine.Main;
 import com.lomekwi.cine.project.Project;
-
+import com.lomekwi.cine.ui.tabs.ProjectTab;
+import com.lomekwi.cine.ui.tabs.TopTabbedPane;
+import com.lomekwi.cine.ui.topbar.TopBar;
 
 public class Root implements ApplicationListener {
-    private final Stage stage;
-    private final Main main;
-    public Root(Main main) {
-        VisUI.load();
+    private static Root INSTANCE;
+    private Stage stage;
+    private Main main;
 
+    private Stack root;
+    private VisTable mainLayout;
+    private VisTable overlayLayer;
+    private VisTable majorArea;
+
+    private TopBar topBar;
+    private TopTabbedPane tabbedPane;
+
+    public Root(Main main) {
         this.main = main;
-        stage = new Stage(new ScreenViewport());
-        Gdx.input.setInputProcessor(stage);
+        INSTANCE = this;
+    }
+
+    public static Root getInstance() {
+        return INSTANCE;
     }
 
     @Override
     public void create() {
+        VisUI.load();
 
+        stage = new Stage(new ScreenViewport());
+        Gdx.input.setInputProcessor(stage);
+
+        // 初始化UI组件
+        root = new Stack();
+        root.setFillParent(true);
+
+        mainLayout = new VisTable();
+        mainLayout.setBackground("window-bg");
+        mainLayout.setFillParent(true);
+
+        overlayLayer = new VisTable();
+        mainLayout.setFillParent(true);
+
+        // 添加TopBar
+        topBar = new TopBar();
+        mainLayout.top();
+        mainLayout.add(topBar.getTable()).fillX().expandX().row();
+
+        // 添加TabbedPane
+        tabbedPane = new TopTabbedPane();
+        mainLayout.add(tabbedPane.getTable()).fillX().expandX().row();
+        majorArea=new VisTable();
+        mainLayout.add(majorArea).fill().expand().row();
+        majorArea.setFillParent(true);
+
+        tabbedPane.add(new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab());
+
+        root.add(mainLayout);
+        root.add(overlayLayer);
+
+        stage.addActor(root);
     }
 
     @Override
     public void render() {
+        ScreenUtils.clear(Color.BLACK);
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
     }
 
     @Override
-    public void pause() {
-
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-
-    }
+    public void resume() {}
 
     @Override
     public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
+        if (stage != null) {
+            stage.getViewport().update(width, height, true);
+        }
     }
 
     @Override
     public void dispose() {
+        if (stage != null) stage.dispose();
         VisUI.dispose();
     }
-    public Project getProject(){
+
+    public Project getProject() {
         return main.getProject();
+    }
+    public Stage getStage() {
+        return stage;
+    }
+    public Stack getRoot() {
+        return root;
+    }
+    public VisTable getMainLayout() {
+        return mainLayout;
+    }
+    public VisTable getMajorArea() {
+        return majorArea;
     }
 }

@@ -17,10 +17,11 @@ import java.util.Queue;
 
 //TODO:解码音频，音视频流同步
 //TODO：把这一堆东西改成非阻塞的
-public class VideoDecProc implements DecProc {
-    private final static VideoDecProc instance = new VideoDecProc();
+//TODO：拆分”解码服务“和”把从时间线获取的元素的元信息提取用于解码“这两个职责
+public class VdoDecProc implements DecProc {
+    private final static VdoDecProc instance = new VdoDecProc();
 
-    public static VideoDecProc getInstance() {
+    public static VdoDecProc getInstance() {
         return instance;
     }
 
@@ -44,7 +45,7 @@ public class VideoDecProc implements DecProc {
             decoder.setCurrentClipRange(clipRange);
         }
 
-        final long target = Math.min((clip.getInPoint() + offset), decoder.getLengthInTime());
+        final long target = Math.min((clip.getOffset() + offset), decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
         //当片段改变或者seek时
         if (!decoder.getCurrentClipRange().equals(clipRange) || GlobalVars.getProject().getPlayController().getPlayhead().isSought()) {
