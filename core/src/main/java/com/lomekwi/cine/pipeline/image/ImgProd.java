@@ -1,4 +1,4 @@
 package com.lomekwi.cine.pipeline.product;
 
-public interface Product {
+public class Img implements Product {
 }
