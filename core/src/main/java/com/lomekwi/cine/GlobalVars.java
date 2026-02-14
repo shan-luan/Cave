@@ -1,7 +1,7 @@
 package com.lomekwi.cine;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cine.content.Element;
+import com.lomekwi.cine.element.Element;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.timeline.Track;
 import com.lomekwi.cine.timeline.playback.PlayController;

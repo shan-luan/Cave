@@ -1,7 +1,5 @@
-package com.lomekwi.cine.pipeline.filter;
+package com.lomekwi.cine.pipeline;
 
-import com.lomekwi.cine.pipeline.product.Product;
-
-public interface Filter <T extends Product>{
-    public T filter(T product);
+public interface Filter <T>{
+    public void filter(T product);
 }

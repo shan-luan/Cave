@@ -1,6 +1,4 @@
-package com.lomekwi.cine.pipeline.producer;
-
-import com.lomekwi.cine.pipeline.product.Product;
+package com.lomekwi.cine.pipeline;
 
 public interface Producer<T extends Product> {
     /**

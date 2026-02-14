@@ -1,4 +1,6 @@
-package com.lomekwi.cine.pipeline.product;
+package com.lomekwi.cine.pipeline.audio;
 
-public class Aud implements Product {
+import com.lomekwi.cine.pipeline.Product;
+
+public class AudProd implements Product {
 }

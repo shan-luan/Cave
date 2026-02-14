@@ -4,22 +4,15 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.lomekwi.cine.content.Clip;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.media.VdoRes;
 import com.lomekwi.cine.ui.Root;
-
-import static com.lomekwi.cine.util.Units.*;
-
-import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.stream.IntStream;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */

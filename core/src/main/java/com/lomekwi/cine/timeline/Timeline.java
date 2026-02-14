@@ -1,6 +1,6 @@
 package com.lomekwi.cine.timeline;
 
-import com.lomekwi.cine.content.Element;
+import com.lomekwi.cine.element.Element;
 import com.lomekwi.cine.pipeline.Product;
 
 import java.util.ArrayList;

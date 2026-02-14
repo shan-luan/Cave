@@ -3,7 +3,7 @@ package com.lomekwi.cine.timeline;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import com.lomekwi.cine.content.Element;
+import com.lomekwi.cine.element.Element;
 
 import org.jspecify.annotations.NonNull;
 

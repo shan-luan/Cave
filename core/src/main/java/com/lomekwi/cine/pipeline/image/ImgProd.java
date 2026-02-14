@@ -1,4 +1,6 @@
-package com.lomekwi.cine.pipeline.product;
+package com.lomekwi.cine.pipeline.image;
 
-public class Img implements Product {
+import com.lomekwi.cine.pipeline.Product;
+
+public class ImgProd implements Product {
 }
