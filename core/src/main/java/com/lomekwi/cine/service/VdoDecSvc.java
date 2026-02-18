@@ -1,7 +1,7 @@
 package com.lomekwi.cine.service;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cine.pipeline.decode.PixProd;
+import com.lomekwi.cine.pipeline.image.ImgProd;
 import com.lomekwi.cine.resource.decoder.VdoDecRes;
 
 import org.bytedeco.ffmpeg.global.avutil;
@@ -19,14 +19,14 @@ public class VdoDecSvc {
      * @param clipRange 当前片段的时间范围
      * @throws Exception 解码异常
      */
-    public static void decode(long time, VdoDecRes decoder, Range<@NonNull Long> clipRange) throws Exception {
+    public static ByteBuffer decode(long time, VdoDecRes decoder, Range<@NonNull Long> clipRange) throws Exception {
         Frame output;
 
         // 初始化解码器
         if (!decoder.isInitialized()) {
             decoder.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
             decoder.start();
-            decoder.setBufferedProduct(new PixProd(decoder.getWidth(), decoder.getHeight()));
+            decoder.setBufferedProduct(new ImgProd());
             decoder.setCurrentClipRange(clipRange);
         }
 
@@ -48,7 +48,7 @@ public class VdoDecSvc {
             decoder.setCurrentClipRange(clipRange);
         } else if (target < nextFrameTime && decoder.getBufferedProduct().getPixels() != null) {
             // 如果目标时间在下一帧之前且缓冲区有数据，则直接返回缓冲帧
-            return;
+            return decoder.getBufferedProduct().getPixels();
         }
 
         // 抓取新帧
@@ -56,8 +56,9 @@ public class VdoDecSvc {
         if (output != null) {
             decoder.getBufferedProduct().setPixels((ByteBuffer) output.image[0]);
         }
+        return decoder.getBufferedProduct().getPixels();
     }
-    public static void decode(long time, VdoDecRes decoder) throws Exception {
-        decode(time, decoder, ALL_TIME);
+    public static ByteBuffer decode(long time, VdoDecRes decoder) throws Exception {
+        return decode(time, decoder, ALL_TIME);
     }
 }

@@ -1,12 +1,12 @@
 package com.lomekwi.cine.resource.decoder;
 
-import com.lomekwi.cine.pipeline.decode.PixProd;
+import com.lomekwi.cine.pipeline.image.ImgProd;
 import com.lomekwi.cine.resource.media.VdoRes;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 
-public class VdoDecRes extends DecRes<PixProd>{
+public class VdoDecRes extends DecRes<ImgProd>{
     public VdoDecRes(VdoRes source) {
         super(source);
     }

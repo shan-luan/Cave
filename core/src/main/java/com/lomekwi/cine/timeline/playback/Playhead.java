@@ -2,7 +2,7 @@ package com.lomekwi.cine.timeline.playback;
 
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cine.util.Units;
-
+//WIP,unwork
 public class Playhead{
     private long time= 0L;
     private  boolean isPlaying;

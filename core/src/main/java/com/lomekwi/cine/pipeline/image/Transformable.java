@@ -1,6 +1,6 @@
 package com.lomekwi.cine.pipeline.image;
 
-public interface Transformable {
+public interface Transformable<T extends Transformable<T>> {
     Transform getTransform();
-    void setTransform(Transform transform);
+    T setTransform(Transform transform);
 }

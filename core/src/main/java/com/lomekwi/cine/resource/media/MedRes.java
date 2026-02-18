@@ -1,6 +1,5 @@
 package com.lomekwi.cine.resource.media;
 
-import com.lomekwi.cine.pipeline.Processor;
 import com.lomekwi.cine.resource.Resource;
 import com.lomekwi.cine.resource.decoder.DecRes;
 
@@ -28,7 +27,6 @@ public abstract class MedRes implements Resource {
     public DecRes<?> getDecoder(){
         return decRes;
     }
-    public abstract Processor getNextProcessor();
 
     @Override
     public void close() throws Exception {
