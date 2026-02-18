@@ -1,6 +1,6 @@
 package com.lomekwi.cine.timeline;
 
-import com.lomekwi.cine.element.Element;
+import com.lomekwi.cine.element.FilteredSrc;
 import com.lomekwi.cine.pipeline.Product;
 
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ public class Timeline {
     }
     public Timeline get(long time, Queue<Product> collector) {
         tracks.forEach(track -> {
-            Element element=track.get(time);
+            FilteredSrc element=track.get(time);
             if(element!=null){
                 collector.add(element);
             }
