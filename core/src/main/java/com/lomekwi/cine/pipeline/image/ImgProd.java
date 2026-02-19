@@ -51,7 +51,7 @@ public class ImgProd implements Product, Transformable<ImgProd> {
                 GL20.GL_UNSIGNED_BYTE,
                 pixels
             );
-
+        changed = false;
         }
         batch.draw(
             texture,

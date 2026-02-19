@@ -1,12 +1,11 @@
 package com.lomekwi.cine.timeline;
 
-import com.lomekwi.cine.element.FilteredSrc;
 import com.lomekwi.cine.pipeline.Product;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-//WIP,unwork
+
 public class Timeline {
     private final List<Track> tracks = new ArrayList<>();
     public Timeline add() {
@@ -19,12 +18,10 @@ public class Timeline {
         return this;
     }
     public Timeline get(long time, Queue<Product> collector) {
-        tracks.forEach(track -> {
-            FilteredSrc element=track.get(time);
-            if(element!=null){
-                collector.add(element);
-            }
-        });
+        for(Track track:tracks){
+            Product product = track.get(time);
+            collector.add(product);
+        }
         return this;
     }
     public Track getTrack(int index) {
