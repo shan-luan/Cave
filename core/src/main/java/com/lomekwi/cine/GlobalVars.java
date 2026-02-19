@@ -1,11 +1,9 @@
 package com.lomekwi.cine;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cine.element.FilteredSrc;
+import com.lomekwi.cine.pipeline.Source;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.timeline.Track;
-import com.lomekwi.cine.timeline.playback.PlayController;
-import com.lomekwi.cine.timeline.playback.Playhead;
 
 import org.jspecify.annotations.NonNull;
 
@@ -19,17 +17,8 @@ public class GlobalVars {
     protected static void setProject(Project project) {
         GlobalVars.project = project;
     }
-    public static PlayController getPlayController() {
-        return project.getPlayController();
-    }
-    public static Playhead getPlayhead() {
-        return project.getPlayController().getPlayhead();
-    }
-    public static long getCurrentTime() {
-        return getPlayhead().getTime();
-    }
     public static Range<@NonNull Long> getCurrentElementRangeIn(Track track){
-        Map.Entry<Range<@NonNull Long>, FilteredSrc> entry = track.getEntry(getCurrentTime());
+        Map.Entry<Range<@NonNull Long>, Source<?>> entry = track.getEntry(project.playhead.getTime());
         if (entry != null) {
             return entry.getKey();
         }else {

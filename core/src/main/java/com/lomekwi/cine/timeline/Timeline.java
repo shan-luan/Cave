@@ -3,8 +3,8 @@ package com.lomekwi.cine.timeline;
 import com.lomekwi.cine.pipeline.Product;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Queue;
 
 public class Timeline {
     private final List<Track> tracks = new ArrayList<>();
@@ -17,9 +17,10 @@ public class Timeline {
         tracks.remove(track);
         return this;
     }
-    public Timeline get(long time, Queue<Product> collector) {
+    public Timeline get(long time, Collection<Product> collector) {
         for(Track track:tracks){
             Product product = track.get(time);
+            if(product==null) continue;
             collector.add(product);
         }
         return this;

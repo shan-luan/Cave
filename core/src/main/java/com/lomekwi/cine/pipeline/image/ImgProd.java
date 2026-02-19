@@ -8,7 +8,7 @@ import com.lomekwi.cine.pipeline.Product;
 
 import java.nio.ByteBuffer;
 
-public class ImgProd implements Product, Transformable<ImgProd> {
+public class ImgProd implements Product, Transformable<ImgProd>{
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;

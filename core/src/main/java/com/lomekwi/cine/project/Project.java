@@ -1,15 +1,11 @@
 package com.lomekwi.cine.project;
 
+import com.lomekwi.cine.pipeline.Distributor;
 import com.lomekwi.cine.timeline.Timeline;
-import com.lomekwi.cine.timeline.playback.PlayController;
+import com.lomekwi.cine.timeline.playback.Playhead;
 
 public class Project {
-    private final Timeline timeline=new Timeline();
-    private final PlayController playController=new PlayController(timeline);
-    public Timeline getTimeline(){
-        return timeline;
-    }
-    public PlayController getPlayController(){
-        return playController;
-    }
+    public final Timeline timeline=new Timeline();
+    public final Distributor distributor=new Distributor(timeline);
+    public final Playhead playhead=new Playhead();
 }

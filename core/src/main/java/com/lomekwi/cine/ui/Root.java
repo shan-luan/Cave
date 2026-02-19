@@ -67,7 +67,7 @@ public class Root implements ApplicationListener {
         mainLayout.add(majorArea).fill().expand().row();
         majorArea.setFillParent(true);
 
-        tabbedPane.add(new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab(),new ProjectTab());
+        tabbedPane.add(new ProjectTab());
 
         root.add(mainLayout);
         root.add(overlayLayer);

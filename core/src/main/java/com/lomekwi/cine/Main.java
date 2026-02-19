@@ -1,9 +1,15 @@
 package com.lomekwi.cine;
 
+import static com.lomekwi.cine.util.Units.SECOND;
+
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.lomekwi.cine.element.FilteredSrc;
+import com.lomekwi.cine.pipeline.image.ImgProd;
+import com.lomekwi.cine.pipeline.image.TransFilter;
+import com.lomekwi.cine.pipeline.image.VdoClipSrc;
 import com.lomekwi.cine.project.Project;
 import com.lomekwi.cine.resource.media.VdoRes;
 import com.lomekwi.cine.ui.Root;
@@ -24,7 +30,7 @@ public class Main extends ApplicationAdapter {
         GlobalVars.setProject(project);
         ui = new Root(this);
         ui.create();
-        project.getTimeline().add().add();
+        project.timeline.add().add();
 
         // blame Android
         FileHandle handle = Gdx.files.internal("test.mp4");
@@ -47,7 +53,6 @@ public class Main extends ApplicationAdapter {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         VdoRes testVideoFile;
         try {
             testVideoFile = new VdoRes(videoPath);
@@ -55,13 +60,15 @@ public class Main extends ApplicationAdapter {
             throw new RuntimeException(e);
         }
 
-        project.getPlayController().start();
+        project.timeline.getTrack(0).add(new FilteredSrc<ImgProd>(new VdoClipSrc(testVideoFile,0),new TransFilter(42,42,1,1,0)),0,30*SECOND);
+        project.playhead.setPlaying(true);
     }
 
     @Override
     public void render() {
+        project.playhead.update();
+        project.distributor.distribute(project.playhead.getTime());
         ui.render();
-        project.getPlayController().update();
     }
 
     @Override
@@ -72,7 +79,6 @@ public class Main extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         ui.resize(width, height);
-        project.getPlayController().seek(0);
     }
     @Override
     public void pause() {

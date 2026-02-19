@@ -6,6 +6,8 @@ import com.lomekwi.cine.pipeline.Source;
 import com.lomekwi.cine.resource.media.VdoRes;
 import com.lomekwi.cine.service.VdoDecSvc;
 
+import java.nio.ByteBuffer;
+
 public class VdoClipSrc implements Source<ImgProd> {
     private final VdoRes src;
     private final long offset;
@@ -19,12 +21,21 @@ public class VdoClipSrc implements Source<ImgProd> {
     @Override
     public ImgProd get(long time) {
         long target = time + offset;
+        ByteBuffer pixels;
         try {
-            prod.setPixels(VdoDecSvc.decode(target, src.getDecoder()));
+            pixels=VdoDecSvc.decode(target, src.getDecoder());
         } catch (Exception e) {
             e.printStackTrace();
+            pixels=null;
         }
-        prod.changed = true;
+        prod.setPixels(pixels);
+        Transform t=prod.getTransform();
+        t.x=0;
+        t.y=0;
+        t.width=src.getWidth();
+        t.height=src.getHeight();
+        t.rotation=0;
+        prod.changed=true;
         return prod;
     }
 }
