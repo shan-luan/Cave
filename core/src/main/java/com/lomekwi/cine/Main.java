@@ -1,5 +1,6 @@
 package com.lomekwi.cine;
 
+import static com.lomekwi.cine.util.Units.MINUTE;
 import static com.lomekwi.cine.util.Units.SECOND;
 
 import com.badlogic.gdx.Application;
@@ -60,7 +61,7 @@ public class Main extends ApplicationAdapter {
             throw new RuntimeException(e);
         }
 
-        project.timeline.getTrack(0).add(new FilteredSrc<ImgProd>(new VdoClipSrc(testVideoFile,0),new TransFilter(42,42,1,1,0)),0,30*SECOND);
+        project.timeline.getTrack(0).add(new FilteredSrc<ImgProd>(new VdoClipSrc(testVideoFile,0),new TransFilter(0,0,1,1,0)),0,30*MINUTE);
         project.playhead.setPlaying(true);
     }
 

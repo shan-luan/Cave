@@ -1,12 +1,14 @@
 package com.lomekwi.cine.ui.editpanel;
 
-import com.kotcrab.vis.ui.widget.VisLabel;
+import com.badlogic.gdx.Gdx;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cine.ui.editpanel.previewarea.PreviewArea;
+import com.lomekwi.cine.ui.editpanel.previewarea.TlPrevCont;
 
 public class EditPanel extends VisTable {
     public EditPanel() {
         super();
-        add(new PreviewArea(1920,1080));
+        PreviewArea p=new PreviewArea(new TlPrevCont(1920,1080));
+        add(p).size(192,108);
     }
 }

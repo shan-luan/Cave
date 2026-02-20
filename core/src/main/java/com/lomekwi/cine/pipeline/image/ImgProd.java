@@ -38,7 +38,6 @@ public class ImgProd implements Product, Transformable<ImgProd>{
         this.texture = texture;
         return this;
     }
-    //FIXME:上传问题
     public ImgProd updateAndDraw(Batch batch){
         if(changed) {
             texture.bind();

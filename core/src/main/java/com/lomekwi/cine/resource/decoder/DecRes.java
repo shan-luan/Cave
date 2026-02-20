@@ -30,10 +30,12 @@ public abstract class DecRes<P extends Product> implements Resource {
         initialized = true;
     }
     public void stop() throws FrameGrabber.Exception {
+        if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.stop();
     }
     @Override
     public void close() throws FrameGrabber.Exception {
+        if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.stop();
         grabber.close();
     }
@@ -45,6 +47,7 @@ public abstract class DecRes<P extends Product> implements Resource {
     }
     public abstract Frame grab() throws FFmpegFrameGrabber.Exception;
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
+        if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.setTimestamp(time);
     }
     public void setBufferedProduct(P product) {
