@@ -2,6 +2,7 @@ package com.lomekwi.cine.pipeline.image;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cine.pipeline.Product;
@@ -37,6 +38,7 @@ public class ImgProd implements Product, Transformable<ImgProd>{
         this.texture = texture;
         return this;
     }
+    //FIXME:上传问题
     public ImgProd updateAndDraw(Batch batch){
         if(changed) {
             texture.bind();

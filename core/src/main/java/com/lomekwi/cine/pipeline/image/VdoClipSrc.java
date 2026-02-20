@@ -11,12 +11,12 @@ import java.nio.ByteBuffer;
 public class VdoClipSrc implements Source<ImgProd> {
     private final VdoRes src;
     private final long offset;
+    private Texture texture;
     private final ImgProd prod= new ImgProd();
     public VdoClipSrc(VdoRes src, long offset) {
         this.src = src;
         this.offset = offset;
-        prod.setTransform(new Transform(0,0,src.getWidth(),src.getHeight(),0))
-            .setTexture(new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888));
+        prod.setTransform(new Transform(0,0,src.getWidth(),src.getHeight(),0));
     }
     @Override
     public ImgProd get(long time) {
@@ -29,6 +29,10 @@ public class VdoClipSrc implements Source<ImgProd> {
             pixels=null;
         }
         prod.setPixels(pixels);
+        if(texture==null){
+            texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
+            prod.setTexture(texture);
+        }
         Transform t=prod.getTransform();
         t.x=0;
         t.y=0;
