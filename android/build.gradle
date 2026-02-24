@@ -9,7 +9,7 @@ apply plugin: 'com.android.application'
 
 
 android {
-  namespace "com.lomekwi.cine"
+  namespace "com.lomekwi.cave"
   compileSdk 35
   sourceSets {
     main {
@@ -31,7 +31,7 @@ android {
 		}
   }
   defaultConfig {
-    applicationId 'com.lomekwi.cine'
+    applicationId 'com.lomekwi.cave'
     minSdkVersion 21
     targetSdkVersion 35
     versionCode 1
@@ -131,7 +131,7 @@ tasks.register('run', Exec) {
   }
 
   def adb = path + "/platform-tools/adb"
-  commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.lomekwi.cine/com.lomekwi.cine.android.AndroidLauncher'
+  commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.lomekwi.cave/com.lomekwi.cave.android.AndroidLauncher'
 }
 
 eclipse.project.name = appName + "-android"
