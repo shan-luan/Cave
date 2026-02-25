@@ -11,15 +11,13 @@ import org.jspecify.annotations.NonNull;
 import java.nio.ByteBuffer;
 
 public class VdoDecSvc {
-    private static final Range<@NonNull Long> ALL_TIME = Range.all();//防止每次查询都要新建对象，整体依然无状态
     /**
      * 解码指定时间的视频帧,输出到VdoDecRes的缓存
      * @param time 目标解码时间戳
      * @param decoder 视频解码解码器和上下文
-     * @param clipRange 当前片段的时间范围
      * @throws Exception 解码异常
      */
-    public static ByteBuffer decode(long time, VdoDecRes decoder, Range<@NonNull Long> clipRange) throws Exception {
+    public static ByteBuffer decode(long time, VdoDecRes decoder) throws Exception {
         Frame output;
 
         // 初始化解码器
@@ -27,27 +25,23 @@ public class VdoDecSvc {
             decoder.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
             decoder.start();
             decoder.setBufferedProduct(new ImgProd());
-            decoder.setCurrentClipRange(clipRange);
         }
 
         final long target = Math.min(time, decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
+        final long diff = time-decoder.getLastGrabTime();
 
-        // 当片段改变或者seek时。FIXME：此处监测逻辑过时
-        if (!decoder.getCurrentClipRange().equals(clipRange)) {
-            // 当时间差大于1帧，跳转
-            if (Math.abs(target - decoder.getTimestamp()) > decoder.getLengthPerFrame()) {
-                long old = decoder.getTimestamp();
-                decoder.seek(target);
-                // 向后跳转ffmpegFrameGrabber已经帮我们做过了
-                if (decoder.getTimestamp() > target) {
-                    // TODO：完成前向跳转逻辑。但实际上如果跳过头了会根据下面的逻辑自动等播放进度追上来
-                    System.err.println("over jumped,Delta:" + (decoder.getTimestamp() - target));
-                }
+        // 当请求的时间更早，跳转
+        if (diff<0) {
+            decoder.seek(target);
+            // 向后跳转ffmpegFrameGrabber已经帮我们做过了
+            if (decoder.getTimestamp() > target) {
+                // TODO：完成前向跳转逻辑。但实际上如果跳过头了会根据下面的逻辑自动等播放进度追上来
+                System.err.println("over jumped,Delta:" + (decoder.getTimestamp() - target));
             }
-            decoder.setCurrentClipRange(clipRange);
-        } else if (target < nextFrameTime && decoder.getBufferedProduct().getPixels() != null) {
-            // 如果目标时间在下一帧之前且缓冲区有数据，则直接返回缓冲帧.
+        } else if ((target < nextFrameTime || diff==0) && decoder.getBufferedProduct().getPixels() != null) {
+            // 如果(目标时间在下一帧之前或请求的时间相同)且缓冲区有数据，则直接返回缓冲帧.
+            decoder.setLastGrabTime(time);
             return decoder.getBufferedProduct().getPixels();
         }
 
@@ -56,9 +50,7 @@ public class VdoDecSvc {
         if (output != null) {
             decoder.getBufferedProduct().setPixels((ByteBuffer) output.image[0]);
         }
+        decoder.setLastGrabTime(time);
         return decoder.getBufferedProduct().getPixels();
-    }
-    public static ByteBuffer decode(long time, VdoDecRes decoder) throws Exception {
-        return decode(time, decoder, ALL_TIME);
     }
 }

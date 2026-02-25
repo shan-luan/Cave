@@ -17,7 +17,7 @@ import java.io.InputStream;
  */
 public abstract class DecRes<P extends Product> implements Resource {
     protected final FFmpegFrameGrabber grabber;
-    protected Range<@NonNull Long> currentClipRange;
+    protected long lastGrabTime;
     protected P bufferedProd;
     protected boolean initialized;
 
@@ -39,12 +39,6 @@ public abstract class DecRes<P extends Product> implements Resource {
         grabber.stop();
         grabber.close();
     }
-    public void setCurrentClipRange(Range<@NonNull Long> range) {
-        currentClipRange = range;
-    }
-    public Range<@NonNull Long> getCurrentClipRange() {
-        return currentClipRange;
-    }
     public abstract Frame grab() throws FFmpegFrameGrabber.Exception;
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
         if (!initialized) throw new IllegalStateException("Not initialized");
@@ -58,5 +52,13 @@ public abstract class DecRes<P extends Product> implements Resource {
     }
     public boolean isInitialized() {
         return initialized;
+    }
+
+    public long getLastGrabTime() {
+        return lastGrabTime;
+    }
+
+    public void setLastGrabTime(long lastGrabTime) {
+        this.lastGrabTime = lastGrabTime;
     }
 }
