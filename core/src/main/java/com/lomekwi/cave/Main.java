@@ -60,8 +60,13 @@ public class Main extends ApplicationAdapter {
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-
-        project.timeline.getTrack(0).add(new FilteredSrc<ImgProd>(new VdoClipSrc(testVideoFile,0),new TransFilter(0,0,1,1,0)),0,30*MINUTE);
+        FilteredSrc<ImgProd> clip=new FilteredSrc<>(new VdoClipSrc(testVideoFile,0),new TransFilter(0,0,1,1,0));
+        project.timeline.getTrack(0).add(clip,0,10*SECOND);
+        project.timeline.getTrack(0).add(clip,10*SECOND,10*SECOND);
+        project.timeline.getTrack(0).add(clip,20*SECOND,10*SECOND);
+        project.timeline.getTrack(0).add(clip,30*SECOND,10*SECOND);
+        project.timeline.getTrack(0).add(clip,40*SECOND,10*SECOND);
+        project.timeline.getTrack(0).add(clip,50*SECOND,10*SECOND);
         project.playhead.setPlaying(true);
     }
 

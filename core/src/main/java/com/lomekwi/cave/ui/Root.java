@@ -65,7 +65,6 @@ public class Root implements ApplicationListener {
         mainLayout.add(tabbedPane.getTable()).fillX().expandX().row();
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
-        majorArea.setFillParent(true);
 
         tabbedPane.add(new ProjectTab());
 

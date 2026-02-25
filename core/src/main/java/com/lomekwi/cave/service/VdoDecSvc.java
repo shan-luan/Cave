@@ -33,7 +33,7 @@ public class VdoDecSvc {
         final long target = Math.min(time, decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
 
-        // 当片段改变或者seek时
+        // 当片段改变或者seek时。FIXME：此处监测逻辑过时
         if (!decoder.getCurrentClipRange().equals(clipRange)) {
             // 当时间差大于1帧，跳转
             if (Math.abs(target - decoder.getTimestamp()) > decoder.getLengthPerFrame()) {
@@ -47,7 +47,7 @@ public class VdoDecSvc {
             }
             decoder.setCurrentClipRange(clipRange);
         } else if (target < nextFrameTime && decoder.getBufferedProduct().getPixels() != null) {
-            // 如果目标时间在下一帧之前且缓冲区有数据，则直接返回缓冲帧
+            // 如果目标时间在下一帧之前且缓冲区有数据，则直接返回缓冲帧.
             return decoder.getBufferedProduct().getPixels();
         }
 

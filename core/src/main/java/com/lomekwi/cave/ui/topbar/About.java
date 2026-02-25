@@ -8,6 +8,6 @@ import com.lomekwi.cave.ui.Root;
 public class About extends ChangeListener {
     @Override
     public void changed(ChangeEvent event, Actor actor) {
-        Dialogs.showOKDialog(Root.getInstance().getStage(), "About", "CAVE. Short for Cave Is Non-linear Editor. It's open source and free. ");
+        Dialogs.showOKDialog(Root.getInstance().getStage(), "About", "CAVE. Short for Cave's Another Video Editor. It's open source and free. ");
     }
 }

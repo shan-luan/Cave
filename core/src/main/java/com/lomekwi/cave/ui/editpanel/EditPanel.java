@@ -9,6 +9,6 @@ public class EditPanel extends VisTable {
     public EditPanel() {
         super();
         PreviewArea p=new PreviewArea(new TlPrevCont(1920,1080));
-        add(p).size(192,108);
+        add(p).size(1920,1080);
     }
 }

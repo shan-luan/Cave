@@ -16,8 +16,12 @@ public class PreviewArea extends Image {
         this.content = content;
     }
     @Override
+    public void act(float delta) {
+        super.act(delta);
+        content.render();
+    }
+    @Override
     public void draw(Batch batch, float parentAlpha) {
-        content.render(batch);
         super.draw(batch, parentAlpha);
     }
     public void dispose() {
