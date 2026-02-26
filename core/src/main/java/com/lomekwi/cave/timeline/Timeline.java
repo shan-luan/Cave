@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline;
 
 import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Source;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,16 +9,18 @@ import java.util.List;
 
 public class Timeline {
     private final List<Track> tracks = new ArrayList<>();
-    public Timeline add() {
+    private long length;
+    private boolean lengthChanged = true;
+    public Timeline addTrack() {
         Track track = new Track(this);
         tracks.add(track);
         return this;
     }
-    public Timeline remove(Track track) {
+    public Timeline removeTrack(Track track) {
         tracks.remove(track);
         return this;
     }
-    public Timeline get(long time, Collection<Product> collector) {
+    public Timeline getActiveElements(long time, Collection<Product> collector) {
         for(Track track:tracks){
             Product product = track.get(time);
             if(product==null) continue;
@@ -25,8 +28,15 @@ public class Timeline {
         }
         return this;
     }
-    public Track getTrack(int index) {
-        return tracks.get(index);
+    public Timeline add(int index,Source<?> src, long start, long duration) {
+        tracks.get(index).add(src,start,duration);
+        lengthChanged = true;
+        return this;
+    }
+    public Timeline remove(int index,long time) {
+        tracks.get(index).remove(time);
+        lengthChanged = true;
+        return this;
     }
 
     @Override
@@ -38,5 +48,14 @@ public class Timeline {
             sb.append("track#").append(i).append(":").append(tracks.get(i));
         }
         return sb.toString();
+    }
+    public long getLength(){
+        if(lengthChanged){
+            length=tracks.stream()
+                .mapToLong(Track::getLength)
+                .max()
+                .orElse(0);
+        }
+        return length;
     }
 }

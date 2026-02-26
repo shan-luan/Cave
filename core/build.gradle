@@ -10,6 +10,8 @@ dependencies {
   api "org.bytedeco:javacv:$javacvVersion"
   api "com.google.guava:guava:33.5.0-android"
 
+  api "space.earlygrey:shapedrawer:$shapedrawerVersion"
+
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }

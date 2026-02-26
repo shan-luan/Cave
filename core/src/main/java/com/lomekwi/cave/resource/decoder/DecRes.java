@@ -17,7 +17,7 @@ import java.io.InputStream;
  */
 public abstract class DecRes<P extends Product> implements Resource {
     protected final FFmpegFrameGrabber grabber;
-    protected long lastGrabTime;
+    protected long lastGrabTime = -1;
     protected P bufferedProd;
     protected boolean initialized;
 

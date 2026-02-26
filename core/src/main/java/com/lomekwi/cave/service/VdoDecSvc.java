@@ -1,12 +1,10 @@
 package com.lomekwi.cave.service;
 
-import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
 
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.Frame;
-import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -39,7 +37,7 @@ public class VdoDecSvc {
                 // TODO：完成前向跳转逻辑。但实际上如果跳过头了会根据下面的逻辑自动等播放进度追上来
                 System.err.println("over jumped,Delta:" + (decoder.getTimestamp() - target));
             }
-        } else if ((target < nextFrameTime || diff==0) && decoder.getBufferedProduct().getPixels() != null) {
+        } else if ((target < nextFrameTime) && decoder.getBufferedProduct().getPixels() != null) {
             // 如果(目标时间在下一帧之前或请求的时间相同)且缓冲区有数据，则直接返回缓冲帧.
             decoder.setLastGrabTime(time);
             return decoder.getBufferedProduct().getPixels();

@@ -16,7 +16,7 @@ public class Distributor {
     @SuppressWarnings("unchecked")
     public void distribute(long time) {
         collector.clear();
-        timeline.get(time, collector);
+        timeline.getActiveElements(time, collector);
 
         for (Product product : collector) {
             Class<?> type = product.getClass();

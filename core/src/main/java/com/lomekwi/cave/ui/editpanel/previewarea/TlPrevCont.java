@@ -23,8 +23,7 @@ public class TlPrevCont implements Sink<ImgProd> {
     private final FrameBuffer fbo;
     private final List<ImgProd> prods = new ArrayList<>();
     private final TextureRegionDrawable drawable;
-    private final Batch batch;                 // 专用 Batch
-    private final Matrix4 orthoMatrix;          // FBO 正交投影矩阵
+    private final Batch batch;
 
     public TlPrevCont(int width, int height) {
         fbo = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
@@ -32,7 +31,7 @@ public class TlPrevCont implements Sink<ImgProd> {
         region.flip(false, true);
         drawable = new TextureRegionDrawable(region);
         batch = new SpriteBatch();
-        orthoMatrix = new Matrix4().setToOrtho2D(0, 0, width, height);
+        batch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, width, height));
         GlobalVars.getProject().distributor.registerSink(ImgProd.class, this);
     }
 
@@ -48,8 +47,6 @@ public class TlPrevCont implements Sink<ImgProd> {
     /** 渲染到 FBO */
     public void render() {
         fbo.begin();
-
-        batch.setProjectionMatrix(orthoMatrix);
         batch.begin();
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -68,6 +65,7 @@ public class TlPrevCont implements Sink<ImgProd> {
     public void dispose() {
         fbo.dispose();
         batch.dispose();
+        GlobalVars.getProject().distributor.unregisterSink(ImgProd.class, this);
     }
 
     public TextureRegionDrawable getDrawable() {

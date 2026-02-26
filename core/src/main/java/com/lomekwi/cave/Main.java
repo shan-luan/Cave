@@ -1,6 +1,5 @@
 package com.lomekwi.cave;
 
-import static com.lomekwi.cave.util.Units.MINUTE;
 import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Application;
@@ -31,7 +30,7 @@ public class Main extends ApplicationAdapter {
         GlobalVars.setProject(project);
         ui = new Root(this);
         ui.create();
-        project.timeline.add().add();
+        project.timeline.addTrack().addTrack();
 
         // blame Android
         FileHandle handle = Gdx.files.internal("test.mp4");
@@ -61,12 +60,12 @@ public class Main extends ApplicationAdapter {
             throw new RuntimeException(e);
         }
         FilteredSrc<ImgProd> clip=new FilteredSrc<>(new VdoClipSrc(testVideoFile,0),new TransFilter(0,0,1,1,0));
-        project.timeline.getTrack(0).add(clip,0,10*SECOND);
-        project.timeline.getTrack(0).add(clip,10*SECOND,10*SECOND);
-        project.timeline.getTrack(0).add(clip,20*SECOND,10*SECOND);
-        project.timeline.getTrack(0).add(clip,30*SECOND,10*SECOND);
-        project.timeline.getTrack(0).add(clip,40*SECOND,10*SECOND);
-        project.timeline.getTrack(0).add(clip,50*SECOND,10*SECOND);
+        project.timeline.add(0,clip,0,10*SECOND);
+        project.timeline.add(0,clip,10*SECOND,10*SECOND);
+        project.timeline.add(0,clip,20*SECOND,10*SECOND);
+        project.timeline.add(0,clip,30*SECOND,10*SECOND);
+        project.timeline.add(0,clip,40*SECOND,10*SECOND);
+        project.timeline.add(0,clip,50*SECOND,10*SECOND);
         project.playhead.setPlaying(true);
     }
 

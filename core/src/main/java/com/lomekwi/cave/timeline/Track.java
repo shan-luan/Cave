@@ -3,7 +3,6 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import com.lomekwi.cave.element.FilteredSrc;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.pipeline.Source;
 
@@ -15,6 +14,8 @@ public class Track {
     private final RangeMap<@NonNull Long, @NonNull Source<?>> sources = TreeRangeMap.create();
     private final Timeline timeline;
     private Map.Entry<Range<@NonNull Long>, @NonNull Source<?>> cache;
+    private long length;
+    private boolean lengthChanged = true;
 
     public Track(Timeline timeline) {
         this.timeline = timeline;
@@ -27,6 +28,7 @@ public class Track {
             sources.put(Range.closedOpen(start, start + duration), src);
         }
         cache = null;
+        lengthChanged = true;
     }
 
     public Product get(long time) {
@@ -46,11 +48,22 @@ public class Track {
             sources.remove(entry.getKey());
         }
         cache = null;
+        lengthChanged = true;
     }
     public Map.Entry<Range<@NonNull Long>, Source<?>> getEntry(long time){
         if (cache == null || !cache.getKey().contains(time)) {
             cache = sources.getEntry(time);
         }
         return cache;
+    }
+    public long getLength(){
+        if(lengthChanged){
+            length = sources.asMapOfRanges().keySet().stream()
+                .mapToLong(Range::upperEndpoint)
+                .max()
+                .orElse(0);
+            lengthChanged = false;
+        }
+        return length;
     }
 }
