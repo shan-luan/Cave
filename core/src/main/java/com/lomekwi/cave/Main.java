@@ -66,6 +66,7 @@ public class Main extends ApplicationAdapter {
         project.timeline.add(0,clip,30*SECOND,10*SECOND);
         project.timeline.add(0,clip,40*SECOND,10*SECOND);
         project.timeline.add(0,clip,50*SECOND,10*SECOND);
+        System.out.println(project.timeline.getLength());
         project.playhead.setPlaying(true);
     }
 

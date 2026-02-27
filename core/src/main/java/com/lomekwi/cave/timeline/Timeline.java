@@ -55,6 +55,7 @@ public class Timeline {
                 .mapToLong(Track::getLength)
                 .max()
                 .orElse(0);
+            lengthChanged = false;
         }
         return length;
     }
