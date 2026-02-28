@@ -12,7 +12,7 @@ public class PreviewArea extends Image {
     private final TlPrevCont content;
 
     public PreviewArea(TlPrevCont content) {
-        super(content.getDrawable(), Scaling.fill);
+        super(content.getDrawable(), Scaling.contain);
         this.content = content;
     }
     @Override

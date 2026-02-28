@@ -60,12 +60,7 @@ public class Main extends ApplicationAdapter {
             throw new RuntimeException(e);
         }
         FilteredSrc<ImgProd> clip=new FilteredSrc<>(new VdoClipSrc(testVideoFile,0),new TransFilter(0,0,1,1,0));
-        project.timeline.add(0,clip,0,10*SECOND);
-        project.timeline.add(0,clip,10*SECOND,10*SECOND);
-        project.timeline.add(0,clip,20*SECOND,10*SECOND);
-        project.timeline.add(0,clip,30*SECOND,10*SECOND);
-        project.timeline.add(0,clip,40*SECOND,10*SECOND);
-        project.timeline.add(0,clip,50*SECOND,10*SECOND);
+        project.timeline.add(0,clip,0,300*SECOND);
         System.out.println(project.timeline.getLength());
         project.playhead.setPlaying(true);
     }
