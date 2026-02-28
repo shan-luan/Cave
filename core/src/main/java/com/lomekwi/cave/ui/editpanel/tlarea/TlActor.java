@@ -1,5 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
+import static com.lomekwi.cave.util.Units.SECOND;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -22,6 +24,9 @@ public class TlActor extends Actor {
     private final Timeline timeline;
     private final Playhead playhead;
 
+    private long viewStartTime;
+    private long viewDurationTime;
+
     public TlActor(Timeline timeline, Playhead playhead) {
 
         this.timeline = timeline;
@@ -39,11 +44,13 @@ public class TlActor extends Actor {
         addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                float ratio = x / getWidth();
-                long time = (long)(ratio * timeline.getLength());
-                playhead.setTime(time);
+                playhead.setTime(xToAbsoluteTime(x));
             }
         });
+
+        //for test
+        viewStartTime =0;
+        viewDurationTime =300*SECOND;
     }
 
     @Override
@@ -52,15 +59,12 @@ public class TlActor extends Actor {
 
         shapeDrawer.filledRectangle(getX(), getY(), getWidth(), getHeight());
 
-        float x = (float) playhead.getTime()
-            / timeline.getLength()
-            * getWidth();
-
+        float x = absoluteTimeToX(playhead.getTime());
         shapeDrawer.line(
-            getX()+x,
+            x,
             getY(),
-            getX()+x,
-            getY()+getHeight(),
+            x,
+            getY() + getHeight(),
             Color.RED,
             3
         );
@@ -68,5 +72,15 @@ public class TlActor extends Actor {
 
     public void dispose(){
         region.getTexture().dispose();
+    }
+    private float absoluteTimeToX(long time) {
+        return getX()
+            + (float)(time - viewStartTime)
+            / viewDurationTime
+            * getWidth();
+    }
+    private long xToAbsoluteTime(float x) {
+        float ratio = (x - getX()) / getWidth();
+        return viewStartTime + (long)(ratio * viewDurationTime);
     }
 }
