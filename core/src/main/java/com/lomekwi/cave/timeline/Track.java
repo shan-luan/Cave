@@ -58,12 +58,18 @@ public class Track {
     }
     public long getLength(){
         if(lengthChanged){
-            length = sources.asMapOfRanges().keySet().stream()
-                .mapToLong(Range::upperEndpoint)
-                .max()
-                .orElse(0);
+            long max = 0;
+            for(Range<Long> range : sources.asMapOfRanges().keySet()){
+                long end = range.upperEndpoint();
+                if(end > max) max = end;
+            }
+            length = max;
             lengthChanged = false;
         }
         return length;
+    }
+
+    public RangeMap<@NonNull Long, @NonNull Source<?>> getSources() {
+        return sources;
     }
 }

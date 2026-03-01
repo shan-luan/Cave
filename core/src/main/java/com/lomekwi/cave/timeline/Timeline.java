@@ -59,4 +59,7 @@ public class Timeline {
         }
         return length;
     }
+    public List<Track> getTracks() {
+        return tracks;
+    }
 }

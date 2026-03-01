@@ -13,7 +13,7 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void switchedTab(Tab tab) {
                 Root.getInstance().getMajorArea().clear();
-                Root.getInstance().getMajorArea().add(tab.getContentTable());
+                Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
             }
 
             @Override
