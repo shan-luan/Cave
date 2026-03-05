@@ -72,7 +72,7 @@ public class TlActor extends Actor {
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
                 final Input ip = Gdx.input;
                 if(ip.isKeyPressed(CONTROL_LEFT)&&ip.isKeyPressed(SHIFT_LEFT)){
-                    trackHeight += amountY*10;
+                    trackHeight = Math.max(trackHeight+amountY*10,10);
                 }else if(ip.isKeyPressed(CONTROL_LEFT)){
                     float mouseStageX = getX() + x;
                     float ratio = (mouseStageX - getX()) / getWidth();
@@ -114,6 +114,7 @@ public class TlActor extends Actor {
         }
         //绘制播放指针
         float x = absoluteTimeToX(playhead.getTime());
+        shapeDrawer.filledTriangle(x-10,getY()+getHeight(),x+10,getY()+getHeight(),x,getY()+getHeight()-20,Color.RED);
         shapeDrawer.line(
             x,
             getY(),

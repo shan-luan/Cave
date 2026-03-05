@@ -12,7 +12,7 @@ public class ProjectTab extends Tab {
     }
     @Override
     public String getTabTitle() {
-        return "new Project";
+        return "project";
     }
     @Override
     public Table getContentTable() {

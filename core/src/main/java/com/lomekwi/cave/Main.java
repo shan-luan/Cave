@@ -1,5 +1,6 @@
 package com.lomekwi.cave;
 
+import static com.lomekwi.cave.util.Units.HOUR;
 import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Application;
