@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline;
 
-public interface Filter <T>{
+import java.io.Serializable;
+
+public interface Filter <T> extends Serializable {
     public void filter(T product);
 }

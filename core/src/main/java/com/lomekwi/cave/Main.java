@@ -15,6 +15,13 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.ui.Root;
 
+import org.bytedeco.ffmpeg.avcodec.AVCodec;
+import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.Pointer;
+import org.bytedeco.javacpp.PointerPointer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -28,6 +35,17 @@ public class Main extends ApplicationAdapter {
     private Project project=new Project();
     @Override
     public void create() {
+        Loader.load(org.bytedeco.ffmpeg.global.avcodec.class);
+
+        PointerPointer<Pointer> opaque = new PointerPointer<>(1).put((Pointer) null);
+
+        AVCodec codec;
+        System.out.println("可用的codec：");
+        while ((codec = avcodec.av_codec_iterate(opaque)) != null) {
+            System.out.print(codec.name().getString()+"|");
+        }
+        System.out.println("没了");
+
         GlobalVars.setProject(project);
         ui = new Root(this);
         ui.create();

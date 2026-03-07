@@ -2,7 +2,11 @@ package com.lomekwi.cave.timeline.playback;
 
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.util.Units;
-public class Playhead{
+
+import java.io.Serializable;
+
+public class Playhead implements Serializable {
+    private static final long serialVersionUID = 1L;
     private long time= 0L;
     private  boolean isPlaying;
     private boolean isSought;

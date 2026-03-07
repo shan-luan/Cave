@@ -3,12 +3,11 @@ package com.lomekwi.cave.service;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
 
-import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.Frame;
 
 import java.nio.ByteBuffer;
 
-public class VdoDecSvc {
+public final class VdoDecSvc {
     /**
      * 解码指定时间的视频帧,输出到VdoDecRes的缓存
      * @param time 目标解码时间戳
@@ -17,13 +16,6 @@ public class VdoDecSvc {
      */
     public static ByteBuffer decode(long time, VdoDecRes decoder) throws Exception {
         Frame output;
-
-        // 初始化解码器
-        if (!decoder.isInitialized()) {
-            decoder.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
-            decoder.start();
-            decoder.setBufferedProduct(new ImgProd());
-        }
 
         final long target = Math.min(time, decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();

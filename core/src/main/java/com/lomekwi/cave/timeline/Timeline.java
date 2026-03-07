@@ -3,17 +3,18 @@ package com.lomekwi.cave.timeline;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.pipeline.Source;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class Timeline {
+public class Timeline implements Serializable {
     private final List<Track> tracks = new ArrayList<>();
     private long length;
     private boolean lengthChanged = true;
+    private static final long serialVersionUID = 1L;
     public Timeline addTrack() {
-        Track track = new Track(this);
-        tracks.add(track);
+        tracks.add(new Track());
         return this;
     }
     public Timeline removeTrack(Track track) {

@@ -6,13 +6,17 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.service.VdoDecSvc;
 
+import org.bytedeco.javacv.FrameGrabber;
+
 import java.nio.ByteBuffer;
 
 public class VdoClipSrc implements Source<ImgProd> {
     private final VdoRes src;
     private final long offset;
-    private Texture texture;
-    private final ImgProd prod= new ImgProd();
+    private transient Texture texture;
+    private transient ImgProd prod;
+    private transient boolean initialized;
+    private static final long serialVersionUID = 1L;
     public VdoClipSrc(VdoRes src, long offset) {
         this.src = src;
         this.offset = offset;
@@ -20,6 +24,13 @@ public class VdoClipSrc implements Source<ImgProd> {
     @Override
     public ImgProd get(long time) {
         long target = time + offset;
+        if(!initialized){
+            texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
+            prod=new ImgProd();
+            prod.setTexture(texture)
+                .setTransform(new Transform(0,0,src.getWidth(),src.getHeight(),0));
+            initialized=true;
+        }
         ByteBuffer pixels;
         try {
             pixels=VdoDecSvc.decode(target, src.getDecoder());
@@ -28,11 +39,6 @@ public class VdoClipSrc implements Source<ImgProd> {
             pixels=null;
         }
         prod.setPixels(pixels);
-        if(texture==null){
-            texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
-            prod.setTexture(texture)
-                .setTransform(new Transform(0,0,src.getWidth(),src.getHeight(),0));
-        }
         Transform t=prod.getTransform();
         t.x=0;
         t.y=0;

@@ -16,6 +16,7 @@ import java.util.List;
  * @param <T> “获取”此源时返回的产品类型
  */
 public class FilteredSrc<T extends Product> implements Source<T> {
+    private static final long serialVersionUID = 1L;
     private final Source<T> source;
     private final List<Filter<? super T>> filters;
 

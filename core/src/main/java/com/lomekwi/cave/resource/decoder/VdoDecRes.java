@@ -3,10 +3,13 @@ package com.lomekwi.cave.resource.decoder;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 import com.lomekwi.cave.resource.media.VdoRes;
 
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
 
 public class VdoDecRes extends DecRes<ImgProd>{
+    private static final long serialVersionUID = 1L;
     public VdoDecRes(VdoRes source) {
         super(source);
     }
@@ -41,5 +44,11 @@ public class VdoDecRes extends DecRes<ImgProd>{
     public long getLengthPerFrame() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getLengthInTime() / grabber.getLengthInVideoFrames();
+    }
+    @Override
+    public void start() throws FrameGrabber.Exception {
+        grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
+        super.start();
+        setBufferedProduct(new ImgProd());
     }
 }

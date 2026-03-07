@@ -4,6 +4,7 @@ import com.lomekwi.cave.pipeline.Filter;
 
 public class TransFilter implements Filter<Transformable> {
     private final float dx,dy,scaleX,scaleY,dRotation;
+    private static final long serialVersionUID = 1L;
     public TransFilter(float dx, float dy, float scaleX, float scaleY, float dRotation) {
         this.dx = dx;
         this.dy = dy;
