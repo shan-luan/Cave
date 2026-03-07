@@ -125,6 +125,7 @@ public class Root implements ApplicationListener {
     private Skin injectChineseFont(VisUI.SkinScale scale) {
         Skin skin = new Skin(scale.getSkinFile());
 
+        //TODO:释放generator
         FreeTypeFontGenerator generator =
             new FreeTypeFontGenerator(Gdx.files.internal("font/noto.otf"));
 

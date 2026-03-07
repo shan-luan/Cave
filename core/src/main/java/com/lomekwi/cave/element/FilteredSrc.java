@@ -6,6 +6,10 @@ import com.lomekwi.cave.pipeline.Product;
 
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 /**被过滤的源
  *
@@ -13,7 +17,7 @@ import org.jspecify.annotations.NonNull;
  */
 public class FilteredSrc<T extends Product> implements Source<T> {
     private final Source<T> source;
-    private final Filter<? super T>[] filters;
+    private final List<Filter<? super T>> filters;
 
 /**
  *
@@ -23,7 +27,7 @@ public class FilteredSrc<T extends Product> implements Source<T> {
 @SafeVarargs
    public FilteredSrc(@NonNull Source<T> source, @NonNull Filter<? super T>... filters) {
        this.source = source;
-       this.filters = filters;
+       this.filters = new ArrayList<>(Arrays.asList(filters));
    }
    public T get(long time){
        T product = source.get(time);
@@ -32,8 +36,8 @@ public class FilteredSrc<T extends Product> implements Source<T> {
        }
        return product;
    }
-   public Filter<? super T>[] getFilters() {
-       return filters.clone();
+   public List<Filter<? super T>> getFilters() {
+       return filters;
    }
    public Source<T> getSource() {
        return source;
