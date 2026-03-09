@@ -17,6 +17,7 @@ import java.io.Serializable;
  *媒体资源类，指代一个在磁盘中存在，占有编解码器的资源
  */
 public abstract class MedRes implements Resource, Serializable {
+    private static final long serialVersionUID = 1L;
     private final String path;//TODO:改为持有输入流
     private transient InputStream inputStream;
     protected transient DecRes<?> decRes;

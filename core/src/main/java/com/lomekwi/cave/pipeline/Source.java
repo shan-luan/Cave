@@ -1,12 +1,25 @@
 package com.lomekwi.cave.pipeline;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface Source<T extends Product> extends Serializable {
-    /**
-     * 获取指定时间处的产品
-     * @param time 相对于源起点的本地时间，如对于时间轴上的片段是在时间轴的起点为0，对于媒体则是媒体开始播放的起点为0
-     * @return 产品
-     */
-    public T get(long time);
+public abstract class Source<T extends Product> implements Serializable {
+    private static final long serialVersionUID = 1L;
+        private final List<Filter<? super T>> filters = new ArrayList<>();
+        public final T get(long time){
+            T product = generate(time);
+            for (Filter<? super T> filter : filters) {
+                filter.filter(product);
+            }
+            return product;
+        }
+        protected abstract T generate(long time);
+        public List<Filter<? super T>> getFilters() {
+            return filters;
+        }
+        public final Source<T> attach(Filter<? super T> filter){
+            filters.add(filter);
+            return this;
+        }
 }

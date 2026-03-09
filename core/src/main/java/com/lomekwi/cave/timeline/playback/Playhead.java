@@ -8,8 +8,8 @@ import java.io.Serializable;
 public class Playhead implements Serializable {
     private static final long serialVersionUID = 1L;
     private long time= 0L;
-    private  boolean isPlaying;
-    private boolean isSought;
+    private transient boolean isPlaying;
+    private transient boolean isSought;
     public void setPlaying(Boolean isPlaying){
         this.isPlaying=isPlaying;
     }

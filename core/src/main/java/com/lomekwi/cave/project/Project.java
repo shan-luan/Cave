@@ -7,7 +7,8 @@ import com.lomekwi.cave.timeline.playback.Playhead;
 import java.io.Serializable;
 
 public class Project implements Serializable {
+    private static final long serialVersionUID = 1L;
     public final Timeline timeline=new Timeline();
-    public final Distributor distributor=new Distributor(timeline);
+    public final transient Distributor distributor=new Distributor(timeline);
     public final Playhead playhead=new Playhead();
 }

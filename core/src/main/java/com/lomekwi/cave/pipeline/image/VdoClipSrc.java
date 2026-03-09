@@ -10,7 +10,7 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 
-public class VdoClipSrc implements Source<ImgProd> {
+public class VdoClipSrc extends Source<ImgProd> {
     private final VdoRes src;
     private final long offset;
     private transient Texture texture;
@@ -22,7 +22,7 @@ public class VdoClipSrc implements Source<ImgProd> {
         this.offset = offset;
     }
     @Override
-    public ImgProd get(long time) {
+    public ImgProd generate(long time) {
         long target = time + offset;
         if(!initialized){
             texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
