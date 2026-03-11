@@ -13,7 +13,7 @@ import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.ui.Root;
-import com.lomekwi.cave.util.GlobalVars;
+import com.lomekwi.cave.util.Vars;
 
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -27,11 +27,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import games.spooky.gdx.nativefilechooser.NativeFileChooser;
+
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private Root ui;
     private Project project=new Project();
+    public Main (NativeFileChooser fileChooser) {
+        Vars.fileChooser = fileChooser;
+    }
     @Override
     public void create() {
         Loader.load(org.bytedeco.ffmpeg.global.avcodec.class);
@@ -45,7 +50,7 @@ public class Main extends ApplicationAdapter {
         }
         System.out.println("没了");
 
-        GlobalVars.project=this.project;
+        Vars.project=this.project;
         ui = new Root(this);
         ui.create();
         project.timeline.addTrack().addTrack();

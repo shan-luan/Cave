@@ -12,6 +12,8 @@ dependencies {
 
   api "space.earlygrey:shapedrawer:$shapedrawerVersion"
 
+  implementation "games.spooky.gdx:gdx-nativefilechooser:$gdxNativefilechooserVersion"
+
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }

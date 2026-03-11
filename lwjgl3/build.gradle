@@ -49,6 +49,8 @@ dependencies {
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-arm64-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-armhf-gpl"
+
+  implementation "games.spooky.gdx:gdx-nativefilechooser-desktop:$gdxNativefilechooserVersion"
 }
 
 def os = System.properties['os.name'].toLowerCase()

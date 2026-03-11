@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.lomekwi.cave.util.GlobalVars;
+import com.lomekwi.cave.util.Vars;
 import com.lomekwi.cave.pipeline.Sink;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 
@@ -32,7 +32,7 @@ public class TlPrevCont implements Sink<ImgProd> {
         drawable = new TextureRegionDrawable(region);
         batch = new SpriteBatch();
         batch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, width, height));
-        GlobalVars.project.distributor.registerSink(ImgProd.class, this);
+        Vars.project.distributor.registerSink(ImgProd.class, this);
     }
 
     public FrameBuffer getFbo() {
@@ -65,7 +65,7 @@ public class TlPrevCont implements Sink<ImgProd> {
     public void dispose() {
         fbo.dispose();
         batch.dispose();
-        GlobalVars.project.distributor.unregisterSink(ImgProd.class, this);
+        Vars.project.distributor.unregisterSink(ImgProd.class, this);
     }
 
     public TextureRegionDrawable getDrawable() {
