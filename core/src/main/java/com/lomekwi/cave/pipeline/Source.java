@@ -18,7 +18,7 @@ public abstract class Source<T extends Product> implements Serializable {
         public List<Filter<? super T>> getFilters() {
             return filters;
         }
-        public final Source<T> attach(Filter<? super T> filter){
+        public Source<T> attach(Filter<? super T> filter){
             filters.add(filter);
             return this;
         }

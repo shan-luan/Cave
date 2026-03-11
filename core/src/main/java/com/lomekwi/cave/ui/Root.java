@@ -15,8 +15,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
+import com.kotcrab.vis.ui.widget.Menu;
+import com.kotcrab.vis.ui.widget.MenuItem;
+import com.kotcrab.vis.ui.widget.PopupMenu;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
+import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
@@ -143,7 +147,8 @@ public class Root implements ApplicationListener {
         skin.get("default", TextButton.TextButtonStyle.class).font = font;
         skin.get("default", TextField.TextFieldStyle.class).font = font;
         skin.get("default", CheckBox.CheckBoxStyle.class).font = font;
-
+        skin.get("default", MenuItem.MenuItemStyle.class).font = font;
+        skin.get("default", Menu.MenuStyle.class).openButtonStyle.font = font;
        return skin;
     }
 }

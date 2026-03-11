@@ -1,6 +1,5 @@
 package com.lomekwi.cave;
 
-import static com.lomekwi.cave.util.Units.HOUR;
 import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Application;
@@ -14,6 +13,7 @@ import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.util.GlobalVars;
 
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.global.avcodec;
@@ -26,7 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -46,7 +45,7 @@ public class Main extends ApplicationAdapter {
         }
         System.out.println("没了");
 
-        GlobalVars.setProject(project);
+        GlobalVars.project=this.project;
         ui = new Root(this);
         ui.create();
         project.timeline.addTrack().addTrack();
@@ -83,7 +82,7 @@ public class Main extends ApplicationAdapter {
         project.timeline.add(1,clip,100*SECOND,200*SECOND);
         System.out.println(project.timeline.getLength());
         project.playhead.setPlaying(true);
-
+/*
         try (FileOutputStream fileOut = new FileOutputStream("project.cave");
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
 
@@ -92,6 +91,7 @@ public class Main extends ApplicationAdapter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+ */
     }
 
     @Override
