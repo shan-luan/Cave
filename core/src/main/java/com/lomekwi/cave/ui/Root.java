@@ -21,6 +21,7 @@ import com.kotcrab.vis.ui.widget.PopupMenu;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
+import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
@@ -77,8 +78,6 @@ public class Root implements ApplicationListener {
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
 
-        tabbedPane.add(new ProjectTab());
-
         root.add(mainLayout);
         root.add(overlayLayer);
 
@@ -109,10 +108,6 @@ public class Root implements ApplicationListener {
     public void dispose() {
         if (stage != null) stage.dispose();
         VisUI.dispose();
-    }
-
-    public Project getProject() {
-        return main.getProject();
     }
     public Stage getStage() {
         return stage;
@@ -149,6 +144,15 @@ public class Root implements ApplicationListener {
         skin.get("default", CheckBox.CheckBoxStyle.class).font = font;
         skin.get("default", MenuItem.MenuItemStyle.class).font = font;
         skin.get("default", Menu.MenuStyle.class).openButtonStyle.font = font;
+        skin.get("default", TabbedPane.TabbedPaneStyle.class).buttonStyle.font = font;
        return skin;
+    }
+
+    public Project getFrontendProject() {
+        if (tabbedPane.getActiveTab() instanceof ProjectTab) {
+            return ((ProjectTab) tabbedPane.getActiveTab()).getProject();
+        }else{
+            return null;
+        }
     }
 }

@@ -10,6 +10,11 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
+import com.lomekwi.cave.project.ProjectEvents;
+import com.lomekwi.cave.project.Projects;
+import com.lomekwi.cave.util.Vars;
+
+import java.io.IOException;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
@@ -19,15 +24,20 @@ public class TopBar extends MenuBar {
         super();
 
         addMenu(new MenuX(i18n("文件"))
-            .withItem(new MenuItem(i18n("新建")))
+            .withItem(new MenuItem(i18n("新建"),new ChangeListenerX(() -> {
+                Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()));
+            })))
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择项目...");
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
                     public void onFileChosen(FileHandle file) {
-                        // 用户选好了文件，file 就是选中的文件
-                        Gdx.app.log("FileChooser", "选了：" + file.path());
+                        try {
+                            Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.open(file)));
+                        } catch (IOException | ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
                     }
                     @Override
                     public void onCancellation() {

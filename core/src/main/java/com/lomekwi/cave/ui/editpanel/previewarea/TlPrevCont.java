@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.Vars;
 import com.lomekwi.cave.pipeline.Sink;
 import com.lomekwi.cave.pipeline.image.ImgProd;
@@ -24,15 +26,17 @@ public class TlPrevCont implements Sink<ImgProd> {
     private final List<ImgProd> prods = new ArrayList<>();
     private final TextureRegionDrawable drawable;
     private final Batch batch;
+    private final Project project;
 
-    public TlPrevCont(int width, int height) {
+    public TlPrevCont(Project project, int width, int height) {
+        this.project = project;
         fbo = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
         TextureRegion region = new TextureRegion(fbo.getColorBufferTexture());
         region.flip(false, true);
         drawable = new TextureRegionDrawable(region);
         batch = new SpriteBatch();
         batch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, width, height));
-        Vars.project.distributor.registerSink(ImgProd.class, this);
+        project.distributor.registerSink(ImgProd.class, this);
     }
 
     public FrameBuffer getFbo() {
@@ -65,7 +69,7 @@ public class TlPrevCont implements Sink<ImgProd> {
     public void dispose() {
         fbo.dispose();
         batch.dispose();
-        Vars.project.distributor.unregisterSink(ImgProd.class, this);
+        project.distributor.unregisterSink(ImgProd.class, this);
     }
 
     public TextureRegionDrawable getDrawable() {

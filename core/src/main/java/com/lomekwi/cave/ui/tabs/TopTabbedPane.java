@@ -1,14 +1,17 @@
 package com.lomekwi.cave.ui.tabs;
 
-import com.badlogic.gdx.Gdx;
+import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
+import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.util.Vars;
 
 public class TopTabbedPane extends TabbedPane {
     public TopTabbedPane() {
         super();
+        Vars.appEventBus.register(this);
         addListener(new TabbedPaneListener() {
             @Override
             public void switchedTab(Tab tab) {
@@ -20,9 +23,7 @@ public class TopTabbedPane extends TabbedPane {
             public void removedTab(Tab tab) {}
 
             @Override
-            public void removedAllTabs() {
-                Gdx.app.postRunnable(()->add(new ProjectTab()));
-            }
+            public void removedAllTabs() {}
         });
     }
 
@@ -31,5 +32,10 @@ public class TopTabbedPane extends TabbedPane {
             super.add(tab);
         }
     }
-
+    @Subscribe
+    public void onNewProject(ProjectEvents.ProjectLoadedEvent event){
+        ProjectTab pt = new ProjectTab(event.getNewProject());
+        add(pt);
+        switchTab(pt);
+    }
 }

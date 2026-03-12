@@ -1,11 +1,11 @@
 package com.lomekwi.cave.util;
 
 
-import com.lomekwi.cave.project.Project;
+import com.google.common.eventbus.EventBus;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
-public class Vars {
-    public static Project project;
+public final class Vars {
     public static NativeFileChooser fileChooser;
+    public static final EventBus appEventBus = new EventBus();
 }
