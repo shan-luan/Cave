@@ -25,4 +25,9 @@ public class ProjectTab extends Tab {
     public Project getProject() {
         return project;
     }
+    @Override
+    public void dispose() {
+        super.dispose();
+        project.close();
+    }
 }

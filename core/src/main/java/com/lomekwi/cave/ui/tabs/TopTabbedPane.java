@@ -20,10 +20,14 @@ public class TopTabbedPane extends TabbedPane {
             }
 
             @Override
-            public void removedTab(Tab tab) {}
+            public void removedTab(Tab tab) {
+                tab.dispose();
+            }
 
             @Override
-            public void removedAllTabs() {}
+            public void removedAllTabs() {
+                Root.getInstance().getMajorArea().clear();
+            }
         });
     }
 
