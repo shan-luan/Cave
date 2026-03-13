@@ -25,9 +25,11 @@ public class ProjectTab extends Tab {
     public Project getProject() {
         return project;
     }
+    //不需要手动调用！
     @Override
     public void dispose() {
         super.dispose();
         project.close();
+        editPanel.dispose();
     }
 }

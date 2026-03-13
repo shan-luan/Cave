@@ -17,11 +17,13 @@ public class TopTabbedPane extends TabbedPane {
             public void switchedTab(Tab tab) {
                 Root.getInstance().getMajorArea().clear();
                 Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
+                if(tab instanceof ProjectTab){
+                    ((ProjectTab) tab).getProject().projEventBus.post(new ProjectEvents.ProjectFrontedEvent());
+                }
             }
 
             @Override
             public void removedTab(Tab tab) {
-                tab.dispose();
             }
 
             @Override

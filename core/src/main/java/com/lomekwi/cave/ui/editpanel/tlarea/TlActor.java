@@ -14,7 +14,10 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.collect.Range;
+import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
@@ -33,6 +36,7 @@ public class TlActor extends Actor {
 
     private final Timeline timeline;
     private final Playhead playhead;
+    private final Project project;
 
     private long viewStartTime;
     private long viewDurationTime;
@@ -40,9 +44,12 @@ public class TlActor extends Actor {
     private float trackHeight;
     private float trackYShift;
 
-    public TlActor(Timeline timeline, Playhead playhead) {
-        this.timeline = timeline;
-        this.playhead = playhead;
+    public TlActor(Project project) {
+        this.project = project;
+        this.timeline = project.timeline;
+        this.playhead = project.playhead;
+
+        project.projEventBus.register(this);
 
         Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         white.setColor(Color.WHITE);
@@ -64,7 +71,6 @@ public class TlActor extends Actor {
         viewDurationTime = 900 * SECOND;
         trackHeight = 50;
 
-        Root.getInstance().getStage().setScrollFocus(this);
         addListener(new InputListener() {
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
@@ -114,9 +120,9 @@ public class TlActor extends Actor {
         shapeDrawer.filledTriangle(x - 10, getHeight(), x + 10, getHeight(), x, getHeight() - 20, Color.RED);
         shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3);
     }
-
     public void dispose() {
         region.getTexture().dispose();
+        project.projEventBus.unregister(this);
     }
 
     private float absoluteTimeToX(long time) {
@@ -126,5 +132,9 @@ public class TlActor extends Actor {
     private long xToAbsoluteTime(float x) {
         float ratio = x / getWidth();
         return viewStartTime + (long) (ratio * viewDurationTime);
+    }
+    @Subscribe
+    public void onProjectFronted(ProjectEvents.ProjectFrontedEvent e){
+        Root.getInstance().getStage().setScrollFocus(this);
     }
 }

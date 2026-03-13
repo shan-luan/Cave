@@ -11,11 +11,17 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TlPrevCont;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlActor;
 
 public class EditPanel extends VisTable {
+    PreviewArea previewArea;
+    Container<TlActor> tl;
     public EditPanel(Project project) {
         super();
-        PreviewArea p=new PreviewArea(new TlPrevCont(project,1920,1080));
-        Container<TlActor> tl=new Container<>(new TlActor(project.timeline,project.playhead)).fill().clip();
-        VisSplitPane sp = new VisSplitPane(p,tl,true);
+        previewArea=new PreviewArea(new TlPrevCont(project,1920,1080));
+        tl=new Container<>(new TlActor(project)).fill().clip();
+        VisSplitPane sp = new VisSplitPane(previewArea,tl,true);
         add(sp).expand().fill();
+    }
+    public void dispose() {
+        previewArea.dispose();
+        tl.getActor().dispose();
     }
 }

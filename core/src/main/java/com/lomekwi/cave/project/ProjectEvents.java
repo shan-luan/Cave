@@ -12,4 +12,5 @@ public class ProjectEvents {
             return newProject;
         }
     }
+    public static class ProjectFrontedEvent{}
 }
