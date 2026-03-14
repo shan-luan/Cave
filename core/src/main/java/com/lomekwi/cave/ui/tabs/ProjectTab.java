@@ -4,6 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.EditPanel;
+import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
 
 public class ProjectTab extends Tab {
     private final EditPanel editPanel;
@@ -19,7 +20,7 @@ public class ProjectTab extends Tab {
     }
     @Override
     public Table getContentTable() {
-        return editPanel;
+        return EditPanelFrame.getINSTANCE().with(editPanel);
     }
 
     public Project getProject() {

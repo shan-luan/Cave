@@ -25,6 +25,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
@@ -85,6 +86,7 @@ public class Root implements ApplicationListener {
         mainLayout.add(majorArea).fill().expand().row();
 
         new FileTree();
+        new EditPanelFrame();
 
         root.add(mainLayout);
         root.add(overlayLayer);
