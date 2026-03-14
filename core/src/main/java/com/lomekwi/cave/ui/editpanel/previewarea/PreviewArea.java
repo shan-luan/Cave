@@ -7,7 +7,6 @@ import com.badlogic.gdx.utils.Scaling;
 /**
  * 负责显示 FBO 输出
  */
-//FIXME：dispose从未被调用
 public class PreviewArea extends Image {
     private final TlPrevCont content;
 

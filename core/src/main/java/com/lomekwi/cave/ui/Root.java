@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
@@ -24,6 +25,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
@@ -41,6 +43,8 @@ public class Root implements ApplicationListener {
     private TopBar topBar;
     private TopTabbedPane tabbedPane;
 
+    private DragAndDrop dragAndDrop;
+
     public Root(Main main) {
         this.main = main;
         INSTANCE = this;
@@ -52,7 +56,9 @@ public class Root implements ApplicationListener {
 
     @Override
     public void create() {
-        VisUI.load(injectChineseFont(VisUI.SkinScale.X1));
+        dragAndDrop=new DragAndDrop();
+
+        VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
@@ -77,6 +83,8 @@ public class Root implements ApplicationListener {
         mainLayout.add(tabbedPane.getTable()).fillX().expandX().row();
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
+
+        new FileTree();
 
         root.add(mainLayout);
         root.add(overlayLayer);
@@ -154,5 +162,9 @@ public class Root implements ApplicationListener {
         }else{
             return null;
         }
+    }
+
+    public DragAndDrop getDragAndDrop() {
+        return dragAndDrop;
     }
 }
