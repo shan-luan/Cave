@@ -10,9 +10,12 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.Source;
@@ -44,6 +47,7 @@ public class TlActor extends Actor {
     private float trackHeight;
     private float trackYShift;
 
+    private final Color gray2 = new Color(0.3f, 0.3f, 0.3f, 1);
     public TlActor(Project project) {
         this.project = project;
         this.timeline = project.timeline;
@@ -59,17 +63,9 @@ public class TlActor extends Actor {
         shapeDrawer = new ShapeDrawer(Root.getInstance().getStage().getBatch(), region);
         white.dispose();
 
-        addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                playhead.setTime(xToAbsoluteTime(x));
-            }
-        });
-
-        //for test
-        viewStartTime = -300 * SECOND;
-        viewDurationTime = 900 * SECOND;
-        trackHeight = 50;
+        viewStartTime = 0;
+        viewDurationTime = Math.max(project.timeline.getLength(),30*SECOND);
+        trackHeight = 80;
 
         addListener(new InputListener() {
             @Override
@@ -86,14 +82,41 @@ public class TlActor extends Actor {
                     if (newDuration <= SECOND) newDuration = SECOND;
                     long anchorTime = viewStartTime + (long) (ratio * oldDuration);
                     viewDurationTime = newDuration;
-                    viewStartTime = anchorTime - (long) (ratio * newDuration);
+                    viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
                 } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    viewStartTime += (long) (amountY * SECOND);
+                    viewStartTime = Math.max(viewStartTime + (long) (amountY * SECOND), 0);
                 } else {
                     trackYShift += amountY * 10;
                 }
                 return true;
             }
+
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                if(keycode == SPACE){
+                    project.playhead.setPlaying(!project.playhead.isPlaying());
+                }
+                return true;
+            }
+        });
+
+        addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                long t = xToAbsoluteTime(x);
+                project.playhead.setTime(Math.max(t, 0));
+            }
+        });
+
+        addListener(event -> {
+            if(event instanceof FocusListener.FocusEvent){
+                FocusListener.FocusEvent e = (FocusListener.FocusEvent) event;
+                if(Root.getInstance().getFrontendProject() == project&&!e.isFocused()){
+                    e.cancel();
+                    return true;
+                }
+            }
+            return false;
         });
     }
 
@@ -105,6 +128,14 @@ public class TlActor extends Actor {
         float startX = absoluteTimeToX(0);
         float endX = absoluteTimeToX(timeline.getLength());
         shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
+
+        int count = (int) (getHeight()/trackHeight) + 2;
+
+        for(int i = 0; i < count; i++){
+            if(i%2==0) {
+                shapeDrawer.filledRectangle(0, trackYShift%(trackHeight*2)+i * trackHeight, getWidth(), trackHeight,gray2);
+            }
+        }
 
         for (int i = 0; i < timeline.getTracks().size(); i++) {
             Track track = timeline.getTracks().get(i);
@@ -136,5 +167,6 @@ public class TlActor extends Actor {
     @Subscribe
     public void onProjectFronted(ProjectEvents.ProjectFrontedEvent e){
         Root.getInstance().getStage().setScrollFocus(this);
+        Root.getInstance().getStage().setKeyboardFocus(this);
     }
 }

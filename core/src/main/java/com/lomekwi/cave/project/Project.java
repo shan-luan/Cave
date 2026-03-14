@@ -22,7 +22,6 @@ public class Project implements Serializable, AutoCloseable {
     protected Project(){
         Vars.appEventBus.register(this);
         name=i18n("未命名");
-        playhead.setPlaying( true);
         projEventBus=new EventBus(uuid.toString());
     }
     public void update() {

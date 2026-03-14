@@ -12,37 +12,39 @@ import com.lomekwi.cave.ui.Root;
 
 
 
-public class ResPanel extends Container<ResPanel.ResPanelCon> {
+public class ResPanel extends GridGroup {
     private final TextureRegionDrawable test;
     public ResPanel(){
-        super();
+        super(64, 4);
         test = new TextureRegionDrawable(new Texture("libgdx.png"));
-        setActor(new ResPanelCon());
-        fill();
-        getActor().addActor(new ResPanelItem("test"));
-    }
-    public class ResPanelCon extends GridGroup{
-        public ResPanelCon(){
-            super(64, 4);
+        addActor(new ResPanelItem("test"));
+        setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
+        Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
+            @Override
+            public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                System.out.println("drag");
+                return true;
+            }
 
-            Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
-                @Override
-                public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                    System.out.println("drag");
-                    return true;
-                }
-
-                @Override
-                public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                    addActor(new ResPanelItem(((FileHandle) payload.getObject()).name()));
-                    System.out.println("drop");
-                }
-            });
-        }
+            @Override
+            public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                addActor(new ResPanelItem(((FileHandle) payload.getObject()).name()));
+                System.out.println("drop");
+            }
+        });
     }
     public class ResPanelItem extends VisImage {
         public ResPanelItem(String name){
             super(test);
         }
     }
+    @Override
+    public float getMinWidth() {
+        return 0;
+    }
+    @Override
+    public float getMinHeight() {
+        return 0;
+    }
 }
+

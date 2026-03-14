@@ -17,6 +17,7 @@ public class EditPanelFrame extends VisTable {
         B_ResAndPrev = new VisSplitPane(null,null,false);
         A_BAndTl = new VisSplitPane( B_ResAndPrev,null,true);
         ftAndA = new VisSplitPane(FileTree.getINSTANCE(),A_BAndTl,false);
+        ftAndA.setSplitAmount(0.2f);
         add(ftAndA).fill().expand();
     }
     public static EditPanelFrame getINSTANCE() {
