@@ -7,10 +7,12 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.lomekwi.cave.ui.Root;
 
-public class FileTreeNode extends Tree.Node<FileTreeNode, FileHandle, VisLabel> {
-    public FileTreeNode(FileHandle file){
+import java.io.File;
+
+public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
+    public FileTreeNode(File file){
         super();
-        setActor(new DraggableLabel(file.name()));
+        setActor(new DraggableLabel(file.getName()));
         setValue(file);
     }
     public class DraggableLabel extends VisLabel {
@@ -25,13 +27,11 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, FileHandle, VisLabel> 
 
                     dragActor = new VisLabel(getText().toString());
                     payload.setDragActor(dragActor);
-
-                    System.out.println("dragStart");
                     return payload;
                 }
                 @Override
                 public void drag(InputEvent event, float x, float y, int pointer) {
-                    System.out.println("drag:"+x+","+y);
+                    super.drag(event, x, y, pointer);
                 }
 
                 @Override

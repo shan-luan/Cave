@@ -18,7 +18,7 @@ public class EditPanel {
         super();
         previewArea=new PreviewArea(new TlPrevCont(project, 1920, 1080));
         tl=new Container<>(new TlActor(project));
-        res=new Container<>(new ResPanel());
+        res=new Container<>(new ResPanel(project.resources));
     }
     public void dispose() {
         previewArea.dispose();

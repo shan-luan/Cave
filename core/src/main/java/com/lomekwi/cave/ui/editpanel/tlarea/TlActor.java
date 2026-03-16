@@ -129,21 +129,26 @@ public class TlActor extends Actor {
         float endX = absoluteTimeToX(timeline.getLength());
         shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
 
-        int count = (int) (getHeight()/trackHeight) + 2;
+        int count = (int) (getHeight()/trackHeight) + 3;
 
-        for(int i = 0; i < count; i++){
-            if(i%2==0) {
-                shapeDrawer.filledRectangle(0, trackYShift%(trackHeight*2)+i * trackHeight, getWidth(), trackHeight,gray2);
+// 背景条纹
+        for(int i = 0; i < count; i++) {
+            if(i % 2 == 0) {
+                float y = getHeight() - (-trackYShift % (trackHeight * 2) + i * trackHeight) - trackHeight;
+                shapeDrawer.filledRectangle(0, y, getWidth(), trackHeight, gray2);
             }
         }
 
+// 轨道内容
         for (int i = 0; i < timeline.getTracks().size(); i++) {
             Track track = timeline.getTracks().get(i);
             for (Map.Entry<Range<Long>, Source<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
                 float sx = absoluteTimeToX(entry.getKey().lowerEndpoint());
                 float ex = absoluteTimeToX(entry.getKey().upperEndpoint());
-                float y = getHeight() + trackYShift - i * trackHeight;
-                shapeDrawer.rectangle(sx, y, ex - sx, -trackHeight);
+
+                float y = getHeight() - (trackYShift + i * trackHeight) - trackHeight;
+
+                shapeDrawer.filledRectangle(sx, y, ex - sx, trackHeight, Color.WHITE);
             }
         }
 

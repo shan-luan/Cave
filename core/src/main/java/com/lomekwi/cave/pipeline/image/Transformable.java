@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline.image;
 
-public interface Transformable<T extends Transformable<T>> {
+public interface Transformable {
     Transform getTransform();
-    T setTransform(Transform transform);
+    void setTransform(Transform transform);
 }

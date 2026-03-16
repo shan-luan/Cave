@@ -6,7 +6,9 @@ import com.kotcrab.vis.ui.widget.VisTree;
 
 import java.io.File;
 
-public class FileTree extends VisTree<FileTreeNode, FileHandle> {
+import java.io.File;
+
+public class FileTree extends VisTree<FileTreeNode, File> {
     private static FileTree INSTANCE;
 
     public FileTree() {
@@ -14,8 +16,8 @@ public class FileTree extends VisTree<FileTreeNode, FileHandle> {
         INSTANCE = this;
 
         // 获取当前工作目录
-        FileHandle rootHandle = Gdx.files.absolute(System.getProperty("user.dir"));
-        FileTreeNode rootNode = createNodeRecursive(rootHandle);
+        File rootFile = new File(System.getProperty("user.dir"));
+        FileTreeNode rootNode = createNodeRecursive(rootFile);
 
         // 将根节点加入树
         add(rootNode);
@@ -24,13 +26,16 @@ public class FileTree extends VisTree<FileTreeNode, FileHandle> {
     /**
      * 递归创建节点
      */
-    private FileTreeNode createNodeRecursive(FileHandle handle) {
-        FileTreeNode node = new FileTreeNode(handle);
+    private FileTreeNode createNodeRecursive(File file) {
+        FileTreeNode node = new FileTreeNode(file);
 
-        if (handle.isDirectory()) {
-            for (FileHandle child : handle.list()) {
-                FileTreeNode childNode = createNodeRecursive(child);
-                node.add(childNode); // 添加子节点
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    FileTreeNode childNode = createNodeRecursive(child);
+                    node.add(childNode); // 添加子节点
+                }
             }
         }
 

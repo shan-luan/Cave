@@ -18,13 +18,20 @@ import java.io.Serializable;
  */
 public abstract class MedRes implements Resource, Serializable {
     private static final long serialVersionUID = 1L;
-    private final String path;//TODO:改为持有输入流
+    private final String path;
     private transient InputStream inputStream;
     protected transient DecRes<?> decRes;
 
-    public MedRes(String path) throws FileNotFoundException {
+    /**
+     * 必须确保路径对应一个存在的文件
+     */
+    public MedRes(String path) {
         this.path = path;
-        this.inputStream = new BufferedInputStream(new FileInputStream(path));
+        try {
+            this.inputStream = new BufferedInputStream(new FileInputStream(path));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         setupDecoders();
         try {
             decRes.start();

@@ -2,14 +2,13 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.pipeline.Product;
 
 import java.nio.ByteBuffer;
 
-public class ImgProd implements Product, Transformable<ImgProd>{
+public class ImgProd extends Product implements Transformable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
@@ -19,9 +18,8 @@ public class ImgProd implements Product, Transformable<ImgProd>{
         return transform;
     }
     @Override
-    public ImgProd setTransform(Transform transform) {
+    public void setTransform(Transform transform) {
         this.transform = transform;
-        return this;
     }
     public ByteBuffer getPixels() {
         return pixels;

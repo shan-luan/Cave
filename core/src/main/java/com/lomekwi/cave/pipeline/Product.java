@@ -1,4 +1,4 @@
 package com.lomekwi.cave.pipeline;
 
-public interface Product extends AutoCloseable{
+public abstract class Product implements AutoCloseable{
 }
