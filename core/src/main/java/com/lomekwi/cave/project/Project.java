@@ -1,11 +1,16 @@
 package com.lomekwi.cave.project;
 
+import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.Distributor;
+import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.image.ImgProd;
+import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MedRes;
+import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.util.Vars;
@@ -38,5 +43,11 @@ public class Project implements Serializable, AutoCloseable {
     }
     public void close() {
         Vars.appEventBus.unregister(this);
+    }
+    {
+        //测试：
+        VdoRes res=new VdoRes("test.mp4");
+        timeline.addTrack();
+        timeline.add(0,new VdoClipSrc(res,0),0,30*SECOND);
     }
 }

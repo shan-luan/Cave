@@ -10,8 +10,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -47,7 +45,8 @@ public class TlActor extends Actor {
     private float trackHeight;
     private float trackYShift;
 
-    private final Color gray2 = new Color(0.3f, 0.3f, 0.3f, 1);
+    private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
+
     public TlActor(Project project) {
         this.project = project;
         this.timeline = project.timeline;
@@ -55,36 +54,44 @@ public class TlActor extends Actor {
 
         project.projEventBus.register(this);
 
-        Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        final Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         white.setColor(Color.WHITE);
         white.fill();
 
-        region = new TextureRegion(new Texture(white));
-        shapeDrawer = new ShapeDrawer(Root.getInstance().getStage().getBatch(), region);
+        this.region = new TextureRegion(new Texture(white));
+        this.shapeDrawer = new ShapeDrawer(Root.getInstance().getStage().getBatch(), region);
         white.dispose();
 
-        viewStartTime = 0;
-        viewDurationTime = Math.max(project.timeline.getLength(),30*SECOND);
-        trackHeight = 80;
+        this.viewStartTime = 0;
+        this.viewDurationTime = Math.max(project.timeline.getLength(), 30 * SECOND);
+        this.trackHeight = 80;
 
         addListener(new InputListener() {
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
                 final Input ip = Gdx.input;
+
                 if (ip.isKeyPressed(CONTROL_LEFT) && ip.isKeyPressed(SHIFT_LEFT)) {
                     trackHeight = Math.max(trackHeight + amountY * 10, 10);
+
                 } else if (ip.isKeyPressed(CONTROL_LEFT)) {
-                    float ratio = x / getWidth();
-                    long oldDuration = viewDurationTime;
-                    float scaleFactor = 1f + amountY * 0.1f;
+                    final float ratio = x / getWidth();
+                    final long oldDuration = viewDurationTime;
+
+                    final float scaleFactor = 1f + amountY * 0.1f;
                     if (scaleFactor <= 0f) return true;
+
                     long newDuration = (long) (oldDuration * scaleFactor);
                     if (newDuration <= SECOND) newDuration = SECOND;
-                    long anchorTime = viewStartTime + (long) (ratio * oldDuration);
+
+                    final long anchorTime = viewStartTime + (long) (ratio * oldDuration);
+
                     viewDurationTime = newDuration;
                     viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
+
                 } else if (ip.isKeyPressed(SHIFT_LEFT)) {
                     viewStartTime = Math.max(viewStartTime + (long) (amountY * SECOND), 0);
+
                 } else {
                     trackYShift += amountY * 10;
                 }
@@ -93,7 +100,7 @@ public class TlActor extends Actor {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if(keycode == SPACE){
+                if (keycode == SPACE) {
                     project.playhead.setPlaying(!project.playhead.isPlaying());
                 }
                 return true;
@@ -103,15 +110,15 @@ public class TlActor extends Actor {
         addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                long t = xToAbsoluteTime(x);
+                final long t = xToAbsoluteTime(x);
                 project.playhead.setTime(Math.max(t, 0));
             }
         });
 
         addListener(event -> {
-            if(event instanceof FocusListener.FocusEvent){
-                FocusListener.FocusEvent e = (FocusListener.FocusEvent) event;
-                if(Root.getInstance().getFrontendProject() == project&&!e.isFocused()){
+            if (event instanceof FocusListener.FocusEvent) {
+                final FocusListener.FocusEvent e = (FocusListener.FocusEvent) event;
+                if (Root.getInstance().getFrontendProject() == project && !e.isFocused()) {
                     e.cancel();
                     return true;
                 }
@@ -124,38 +131,59 @@ public class TlActor extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
 
+        drawBackground();
+        drawSplitters();
+        drawTrackContents();
+        drawPlayhead();
+    }
+
+    private void drawBackground() {
         shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Color.DARK_GRAY);
-        float startX = absoluteTimeToX(0);
-        float endX = absoluteTimeToX(timeline.getLength());
+
+        final float startX = absoluteTimeToX(0);
+        final float endX = absoluteTimeToX(timeline.getLength());
+
         shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
+    }
+    private void drawSplitters() {
+        float offset = ((trackYShift % trackHeight) + trackHeight) % trackHeight;
+        float startY = getHeight() + offset;
 
-        int count = (int) (getHeight()/trackHeight) + 3;
-
-// 背景条纹
-        for(int i = 0; i < count; i++) {
-            if(i % 2 == 0) {
-                float y = getHeight() - (-trackYShift % (trackHeight * 2) + i * trackHeight) - trackHeight;
-                shapeDrawer.filledRectangle(0, y, getWidth(), trackHeight, gray2);
-            }
+        for (float y = startY; y > -trackHeight; y -= trackHeight) {
+            shapeDrawer.line(0, y, getWidth(), y, black);
         }
+    }
 
-// 轨道内容
+    private void drawTrackContents() {
         for (int i = 0; i < timeline.getTracks().size(); i++) {
-            Track track = timeline.getTracks().get(i);
-            for (Map.Entry<Range<Long>, Source<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
-                float sx = absoluteTimeToX(entry.getKey().lowerEndpoint());
-                float ex = absoluteTimeToX(entry.getKey().upperEndpoint());
+            final Track track = timeline.getTracks().get(i);
 
-                float y = getHeight() - (trackYShift + i * trackHeight) - trackHeight;
+            for (final Map.Entry<Range<Long>, Source<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
+
+                final float sx = absoluteTimeToX(entry.getKey().lowerEndpoint());
+                final float ex = absoluteTimeToX(entry.getKey().upperEndpoint());
+
+                final float baseY = getHeight() - trackHeight;
+                final float y = baseY - i * trackHeight + trackYShift;
 
                 shapeDrawer.filledRectangle(sx, y, ex - sx, trackHeight, Color.WHITE);
             }
         }
+    }
 
-        float x = absoluteTimeToX(playhead.getTime());
-        shapeDrawer.filledTriangle(x - 10, getHeight(), x + 10, getHeight(), x, getHeight() - 20, Color.RED);
+    private void drawPlayhead() {
+        final float x = absoluteTimeToX(playhead.getTime());
+
+        shapeDrawer.filledTriangle(
+            x - 10, getHeight(),
+            x + 10, getHeight(),
+            x, getHeight() - 20,
+            Color.RED
+        );
+
         shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3);
     }
+
     public void dispose() {
         region.getTexture().dispose();
         project.projEventBus.unregister(this);
@@ -166,11 +194,12 @@ public class TlActor extends Actor {
     }
 
     private long xToAbsoluteTime(float x) {
-        float ratio = x / getWidth();
+        final float ratio = x / getWidth();
         return viewStartTime + (long) (ratio * viewDurationTime);
     }
+
     @Subscribe
-    public void onProjectFronted(ProjectEvents.ProjectFrontedEvent e){
+    public void onProjectFronted(ProjectEvents.ProjectFrontedEvent e) {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
