@@ -3,10 +3,16 @@ package com.lomekwi.cave.ui;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
@@ -27,9 +33,12 @@ import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
+import com.lomekwi.cave.ui.editpanel.tlarea.segactors.VdoSegActor;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
+
+import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class Root implements ApplicationListener {
     private static Root INSTANCE;
@@ -45,6 +54,8 @@ public class Root implements ApplicationListener {
     private TopTabbedPane tabbedPane;
 
     private DragAndDrop dragAndDrop;
+
+    private ShapeDrawer shapeDrawer;
 
     public Root(Main main) {
         this.main = main;
@@ -62,6 +73,13 @@ public class Root implements ApplicationListener {
         VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
+
+        Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        white.setColor(Color.WHITE);
+        white.fill();
+        TextureRegion region = new TextureRegion(new Texture(white));
+        this.shapeDrawer = new ShapeDrawer(stage.getBatch(), region);
+        white.dispose();
 
         // 初始化UI组件
         root = new Stack();
@@ -92,6 +110,8 @@ public class Root implements ApplicationListener {
         root.add(overlayLayer);
 
         stage.addActor(root);
+
+        stage.setDebugAll(true);
     }
 
     @Override
@@ -168,5 +188,9 @@ public class Root implements ApplicationListener {
 
     public DragAndDrop getDragAndDrop() {
         return dragAndDrop;
+    }
+
+    public ShapeDrawer getShapeDrawer() {
+        return shapeDrawer;
     }
 }

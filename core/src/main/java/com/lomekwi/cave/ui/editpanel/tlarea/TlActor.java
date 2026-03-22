@@ -10,13 +10,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.timeline.segments.Segment;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
@@ -30,10 +31,9 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-public class TlActor extends Actor {
+public class TlActor extends Group {
 
-    private final ShapeDrawer shapeDrawer;
-    private final TextureRegion region;
+    private final ShapeDrawer shapeDrawer=Root.getInstance().getShapeDrawer();
 
     private final Timeline timeline;
     private final Playhead playhead;
@@ -48,19 +48,14 @@ public class TlActor extends Actor {
     private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
 
     public TlActor(Project project) {
+
+
         this.project = project;
         this.timeline = project.timeline;
         this.playhead = project.playhead;
 
         project.projEventBus.register(this);
 
-        final Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        white.setColor(Color.WHITE);
-        white.fill();
-
-        this.region = new TextureRegion(new Texture(white));
-        this.shapeDrawer = new ShapeDrawer(Root.getInstance().getStage().getBatch(), region);
-        white.dispose();
 
         this.viewStartTime = 0;
         this.viewDurationTime = Math.max(project.timeline.getLength(), 30 * SECOND);
@@ -126,14 +121,31 @@ public class TlActor extends Actor {
             return false;
         });
     }
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+
+        for (int i = 0; i < timeline.getTracks().size(); i++) {
+            final Track track = timeline.getTracks().get(i);
+
+            for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
+
+            entry.getValue().getActor().setBounds(
+                absoluteTimeToX(entry.getKey().lowerEndpoint()),
+                getHeight() + trackYShift - (i+1) * trackHeight,
+                absoluteTimeToX(entry.getKey().upperEndpoint()) - absoluteTimeToX(entry.getKey().lowerEndpoint()),
+                trackHeight
+            );
+            addActor(entry.getValue().getActor());
+            }
+        }
+    }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        super.draw(batch, parentAlpha);
-
         drawBackground();
         drawSplitters();
-        drawTrackContents();
+        super.draw(batch, parentAlpha);
         drawPlayhead();
     }
 
@@ -154,22 +166,6 @@ public class TlActor extends Actor {
         }
     }
 
-    private void drawTrackContents() {
-        for (int i = 0; i < timeline.getTracks().size(); i++) {
-            final Track track = timeline.getTracks().get(i);
-
-            for (final Map.Entry<Range<Long>, Source<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
-
-                final float sx = absoluteTimeToX(entry.getKey().lowerEndpoint());
-                final float ex = absoluteTimeToX(entry.getKey().upperEndpoint());
-
-                final float baseY = getHeight() - trackHeight;
-                final float y = baseY - i * trackHeight + trackYShift;
-
-                shapeDrawer.filledRectangle(sx, y, ex - sx, trackHeight, Color.WHITE);
-            }
-        }
-    }
 
     private void drawPlayhead() {
         final float x = absoluteTimeToX(playhead.getTime());
@@ -185,7 +181,6 @@ public class TlActor extends Actor {
     }
 
     public void dispose() {
-        region.getTexture().dispose();
         project.projEventBus.unregister(this);
     }
 

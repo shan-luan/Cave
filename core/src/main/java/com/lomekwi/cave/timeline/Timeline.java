@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline;
 
 import com.lomekwi.cave.pipeline.Product;
-import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.timeline.segments.Segment;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -29,8 +29,8 @@ public class Timeline implements Serializable {
         }
         return this;
     }
-    public Timeline add(int index,Source<?> src, long start, long duration) {
-        tracks.get(index).add(src,start,duration);
+    public Timeline add(int index, Segment<?> segment, long start, long duration) {
+        tracks.get(index).add(segment, start, duration);
         lengthChanged = true;
         return this;
     }

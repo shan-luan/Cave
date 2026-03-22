@@ -13,6 +13,7 @@ import com.lomekwi.cave.resource.media.MedRes;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.playback.Playhead;
+import com.lomekwi.cave.timeline.segments.VdoSeg;
 import com.lomekwi.cave.util.Vars;
 
 import java.io.File;
@@ -48,6 +49,6 @@ public class Project implements Serializable, AutoCloseable {
         //测试：
         VdoRes res=new VdoRes("test.mp4");
         timeline.addTrack();
-        timeline.add(0,new VdoClipSrc(res,0),0,30*SECOND);
+        timeline.add(0,new VdoSeg(res,0),0,30*SECOND);
     }
 }
