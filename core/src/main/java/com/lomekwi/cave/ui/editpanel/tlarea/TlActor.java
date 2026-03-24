@@ -209,4 +209,7 @@ public class TlActor extends Group {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
+    protected void segLengthDrag(SegActor actor,float x){
+        actor.setWidth(x);
+    }
 }
