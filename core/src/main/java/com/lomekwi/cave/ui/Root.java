@@ -111,7 +111,7 @@ public class Root implements ApplicationListener {
 
         stage.addActor(root);
 
-        stage.setDebugAll(true);
+        stage.setDebugAll(false);
     }
 
     @Override

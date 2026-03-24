@@ -45,6 +45,8 @@ public class TlActor extends Group {
     private float trackHeight;
     private float trackYShift;
 
+    private boolean dirty = true;
+
     private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
 
     public TlActor(Project project) {
@@ -90,6 +92,8 @@ public class TlActor extends Group {
                 } else {
                     trackYShift += amountY * 10;
                 }
+
+                dirty = true;
                 return true;
             }
 
@@ -124,20 +128,27 @@ public class TlActor extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
+        if (dirty) {
+            clearChildren();
 
-        for (int i = 0; i < timeline.getTracks().size(); i++) {
-            final Track track = timeline.getTracks().get(i);
+            final Range<Long> visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
+            for (int i = 0; i < timeline.getTracks().size(); i++) {
+                final Track track = timeline.getTracks().get(i);
 
-            for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().asMapOfRanges().entrySet()) {
+                //FIXME:截断区间边界导致渲染可能会出现问题
+                for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
 
-            entry.getValue().getActor().setBounds(
-                absoluteTimeToX(entry.getKey().lowerEndpoint()),
-                getHeight() + trackYShift - (i+1) * trackHeight,
-                absoluteTimeToX(entry.getKey().upperEndpoint()) - absoluteTimeToX(entry.getKey().lowerEndpoint()),
-                trackHeight
-            );
-            addActor(entry.getValue().getActor());
+                    entry.getValue().getActor().setBounds(
+                        absoluteTimeToX(entry.getKey().lowerEndpoint()),
+                        getHeight() + trackYShift - (i + 1) * trackHeight,
+                        absoluteTimeToX(entry.getKey().upperEndpoint()) - absoluteTimeToX(entry.getKey().lowerEndpoint()),
+                        trackHeight
+                    );
+                    addActor(entry.getValue().getActor());
+                }
             }
+
+            dirty = false;
         }
     }
 
