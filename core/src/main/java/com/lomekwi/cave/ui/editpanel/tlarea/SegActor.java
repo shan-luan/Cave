@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.lomekwi.cave.ui.Root;
 
 public abstract class SegActor extends Actor {
+    private DragSide dragSide;
     public SegActor() {
         addListener(new InputListener(){
             @Override
@@ -16,14 +17,21 @@ public abstract class SegActor extends Actor {
                 if(!(getParent() instanceof TlActor)){
                     return false;
                 }
-                if (x < edgeWidth || x > getWidth() - edgeWidth) {
+                if (x < edgeWidth){
+                    dragSide = DragSide.FRONT;
+                    System.out.println("f");
                     return true;
+                }else if (x > getWidth() - edgeWidth) {
+                    dragSide = DragSide.BEHIND;
+                    System.out.println("b");
+                    return true;
+                }else {
+                    return false;
                 }
-                return false;
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
-                ((TlActor) getParent()).segLengthDrag(SegActor.this,x);}
+                ((TlActor) getParent()).segLengthDrag(SegActor.this,x,dragSide);}
         });}
     @Override
     public void draw(Batch batch, float parentAlpha) {

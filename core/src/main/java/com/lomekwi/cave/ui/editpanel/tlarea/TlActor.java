@@ -128,6 +128,7 @@ public class TlActor extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
+
         if (dirty) {
             clearChildren();
 
@@ -209,7 +210,16 @@ public class TlActor extends Group {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
-    protected void segLengthDrag(SegActor actor,float x){
-        actor.setWidth(x);
+    protected void segLengthDrag(SegActor actor,float x,DragSide side){
+        switch (side) {
+            case FRONT:
+                float upper = actor.getX() + actor.getWidth();
+                actor.setX(getX()+x);
+                actor.setWidth(upper - x);
+                break;
+            case BEHIND:
+                actor.setWidth(x);
+                break;
+        }
     }
 }
