@@ -6,7 +6,8 @@ import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.timeline.segments.Segment;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,14 +16,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+@NullMarked
 public class Track implements Serializable {
-    private transient RangeMap<@NonNull Long, @NonNull Segment<?>> sources = TreeRangeMap.create();
-    private transient Map.Entry<Range<@NonNull Long>, @NonNull Segment<?>> cache;
+    private transient RangeMap<Long, Segment<?>> sources = TreeRangeMap.create();
+    private transient Map.@Nullable Entry<Range<Long>, Segment<?>> cache;
     private long length;
     private boolean lengthChanged = true;
-    private long[] serializationRanges;
-    private List<Segment<?>> serializationSources;
+    private long @Nullable [] serializationRanges;
+    private @Nullable List<Segment<?>> serializationSources;
     private static final long serialVersionUID = 1L;
     public Track() {
     }
@@ -38,7 +39,7 @@ public class Track implements Serializable {
         lengthChanged = true;
     }
 
-    public Product get(long time) {
+    public @Nullable Product get(long time) {
         if (cache == null || !cache.getKey().contains(time)) {
             cache = sources.getEntry(time);
         }
@@ -53,7 +54,7 @@ public class Track implements Serializable {
     }
 
     protected void remove(long time) {
-        Map.Entry<Range<@NonNull Long>, Segment<?>> entry = sources.getEntry(time);
+        Map.Entry<Range<Long>, Segment<?>> entry = sources.getEntry(time);
         if (entry != null) {
             sources.remove(entry.getKey());
         }
@@ -65,7 +66,7 @@ public class Track implements Serializable {
         lengthChanged = true;
         cache = null;
     }
-    public Map.Entry<Range<@NonNull Long>, Segment<?>> getEntry(long time){
+    public Map.@Nullable Entry<Range<Long>, Segment<?>> getEntry(long time){
         if (cache == null || !cache.getKey().contains(time)) {
             cache = sources.getEntry(time);
         }
@@ -83,7 +84,7 @@ public class Track implements Serializable {
         }
         return length;
     }
-    public RangeMap<@NonNull Long, @NonNull Segment<?>> getSources() {
+    public RangeMap<Long, Segment<?>> getSources() {
         return sources;
     }
     private void writeObject(ObjectOutputStream oos) throws IOException{

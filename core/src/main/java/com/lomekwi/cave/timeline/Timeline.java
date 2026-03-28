@@ -3,11 +3,14 @@ package com.lomekwi.cave.timeline;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.timeline.segments.Segment;
 
+import org.jspecify.annotations.NullMarked;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@NullMarked
 public class Timeline implements Serializable {
     private final List<Track> tracks = new ArrayList<>();
     private long length;
