@@ -5,11 +5,7 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -31,7 +27,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-public class TlActor extends Group {
+public class TlGroup extends Group {
 
     private final ShapeDrawer shapeDrawer=Root.getInstance().getShapeDrawer();
 
@@ -49,7 +45,9 @@ public class TlActor extends Group {
 
     private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
 
-    public TlActor(Project project) {
+    private final Map<SegActor,Track> segActorToTrack = new java.util.HashMap<>();
+
+    public TlGroup(Project project) {
 
 
         this.project = project;
@@ -130,13 +128,13 @@ public class TlActor extends Group {
         super.act(delta);
 
         if (dirty) {
-            clearChildren();
+            clearChildren(false);
+            segActorToTrack.clear();
 
-            final Range<Long> visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
+            final Range<Long> visibleRange = Range.closedOpen(viewStartTime-SECOND, viewStartTime+SECOND + viewDurationTime);
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                //FIXME:截断区间边界导致渲染可能会出现问题
                 for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
 
                     entry.getValue().getActor().setBounds(
@@ -146,6 +144,7 @@ public class TlActor extends Group {
                         trackHeight
                     );
                     addActor(entry.getValue().getActor());
+                    segActorToTrack.put((SegActor) entry.getValue().getActor(), track);
                 }
             }
 
@@ -214,12 +213,24 @@ public class TlActor extends Group {
         switch (side) {
             case FRONT:
                 float upper = actor.getX() + actor.getWidth();
-                actor.setX(getX()+x);
-                actor.setWidth(upper - x);
+                actor.setX(actor.getX()+x);
+                actor.setWidth(upper - actor.getX());
                 break;
             case BEHIND:
                 actor.setWidth(x);
+
+                Track t = segActorToTrack.get(actor);
+                Map.Entry<Range<Long>, Segment<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
+                timeline.remove(t,r.getKey().lowerEndpoint(),r.getKey().upperEndpoint()-r.getKey().lowerEndpoint())
+                .add(t,r.getValue(),r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX()+actor.getWidth()));
                 break;
         }
+    }
+    protected void segLengthDragEnd(SegActor actor){
+        System.out.println("segLengthDragEnd");
+    }
+    @Override
+    public void sizeChanged() {
+        dirty = true;
     }
 }

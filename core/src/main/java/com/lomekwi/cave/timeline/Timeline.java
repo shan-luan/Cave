@@ -29,15 +29,23 @@ public class Timeline implements Serializable {
         }
         return this;
     }
-    public Timeline add(int index, Segment<?> segment, long start, long duration) {
-        tracks.get(index).add(segment, start, duration);
+    public Timeline add(Track track,Segment<?> segment, long start, long duration) {
+        track.add(segment, start, duration);
         lengthChanged = true;
         return this;
     }
-    public Timeline remove(int index,long time) {
-        tracks.get(index).remove(time);
+    public Timeline remove(Track track,long time) {
+        track.remove(time);
         lengthChanged = true;
         return this;
+    }
+    public Timeline remove(Track track,long start,long duration) {
+        track.remove(start,duration);
+        lengthChanged = true;
+        return this;
+    }
+    public Track getTrack(int index) {
+        return tracks.get(index);
     }
 
     @Override

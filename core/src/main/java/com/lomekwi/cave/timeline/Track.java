@@ -27,12 +27,13 @@ public class Track implements Serializable {
     public Track() {
     }
 
-    public void add(Segment<?> segment, long start, long duration) {
-        if(segment == null){
-            sources.remove(Range.closedOpen(start, start + duration));
-        } else {
-            sources.put(Range.closedOpen(start, start + duration), segment);
-        }
+    protected void add(Segment<?> segment, long start, long duration) {
+        sources.put(Range.closedOpen(start, start + duration), segment);
+        cache = null;
+        lengthChanged = true;
+    }
+    protected void remove(long start, long duration) {
+        sources.remove(Range.closedOpen(start, start + duration));
         cache = null;
         lengthChanged = true;
     }
@@ -47,14 +48,22 @@ public class Track implements Serializable {
         long start = cache.getKey().lowerEndpoint();
         return cache.getValue().getSource().get(time - start);
     }
+    public boolean isFree(Range<Long> range) {
+        return sources.subRangeMap(range).asMapOfRanges().isEmpty();
+    }
 
-    public void remove(long time) {
+    protected void remove(long time) {
         Map.Entry<Range<@NonNull Long>, Segment<?>> entry = sources.getEntry(time);
         if (entry != null) {
             sources.remove(entry.getKey());
         }
         cache = null;
         lengthChanged = true;
+    }
+    protected void remove(Range<Long> range){
+        sources.remove(range);
+        lengthChanged = true;
+        cache = null;
     }
     public Map.Entry<Range<@NonNull Long>, Segment<?>> getEntry(long time){
         if (cache == null || !cache.getKey().contains(time)) {

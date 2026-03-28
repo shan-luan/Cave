@@ -14,16 +14,14 @@ public abstract class SegActor extends Actor {
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
                 final float edgeWidth = 10;
-                if(!(getParent() instanceof TlActor)){
+                if(!(getParent() instanceof TlGroup)){
                     return false;
                 }
                 if (x < edgeWidth){
                     dragSide = DragSide.FRONT;
-                    System.out.println("f");
                     return true;
                 }else if (x > getWidth() - edgeWidth) {
                     dragSide = DragSide.BEHIND;
-                    System.out.println("b");
                     return true;
                 }else {
                     return false;
@@ -31,7 +29,12 @@ public abstract class SegActor extends Actor {
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
-                ((TlActor) getParent()).segLengthDrag(SegActor.this,x,dragSide);}
+                ((TlGroup) getParent()).segLengthDrag(SegActor.this,x,dragSide);
+            }
+            @Override
+            public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
+                ((TlGroup) getParent()).segLengthDragEnd(SegActor.this);
+            }
         });}
     @Override
     public void draw(Batch batch, float parentAlpha) {

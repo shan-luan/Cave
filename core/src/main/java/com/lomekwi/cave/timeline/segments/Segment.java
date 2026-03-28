@@ -17,7 +17,7 @@ public abstract class Segment<T extends Product> {
         return source;
     }
 
-    public Actor getActor() {
+    public SegActor getActor() {
         return actor;
     }
 }

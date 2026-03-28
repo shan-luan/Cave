@@ -49,6 +49,6 @@ public class Project implements Serializable, AutoCloseable {
         //测试：
         VdoRes res=new VdoRes("test.mp4");
         timeline.addTrack();
-        timeline.add(0,new VdoSeg(res,0),0,30*SECOND);
+        timeline.add(timeline.getTrack(0),new VdoSeg(res,0),0,30*SECOND);
     }
 }
