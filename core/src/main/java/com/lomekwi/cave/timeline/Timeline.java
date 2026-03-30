@@ -1,7 +1,8 @@
 package com.lomekwi.cave.timeline;
 
+import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Product;
-import com.lomekwi.cave.timeline.segments.Segment;
+import com.lomekwi.cave.timeline.segments.SegmentData;
 
 import org.jspecify.annotations.NullMarked;
 
@@ -9,6 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @NullMarked
 public class Timeline implements Serializable {
@@ -32,8 +34,8 @@ public class Timeline implements Serializable {
         }
         return this;
     }
-    public Timeline add(Track track,Segment<?> segment, long start, long duration) {
-        track.add(segment, start, duration);
+    public Timeline add(Track track, SegmentData<?> segmentData, long start, long duration) {
+        track.add(segmentData, start, duration);
         lengthChanged = true;
         return this;
     }
@@ -44,6 +46,11 @@ public class Timeline implements Serializable {
     }
     public Timeline remove(Track track,long start,long duration) {
         track.remove(start,duration);
+        lengthChanged = true;
+        return this;
+    }
+    public Timeline resize(Track track, Map.Entry<Range<Long>, SegmentData<?>> e, long start, long duration) {
+        track.resize(e,start,duration);
         lengthChanged = true;
         return this;
     }

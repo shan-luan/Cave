@@ -7,7 +7,13 @@ import java.util.List;
 public abstract class Source<T extends Product> implements Serializable {
     private static final long serialVersionUID = 1L;
         private final List<Filter<? super T>> filters = new ArrayList<>();
-        public final T get(long time){
+
+    /**
+     *  获取指定时间的产品
+     * @param time 绝对时间
+     * @return 产品
+     */
+    public final T get(long time){
             T product = generate(time);
             for (Filter<? super T> filter : filters) {
                 filter.filter(product);

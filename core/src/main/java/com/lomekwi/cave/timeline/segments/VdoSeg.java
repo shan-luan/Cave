@@ -5,8 +5,8 @@ import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor;
 
-public class VdoSeg extends Segment<ImgProd> {
-    public VdoSeg(VdoRes source,long offset){
-        super(new VdoClipSrc(source,offset),new VdoSegActor());
+public class VdoSeg extends SegmentData<ImgProd> {
+    public VdoSeg(VdoRes source,long srcZeroAt){
+        super(new VdoClipSrc(source),new VdoSegActor(),srcZeroAt);
     }
 }

@@ -8,12 +8,14 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.lomekwi.cave.ui.Root;
 
 public abstract class SegActor extends Actor {
+    private static Color blue = new Color(0x1ba1e2ff);
+    private static Color lightBlue = new Color(0x5ebdecff);
     private DragSide dragSide;
     public SegActor() {
         addListener(new InputListener(){
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-                final float edgeWidth = 10;
+                final float edgeWidth = 30;
                 if(!(getParent() instanceof TlGroup)){
                     return false;
                 }
@@ -38,7 +40,7 @@ public abstract class SegActor extends Actor {
         });}
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        Root.getInstance().getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.SKY);
-        Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), Color.BLUE, 10);
+        Root.getInstance().getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+        Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
     }
 }

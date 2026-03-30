@@ -12,18 +12,15 @@ import java.nio.ByteBuffer;
 
 public class VdoClipSrc extends Source<ImgProd> {
     private final VdoRes src;
-    private final long offset;
     private transient Texture texture;
     private transient ImgProd prod;
     private transient boolean initialized;
     private static final long serialVersionUID = 1L;
-    public VdoClipSrc(VdoRes src, long offset) {
+    public VdoClipSrc(VdoRes src) {
         this.src = src;
-        this.offset = offset;
     }
     @Override
     public ImgProd generate(long time) {
-        long target = time + offset;
         if(!initialized){
             texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
             prod=new ImgProd();
@@ -33,7 +30,7 @@ public class VdoClipSrc extends Source<ImgProd> {
         }
         ByteBuffer pixels;
         try {
-            pixels=VdoDecSvc.decode(target, src.getDecoder());
+            pixels=VdoDecSvc.decode(time, src.getDecoder());
         } catch (Exception e) {
             e.printStackTrace();
             pixels=null;

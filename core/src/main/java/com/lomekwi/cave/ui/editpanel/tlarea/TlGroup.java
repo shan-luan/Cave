@@ -13,7 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.timeline.segments.Segment;
+import com.lomekwi.cave.timeline.segments.SegmentData;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
@@ -135,7 +135,7 @@ public class TlGroup extends Group {
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
+                for (final Map.Entry<Range<Long>, SegmentData<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
 
                     entry.getValue().getActor().setBounds(
                         absoluteTimeToX(entry.getKey().lowerEndpoint()),
@@ -209,25 +209,31 @@ public class TlGroup extends Group {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
-    protected void segLengthDrag(SegActor actor,float x,DragSide side){
+    protected void segLengthDrag(SegActor actor,float deltaX,DragSide side){
+        Track t = segActorToTrack.get(actor);
+        Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
+        if(r==null) return;
+        //TODO:交叠检查
         switch (side) {
-            case FRONT:
+            case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
-                actor.setX(actor.getX()+x);
+                float target = actor.getX() + deltaX;
+                if(target>=upper) return;
+                if(xToAbsoluteTime(target)<0) return;
+                actor.setX(target);
                 actor.setWidth(upper - actor.getX());
+                timeline.resize(t,r,xToAbsoluteTime(actor.getX()),r.getKey().upperEndpoint()-xToAbsoluteTime(actor.getX()));
                 break;
-            case BEHIND:
-                actor.setWidth(x);
-
-                Track t = segActorToTrack.get(actor);
-                Map.Entry<Range<Long>, Segment<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
-                timeline.remove(t,r.getKey().lowerEndpoint(),r.getKey().upperEndpoint()-r.getKey().lowerEndpoint())
-                .add(t,r.getValue(),r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX()+actor.getWidth()));
+            }
+            case BEHIND: {
+                if(deltaX<1f)return;
+                actor.setWidth(deltaX);
+                timeline.resize(t,r,r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX() + actor.getWidth())-r.getKey().lowerEndpoint());
                 break;
+            }
         }
     }
     protected void segLengthDragEnd(SegActor actor){
-        System.out.println("segLengthDragEnd");
     }
     @Override
     public void sizeChanged() {
