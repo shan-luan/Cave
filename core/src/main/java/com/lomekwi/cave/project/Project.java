@@ -5,23 +5,17 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.Distributor;
-import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.ImgProd;
-import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.Resource;
-import com.lomekwi.cave.resource.media.MedRes;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.playback.Playhead;
-import com.lomekwi.cave.timeline.segments.VdoSeg;
+import com.lomekwi.cave.timeline.VdoSeg;
 import com.lomekwi.cave.util.Vars;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public class Project implements Serializable, AutoCloseable {

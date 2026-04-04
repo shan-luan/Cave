@@ -2,7 +2,6 @@ package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Product;
-import com.lomekwi.cave.timeline.segments.SegmentData;
 
 import org.jspecify.annotations.NullMarked;
 
@@ -36,6 +35,7 @@ public class Timeline implements Serializable {
     }
     public Timeline add(Track track, SegmentData<?> segmentData, long start, long duration) {
         track.add(segmentData, start, duration);
+        segmentData.setTrack(track);
         lengthChanged = true;
         return this;
     }

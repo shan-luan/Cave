@@ -13,7 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.timeline.segments.SegmentData;
+import com.lomekwi.cave.timeline.SegmentData;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
@@ -44,8 +44,6 @@ public class TlGroup extends Group {
     private boolean dirty = true;
 
     private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
-
-    private final Map<SegActor,Track> segActorToTrack = new java.util.HashMap<>();
 
     public TlGroup(Project project) {
 
@@ -85,7 +83,7 @@ public class TlGroup extends Group {
                     viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
 
                 } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    viewStartTime = Math.max(viewStartTime + (long) (amountY * SECOND), 0);
+                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY*30)-xToAbsoluteTime(0)), 0);
 
                 } else {
                     trackYShift += amountY * 10;
@@ -129,7 +127,6 @@ public class TlGroup extends Group {
 
         if (dirty) {
             clearChildren(false);
-            segActorToTrack.clear();
 
             final Range<Long> visibleRange = Range.closedOpen(viewStartTime-SECOND, viewStartTime+SECOND + viewDurationTime);
             for (int i = 0; i < timeline.getTracks().size(); i++) {
@@ -144,7 +141,6 @@ public class TlGroup extends Group {
                         trackHeight
                     );
                     addActor(entry.getValue().getActor());
-                    segActorToTrack.put((SegActor) entry.getValue().getActor(), track);
                 }
             }
 
@@ -209,15 +205,15 @@ public class TlGroup extends Group {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
-    protected void segLengthDrag(SegActor actor,float deltaX,DragSide side){
-        Track t = segActorToTrack.get(actor);
+    protected void segLengthDrag(SegActor actor,float diffToActorX,DragSide side){
+        Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
         if(r==null) return;
         //TODO:交叠检查
         switch (side) {
             case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
-                float target = actor.getX() + deltaX;
+                float target = actor.getX() + diffToActorX;
                 if(target>=upper) return;
                 if(xToAbsoluteTime(target)<0) return;
                 actor.setX(target);
@@ -226,8 +222,8 @@ public class TlGroup extends Group {
                 break;
             }
             case BEHIND: {
-                if(deltaX<1f)return;
-                actor.setWidth(deltaX);
+                if(diffToActorX<1f)return;
+                actor.setWidth(diffToActorX);
                 timeline.resize(t,r,r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX() + actor.getWidth())-r.getKey().lowerEndpoint());
                 break;
             }

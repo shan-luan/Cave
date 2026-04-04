@@ -5,13 +5,16 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.lomekwi.cave.timeline.SegmentData;
 import com.lomekwi.cave.ui.Root;
 
 public abstract class SegActor extends Actor {
-    private static Color blue = new Color(0x1ba1e2ff);
-    private static Color lightBlue = new Color(0x5ebdecff);
+    private static final Color blue = new Color(0x1ba1e2ff);
+    private static final Color lightBlue = new Color(0x5ebdecff);
+    private final SegmentData<?> segmentData;
     private DragSide dragSide;
-    public SegActor() {
+    public SegActor(SegmentData<?> segmentData) {
+        this.segmentData = segmentData;
         addListener(new InputListener(){
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
@@ -42,5 +45,9 @@ public abstract class SegActor extends Actor {
     public void draw(Batch batch, float parentAlpha) {
         Root.getInstance().getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
         Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
+    }
+
+    public SegmentData<?> getSegmentData() {
+        return segmentData;
     }
 }

@@ -4,7 +4,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Product;
-import com.lomekwi.cave.timeline.segments.SegmentData;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
