@@ -54,6 +54,13 @@ public class Timeline implements Serializable {
         lengthChanged = true;
         return this;
     }
+    public Timeline move(Track track,Track newTrack, Map.Entry<Range<Long>, SegmentData<?>> e,long start,long duration) {
+        track.remove(e.getKey());
+        newTrack.add(e.getValue(),start,duration);
+        e.getValue().setTrack(newTrack);
+        lengthChanged = true;
+        return this;
+    }
     public Track getTrack(int index) {
         return tracks.get(index);
     }

@@ -205,9 +205,12 @@ public class TlGroup extends Group {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
-    protected void segLengthDrag(SegActor actor,float diffToActorX,DragSide side){
+
+    float firstX,firstY = Float.NaN;
+    protected void segLengthDrag(SegActor actor,float diffToActorX,float diffToActorY,DragSide side){
         Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
+        //FIXME:下面的这个判空似乎存在一些问题，可能导致有时拖拽操作无反应
         if(r==null) return;
         //TODO:交叠检查
         switch (side) {
@@ -227,9 +230,34 @@ public class TlGroup extends Group {
                 timeline.resize(t,r,r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX() + actor.getWidth())-r.getKey().lowerEndpoint());
                 break;
             }
+            case MIDDLE: {
+                if(Float.isNaN(firstX)){
+                    firstX = diffToActorX;
+                    firstY = diffToActorY;
+                    return;
+                }
+                float deltaX = diffToActorX - firstX;
+                float deltaY = diffToActorY - firstY;
+                actor.setPosition(actor.getX() + deltaX, snapToTrack(actor.getY() + deltaY));
+                timeline.move(t,timeline.getTrack(Math.max(0,yToTrackIndex(actor.getY())-1)),r,xToAbsoluteTime(actor.getX()),xToAbsoluteTime(actor.getX()+actor.getWidth())-xToAbsoluteTime(actor.getX()));
+                r.getValue().origin+=xToAbsoluteTime(deltaX)-xToAbsoluteTime(0);
+            }
         }
     }
+    private float snapToTrack(float y){
+        return trackIndexToY(yToTrackIndex(y));
+    }
+    private int yToTrackIndex(float y){
+        final float top = getHeight() + trackYShift;
+        final float distance = top - y;
+        return Math.round(distance/trackHeight);
+    }
+    private float trackIndexToY(int index){
+        return getHeight() + trackYShift - index * trackHeight;
+    }
     protected void segLengthDragEnd(SegActor actor){
+        dirty = true;
+        firstX = Float.NaN;
     }
     @Override
     public void sizeChanged() {

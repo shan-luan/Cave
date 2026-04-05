@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.lomekwi.cave.timeline.SegmentData;
 import com.lomekwi.cave.ui.Root;
 
@@ -15,7 +16,7 @@ public abstract class SegActor extends Actor {
     private DragSide dragSide;
     public SegActor(SegmentData<?> segmentData) {
         this.segmentData = segmentData;
-        addListener(new InputListener(){
+        addListener(new ClickListener(){
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
                 final float edgeWidth = 30;
@@ -24,23 +25,24 @@ public abstract class SegActor extends Actor {
                 }
                 if (x < edgeWidth){
                     dragSide = DragSide.FRONT;
-                    return true;
                 }else if (x > getWidth() - edgeWidth) {
                     dragSide = DragSide.BEHIND;
-                    return true;
                 }else {
-                    return false;
+                    dragSide = DragSide.MIDDLE;
                 }
+                event.stop();
+                return true;
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
-                ((TlGroup) getParent()).segLengthDrag(SegActor.this,x,dragSide);
+                ((TlGroup) getParent()).segLengthDrag(SegActor.this,x,y,dragSide);
             }
             @Override
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
                 ((TlGroup) getParent()).segLengthDragEnd(SegActor.this);
             }
-        });}
+        });
+    }
     @Override
     public void draw(Batch batch, float parentAlpha) {
         Root.getInstance().getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
