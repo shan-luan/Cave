@@ -12,7 +12,7 @@ public abstract class SegmentData<T extends Product> {
     private Track track;
     private SegActor actor;
     private Range<Long> range;
-    private AbstractMap.SimpleEntry<Range<Long>,SegmentData<?>> entry;
+    private AbstractMap.SimpleImmutableEntry<Range<Long>,SegmentData<?>> entry;
     public long origin;
     protected SegmentData(Source<T> source,long origin) {
         this.source = source;
@@ -47,6 +47,6 @@ public abstract class SegmentData<T extends Product> {
     protected void setRange(Range<Long> range) {
         if(range.equals(this.range))return;
         this.range = range;
-        entry = new AbstractMap.SimpleEntry<>(range,this);
+        entry = new AbstractMap.SimpleImmutableEntry<>(range,this);
     }
 }

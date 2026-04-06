@@ -12,8 +12,7 @@ public abstract class SegActor extends Actor {
     private static final Color blue = new Color(0x1ba1e2ff);
     private static final Color lightBlue = new Color(0x5ebdecff);
     private final SegmentData<?> segmentData;
-    private boolean moving;
-    private DragSide dragSide;
+    private DragSide dragSide=DragSide.NONE;
     public SegActor(SegmentData<?> segmentData) {
         this.segmentData = segmentData;
         addListener(new ClickListener(){
@@ -28,7 +27,6 @@ public abstract class SegActor extends Actor {
                 }else if (x > getWidth() - edgeWidth) {
                     dragSide = DragSide.BEHIND;
                 }else {
-                    moving = true;
                     dragSide = DragSide.MIDDLE;
                 }
                 event.stop();
@@ -41,7 +39,7 @@ public abstract class SegActor extends Actor {
             @Override
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
                 ((TlGroup) getParent()).segDragEnd(SegActor.this);
-                moving = false;
+                dragSide=DragSide.NONE;
             }
         });
     }
@@ -54,8 +52,7 @@ public abstract class SegActor extends Actor {
     public SegmentData<?> getSegmentData() {
         return segmentData;
     }
-
-    public boolean isMoving() {
-        return moving;
+    public DragSide getDragSide(){
+        return dragSide;
     }
 }

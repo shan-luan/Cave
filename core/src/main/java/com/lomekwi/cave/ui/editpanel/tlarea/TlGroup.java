@@ -6,9 +6,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
@@ -138,16 +140,35 @@ public class TlGroup extends Group {
                 for (final Map.Entry<Range<Long>, SegmentData<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegmentData().getRange();
-                    if(!actor.isMoving()) {
-                        actor.setPosition(
-                            absoluteTimeToX(r.lowerEndpoint()),
-                            getHeight() + trackYShift - (i + 1) * trackHeight
-                        );
+                    switch (actor.getDragSide()){
+                        case FRONT:
+                        case BEHIND:
+                            actor.setPosition(
+                                absoluteTimeToX(r.lowerEndpoint()),
+                                getHeight() + trackYShift - (i + 1) * trackHeight
+                            );
+                            Stage s=getStage();
+                            actor.setSize(
+                                stageToLocalCoordinates(s.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()))).x-actor.getX(),
+                                trackHeight
+                            );
+                            break;
+                        case MIDDLE:
+                            actor.setSize(
+                                absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
+                                trackHeight
+                            );
+                            break;
+                        case NONE:
+                            actor.setPosition(
+                                absoluteTimeToX(r.lowerEndpoint()),
+                                getHeight() + trackYShift - (i + 1) * trackHeight
+                            );
+                            actor.setSize(
+                                absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
+                                trackHeight
+                            );
                     }
-                    actor.setSize(
-                        absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
-                        trackHeight
-                    );
                     addActor(entry.getValue().getActor());
                 }
             }
