@@ -48,6 +48,8 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
 
+    private final Vector2 pointer=new Vector2();
+
     private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
 
     public TlGroup(Project project) {
@@ -148,10 +150,8 @@ public class TlGroup extends Group {
                                 getHeight() + trackYShift - (i + 1) * trackHeight
                             );
                             Stage s=getStage();
-                            actor.setSize(
-                                stageToLocalCoordinates(s.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()))).x-actor.getX(),
-                                trackHeight
-                            );
+                            segDrag(actor,stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x-actor.getX(),Float.NaN/*此时不可能用到*/);
+                            actor.setHeight(trackHeight);
                             break;
                         case MIDDLE:
                             actor.setSize(
@@ -236,11 +236,11 @@ public class TlGroup extends Group {
     }
 
     float firstX,firstY = Float.NaN;
-    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY, DragSide side){
+    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY){
         Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, SegmentData<?>> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查
-        switch (side) {
+        switch (actor.getDragSide()) {
             case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
                 float target = actor.getX() + diffToActorX;
