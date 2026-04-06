@@ -86,7 +86,7 @@ public class TlGroup extends Group {
                     viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY*30)-xToAbsoluteTime(0)), 0);
 
                 } else {
-                    trackYShift += amountY * 10;
+                    trackYShift =Math.max(0,trackYShift+ amountY * 10);
                 }
 
                 dirty = true;
@@ -207,11 +207,14 @@ public class TlGroup extends Group {
     }
 
     float firstX,firstY = Float.NaN;
-    protected void segLengthDrag(SegActor actor,float diffToActorX,float diffToActorY,DragSide side){
+    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY, DragSide side){
         Track t = actor.getSegmentData().getTrack();
-        Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX()));
-        //FIXME:下面的这个判空似乎存在一些问题，可能导致有时拖拽操作无反应
-        if(r==null) return;
+        final long epsilon = 1;//防止浮点运算精度问题
+        Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX())+epsilon);
+        if(r==null) {
+            System.out.println(xToAbsoluteTime(actor.getX()));
+            return;
+        };
         //TODO:交叠检查
         switch (side) {
             case FRONT: {
@@ -231,33 +234,34 @@ public class TlGroup extends Group {
                 break;
             }
             case MIDDLE: {
-                if(Float.isNaN(firstX)){
+                if(Float.isNaN(firstX)||Float.isNaN(firstY)){
                     firstX = diffToActorX;
                     firstY = diffToActorY;
                     return;
                 }
                 float deltaX = diffToActorX - firstX;
                 float deltaY = diffToActorY - firstY;
-                actor.setPosition(actor.getX() + deltaX, snapToTrack(actor.getY() + deltaY));
-                timeline.move(t,timeline.getTrack(Math.max(0,yToTrackIndex(actor.getY())-1)),r,xToAbsoluteTime(actor.getX()),xToAbsoluteTime(actor.getX()+actor.getWidth())-xToAbsoluteTime(actor.getX()));
+                actor.setPosition(actor.getX() + deltaX, actor.getY() + deltaY);
+                timeline.move(t,timeline.getTrack(Math.max(0,yToTrackIndex(actor.getY()+trackHeight/2))),r,xToAbsoluteTime(actor.getX()),xToAbsoluteTime(actor.getX()+actor.getWidth())-xToAbsoluteTime(actor.getX()));
                 r.getValue().origin+=xToAbsoluteTime(deltaX)-xToAbsoluteTime(0);
             }
         }
     }
-    private float snapToTrack(float y){
-        return trackIndexToY(yToTrackIndex(y));
-    }
     private int yToTrackIndex(float y){
-        final float top = getHeight() + trackYShift;
+        final float top = getHeight() - trackYShift;
         final float distance = top - y;
-        return Math.round(distance/trackHeight);
+        return (int) Math.floor(distance/trackHeight);
     }
-    private float trackIndexToY(int index){
+    private float trackIndexToTopY(int index){
         return getHeight() + trackYShift - index * trackHeight;
     }
-    protected void segLengthDragEnd(SegActor actor){
+    private float trackIndexToBottomY(int index){
+        return trackIndexToTopY(index)-trackHeight;
+    }
+    protected void segDragEnd(SegActor actor){
         dirty = true;
         firstX = Float.NaN;
+        firstY = Float.NaN;
     }
     @Override
     public void sizeChanged() {

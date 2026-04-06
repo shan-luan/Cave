@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.lomekwi.cave.timeline.SegmentData;
 import com.lomekwi.cave.ui.Root;
@@ -35,11 +34,11 @@ public abstract class SegActor extends Actor {
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
-                ((TlGroup) getParent()).segLengthDrag(SegActor.this,x,y,dragSide);
+                ((TlGroup) getParent()).segDrag(SegActor.this,x,y,dragSide);
             }
             @Override
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
-                ((TlGroup) getParent()).segLengthDragEnd(SegActor.this);
+                ((TlGroup) getParent()).segDragEnd(SegActor.this);
             }
         });
     }
