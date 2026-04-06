@@ -39,6 +39,9 @@ public class TlGroup extends Group {
     private long viewDurationTime;
 
     private float trackHeight;
+    /**
+     * 轨道的y偏移，一个非负数。当值大于0，则将所有轨道向下移动y偏移量
+     */
     private float trackYShift;
 
     private boolean dirty = true;
@@ -128,16 +131,21 @@ public class TlGroup extends Group {
         if (dirty) {
             clearChildren(false);
 
-            final Range<Long> visibleRange = Range.closedOpen(viewStartTime-SECOND, viewStartTime+SECOND + viewDurationTime);
+            final Range<Long> visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
                 for (final Map.Entry<Range<Long>, SegmentData<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
-
-                    entry.getValue().getActor().setBounds(
-                        absoluteTimeToX(entry.getKey().lowerEndpoint()),
-                        getHeight() + trackYShift - (i + 1) * trackHeight,
-                        absoluteTimeToX(entry.getKey().upperEndpoint()) - absoluteTimeToX(entry.getKey().lowerEndpoint()),
+                    SegActor actor = entry.getValue().getActor();
+                    Range<Long> r = actor.getSegmentData().getRange();
+                    if(!actor.isMoving()) {
+                        actor.setPosition(
+                            absoluteTimeToX(r.lowerEndpoint()),
+                            getHeight() + trackYShift - (i + 1) * trackHeight
+                        );
+                    }
+                    actor.setSize(
+                        absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
                         trackHeight
                     );
                     addActor(entry.getValue().getActor());
@@ -209,12 +217,7 @@ public class TlGroup extends Group {
     float firstX,firstY = Float.NaN;
     protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY, DragSide side){
         Track t = actor.getSegmentData().getTrack();
-        final long epsilon = 1;//防止浮点运算精度问题
-        Map.Entry<Range<Long>, SegmentData<?>> r = t.getSources().getEntry(xToAbsoluteTime(actor.getX())+epsilon);
-        if(r==null) {
-            System.out.println(xToAbsoluteTime(actor.getX()));
-            return;
-        };
+        Map.Entry<Range<Long>, SegmentData<?>> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查
         switch (side) {
             case FRONT: {
@@ -242,7 +245,15 @@ public class TlGroup extends Group {
                 float deltaX = diffToActorX - firstX;
                 float deltaY = diffToActorY - firstY;
                 actor.setPosition(actor.getX() + deltaX, actor.getY() + deltaY);
-                timeline.move(t,timeline.getTrack(Math.max(0,yToTrackIndex(actor.getY()+trackHeight/2))),r,xToAbsoluteTime(actor.getX()),xToAbsoluteTime(actor.getX()+actor.getWidth())-xToAbsoluteTime(actor.getX()));
+                timeline.move(
+                    t,
+                    timeline.getTrack(
+                        Math.max(0, yToTrackIndex(actor.getY() + trackHeight / 2))
+                    ),
+                    r,
+                    xToAbsoluteTime(actor.getX()),
+                    xToAbsoluteTime(actor.getX() + actor.getWidth()) - xToAbsoluteTime(actor.getX())
+                );
                 r.getValue().origin+=xToAbsoluteTime(deltaX)-xToAbsoluteTime(0);
             }
         }

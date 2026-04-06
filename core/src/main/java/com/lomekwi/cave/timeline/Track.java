@@ -29,7 +29,10 @@ public class Track implements Serializable {
     }
 
     protected void add(SegmentData<?> segmentData, long start, long duration) {
-        sources.put(Range.closedOpen(start, start + duration), segmentData);
+        Range<Long> r = Range.closedOpen(start, start + duration);
+        sources.put(r, segmentData);
+        segmentData.setTrack(this);
+        segmentData.setRange(r);
         cache = null;
         lengthChanged = true;
     }

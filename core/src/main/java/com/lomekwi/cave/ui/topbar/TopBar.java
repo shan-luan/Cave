@@ -30,6 +30,7 @@ public class TopBar extends MenuBar {
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择项目...");
+                conf.mimeFilter = "*/*";
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
                     public void onFileChosen(FileHandle file) {
