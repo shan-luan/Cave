@@ -31,7 +31,7 @@ import static com.badlogic.gdx.Input.Keys.*;
 
 public class TlGroup extends Group {
 
-    private final ShapeDrawer shapeDrawer=Root.getInstance().getShapeDrawer();
+    private final ShapeDrawer shapeDrawer = Root.getInstance().getShapeDrawer();
 
     private final Timeline timeline;
     private final Playhead playhead;
@@ -48,9 +48,9 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
 
-    private final Vector2 pointer=new Vector2();
+    private final Vector2 pointer = new Vector2();
 
-    private final Color black = new Color(Color.BLACK).add(0,0,0,-0.5f);
+    private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
 
     public TlGroup(Project project) {
 
@@ -90,10 +90,10 @@ public class TlGroup extends Group {
                     viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
 
                 } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY*30)-xToAbsoluteTime(0)), 0);
+                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY * 30) - xToAbsoluteTime(0)), 0);
 
                 } else {
-                    trackYShift =Math.max(0,trackYShift+ amountY * 10);
+                    trackYShift = Math.max(0, trackYShift + amountY * 10);
                 }
 
                 dirty = true;
@@ -128,6 +128,7 @@ public class TlGroup extends Group {
             return false;
         });
     }
+
     @Override
     public void act(float delta) {
         super.act(delta);
@@ -142,20 +143,20 @@ public class TlGroup extends Group {
                 for (final Map.Entry<Range<Long>, SegmentData<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegmentData().getRange();
-                    switch (actor.getDragSide()){
+                    switch (actor.getDragSide()) {
                         case FRONT:
                         case BEHIND:
                             actor.setPosition(
                                 absoluteTimeToX(r.lowerEndpoint()),
                                 getHeight() + trackYShift - (i + 1) * trackHeight
                             );
-                            Stage s=getStage();
-                            segDrag(actor,stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x-actor.getX(),Float.NaN/*此时不可能用到*/);
+                            Stage s = getStage();
+                            segDrag(actor, stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x - actor.getX(), Float.NaN/*此时不可能用到*/);
                             actor.setHeight(trackHeight);
                             break;
                         case MIDDLE:
                             actor.setSize(
-                                absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
+                                absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
                                 trackHeight
                             );
                             break;
@@ -165,9 +166,10 @@ public class TlGroup extends Group {
                                 getHeight() + trackYShift - (i + 1) * trackHeight
                             );
                             actor.setSize(
-                                absoluteTimeToX(r.upperEndpoint())- absoluteTimeToX(r.lowerEndpoint()),
+                                absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
                                 trackHeight
                             );
+                            break;
                     }
                     addActor(entry.getValue().getActor());
                 }
@@ -193,6 +195,7 @@ public class TlGroup extends Group {
 
         shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
     }
+
     private void drawSplitters() {
         float offset = ((trackYShift % trackHeight) + trackHeight) % trackHeight;
         float startY = getHeight() + offset;
@@ -225,8 +228,7 @@ public class TlGroup extends Group {
     }
 
     private long xToAbsoluteTime(float x) {
-        final float ratio = x / getWidth();
-        return viewStartTime + (long) (ratio * viewDurationTime);
+        return viewStartTime + (long) ((x / getWidth()) * viewDurationTime);
     }
 
     @Subscribe
@@ -235,8 +237,9 @@ public class TlGroup extends Group {
         Root.getInstance().getStage().setKeyboardFocus(this);
     }
 
-    float firstX,firstY = Float.NaN;
-    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY){
+    float firstX = Float.NaN, firstY = Float.NaN;
+
+    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, SegmentData<?>> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查
@@ -244,57 +247,66 @@ public class TlGroup extends Group {
             case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
                 float target = actor.getX() + diffToActorX;
-                if(target>=upper) return;
-                if(xToAbsoluteTime(target)<0) return;
+                if (target >= upper) return;
+                if (xToAbsoluteTime(target) < 0) return;
                 actor.setX(target);
                 actor.setWidth(upper - actor.getX());
-                timeline.resize(t,r,xToAbsoluteTime(actor.getX()),r.getKey().upperEndpoint()-xToAbsoluteTime(actor.getX()));
+                timeline.resize(t, r, xToAbsoluteTime(actor.getX()), r.getKey().upperEndpoint() - xToAbsoluteTime(actor.getX()));
                 break;
             }
             case BEHIND: {
-                if(diffToActorX<1f)return;
+                if (diffToActorX < 1f) return;
                 actor.setWidth(diffToActorX);
-                timeline.resize(t,r,r.getKey().lowerEndpoint(),xToAbsoluteTime(actor.getX() + actor.getWidth())-r.getKey().lowerEndpoint());
+                timeline.resize(t, r, r.getKey().lowerEndpoint(), xToAbsoluteTime(actor.getX() + actor.getWidth()) - r.getKey().lowerEndpoint());
                 break;
             }
             case MIDDLE: {
-                if(Float.isNaN(firstX)||Float.isNaN(firstY)){
+                if (Float.isNaN(firstX)) {
                     firstX = diffToActorX;
                     firstY = diffToActorY;
                     return;
                 }
-                float deltaX = diffToActorX - firstX;
-                float deltaY = diffToActorY - firstY;
-                actor.setPosition(actor.getX() + deltaX, actor.getY() + deltaY);
+
+                float deltaX = diffToActorX - firstX,
+                    deltaY = diffToActorY - firstY,
+                    targetX = Math.max(actor.getX() + deltaX, 0f),
+                    targetY = Math.min(actor.getY() + deltaY, getHeight() - trackYShift - trackHeight);
+
+                long target = xToAbsoluteTime(targetX);
+                actor.setPosition(targetX, targetY);
                 timeline.move(
                     t,
                     timeline.getTrack(
                         Math.max(0, yToTrackIndex(actor.getY() + trackHeight / 2))
                     ),
                     r,
-                    xToAbsoluteTime(actor.getX()),
-                    xToAbsoluteTime(actor.getX() + actor.getWidth()) - xToAbsoluteTime(actor.getX())
+                    target,
+                    xToAbsoluteTime(actor.getX() + actor.getWidth()) - target
                 );
-                r.getValue().origin+=xToAbsoluteTime(deltaX)-xToAbsoluteTime(0);
+                r.getValue().origin += xToAbsoluteTime(deltaX) - xToAbsoluteTime(0);
             }
         }
     }
-    private int yToTrackIndex(float y){
+
+    private int yToTrackIndex(float y) {
         final float top = getHeight() - trackYShift;
         final float distance = top - y;
-        return (int) Math.floor(distance/trackHeight);
+        return (int) Math.floor(distance / trackHeight);
     }
-    private float trackIndexToTopY(int index){
+
+    private float trackIndexToTopY(int index) {
         return getHeight() + trackYShift - index * trackHeight;
     }
-    private float trackIndexToBottomY(int index){
-        return trackIndexToTopY(index)-trackHeight;
+
+    private float trackIndexToBottomY(int index) {
+        return trackIndexToTopY(index) - trackHeight;
     }
-    protected void segDragEnd(SegActor actor){
+
+    protected void segDragEnd(SegActor actor) {
         dirty = true;
         firstX = Float.NaN;
-        firstY = Float.NaN;
     }
+
     @Override
     public void sizeChanged() {
         dirty = true;
