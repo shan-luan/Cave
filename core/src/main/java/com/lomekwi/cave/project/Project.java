@@ -7,6 +7,7 @@ import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.VdoRes;
+import com.lomekwi.cave.timeline.SegFactory;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
@@ -24,6 +25,7 @@ public class Project implements Serializable, AutoCloseable {
     public final Timeline timeline=new Timeline();
     public final Playhead playhead=new Playhead();
     public final Map<File,Resource> resources=new HashMap<>();
+    public final SegFactory segFactory=new SegFactory(this);
     public final transient EventBus projEventBus;
     public String name;
     public final UUID uuid=UUID.randomUUID();
@@ -48,7 +50,7 @@ public class Project implements Serializable, AutoCloseable {
         //测试：
         VdoRes res=new VdoRes("test.mp4");
         timeline.addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack();
-        timeline.add(timeline.getTrack(0),new VdoSeg(res,0),0,30*SECOND);
-        timeline.add(timeline.getTrack(0),new VdoSeg(res,0),30*SECOND,30*SECOND);
+        timeline.add(timeline.getTrack(0),new VdoSeg(res),0,30*SECOND);
+        timeline.add(timeline.getTrack(0),new VdoSeg(res),30*SECOND,30*SECOND);
     }
 }

@@ -1,10 +1,10 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
-import com.lomekwi.cave.timeline.SegmentData;
+import com.lomekwi.cave.timeline.Segment;
 
 public class VdoSegActor extends SegActor {
 
-    public VdoSegActor(SegmentData<?> segmentData) {
-        super(segmentData);
+    public VdoSegActor(Segment<?> segment) {
+        super(segment);
     }
 }

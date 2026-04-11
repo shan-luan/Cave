@@ -7,16 +7,18 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.util.AbstractMap;
 
-public abstract class SegmentData<T extends Product> {
+public abstract class Segment<T extends Product> {
     private final Source<T> source;
     private Track track;
     private SegActor actor;
     private Range<Long> range;
-    private AbstractMap.SimpleImmutableEntry<Range<Long>,SegmentData<?>> entry;
+    private AbstractMap.SimpleImmutableEntry<Range<Long>, Segment<?>> entry;
+    /**
+     * 源的0秒在时间轴中的位置
+     */
     public long origin;
-    protected SegmentData(Source<T> source,long origin) {
+    protected Segment(Source<T> source) {
         this.source = source;
-        this.origin = origin;
     }
     protected void setActor(SegActor actor) {
         this.actor = actor;
@@ -44,7 +46,7 @@ public abstract class SegmentData<T extends Product> {
     public Range<Long> getRange() {
         return range;
     }
-    public AbstractMap.Entry<Range<Long>,SegmentData<?>> getEntry() {
+    public AbstractMap.Entry<Range<Long>, Segment<?>> getEntry() {
         return entry;
     }
     protected void setRange(Range<Long> range) {

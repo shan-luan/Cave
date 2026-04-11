@@ -12,10 +12,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.timeline.SegmentData;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
@@ -23,6 +24,8 @@ import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.ui.Root;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -127,6 +130,23 @@ public class TlGroup extends Group {
             }
             return false;
         });
+
+        Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
+            @Override
+            public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                return payload.getObject() instanceof File;
+            }
+
+            @Override
+            public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                try {
+                    timeline.add(timeline.getTrack(yToTrackIndex(y)),project.segFactory.get((File) payload.getObject()), xToAbsoluteTime(x), 10*SECOND);
+                    dirty = true;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     @Override
@@ -140,7 +160,7 @@ public class TlGroup extends Group {
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, SegmentData<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
+                for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegmentData().getRange();
                     switch (actor.getDragSide()) {
@@ -241,7 +261,7 @@ public class TlGroup extends Group {
 
     protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegmentData().getTrack();
-        Map.Entry<Range<Long>, SegmentData<?>> r = actor.getSegmentData().getEntry();
+        Map.Entry<Range<Long>, Segment<?>> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查
         switch (actor.getDragSide()) {
             case FRONT: {

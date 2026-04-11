@@ -1,24 +1,25 @@
 package com.lomekwi.cave.resource.media;
 
-import com.badlogic.gdx.files.FileHandle;
-import com.lomekwi.cave.util.FileNameUtil;
-
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 public final class Media {
-    private static final Map<String, Function<String,MedRes>> MediaExtensions;
-    static {
-        MediaExtensions = new HashMap<>();
-        register(Set.of("mp4","mov","avi"), VdoRes::new);
+    private Media(){
     }
-    public static MedRes create(File file){
-        return MediaExtensions.get(FileNameUtil.getExtension(file)).apply(file.getPath());
+    private static final Map<String, Function<String, MedRes>> map = new HashMap<>(Map.of(
+        "video/mp4", VdoRes::new
+    ));
+    public static MedRes create(String mimeType, String path){
+        return map.get(mimeType).apply(path);
     }
-    public static void register(Set<String> extensions, Function<String,MedRes> constructor){
-        extensions.forEach(e->MediaExtensions.put(e,constructor));
+    public static boolean isSupported(String mimeType){
+        return map.containsKey(mimeType);
+    }
+    public static void register(String mimeType, Function<String, MedRes> constructor){
+        map.put(mimeType,constructor);
+    }
+    public static void unregister(String mimeType){
+        map.remove(mimeType);
     }
 }
