@@ -9,11 +9,10 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 
 public class VdoDecRes extends DecRes<ImgProd>{
-    private static final long serialVersionUID = 1L;
     public VdoDecRes(VdoRes source) {
         super(source);
     }
-    public void setPixelFormat(int pixelFormat) {
+    protected void setPixelFormat(int pixelFormat) {
         grabber.setPixelFormat(pixelFormat);
     }
     @Override

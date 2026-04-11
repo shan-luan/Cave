@@ -2,8 +2,11 @@ package com.lomekwi.cave.resource.media;
 
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.decoder.DecRes;
+import com.lomekwi.cave.timeline.Track;
 
+import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber;
+import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -12,6 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *媒体资源类，指代一个在磁盘中存在，占有编解码器的资源
@@ -19,8 +24,7 @@ import java.io.Serializable;
 public abstract class MedRes implements Resource, Serializable {
     private static final long serialVersionUID = 1L;
     private final String path;
-    private transient InputStream inputStream;
-    protected transient DecRes<?> decRes;
+    protected transient Map<Track,DecRes<?>> decRes=new HashMap<>();
 
     /**
      * 必须确保路径对应一个存在的文件
@@ -28,13 +32,8 @@ public abstract class MedRes implements Resource, Serializable {
     public MedRes(String path) {
         this.path = path;
         try {
-            this.inputStream = new BufferedInputStream(new FileInputStream(path));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        setupDecoders();
-        try {
-            decRes.start();
+            decRes.put(null,newDecoder());
+            decRes.get(null).start();
         } catch (FrameGrabber.Exception e) {
             throw new RuntimeException(e);
         }
@@ -43,25 +42,20 @@ public abstract class MedRes implements Resource, Serializable {
     public String getPath() {
         return path;
     }
-    public DecRes<?> getDecoder(){
-        return decRes;
+    public DecRes<?> getDecoder(@Nullable Track track){
+        return decRes.computeIfAbsent(track, k -> newDecoder());
     }
 
     @Override
     public void close() throws Exception {
-        if(decRes !=null){
-            decRes.close();
+        for(DecRes<?> decoder:decRes.values()){
+            decoder.close();
         }
-        inputStream.close();
     }
 
-    public InputStream getInputStream() {
-        return inputStream;
-    }
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        inputStream = new BufferedInputStream(new FileInputStream(path));
-        setupDecoders();
+        decRes.put(null,newDecoder());
     }
-    protected abstract void setupDecoders();
+    protected abstract DecRes<?> newDecoder();
 }

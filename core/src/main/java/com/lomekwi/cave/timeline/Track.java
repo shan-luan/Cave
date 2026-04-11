@@ -49,7 +49,7 @@ public class Track implements Serializable {
         if(cache == null){
             return null;
         }
-        return cache.getValue().get(time);
+        return cache.getValue().get(time, this);
     }
     public boolean isFree(Range<Long> range) {
         return sources.subRangeMap(range).asMapOfRanges().isEmpty();

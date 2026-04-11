@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline;
 
+import com.lomekwi.cave.timeline.Track;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,14 +15,14 @@ public abstract class Source<T extends Product> implements Serializable {
      * @param time 绝对时间
      * @return 产品
      */
-    public final T get(long time){
-            T product = generate(time);
+    public final T get(long time, Track track){
+            T product = generate(time, track);
             for (Filter<? super T> filter : filters) {
                 filter.filter(product);
             }
             return product;
         }
-        protected abstract T generate(long time);
+        protected abstract T generate(long time, Track track);
         public List<Filter<? super T>> getFilters() {
             return filters;
         }

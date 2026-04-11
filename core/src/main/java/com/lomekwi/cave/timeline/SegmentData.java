@@ -28,8 +28,8 @@ public abstract class SegmentData<T extends Product> {
     /**
      * @param time 绝对时间
      */
-    public T get(long time) {
-        return source.get(toLocalTime(time));
+    public T get(long time,Track track) {
+        return source.get(toLocalTime(time), track);
     }
     public SegActor getActor() {
         return actor;

@@ -21,9 +21,8 @@ public abstract class DecRes<P extends Product> implements Resource {
     protected P bufferedProd;
     protected boolean initialized;
 
-    //TODO:构造方法形参改成基于输入流
     protected DecRes(VdoRes source) {
-        this.grabber = new FFmpegFrameGrabber(source.getInputStream());
+        this.grabber = new FFmpegFrameGrabber(source.getPath());
     }
     public void start() throws FrameGrabber.Exception {
         grabber.start();

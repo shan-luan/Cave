@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.service.VdoDecSvc;
+import com.lomekwi.cave.timeline.Track;
 
 import org.bytedeco.javacv.FrameGrabber;
 
@@ -20,7 +21,7 @@ public class VdoClipSrc extends Source<ImgProd> {
         this.src = src;
     }
     @Override
-    public ImgProd generate(long time) {
+    public ImgProd generate(long time, Track track) {
         if(!initialized){
             texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
             prod=new ImgProd();
@@ -30,7 +31,7 @@ public class VdoClipSrc extends Source<ImgProd> {
         }
         ByteBuffer pixels;
         try {
-            pixels=VdoDecSvc.decode(time, src.getDecoder());
+            pixels=VdoDecSvc.decode(time, src.getDecoder(track));
         } catch (Exception e) {
             e.printStackTrace();
             pixels=null;

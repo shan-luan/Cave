@@ -17,6 +17,10 @@ public final class VdoDecSvc {
     public static ByteBuffer decode(long time, VdoDecRes decoder) throws Exception {
         Frame output;
 
+        if(!decoder.isInitialized()){
+            decoder.start();
+        }
+
         final long target = Math.min(time, decoder.getLengthInTime());
         final long nextFrameTime = decoder.getTimestamp() + decoder.getLengthPerFrame();
         final long diff = time-decoder.getLastGrabTime();
