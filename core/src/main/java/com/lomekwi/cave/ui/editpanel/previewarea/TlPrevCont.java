@@ -9,10 +9,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.ui.Root;
-import com.lomekwi.cave.util.Vars;
-import com.lomekwi.cave.pipeline.Sink;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 
 import java.util.ArrayList;
@@ -21,7 +19,7 @@ import java.util.List;
 /**
  * 负责 FBO 的创建、渲染和资源管理
  */
-public class TlPrevCont implements Sink<ImgProd> {
+public class TlPrevCont{
     private final FrameBuffer fbo;
     private final List<ImgProd> prods = new ArrayList<>();
     private final TextureRegionDrawable drawable;
@@ -36,14 +34,14 @@ public class TlPrevCont implements Sink<ImgProd> {
         drawable = new TextureRegionDrawable(region);
         batch = new SpriteBatch();
         batch.setProjectionMatrix(new Matrix4().setToOrtho2D(0, 0, width, height));
-        project.distributor.registerSink(ImgProd.class, this);
+        project.projEventBus.register(this);
     }
 
     public FrameBuffer getFbo() {
         return fbo;
     }
 
-    @Override
+    @Subscribe
     public void sink(ImgProd product) {
         prods.add(product);
     }
@@ -69,7 +67,7 @@ public class TlPrevCont implements Sink<ImgProd> {
     public void dispose() {
         fbo.dispose();
         batch.dispose();
-        project.distributor.unregisterSink(ImgProd.class, this);
+        project.projEventBus.unregister(this);
     }
 
     public TextureRegionDrawable getDrawable() {

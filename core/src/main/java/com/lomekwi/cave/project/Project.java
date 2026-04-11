@@ -4,10 +4,11 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.google.common.eventbus.EventBus;
-import com.lomekwi.cave.pipeline.Distributor;
+import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Timeline;
+import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.timeline.VdoSeg;
 import com.lomekwi.cave.util.Vars;
@@ -21,7 +22,6 @@ import java.util.UUID;
 public class Project implements Serializable, AutoCloseable {
     private static final long serialVersionUID = 1L;
     public final Timeline timeline=new Timeline();
-    public final transient Distributor distributor=new Distributor(timeline);
     public final Playhead playhead=new Playhead();
     public final Map<File,Resource> resources=new HashMap<>();
     public final transient EventBus projEventBus;
@@ -34,7 +34,12 @@ public class Project implements Serializable, AutoCloseable {
     }
     public void update() {
         playhead.update();
-        distributor.distribute(playhead.getTime());
+        for(Track track:timeline.getTracks()){
+            Product prod = track.get(playhead.getTime());
+            if(prod != null){
+                projEventBus.post(prod);
+            }
+        }
     }
     public void close() {
         Vars.appEventBus.unregister(this);

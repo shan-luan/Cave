@@ -25,6 +25,9 @@ public abstract class SegmentData<T extends Product> {
         this.track = track;
     }
 
+    /**
+     * @param time 绝对时间
+     */
     public T get(long time) {
         return source.get(toLocalTime(time));
     }
