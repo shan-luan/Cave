@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.resource.media.Media;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectEvents;
@@ -26,6 +27,7 @@ import com.lomekwi.cave.ui.Root;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -134,7 +136,11 @@ public class TlGroup extends Group {
         Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                return payload.getObject() instanceof File;
+                try {
+                    return payload.getObject() instanceof File && Media.isSupported(Files.probeContentType(((File) payload.getObject()).toPath()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             @Override

@@ -28,7 +28,6 @@ public class SegFactory {
     public void unregister(Class<? extends Resource> clazz){
         map.remove(clazz);
     }
-    @SuppressWarnings("NewApi")
     public Segment<?> get(File file) throws IOException {
         Resource resource = project.resources.get(file);
         if(resource == null){
