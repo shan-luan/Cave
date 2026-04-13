@@ -1,6 +1,8 @@
 package com.lomekwi.cave;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.Vars;
@@ -16,6 +18,7 @@ public class Main extends ApplicationAdapter {
     }
     @Override
     public void create() {
+        Gdx.app.setLogLevel(Application.LOG_DEBUG);
         ui = new Root(this);
         ui.create();
     }

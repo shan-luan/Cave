@@ -1,5 +1,9 @@
 package com.lomekwi.cave.resource.decoder;
 
+import static com.lomekwi.cave.util.Units.SECOND;
+import static com.lomekwi.cave.util.i18n.I18N.i18n;
+
+import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
@@ -82,9 +86,11 @@ public class VdoDecRes extends DecRes<ImgProd> {
         // 请求时间早于上次抓取时间，需要 seek 回退
         if (diff < 0) {
             seek(target);
-            if (getTimestamp() > target) {
-                System.err.println("over jumped, Delta:" + (getTimestamp() - target));
-            }
+            Gdx.app.debug(i18n("视频解码"), hashCode() +i18n("向前跳跃")+(lastGrabTime-getTimestamp())/SECOND + i18n("秒"));
+        }else if(diff > 2 * getLengthPerFrame()){// 如果请求时间间隔超过两帧间隔，则进行跳转
+            seek(target);
+            Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
+            time=getTimestamp();//防止跳转误差造成的反复跳转
         } else if ((target < nextFrameTime) && bufferedProd.getPixels() != null) {
             // 目标时间在下一帧之前，且缓存有效，直接返回缓存
             lastGrabTime = time;
