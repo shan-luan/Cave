@@ -13,7 +13,7 @@ import org.jspecify.annotations.NonNull;
 import java.io.InputStream;
 
 /**
- * 解码器类。不应该包含任何解码的具体逻辑，只包含状态和请求修改状态的方法。也不应该暴露内部可以被修改状态的字段，比如grabber。
+ * 解码器类。
  */
 public abstract class DecRes<P extends Product> implements Resource {
     protected final FFmpegFrameGrabber grabber;

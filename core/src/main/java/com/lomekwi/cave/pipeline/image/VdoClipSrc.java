@@ -4,11 +4,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
-import com.lomekwi.cave.service.VdoDecSvc;
 import com.lomekwi.cave.timeline.Track;
-
-import org.bytedeco.javacv.FrameGrabber;
-
 import java.nio.ByteBuffer;
 
 public class VdoClipSrc extends Source<ImgProd> {
@@ -31,7 +27,7 @@ public class VdoClipSrc extends Source<ImgProd> {
         }
         ByteBuffer pixels;
         try {
-            pixels=VdoDecSvc.decode(time, src.getDecoder(track));
+            pixels=src.getDecoder(track).decodeFrameAtTime(time);
         } catch (Exception e) {
             e.printStackTrace();
             pixels=null;

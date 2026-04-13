@@ -292,10 +292,12 @@ public class TlGroup extends Group {
                     firstY = diffToActorY;
                     return;
                 }
+                
+                float oldx = actor.getX();
 
                 float deltaX = diffToActorX - firstX,
                     deltaY = diffToActorY - firstY,
-                    targetX = Math.max(actor.getX() + deltaX, 0f),
+                    targetX = Math.max(oldx + deltaX, 0f),
                     targetY = Math.min(actor.getY() + deltaY, getHeight() - trackYShift - trackHeight);
 
                 long target = xToAbsoluteTime(targetX);
@@ -309,7 +311,7 @@ public class TlGroup extends Group {
                     target,
                     xToAbsoluteTime(actor.getX() + actor.getWidth()) - target
                 );
-                r.getValue().origin += xToAbsoluteTime(deltaX) - xToAbsoluteTime(0);
+                r.getValue().origin += xToAbsoluteTime(targetX - oldx) - xToAbsoluteTime(0);
             }
         }
     }
