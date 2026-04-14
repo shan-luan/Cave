@@ -70,7 +70,7 @@ public class VdoDecRes extends DecRes<ImgProd> {
      * 解码指定时间戳的视频帧，并返回像素数据（ByteBuffer）。
      * 内部会根据时间戳判断是否使用缓存、跳转或抓取新帧。
      *
-     * @param time 目标时间戳（与 getLengthInTime() 单位一致）
+     * @param time 目标时间
      * @return 解码后的像素数据 ByteBuffer
      * @throws Exception 解码过程中的异常
      */

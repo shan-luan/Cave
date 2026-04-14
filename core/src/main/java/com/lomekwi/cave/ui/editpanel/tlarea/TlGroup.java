@@ -146,7 +146,9 @@ public class TlGroup extends Group {
             @Override
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 try {
-                    timeline.add(timeline.getTrack(yToTrackIndex(y)),project.segFactory.get((File) payload.getObject()), xToAbsoluteTime(x), 10*SECOND);
+                    Segment<?> s = project.segFactory.get((File) payload.getObject());
+                    s.origin = xToAbsoluteTime( x);
+                    timeline.add(timeline.getTrack(yToTrackIndex(y)),s, xToAbsoluteTime(x), 10*SECOND);
                     dirty = true;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -292,7 +294,7 @@ public class TlGroup extends Group {
                     firstY = diffToActorY;
                     return;
                 }
-                
+
                 float oldx = actor.getX();
 
                 float deltaX = diffToActorX - firstX,

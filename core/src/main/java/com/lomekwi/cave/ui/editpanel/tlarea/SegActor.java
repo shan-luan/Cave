@@ -1,10 +1,15 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
+import com.badlogic.gdx.Application;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Null;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.ui.Root;
 
@@ -15,10 +20,28 @@ public abstract class SegActor extends Actor {
     private DragSide dragSide=DragSide.NONE;
     public SegActor(Segment<?> segment) {
         this.segment = segment;
-        addListener(new ClickListener(){
+        addListener(new InputListener(){
+            final float edgeWidth = 30;
+            @Override
+            public boolean mouseMoved(InputEvent event, float x, float y) {
+                if (x < edgeWidth){
+                    setCursor(Cursor.SystemCursor.HorizontalResize);
+                }else if (x > getWidth() - edgeWidth) {
+                    setCursor(Cursor.SystemCursor.HorizontalResize);
+                }else {
+                    setCursor(Cursor.SystemCursor.AllResize);
+                }
+                return false;
+            }
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, @Null Actor toActor) {
+                if(dragSide==DragSide.NONE) {
+                    setCursor(Cursor.SystemCursor.Arrow);
+                }
+            }
+
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-                final float edgeWidth = 30;
                 if(!(getParent() instanceof TlGroup)){
                     return false;
                 }
@@ -40,6 +63,7 @@ public abstract class SegActor extends Actor {
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
                 ((TlGroup) getParent()).segDragEnd(SegActor.this);
                 dragSide=DragSide.NONE;
+                setCursor(Cursor.SystemCursor.Arrow);
             }
         });
     }
@@ -54,5 +78,9 @@ public abstract class SegActor extends Actor {
     }
     public DragSide getDragSide(){
         return dragSide;
+    }
+    private void setCursor(Cursor.SystemCursor cursor){
+        if (Gdx.app.getType() != Application.ApplicationType.Desktop) return;
+        Gdx.graphics.setSystemCursor(cursor);
     }
 }
