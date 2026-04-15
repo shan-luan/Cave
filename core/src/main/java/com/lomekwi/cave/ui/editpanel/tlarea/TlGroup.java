@@ -146,7 +146,7 @@ public class TlGroup extends Group {
             @Override
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 try {
-                    Segment<?> s = project.segFactory.get((File) payload.getObject());
+                    Segment s = project.segFactory.get((File) payload.getObject());
                     s.origin = xToAbsoluteTime( x);
                     timeline.add(timeline.getTrack(yToTrackIndex(y)),s, xToAbsoluteTime(x), 10*SECOND);
                     dirty = true;
@@ -168,7 +168,7 @@ public class TlGroup extends Group {
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, Segment<?>> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
+                for (final Map.Entry<Range<Long>, Segment> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegmentData().getRange();
                     switch (actor.getDragSide()) {
@@ -269,7 +269,7 @@ public class TlGroup extends Group {
 
     protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegmentData().getTrack();
-        Map.Entry<Range<Long>, Segment<?>> r = actor.getSegmentData().getEntry();
+        Map.Entry<Range<Long>, Segment> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查
         switch (actor.getDragSide()) {
             case FRONT: {

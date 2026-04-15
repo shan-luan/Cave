@@ -16,9 +16,9 @@ import com.lomekwi.cave.ui.Root;
 public abstract class SegActor extends Actor {
     private static final Color blue = new Color(0x1ba1e2ff);
     private static final Color lightBlue = new Color(0x5ebdecff);
-    private final Segment<?> segment;
+    private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
-    public SegActor(Segment<?> segment) {
+    public SegActor(Segment segment) {
         this.segment = segment;
         addListener(new InputListener(){
             final float edgeWidth = 30;
@@ -73,7 +73,7 @@ public abstract class SegActor extends Actor {
         Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
     }
 
-    public Segment<?> getSegmentData() {
+    public Segment getSegmentData() {
         return segment;
     }
     public DragSide getDragSide(){

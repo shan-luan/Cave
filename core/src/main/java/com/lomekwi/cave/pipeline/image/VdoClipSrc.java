@@ -2,12 +2,13 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
 import java.nio.ByteBuffer;
 
-public class VdoClipSrc extends Source<ImgProd> {
+public class VdoClipSrc extends Source {
     private final VdoRes src;
     private transient Texture texture;
     private transient ImgProd prod;
@@ -17,7 +18,7 @@ public class VdoClipSrc extends Source<ImgProd> {
         this.src = src;
     }
     @Override
-    public ImgProd generate(long time, Track track) {
+    public Product generate(long time, Track track) {
         if(!initialized){
             texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
             prod=new ImgProd();

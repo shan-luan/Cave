@@ -18,17 +18,17 @@ import java.util.Map;
 
 @NullMarked
 public class Track implements Serializable {
-    private transient RangeMap<Long, Segment<?>> sources = TreeRangeMap.create();
-    private transient Map.@Nullable Entry<Range<Long>, Segment<?>> cache;
+    private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
+    private transient Map.@Nullable Entry<Range<Long>, Segment> cache;
     private long length;
     private boolean lengthChanged = true;
     private long @Nullable [] serializationRanges;
-    private @Nullable List<Segment<?>> serializationSources;
+    private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
     public Track() {
     }
 
-    protected void add(Segment<?> segment, long start, long duration) {
+    protected void add(Segment segment, long start, long duration) {
         Range<Long> r = Range.closedOpen(start, start + duration);
         sources.put(r, segment);
         segment.setTrack(this);
@@ -56,7 +56,7 @@ public class Track implements Serializable {
     }
 
     protected void remove(long time) {
-        Map.Entry<Range<Long>, Segment<?>> entry = sources.getEntry(time);
+        Map.Entry<Range<Long>, Segment> entry = sources.getEntry(time);
         if (entry != null) {
             sources.remove(entry.getKey());
         }
@@ -68,11 +68,11 @@ public class Track implements Serializable {
         lengthChanged = true;
         cache = null;
     }
-    protected void resize(Map.Entry<Range<Long>, Segment<?>> e , long start, long duration){
+    protected void resize(Map.Entry<Range<Long>, Segment> e , long start, long duration){
         remove(e.getKey());
         add(e.getValue(),start,duration);
     }
-    public Map.@Nullable Entry<Range<Long>, Segment<?>> getEntry(long time){
+    public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time){
         if (cache == null || !cache.getKey().contains(time)) {
             cache = sources.getEntry(time);
         }
@@ -90,11 +90,11 @@ public class Track implements Serializable {
         }
         return length;
     }
-    public RangeMap<Long, Segment<?>> getSources() {
+    public RangeMap<Long, Segment> getSources() {
         return sources;
     }
     private void writeObject(ObjectOutputStream oos) throws IOException{
-        Map<Range<Long>, Segment<?>> ranges = sources.asMapOfRanges();
+        Map<Range<Long>, Segment> ranges = sources.asMapOfRanges();
         serializationRanges = new long[ranges.size() * 2];
         serializationSources = new ArrayList<>(ranges.values());
         int i=0;

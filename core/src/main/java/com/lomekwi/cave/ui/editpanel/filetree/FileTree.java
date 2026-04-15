@@ -15,7 +15,7 @@ public class FileTree extends VisTree<FileTreeNode, File> {
         super();
         INSTANCE = this;
 
-        File rootFile = new File(System.getProperty("user.dir"));
+        File rootFile = new File(System.getProperty("user.home"));
         Gdx.app.debug("FileTree", i18n("创建文件树，根目录: ") + rootFile.getAbsolutePath());
         FileTreeNode rootNode = new FileTreeNode(rootFile);
 

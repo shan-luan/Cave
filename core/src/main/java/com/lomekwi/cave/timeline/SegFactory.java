@@ -15,20 +15,20 @@ import java.util.function.Function;
 
 public class SegFactory {
     private final Project project;
-    private final Map<Class<? extends Resource>, Function<? extends Resource,Segment<?>>> map = new HashMap<>();
+    private final Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map = new HashMap<>();
     public SegFactory(Project project){
         this.project = project;
     }
     {
         register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
     }
-    public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment<?>> constructor){
+    public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment> constructor){
         map.put(clazz,constructor);
     }
     public void unregister(Class<? extends Resource> clazz){
         map.remove(clazz);
     }
-    public Segment<?> get(File file) throws IOException {
+    public Segment get(File file) throws IOException {
         Resource resource = project.resources.get(file);
         if(resource == null){
             resource = Media.create(Files.probeContentType(file.toPath()),file.getPath());
@@ -36,7 +36,7 @@ public class SegFactory {
         return applyUnchecked(map.get(resource.getClass()), resource);
     }
     @SuppressWarnings("unchecked")
-    private <R extends Resource> Segment<?> applyUnchecked(Function<? extends Resource, Segment<?>> fn, R resource) {
-        return ((Function<R, Segment<?>>) fn).apply(resource);
+    private <R extends Resource> Segment applyUnchecked(Function<? extends Resource, Segment> fn, R resource) {
+        return ((Function<R, Segment>) fn).apply(resource);
     }
 }

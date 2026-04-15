@@ -33,7 +33,7 @@ public class Timeline implements Serializable {
         }
         return this;
     }
-    public Timeline add(Track track, Segment<?> segment, long start, long duration) {
+    public Timeline add(Track track, Segment segment, long start, long duration) {
         track.add(segment, start, duration);
         lengthChanged = true;
         return this;
@@ -48,12 +48,12 @@ public class Timeline implements Serializable {
         lengthChanged = true;
         return this;
     }
-    public Timeline resize(Track track, Map.Entry<Range<Long>, Segment<?>> e, long start, long duration) {
+    public Timeline resize(Track track, Map.Entry<Range<Long>, Segment> e, long start, long duration) {
         track.resize(e,start,duration);
         lengthChanged = true;
         return this;
     }
-    public Timeline move(Track track, Track newTrack, Map.Entry<Range<Long>, Segment<?>> e, long start, long duration) {
+    public Timeline move(Track track, Track newTrack, Map.Entry<Range<Long>, Segment> e, long start, long duration) {
         track.remove(e.getKey());
         newTrack.add(e.getValue(),start,duration);
         lengthChanged = true;
