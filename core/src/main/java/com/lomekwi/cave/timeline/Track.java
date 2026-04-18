@@ -80,12 +80,11 @@ public class Track implements Serializable {
     }
     public long getLength(){
         if(lengthChanged){
-            long max = 0;
-            for(Range<Long> range : sources.asMapOfRanges().keySet()){
-                long end = range.upperEndpoint();
-                if(end > max) max = end;
+            if(sources.asMapOfRanges().isEmpty()){
+                length=0;
+            }else {
+                length = sources.span().upperEndpoint();
             }
-            length = max;
             lengthChanged = false;
         }
         return length;
