@@ -28,7 +28,7 @@ public class Main extends ApplicationAdapter {
     public void render() {
         Project p = ui.getFrontendProject();
         if (p != null) {
-            p.projEventBus.post(PipelineEvents.productsDoneEvent.INSTANCE);
+            p.projEventBus.post(PipelineEvents.LastFrameEndEvent.INSTANCE);
             p.update();
         }
         ui.render();

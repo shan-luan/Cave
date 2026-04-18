@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Scaling;
 import com.lomekwi.cave.pipeline.Product;
 
 import java.nio.ByteBuffer;
@@ -12,6 +14,7 @@ public class ImgProd extends Product implements Transformable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
+    private Image image;
     public boolean changed = true;
     @Override
     public Transform getTransform() {
@@ -34,9 +37,17 @@ public class ImgProd extends Product implements Transformable {
     }
     public ImgProd setTexture(Texture texture) {
         this.texture = texture;
+        image = new Image(texture);
+        image.setScaling(Scaling.stretch);
         return this;
     }
     public ImgProd updateAndDraw(Batch batch){
+        update();
+        draw(batch);
+        return this;
+    }
+
+    public void update() {
         if(changed) {
             texture.bind();
             Gdx.gl.glTexSubImage2D(
@@ -50,8 +61,11 @@ public class ImgProd extends Product implements Transformable {
                 GL20.GL_UNSIGNED_BYTE,
                 pixels
             );
-        changed = false;
+            changed = false;
         }
+    }
+
+    public void draw(Batch batch) {
         batch.draw(
             texture,
             transform.x,
@@ -69,10 +83,23 @@ public class ImgProd extends Product implements Transformable {
             false,
             false
         );
-        return this;
     }
     @Override
     public void close() {
         texture.dispose();
+    }
+
+    public Image getImage() {
+        return image;
+    }
+
+    /**
+     * 将transform的偏移应用到Image上(叠加而不是覆盖)
+     */
+    public void applyTransform() {
+        if (image != null) {
+            image.setPosition(image.getX() + transform.x, image.getY() + transform.y);
+            image.setSize(transform.width, transform.height);
+        }
     }
 }
