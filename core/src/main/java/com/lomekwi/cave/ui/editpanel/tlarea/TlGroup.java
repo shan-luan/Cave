@@ -112,6 +112,12 @@ public class TlGroup extends Group {
                 }
                 return true;
             }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
+                Root.getInstance().getStage().setScrollFocus(TlGroup.this);
+                Root.getInstance().getStage().setKeyboardFocus(TlGroup.this);
+            }
         });
 
         addListener(new ClickListener() {
@@ -122,16 +128,6 @@ public class TlGroup extends Group {
             }
         });
 
-        addListener(event -> {
-            if (event instanceof FocusListener.FocusEvent) {
-                final FocusListener.FocusEvent e = (FocusListener.FocusEvent) event;
-                if (Root.getInstance().getFrontendProject() == project && !e.isFocused()) {
-                    e.cancel();
-                    return true;
-                }
-            }
-            return false;
-        });
 
         Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override

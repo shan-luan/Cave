@@ -8,7 +8,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import java.util.AbstractMap;
 
 public abstract class Segment {
-    private final Source source;
+    private final Source<?> source;
     private Track track;
     private SegActor actor;
     private Range<Long> range;
@@ -17,7 +17,7 @@ public abstract class Segment {
      * 源的0秒在时间轴中的位置
      */
     public long origin;
-    protected Segment(Source source) {
+    protected Segment(Source<?> source) {
         this.source = source;
     }
     protected void setActor(SegActor actor) {
