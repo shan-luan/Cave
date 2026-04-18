@@ -27,7 +27,6 @@ public class PreviewArea extends Group {
     private final Project project;
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
-    private boolean isDragging = false;
     private float scale = 1.0f;
     private static final float MIN_SCALE = 0.07f;
     private static final float MAX_SCALE = 30.0f;
@@ -45,7 +44,6 @@ public class PreviewArea extends Group {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if(x<0||x>getWidth()||y<0||y>getHeight())return false;
-                isDragging = true;
                 lastMouseX = x;
                 lastMouseY = y;
                 return true;
@@ -53,23 +51,20 @@ public class PreviewArea extends Group {
 
             @Override
             public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                if (isDragging) {
-                    float deltaX = x - lastMouseX;
-                    float deltaY = y - lastMouseY;
+                float deltaX = x - lastMouseX;
+                float deltaY = y - lastMouseY;
 
-                    xOffset += deltaX;
-                    yOffset += deltaY;
+                xOffset += deltaX;
+                yOffset += deltaY;
 
-                    lastMouseX = x;
-                    lastMouseY = y;
+                lastMouseX = x;
+                lastMouseY = y;
 
-                    updateAllImages();
-                }
+                updateAllImages();
             }
 
             @Override
             public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                isDragging = false;
             }
 
             @Override
