@@ -18,7 +18,7 @@ public class TopTabbedPane extends TabbedPane {
                 Root.getInstance().getMajorArea().clear();
                 Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
                 if(tab instanceof ProjectTab){
-                    ((ProjectTab) tab).getProject().projEventBus.post(new ProjectEvents.ProjectFrontedEvent());
+                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectFrontedEvent.INSTANCE);
                 }
             }
 

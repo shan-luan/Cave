@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgProd;
 
@@ -46,6 +47,11 @@ public class TlPrevCont{
         prods.add(product);
     }
 
+    @Subscribe
+    public void sink(PipelineEvents.productsDoneEvent event) {
+        prods.clear();
+    }
+
     /** 渲染到 FBO */
     public void render() {
         fbo.begin();
@@ -60,8 +66,6 @@ public class TlPrevCont{
 
         batch.end();
         fbo.end();
-
-        prods.clear();
     }
 
     public void dispose() {

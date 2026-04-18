@@ -267,7 +267,7 @@ public class TlGroup extends Group {
 
     float firstX = Float.NaN, firstY = Float.NaN;
 
-    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+    protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, Segment> r = actor.getSegmentData().getEntry();
         //TODO:交叠检查

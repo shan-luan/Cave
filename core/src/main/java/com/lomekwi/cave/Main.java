@@ -3,6 +3,7 @@ package com.lomekwi.cave;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.Vars;
@@ -27,6 +28,7 @@ public class Main extends ApplicationAdapter {
     public void render() {
         Project p = ui.getFrontendProject();
         if (p != null) {
+            p.projEventBus.post(PipelineEvents.productsDoneEvent.INSTANCE);
             p.update();
         }
         ui.render();
