@@ -25,10 +25,16 @@ android {
   packagingOptions {
 		resources {
 			excludes += ['META-INF/robovm/ios/robovm.xml', 'META-INF/DEPENDENCIES.txt', 'META-INF/DEPENDENCIES',
-                   'META-INF/dependencies.txt', '**/*.gwt.xml']
+                   'META-INF/dependencies.txt', '**/*.gwt.xml',
+                   'META-INF/LICENSE*', 'META-INF/NOTICE*',
+                   'META-INF/*.version', 'META-INF/services/*',
+                   'META-INF/proguard/*']
 			pickFirsts += ['META-INF/LICENSE.txt', 'META-INF/LICENSE', 'META-INF/license.txt', 'META-INF/LGPL2.1',
                      'META-INF/NOTICE.txt', 'META-INF/NOTICE', 'META-INF/notice.txt']
 		}
+    jniLibs {
+      useLegacyPackaging true
+    }
   }
   defaultConfig {
     applicationId 'com.lomekwi.cave'
@@ -36,6 +42,9 @@ android {
     targetSdkVersion 35
     versionCode 1
     versionName "1.0"
+    ndk {
+      abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+    }
   }
   compileOptions {
     sourceCompatibility "8"
@@ -46,6 +55,10 @@ android {
     release {
       minifyEnabled false
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+    debug {
+      zipAlignEnabled true
+      minifyEnabled false
     }
   }
 }

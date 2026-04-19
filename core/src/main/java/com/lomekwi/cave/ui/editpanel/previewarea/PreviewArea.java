@@ -72,7 +72,7 @@ public class PreviewArea extends Group {
                 float zoomFactor = 1.1f;
                 float oldScale = scale;
 
-                scale *= Math.pow(zoomFactor, -amountY);
+                scale *= (float) Math.pow(zoomFactor, -amountY);
 
                 scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
 
