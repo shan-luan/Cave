@@ -115,6 +115,7 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void clear(PipelineEvents.LastFrameEndEvent event) {
+        prods.clear();
         clearChildren(false);
     }
 
