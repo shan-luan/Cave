@@ -79,7 +79,7 @@ public class VdoDecRes extends DecRes<ImgProd> {
             start();
         }
 
-        final long target = Math.min(time, getLengthInTime());
+        final long target = Math.min(Math.max(0,time), getLengthInTime());
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
         final long diff = time - lastGrabTime;
 
