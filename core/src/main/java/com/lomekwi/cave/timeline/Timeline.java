@@ -17,14 +17,6 @@ public class Timeline implements Serializable {
     private long length;
     private boolean lengthChanged = true;
     private static final long serialVersionUID = 1L;
-    public Timeline addTrack() {
-        tracks.add(new Track());
-        return this;
-    }
-    public Timeline removeTrack(Track track) {
-        tracks.remove(track);
-        return this;
-    }
     public Timeline getActiveElements(long time, Collection<Product> collector) {
         for(Track track:tracks){
             Product product = track.get(time);
@@ -59,7 +51,15 @@ public class Timeline implements Serializable {
         lengthChanged = true;
         return this;
     }
+    /**
+     * 获取指定索引的轨道，如果不存在则自动创建
+     * @param index 轨道索引
+     * @return 对应的轨道对象
+     */
     public Track getTrack(int index) {
+        while (tracks.size() <= index) {
+            tracks.add(new Track());
+        }
         return tracks.get(index);
     }
 

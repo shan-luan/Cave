@@ -43,8 +43,4 @@ public class Project implements Serializable, AutoCloseable {
     public void close() {
         Vars.appEventBus.unregister(this);
     }
-    {
-        //测试：
-        timeline.addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack().addTrack();
-    }
 }
