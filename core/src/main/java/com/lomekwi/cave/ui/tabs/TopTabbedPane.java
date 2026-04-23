@@ -1,5 +1,6 @@
 package com.lomekwi.cave.ui.tabs;
 
+import com.badlogic.gdx.Gdx;
 import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
@@ -19,6 +20,7 @@ public class TopTabbedPane extends TabbedPane {
                 Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
                 if(tab instanceof ProjectTab){
                     ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectFrontedEvent.INSTANCE);
+                    Vars.appEventBus.post(TabEvents.TabSwitchedEvent.INSTANCE);
                 }
             }
 
@@ -29,6 +31,7 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void removedAllTabs() {
                 Root.getInstance().getMajorArea().clear();
+                Vars.appEventBus.post(TabEvents.TabSwitchedEvent.INSTANCE);
             }
         });
     }

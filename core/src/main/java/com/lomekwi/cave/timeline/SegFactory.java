@@ -8,18 +8,23 @@ import com.lomekwi.cave.resource.media.VdoRes;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public class SegFactory {
+public class SegFactory implements Serializable {
     private final Project project;
-    private final Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map = new HashMap<>();
+    private transient final Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map = new HashMap<>();
+    private static final long serialVersionUID = 1L;
     public SegFactory(Project project){
         this.project = project;
+        initDefaultMappings();
     }
-    {
+    
+    private void initDefaultMappings() {
         register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
     }
     public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment> constructor){
@@ -38,5 +43,11 @@ public class SegFactory {
     @SuppressWarnings("unchecked")
     private <R extends Resource> Segment applyUnchecked(Function<? extends Resource, Segment> fn, R resource) {
         return ((Function<R, Segment>) fn).apply(resource);
+    }
+    
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
+        // 反序列化后重新初始化映射关系
+        initDefaultMappings();
     }
 }

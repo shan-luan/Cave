@@ -7,17 +7,21 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.project.Projects;
+import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.ui.tabs.TabEvents;
 import com.lomekwi.cave.util.Vars;
 
 import java.io.IOException;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 
 public class TopBar extends MenuBar {
     public TopBar() {
@@ -29,7 +33,7 @@ public class TopBar extends MenuBar {
             })))
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.title = i18n("选择项目...");
+                conf.title = i18n(i18n("选择项目..."));
                 conf.mimeFilter = "*/*";
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
@@ -41,21 +45,35 @@ public class TopBar extends MenuBar {
                         }
                     }
                     @Override
-                    public void onCancellation() {
-                        // 用户取消了选择
-                        Gdx.app.log("FileChooser", "取消了");
-                    }
-
+                    public void onCancellation() {}
                     @Override
-                    public void onError(Exception exception) {
-                        // 出错了
-                        Gdx.app.error("FileChooser", "错误", exception);
-                    }
+                    public void onError(Exception exception) {}
                 });
                 })
             ))
-            .withItem(new MenuItem(i18n("保存")))
-            .withItem(new MenuItem(i18n("另存为")))
+            .withItem(new MenuItemP(i18n("保存")))
+            .withItem(new MenuItemP(i18n("另存为"),new ChangeListenerX(()->{
+                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+                conf.title = i18n(i18n("选择保存位置..."));
+                conf.mimeFilter = "*/*";
+                conf.intent = NativeFileChooserIntent.SAVE;
+                fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                    @Override
+                    public void onFileChosen(FileHandle file) {
+                        try {
+                            if(Root.getInstance().getFrontendProject()!=null) {
+                                Projects.save(Root.getInstance().getFrontendProject(), file);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    @Override
+                    public void onCancellation() {}
+                    @Override
+                    public void onError(Exception exception) {}
+                });
+            })))
             .withItem(new MenuItem(i18n("关闭"),new ChangeListenerX(()->Gdx.app.exit()))));
     }
     public static class MenuX extends Menu{
@@ -65,6 +83,25 @@ public class TopBar extends MenuBar {
         public MenuX withItem(MenuItem item){
             super.addItem(item);
             return this;
+        }
+    }
+    /**
+     * 与项目关联的菜单项，当当前没有可用项目时会自动禁用
+     */
+    public static class MenuItemP extends MenuItem{
+        public MenuItemP(String text) {
+            super(text);
+            Vars.appEventBus.register(this);
+            setDisabled(true);
+        }
+        public MenuItemP(String text,ChangeListener changeListener){
+            super(text,changeListener);
+            Vars.appEventBus.register(this);
+            setDisabled(true);
+        }
+        @Subscribe
+        public void onTabSwitched(TabEvents.TabSwitchedEvent event){
+            setDisabled(Root.getInstance().getFrontendProject()==null);
         }
     }
     public static class ChangeListenerX extends ChangeListener {

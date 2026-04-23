@@ -17,4 +17,5 @@ public class ProjectEvents {
         public static final ProjectFrontedEvent INSTANCE=new ProjectFrontedEvent();
         private ProjectFrontedEvent(){}
     }
+
 }
