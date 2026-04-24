@@ -38,7 +38,7 @@ public class TopBar extends MenuBar {
                 if(Gdx.app.getType()== Application.ApplicationType.Android) {
                     conf.mimeFilter = "*/*";
                 }
-                conf.intent = NativeFileChooserIntent.SAVE;
+                conf.intent = NativeFileChooserIntent.OPEN;
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
                     public void onFileChosen(FileHandle file) {

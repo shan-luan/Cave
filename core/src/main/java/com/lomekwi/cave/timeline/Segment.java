@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.pipeline.Source;
@@ -12,7 +11,7 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 
 public abstract class Segment implements Serializable {
-    protected static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private final Source<?> source;
     private Track track;
     private transient SegActor actor;

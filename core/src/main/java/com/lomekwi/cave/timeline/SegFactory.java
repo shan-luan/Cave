@@ -16,11 +16,12 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class SegFactory implements Serializable {
-    private final Project project;
-    private transient final Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map = new HashMap<>();
+    private Project project;
+    private transient Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map;
     private static final long serialVersionUID = 1L;
     public SegFactory(Project project){
         this.project = project;
+        this.map = new HashMap<>();
         initDefaultMappings();
     }
     
@@ -47,7 +48,7 @@ public class SegFactory implements Serializable {
     
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        // 反序列化后重新初始化映射关系
+        this.map = new HashMap<>();
         initDefaultMappings();
     }
 }

@@ -4,15 +4,10 @@ import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.decoder.DecRes;
 import com.lomekwi.cave.timeline.Track;
 
-import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber;
 import org.jspecify.annotations.Nullable;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -55,7 +50,13 @@ public abstract class MedRes implements Resource, Serializable {
 
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        decRes.put(null,newDecoder());
+        decRes = new HashMap<>();
+        try {
+            decRes.put(null, newDecoder());
+            decRes.get(null).start();
+        } catch (FrameGrabber.Exception e) {
+            throw new RuntimeException(e);
+        }
     }
     protected abstract DecRes<?> newDecoder();
 }
