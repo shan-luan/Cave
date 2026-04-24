@@ -3,6 +3,7 @@ package com.lomekwi.cave.ui.topbar;
 import static com.lomekwi.cave.util.Vars.fileChooser;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -33,8 +34,11 @@ public class TopBar extends MenuBar {
             })))
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.title = i18n(i18n("选择项目..."));
-                conf.mimeFilter = "*/*";
+                conf.title = i18n("选择项目...");
+                if(Gdx.app.getType()== Application.ApplicationType.Android) {
+                    conf.mimeFilter = "*/*";
+                }
+                conf.intent = NativeFileChooserIntent.SAVE;
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
                     public void onFileChosen(FileHandle file) {
@@ -54,7 +58,7 @@ public class TopBar extends MenuBar {
             .withItem(new MenuItemP(i18n("保存")))
             .withItem(new MenuItemP(i18n("另存为"),new ChangeListenerX(()->{
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.title = i18n(i18n("选择保存位置..."));
+                conf.title = i18n("选择保存位置...");
                 conf.mimeFilter = "*/*";
                 conf.intent = NativeFileChooserIntent.SAVE;
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {

@@ -13,6 +13,8 @@ import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.util.Vars;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +26,7 @@ public class Project implements Serializable, AutoCloseable {
     public final Playhead playhead=new Playhead();
     public final Map<File,Resource> resources=new HashMap<>();
     public final SegFactory segFactory=new SegFactory(this);
-    public final transient EventBus projEventBus;
+    public transient EventBus projEventBus;
     public String name;
     public final UUID uuid=UUID.randomUUID();
     protected Project(){
@@ -45,5 +47,11 @@ public class Project implements Serializable, AutoCloseable {
     }
     public void close() {
         Vars.appEventBus.unregister(this);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        Vars.appEventBus.register(this);
+        projEventBus = new EventBus(uuid.toString());
+        in.defaultReadObject();
     }
 }

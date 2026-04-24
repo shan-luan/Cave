@@ -36,7 +36,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 public class Root implements ApplicationListener {
     private static Root INSTANCE;
     private Stage stage;
-    private Main main;
+    private final Main main;
 
     private Stack root;
     private VisTable mainLayout;

@@ -1,17 +1,22 @@
 package com.lomekwi.cave.timeline;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Product;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.AbstractMap;
 
-public abstract class Segment {
+public abstract class Segment implements Serializable {
+    protected static final long serialVersionUID = 1L;
     private final Source<?> source;
     private Track track;
-    private SegActor actor;
-    private Range<Long> range;
+    private transient SegActor actor;
+    private Range<Long> range;//TODO:transient
     private AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     /**
      * 源的0秒在时间轴中的位置
@@ -19,9 +24,7 @@ public abstract class Segment {
     public long origin;
     protected Segment(Source<?> source) {
         this.source = source;
-    }
-    protected void setActor(SegActor actor) {
-        this.actor = actor;
+        actor= setupActor();
     }
     protected void setTrack(Track track) {
         this.track = track;
@@ -53,5 +56,11 @@ public abstract class Segment {
         if(range.equals(this.range))return;
         this.range = range;
         entry = new AbstractMap.SimpleImmutableEntry<>(range,this);
+    }
+    protected abstract SegActor setupActor();
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        actor = setupActor();
     }
 }
