@@ -55,7 +55,13 @@ public class TopBar extends MenuBar {
                 });
                 })
             ))
-            .withItem(new MenuItemP(i18n("保存")))
+            .withItem(new MenuItemP(i18n("保存"),new ChangeListenerX(()->{
+                try {
+                    Projects.save(Root.getInstance().getFrontendProject());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            })))
             .withItem(new MenuItemP(i18n("另存为"),new ChangeListenerX(()->{
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择保存位置...");

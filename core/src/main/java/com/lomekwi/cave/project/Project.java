@@ -16,12 +16,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class Project implements Serializable, AutoCloseable {
     private static final long serialVersionUID = 1L;
+    protected transient Path savePath;
     public final Timeline timeline=new Timeline();
     public final Playhead playhead=new Playhead();
     public final Map<File,Resource> resources=new HashMap<>();
@@ -47,6 +49,13 @@ public class Project implements Serializable, AutoCloseable {
     }
     public void close() {
         Vars.appEventBus.unregister(this);
+        resources.values().forEach(resource -> {
+            try {
+                resource.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
