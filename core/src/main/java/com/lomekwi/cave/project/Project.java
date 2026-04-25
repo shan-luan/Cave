@@ -63,4 +63,7 @@ public class Project implements Serializable, AutoCloseable {
         Vars.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
     }
+    public Path getSavePath() {
+        return savePath;
+    }
 }

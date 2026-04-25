@@ -56,10 +56,33 @@ public class TopBar extends MenuBar {
                 })
             ))
             .withItem(new MenuItemP(i18n("保存"),new ChangeListenerX(()->{
-                try {
-                    Projects.save(Root.getInstance().getFrontendProject());
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if(Root.getInstance().getFrontendProject().getSavePath()==null) {
+                    NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+                    conf.title = i18n("选择保存位置...");
+                    conf.mimeFilter = "*/*";
+                    conf.intent = NativeFileChooserIntent.SAVE;
+                    fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                        @Override
+                        public void onFileChosen(FileHandle file) {
+                            try {
+                                if(Root.getInstance().getFrontendProject()!=null) {
+                                    Projects.save(Root.getInstance().getFrontendProject(), file);
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        @Override
+                        public void onCancellation() {}
+                        @Override
+                        public void onError(Exception exception) {}
+                    });
+                }else {
+                    try {
+                        Projects.save(Root.getInstance().getFrontendProject());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             })))
             .withItem(new MenuItemP(i18n("另存为"),new ChangeListenerX(()->{

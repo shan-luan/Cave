@@ -28,6 +28,7 @@ public final class Projects {
         try (OutputStream os = fileHandle.write(false)) {
             os.write(data);
         }
+        project.savePath = fileHandle.file().toPath();
     }
     public static void save(Project project) throws IOException {
         if(project.savePath == null) {
