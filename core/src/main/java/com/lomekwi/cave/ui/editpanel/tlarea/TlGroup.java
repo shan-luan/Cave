@@ -275,6 +275,7 @@ public class TlGroup extends Group {
                 if (xToAbsoluteTime(target) < 0) return;
                 actor.setX(target);
                 actor.setWidth(upper - actor.getX());
+                //TODO:把待移动的区间与旧区间的凸包交给t检测是否空闲
                 timeline.resize(t, r, xToAbsoluteTime(actor.getX()), r.getKey().upperEndpoint() - xToAbsoluteTime(actor.getX()));
                 break;
             }

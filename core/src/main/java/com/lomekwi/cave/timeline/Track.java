@@ -51,8 +51,18 @@ public class Track implements Serializable {
         }
         return cache.getValue().get(time, this);
     }
-    public boolean isFree(Range<Long> range) {
-        return sources.subRangeMap(range).asMapOfRanges().isEmpty();
+    /**
+     * 检查指定范围是否与给定的条目兼容（即该范围是否为空闲或仅被同一片段占用）
+     *
+     * @param entry 要检查的片段条目，包含时间范围和对应的Segment对象
+     * @param range 要检查的时间范围
+     * @return 如果范围内没有其他片段占用则返回true；如果范围内只有与entry相同的片段也返回true；否则返回false
+     */
+    public boolean isFree(Map.Entry<Range<Long>, Segment> entry, Range<Long> range) {
+        Map<Range<Long>, Segment> m = sources.subRangeMap(range).asMapOfRanges();
+        if(m.size()>1) return false;
+        if (m.isEmpty()) return true;
+        return m.containsValue(entry.getValue());
     }
 
     protected void remove(long time) {
