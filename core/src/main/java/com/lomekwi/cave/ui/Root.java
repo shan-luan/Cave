@@ -104,7 +104,7 @@ public class Root implements ApplicationListener {
 
         stage.addActor(root);
 
-        stage.setDebugAll(true);
+        stage.setDebugAll(false);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class Root implements ApplicationListener {
         FreeTypeFontGenerator.FreeTypeFontParameter param =
             new FreeTypeFontGenerator.FreeTypeFontParameter();
 
-        param.size = 18;
+        param.size = 22;
         param.incremental = true;
 
         BitmapFont font = generator.generateFont(param);

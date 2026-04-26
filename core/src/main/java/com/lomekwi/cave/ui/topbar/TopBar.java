@@ -24,14 +24,16 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 
+import static com.badlogic.gdx.Input.Keys.*;
+
 public class TopBar extends MenuBar {
     public TopBar() {
         super();
-
+//TODO:实现快捷键
         addMenu(new MenuX(i18n("文件"))
-            .withItem(new MenuItem(i18n("新建"),new ChangeListenerX(() -> {
-                Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()));
-            })))
+            .withItem(new MenuItem(i18n("新建"),new ChangeListenerX(() ->
+                Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()))
+            )).setShortcut(CONTROL_LEFT,N))
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择项目...");
@@ -54,7 +56,7 @@ public class TopBar extends MenuBar {
                     public void onError(Exception exception) {}
                 });
                 })
-            ))
+            ).setShortcut(CONTROL_LEFT,O))
             .withItem(new MenuItemP(i18n("保存"),new ChangeListenerX(()->{
                 if(Root.getInstance().getFrontendProject().getSavePath()==null) {
                     NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
@@ -84,7 +86,7 @@ public class TopBar extends MenuBar {
                         e.printStackTrace();
                     }
                 }
-            })))
+            })).setShortcut(CONTROL_LEFT,S))
             .withItem(new MenuItemP(i18n("另存为"),new ChangeListenerX(()->{
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择保存位置...");
@@ -106,8 +108,8 @@ public class TopBar extends MenuBar {
                     @Override
                     public void onError(Exception exception) {}
                 });
-            })))
-            .withItem(new MenuItem(i18n("关闭"),new ChangeListenerX(()->Gdx.app.exit()))));
+            })).setShortcut(CONTROL_LEFT,SHIFT_LEFT,S))
+            .withItem(new MenuItem(i18n("关闭"),new ChangeListenerX(()->Gdx.app.exit())).setShortcut(CONTROL_LEFT,W)));
     }
     public static class MenuX extends Menu{
         public MenuX(String title) {
