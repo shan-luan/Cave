@@ -13,7 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
-import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.resource.media.Media;
@@ -266,23 +265,30 @@ public class TlGroup extends Group {
     protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegmentData().getTrack();
         Map.Entry<Range<Long>, Segment> r = actor.getSegmentData().getEntry();
-        //TODO:交叠检查
+
         switch (actor.getDragSide()) {
             case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
                 float target = actor.getX() + diffToActorX;
                 if (target >= upper) return;
                 if (xToAbsoluteTime(target) < 0) return;
-                actor.setX(target);
-                actor.setWidth(upper - actor.getX());
-                //TODO:把待移动的区间与旧区间的凸包交给t检测是否空闲
-                timeline.resize(t, r, xToAbsoluteTime(actor.getX()), r.getKey().upperEndpoint() - xToAbsoluteTime(actor.getX()));
+                Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
+                if(t.isFree(r, nr)) {
+                    actor.setX(target);
+                    actor.setWidth(upper - target);
+                    timeline.resize(t, r, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                }
                 break;
             }
             case BEHIND: {
                 if (diffToActorX < 1f) return;
-                actor.setWidth(diffToActorX);
-                timeline.resize(t, r, r.getKey().lowerEndpoint(), xToAbsoluteTime(actor.getX() + actor.getWidth()) - r.getKey().lowerEndpoint());
+                float newWidth = diffToActorX;
+                float upper = actor.getX() + newWidth;
+                Range<Long> nr = Range.closedOpen(r.getKey().lowerEndpoint(), xToAbsoluteTime(upper));
+                if(t.isFree(r, nr)) {
+                    actor.setWidth(newWidth);
+                    timeline.resize(t, r, r.getKey().lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                }
                 break;
             }
             case MIDDLE: {
@@ -300,17 +306,15 @@ public class TlGroup extends Group {
                     targetY = Math.min(actor.getY() + deltaY, getHeight() - trackYShift - trackHeight);
 
                 long target = xToAbsoluteTime(targetX);
-                actor.setPosition(targetX, targetY);
-                timeline.move(
-                    t,
-                    timeline.getTrack(
-                        Math.max(0, yToTrackIndex(actor.getY() + trackHeight / 2))
-                    ),
-                    r,
-                    target,
-                    xToAbsoluteTime(actor.getX() + actor.getWidth()) - target
-                );
-                r.getValue().origin += xToAbsoluteTime(targetX - oldx) - xToAbsoluteTime(0);
+                long duration = r.getKey().upperEndpoint() - r.getKey().lowerEndpoint();
+                Range<Long> nr = Range.closedOpen(target, target + duration);
+
+                Track newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
+                if(newTrack.isFree(r, nr)) {
+                    actor.setPosition(targetX, targetY);
+                    timeline.move(t, newTrack, r, target, duration);
+                    r.getValue().origin += xToAbsoluteTime(targetX - oldx) - xToAbsoluteTime(0);
+                }
             }
         }
     }
