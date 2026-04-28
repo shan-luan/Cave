@@ -271,13 +271,28 @@ public class TlGroup extends Group {
                 float upper = actor.getX() + actor.getWidth();
                 float target = actor.getX() + diffToActorX;
                 if (target >= upper) return;
-                if (xToAbsoluteTime(target) < 0) return;
+                if (xToAbsoluteTime(target) < 0) target = absoluteTimeToX(0);
+                
                 Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
-                if(t.isFree(r, nr)) {
-                    actor.setX(target);
-                    actor.setWidth(upper - target);
-                    timeline.resize(t, r, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                
+                if (!t.isFree(r, nr)) {
+                    long minStart = 0;
+                    Range<Long> hullRange = nr.span(r.getKey());
+                    
+                    Map<Range<Long>, Segment> occupiedRanges = t.getSources().subRangeMap(hullRange).asMapOfRanges();
+                    for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
+                        if (!entry.getValue().equals(r.getValue())) {
+                            minStart = Math.max(minStart, entry.getKey().upperEndpoint());
+                        }
+                    }
+                    
+                    target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
+                    nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
                 }
+                
+                actor.setX(target);
+                actor.setWidth(upper - target);
+                timeline.resize(t, r, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
                 break;
             }
             case BEHIND: {
@@ -285,10 +300,26 @@ public class TlGroup extends Group {
                 float newWidth = diffToActorX;
                 float upper = actor.getX() + newWidth;
                 Range<Long> nr = Range.closedOpen(r.getKey().lowerEndpoint(), xToAbsoluteTime(upper));
-                if(t.isFree(r, nr)) {
-                    actor.setWidth(newWidth);
-                    timeline.resize(t, r, r.getKey().lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                
+                if (!t.isFree(r, nr)) {
+                    long maxEnd = timeline.getLength();
+                    Range<Long> hullRange = nr.span(r.getKey());
+                    
+                    Map<Range<Long>, Segment> occupiedRanges = t.getSources().subRangeMap(hullRange).asMapOfRanges();
+                    for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
+                        if (!entry.getValue().equals(r.getValue())) {
+                            maxEnd = Math.min(maxEnd, entry.getKey().lowerEndpoint());
+                            break;
+                        }
+                    }
+                    
+                    upper = absoluteTimeToX(maxEnd);
+                    newWidth = upper - actor.getX();
+                    nr = Range.closedOpen(r.getKey().lowerEndpoint(), xToAbsoluteTime(upper));
                 }
+                
+                actor.setWidth(newWidth);
+                timeline.resize(t, r, r.getKey().lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
                 break;
             }
             case MIDDLE: {
@@ -310,8 +341,8 @@ public class TlGroup extends Group {
                 Range<Long> nr = Range.closedOpen(target, target + duration);
 
                 Track newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
+                actor.setPosition(targetX, targetY);
                 if(newTrack.isFree(r, nr)) {
-                    actor.setPosition(targetX, targetY);
                     timeline.move(t, newTrack, r, target, duration);
                     r.getValue().origin += xToAbsoluteTime(targetX - oldx) - xToAbsoluteTime(0);
                 }
