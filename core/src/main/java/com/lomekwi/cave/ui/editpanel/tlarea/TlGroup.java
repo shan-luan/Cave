@@ -309,7 +309,6 @@ public class TlGroup extends Group {
                     for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
                         if (!entry.getValue().equals(r.getValue())) {
                             maxEnd = Math.min(maxEnd, entry.getKey().lowerEndpoint());
-                            break;
                         }
                     }
                     

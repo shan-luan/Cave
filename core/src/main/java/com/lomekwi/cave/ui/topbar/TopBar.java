@@ -12,6 +12,7 @@ import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
+import com.kotcrab.vis.ui.widget.toast.Toast;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.ui.Root;

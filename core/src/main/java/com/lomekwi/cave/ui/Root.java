@@ -12,7 +12,6 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
@@ -38,9 +37,7 @@ public class Root implements ApplicationListener {
     private Stage stage;
     private final Main main;
 
-    private Stack root;
     private VisTable mainLayout;
-    private VisTable overlayLayer;
     private VisTable majorArea;
 
     private TopBar topBar;
@@ -75,14 +72,8 @@ public class Root implements ApplicationListener {
         white.dispose();
 
         // 初始化UI组件
-        root = new Stack();
-        root.setFillParent(true);
-
         mainLayout = new VisTable();
         mainLayout.setBackground("window-bg");
-        mainLayout.setFillParent(true);
-
-        overlayLayer = new VisTable();
         mainLayout.setFillParent(true);
 
         // 添加TopBar
@@ -99,10 +90,7 @@ public class Root implements ApplicationListener {
         new FileTree();
         new EditPanelFrame();
 
-        root.add(mainLayout);
-        root.add(overlayLayer);
-
-        stage.addActor(root);
+        stage.addActor(mainLayout);
 
         stage.setDebugAll(false);
     }
@@ -135,9 +123,7 @@ public class Root implements ApplicationListener {
     public Stage getStage() {
         return stage;
     }
-    public Stack getRoot() {
-        return root;
-    }
+
     public VisTable getMainLayout() {
         return mainLayout;
     }
