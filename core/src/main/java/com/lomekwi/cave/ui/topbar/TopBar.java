@@ -28,12 +28,15 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 import static com.badlogic.gdx.Input.Keys.*;
 
 public class TopBar extends MenuBar {
+    private final float toastTimeOut = 2f;
     public TopBar() {
         super();
 //TODO:实现快捷键
         addMenu(new MenuX(i18n("文件"))
-            .withItem(new MenuItem(i18n("新建"),new ChangeListenerX(() ->
-                Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()))
+            .withItem(new MenuItem(i18n("新建"),new ChangeListenerX(() -> {
+                Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()));
+                Root.getInstance().getToastManager().show(i18n("项目已新建"),toastTimeOut);
+            }
             )).setShortcut(CONTROL_LEFT,N))
             .withItem(new MenuItem(i18n("打开"),new ChangeListenerX(() -> {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
@@ -47,6 +50,7 @@ public class TopBar extends MenuBar {
                     public void onFileChosen(FileHandle file) {
                         try {
                             Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.open(file)));
+                            Root.getInstance().getToastManager().show(i18n("项目已打开"),toastTimeOut);
                         } catch (IOException | ClassNotFoundException e) {
                             e.printStackTrace();
                         }
@@ -70,6 +74,7 @@ public class TopBar extends MenuBar {
                             try {
                                 if(Root.getInstance().getFrontendProject()!=null) {
                                     Projects.save(Root.getInstance().getFrontendProject(), file);
+                                    Root.getInstance().getToastManager().show(i18n("项目已保存"),toastTimeOut);
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -83,6 +88,7 @@ public class TopBar extends MenuBar {
                 }else {
                     try {
                         Projects.save(Root.getInstance().getFrontendProject());
+                        Root.getInstance().getToastManager().show(i18n("项目已保存"),toastTimeOut);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -99,6 +105,7 @@ public class TopBar extends MenuBar {
                         try {
                             if(Root.getInstance().getFrontendProject()!=null) {
                                 Projects.save(Root.getInstance().getFrontendProject(), file);
+                                Root.getInstance().getToastManager().show(i18n("项目已保存"),toastTimeOut);
                             }
                         } catch (IOException e) {
                             e.printStackTrace();

@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
+import com.kotcrab.vis.ui.util.ToastManager;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisTable;
@@ -36,6 +37,8 @@ public class Root implements ApplicationListener {
     private static Root INSTANCE;
     private Stage stage;
     private final Main main;
+
+    private ToastManager toastManager;
 
     private VisTable mainLayout;
     private VisTable majorArea;
@@ -63,6 +66,8 @@ public class Root implements ApplicationListener {
         VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
+
+        toastManager=new ToastManager(stage);
 
         Pixmap white = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         white.setColor(Color.WHITE);
@@ -92,6 +97,8 @@ public class Root implements ApplicationListener {
 
         stage.addActor(mainLayout);
 
+        toastManager.toFront();
+
         stage.setDebugAll(false);
     }
 
@@ -112,6 +119,7 @@ public class Root implements ApplicationListener {
     public void resize(int width, int height) {
         if (stage != null) {
             stage.getViewport().update(width, height, true);
+            toastManager.resize();
         }
     }
 
@@ -171,5 +179,9 @@ public class Root implements ApplicationListener {
 
     public ShapeDrawer getShapeDrawer() {
         return shapeDrawer;
+    }
+
+    public ToastManager getToastManager() {
+        return toastManager;
     }
 }
