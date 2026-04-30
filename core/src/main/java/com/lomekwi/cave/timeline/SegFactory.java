@@ -5,6 +5,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.Media;
 import com.lomekwi.cave.resource.media.VdoRes;
+import com.lomekwi.cave.util.MimeType;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +38,11 @@ public class SegFactory implements Serializable {
     public Segment get(File file) throws IOException {
         Resource resource = project.resources.get(file);
         if(resource == null){
-            resource = Media.create(Files.probeContentType(file.toPath()),file.getPath());
+            String mimeType = MimeType.detectMimeType(file);
+            if (mimeType == null) {
+                throw new IOException("无法检测文件MIME类型: " + file.getName());
+            }
+            resource = Media.create(mimeType, file.getPath());
         }
         return applyUnchecked(map.get(resource.getClass()), resource);
     }

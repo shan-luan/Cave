@@ -23,10 +23,10 @@ import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.util.MimeType;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -131,22 +131,24 @@ public class TlGroup extends Group {
         Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                try {
-                    return payload.getObject() instanceof File && Media.isSupported(Files.probeContentType(((File) payload.getObject()).toPath()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (!(payload.getObject() instanceof File)) {
+                    return false;
                 }
+                File file = (File) payload.getObject();
+                String mimeType = MimeType.detectMimeType(file);
+                return mimeType != null && Media.isSupported(mimeType);
             }
 
             @Override
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 try {
-                    Segment s = project.segFactory.get((File) payload.getObject());
-                    s.origin = xToAbsoluteTime( x);
-                    timeline.add(timeline.getTrack(yToTrackIndex(y)),s, xToAbsoluteTime(x), 10*SECOND);
+                    File file = (File) payload.getObject();
+                    Segment s = project.segFactory.get(file);
+                    s.origin = xToAbsoluteTime(x);
+                    timeline.add(timeline.getTrack(yToTrackIndex(y)), s, xToAbsoluteTime(x), 10*SECOND);
                     dirty = true;
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage());
                 }
             }
         });
