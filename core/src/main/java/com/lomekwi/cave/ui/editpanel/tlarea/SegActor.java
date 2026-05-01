@@ -2,13 +2,13 @@ package com.lomekwi.cave.ui.editpanel.tlarea;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Null;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.ui.Root;
@@ -20,6 +20,7 @@ public abstract class SegActor extends Actor {
     private DragSide dragSide=DragSide.NONE;
     public SegActor(Segment segment) {
         this.segment = segment;
+        addListener(getMenu().getDefaultInputListener());
         addListener(new InputListener(){
             final float edgeWidth = 30;
             @Override
@@ -42,18 +43,23 @@ public abstract class SegActor extends Actor {
 
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-                if(!(getParent() instanceof TlGroup)){
+                if (getParent()==null || !(getParent() instanceof TlGroup)) {
                     return false;
                 }
-                if (x < edgeWidth){
-                    dragSide = DragSide.FRONT;
-                }else if (x > getWidth() - edgeWidth) {
-                    dragSide = DragSide.BEHIND;
-                }else {
-                    dragSide = DragSide.MIDDLE;
+                if (button == Input.Buttons.LEFT) {
+                    if (x < edgeWidth) {
+                        dragSide = DragSide.FRONT;
+                    } else if (x > getWidth() - edgeWidth) {
+                        dragSide = DragSide.BEHIND;
+                    } else {
+                        dragSide = DragSide.MIDDLE;
+                    }
+                    event.stop();
+                    return true;
+                } else {
+                    getMenu().setContext((TlGroup) getParent(), SegActor.this);
+                    return false;
                 }
-                event.stop();
-                return true;
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
@@ -73,7 +79,7 @@ public abstract class SegActor extends Actor {
         Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
     }
 
-    public Segment getSegmentData() {
+    public Segment getSegment() {
         return segment;
     }
     public DragSide getDragSide(){
@@ -82,5 +88,8 @@ public abstract class SegActor extends Actor {
     private void setCursor(Cursor.SystemCursor cursor){
         if (Gdx.app.getType() != Application.ApplicationType.Desktop) return;
         Gdx.graphics.setSystemCursor(cursor);
+    }
+    public SegMenu getMenu() {
+        return SegMenu.getInstance();
     }
 }

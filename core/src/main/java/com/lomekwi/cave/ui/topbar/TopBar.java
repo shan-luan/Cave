@@ -6,7 +6,6 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.Menu;
@@ -16,6 +15,7 @@ import com.kotcrab.vis.ui.widget.toast.Toast;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.tabs.TabEvents;
 import com.lomekwi.cave.util.Vars;
 
@@ -137,7 +137,7 @@ public class TopBar extends MenuBar {
             Vars.appEventBus.register(this);
             setDisabled(true);
         }
-        public MenuItemP(String text,ChangeListener changeListener){
+        public MenuItemP(String text, ChangeListener changeListener){
             super(text,changeListener);
             Vars.appEventBus.register(this);
             setDisabled(true);
@@ -145,16 +145,6 @@ public class TopBar extends MenuBar {
         @Subscribe
         public void onTabSwitched(TabEvents.TabSwitchedEvent event){
             setDisabled(Root.getInstance().getFrontendProject()==null);
-        }
-    }
-    public static class ChangeListenerX extends ChangeListener {
-        private final Runnable runnable;
-        public ChangeListenerX(Runnable runnable){
-            this.runnable=runnable;
-        }
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-            runnable.run();
         }
     }
 }

@@ -167,7 +167,7 @@ public class TlGroup extends Group {
 
                 for (final Map.Entry<Range<Long>, Segment> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
-                    Range<Long> r = actor.getSegmentData().getRange();
+                    Range<Long> r = actor.getSegment().getRange();
                     switch (actor.getDragSide()) {
                         case FRONT:
                         case BEHIND:
@@ -265,15 +265,15 @@ public class TlGroup extends Group {
     float firstX = Float.NaN, firstY = Float.NaN;
 
     protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
-        Track t = actor.getSegmentData().getTrack();
-        Map.Entry<Range<Long>, Segment> r = actor.getSegmentData().getEntry();
+        Track t = actor.getSegment().getTrack();
+        Map.Entry<Range<Long>, Segment> r = actor.getSegment().getEntry();
 
         switch (actor.getDragSide()) {
             case FRONT: {
                 float upper = actor.getX() + actor.getWidth();
                 float target = actor.getX() + diffToActorX;
                 if (target >= upper) return;
-                if (xToAbsoluteTime(target) < 0) target = absoluteTimeToX(0);
+                target = Math.max(target, absoluteTimeToX(0));
 
                 Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
 
@@ -347,10 +347,16 @@ public class TlGroup extends Group {
                 actor.setPosition(targetX, targetY);
                 if(newTrack.isFree(r, nr)) {
                     timeline.move(t, newTrack, r, target, duration);
-                    r.getValue().origin += xToAbsoluteTime(targetX - oldx) - xToAbsoluteTime(0);
+                    long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
+                    r.getValue().origin += deltaTime;
                 }
             }
         }
+    }
+    public void removeSeg(SegActor segActor){
+        removeActor(segActor);
+        Segment s = segActor.getSegment();
+        timeline.remove(s.getTrack(),s.getRange().lowerEndpoint(),s.getRange().upperEndpoint()-s.getRange().lowerEndpoint());
     }
 
     private int yToTrackIndex(float y) {
