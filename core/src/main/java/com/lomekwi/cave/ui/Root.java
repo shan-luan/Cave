@@ -2,6 +2,7 @@ package com.lomekwi.cave.ui;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -22,8 +24,10 @@ import com.kotcrab.vis.ui.util.ToastManager;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisTable;
+import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
+import com.lomekwi.cave.app.HotkeyManager;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
@@ -63,9 +67,12 @@ public class Root implements ApplicationListener {
     public void create() {
         dragAndDrop=new DragAndDrop();
 
+        InputMultiplexer multiplexer = new InputMultiplexer();
+
         VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
-        Gdx.input.setInputProcessor(stage);
+        multiplexer.setProcessors(HotkeyManager.getInstance(),stage);
+        Gdx.input.setInputProcessor(multiplexer);
 
         toastManager=new ToastManager(stage);
 
@@ -162,6 +169,7 @@ public class Root implements ApplicationListener {
         skin.get("default", MenuItem.MenuItemStyle.class).font = font;
         skin.get("default", Menu.MenuStyle.class).openButtonStyle.font = font;
         skin.get("default", TabbedPane.TabbedPaneStyle.class).buttonStyle.font = font;
+        skin.get("default", Window.WindowStyle.class).titleFont = font;
        return skin;
     }
 

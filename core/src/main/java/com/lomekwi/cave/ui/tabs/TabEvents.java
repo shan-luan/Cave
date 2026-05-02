@@ -6,4 +6,8 @@ public class TabEvents {
         public static final TabSwitchedEvent INSTANCE=new TabSwitchedEvent();
         private TabSwitchedEvent(){}
     }
+    public static class SettingsOpenedEvent{
+        public static final SettingsOpenedEvent INSTANCE=new SettingsOpenedEvent();
+        private SettingsOpenedEvent(){};
+    }
 }

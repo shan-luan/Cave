@@ -9,9 +9,7 @@ public class SegMenu extends PopupMenu {
     private TlGroup tlGroup;
     private SegActor segActor;
     private SegMenu(){
-        addItem(new MenuItem("删除",new ChangeListenerX(()-> {
-            tlGroup.removeSeg(segActor);
-        })));
+        addItem(new MenuItem("删除",new ChangeListenerX(()-> tlGroup.removeSeg(segActor))));
     }
     public static SegMenu getInstance(){
         if(INSTANCE==null){
