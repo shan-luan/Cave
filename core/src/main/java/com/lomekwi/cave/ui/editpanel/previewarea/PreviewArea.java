@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.pipeline.image.ImgProd;
+import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.ui.Root;
 
 import org.jspecify.annotations.NullMarked;
@@ -23,7 +23,7 @@ import java.util.List;
  */
 @NullMarked
 public class PreviewArea extends Group {
-    private final List<ImgProd> prods = new ArrayList<>();
+    private final List<ImgFrame> frames = new ArrayList<>();
     private final Project project;
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
@@ -95,7 +95,7 @@ public class PreviewArea extends Group {
     }
 
     private void updateAllImages() {
-        for (ImgProd prod : prods) {
+        for (ImgFrame prod : frames) {
             prod.getImage().setPosition(xOffset, yOffset);
             prod.getImage().setScale(scale);
             prod.applyTransform();
@@ -103,8 +103,8 @@ public class PreviewArea extends Group {
     }
 
     @Subscribe
-    public void sink(ImgProd product) {
-        prods.add(product);
+    public void sink(ImgFrame product) {
+        frames.add(product);
         product.update();
         Image i = product.getImage();
         addActor(i);
@@ -115,7 +115,7 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void clear(PipelineEvents.LastFrameEndEvent event) {
-        prods.clear();
+        frames.clear();
         clearChildren(false);
     }
 

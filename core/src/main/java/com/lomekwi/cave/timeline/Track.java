@@ -3,7 +3,7 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -42,7 +42,7 @@ public class Track implements Serializable {
         lengthChanged = true;
     }
 
-    public @Nullable Product get(long time) {
+    public @Nullable Frame get(long time) {
         if (cache == null || !cache.getKey().contains(time)) {
             cache = sources.getEntry(time);
         }

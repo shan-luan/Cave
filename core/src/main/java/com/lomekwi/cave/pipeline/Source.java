@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Source<T extends Product> implements Serializable {
+public abstract class Source<T extends Frame> implements Serializable {
     private static final long serialVersionUID = 1L;
         private final List<Filter<? super T>> filters = new ArrayList<>();
 

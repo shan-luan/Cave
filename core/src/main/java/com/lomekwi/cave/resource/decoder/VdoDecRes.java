@@ -4,7 +4,7 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Gdx;
-import com.lomekwi.cave.pipeline.image.ImgProd;
+import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -13,7 +13,7 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 
-public class VdoDecRes extends DecRes<ImgProd> {
+public class VdoDecRes extends DecRes<ImgFrame> {
 
     public VdoDecRes(VdoRes source) {
         super(source);
@@ -63,7 +63,7 @@ public class VdoDecRes extends DecRes<ImgProd> {
     public void start() throws FrameGrabber.Exception {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         super.start();
-        setBufferedProduct(new ImgProd());
+        setBufferedProduct(new ImgFrame());
     }
 
     /**

@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 
 import org.jspecify.annotations.NullMarked;
 
@@ -17,11 +17,11 @@ public class Timeline implements Serializable {
     private long length;
     private boolean lengthChanged = true;
     private static final long serialVersionUID = 1L;
-    public Timeline getActiveElements(long time, Collection<Product> collector) {
+    public Timeline getActiveElements(long time, Collection<Frame> collector) {
         for(Track track:tracks){
-            Product product = track.get(time);
-            if(product==null) continue;
-            collector.add(product);
+            Frame frame = track.get(time);
+            if(frame ==null) continue;
+            collector.add(frame);
         }
         return this;
     }

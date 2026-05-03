@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
@@ -32,7 +32,7 @@ public abstract class Segment implements Serializable {
     /**
      * @param time 绝对时间
      */
-    public Product get(long time,Track track) {
+    public Frame get(long time, Track track) {
         return source.get(toLocalTime(time), track);
     }
     public SegActor getActor() {

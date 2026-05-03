@@ -1,8 +1,8 @@
 package com.lomekwi.cave.pipeline.audio;
 
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 
-public class AudProd extends Product {
+public class AudFrame extends Frame {
     @Override
     public void close() throws Exception {
 

@@ -1,17 +1,16 @@
 package com.lomekwi.cave.resource.decoder;
 
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.VdoRes;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 
 /**
  * 解码器类。
  */
-public abstract class DecRes<P extends Product> implements Resource {
+public abstract class DecRes<P extends Frame> implements Resource {
     protected final FFmpegFrameGrabber grabber;
     protected long lastGrabTime = -1;
     protected P bufferedProd;
@@ -35,7 +34,7 @@ public abstract class DecRes<P extends Product> implements Resource {
         grabber.close();
         bufferedProd.close();
     }
-    public abstract Frame grab() throws FFmpegFrameGrabber.Exception;
+    public abstract org.bytedeco.javacv.Frame grab() throws FFmpegFrameGrabber.Exception;
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
         if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.setTimestamp(time);

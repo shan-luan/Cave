@@ -4,7 +4,7 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.PipelineEvents;
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.timeline.SegFactory;
 import com.lomekwi.cave.timeline.Timeline;
@@ -41,7 +41,7 @@ public class Project implements Serializable, AutoCloseable {
         // 每帧开始时发送清除事件
         projEventBus.post(PipelineEvents.LastFrameEndEvent.INSTANCE);
         for(Track track:timeline.getTracks()){
-            Product prod = track.get(playhead.getTime());
+            Frame prod = track.get(playhead.getTime());
             if(prod != null){
                 projEventBus.post(prod);
             }

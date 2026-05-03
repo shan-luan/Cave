@@ -6,11 +6,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Scaling;
-import com.lomekwi.cave.pipeline.Product;
+import com.lomekwi.cave.pipeline.Frame;
 
 import java.nio.ByteBuffer;
 
-public class ImgProd extends Product implements Transformable {
+public class ImgFrame extends Frame implements Transformable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
@@ -28,20 +28,20 @@ public class ImgProd extends Product implements Transformable {
         return pixels;
     }
 
-    public ImgProd setPixels(ByteBuffer pixels) {
+    public ImgFrame setPixels(ByteBuffer pixels) {
         this.pixels = pixels;
         return this;
     }
     public Texture getTexture() {
         return texture;
     }
-    public ImgProd setTexture(Texture texture) {
+    public ImgFrame setTexture(Texture texture) {
         this.texture = texture;
         image = new Image(texture);
         image.setScaling(Scaling.stretch);
         return this;
     }
-    public ImgProd updateAndDraw(Batch batch){
+    public ImgFrame updateAndDraw(Batch batch){
         update();
         draw(batch);
         return this;
