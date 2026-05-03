@@ -18,7 +18,7 @@ public class HotkeyManager extends InputAdapter {
     private final BiMap<KeyCombo, String> hotkeyNames = HashBiMap.create();
 
     private HotkeyManager() {
-        
+
     }
 
     public static HotkeyManager getInstance() {
@@ -102,6 +102,10 @@ public class HotkeyManager extends InputAdapter {
         @Override
         public int hashCode() {
             return Objects.hash(ctrl, shift, keycode);
+        }
+        @Override
+        public String toString() {
+            return (ctrl ? "Ctrl+" : "") + (shift ? "Shift+" : "") + Input.Keys.toString(keycode);
         }
     }
 }
