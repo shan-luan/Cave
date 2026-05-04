@@ -40,9 +40,13 @@ public class Project implements Serializable, AutoCloseable {
         // 每帧开始时发送清除事件
         projEventBus.post(PipelineEvents.LastFrameEndEvent.INSTANCE);
         for(Track track:timeline.getTracks()){
-            Frame prod = track.get(playhead.getTime());
-            if(prod != null){
-                projEventBus.post(prod);
+            if(!Thread.currentThread().isInterrupted()) {
+                Frame frame = track.get(playhead.getTime());
+                if (frame != null) {
+                    projEventBus.post(frame);
+                }
+            }else {
+                return;
             }
         }
     }

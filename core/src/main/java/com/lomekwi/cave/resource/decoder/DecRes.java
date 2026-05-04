@@ -56,4 +56,11 @@ public abstract class DecRes<P extends Frame> implements Resource {
     public void setLastGrabTime(long lastGrabTime) {
         this.lastGrabTime = lastGrabTime;
     }
+    protected long toValidTime(long time) {
+        return Math.min(Math.max(0,time), getLengthInTime());
+    }
+    public long getLengthInTime() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getLengthInTime();
+    }
 }

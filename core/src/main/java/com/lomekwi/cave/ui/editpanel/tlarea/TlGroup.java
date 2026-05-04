@@ -22,6 +22,7 @@ import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
+import com.lomekwi.cave.timeline.playback.PlaybackState;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.MimeType;
 
@@ -107,7 +108,11 @@ public class TlGroup extends Group {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
                 if (keycode == SPACE) {
-                    project.playhead.setPlaying(!project.playhead.isPlaying());
+                    if (playhead.getStates().contains(PlaybackState.PLAYING)) {
+                        playhead.clearState(PlaybackState.PLAYING);
+                    } else {
+                        playhead.setState(PlaybackState.PLAYING);
+                    }
                 }
                 return true;
             }
@@ -123,7 +128,7 @@ public class TlGroup extends Group {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 final long t = xToAbsoluteTime(x);
-                project.playhead.setTime(Math.max(t, 0));
+                playhead.seek(Math.max(t, 0));
             }
         });
 
@@ -326,6 +331,8 @@ public class TlGroup extends Group {
                 break;
             }
             case MIDDLE: {
+                playhead.setState(PlaybackState.SEEKING);
+
                 if (Float.isNaN(firstX)) {
                     firstX = diffToActorX;
                     firstY = diffToActorY;

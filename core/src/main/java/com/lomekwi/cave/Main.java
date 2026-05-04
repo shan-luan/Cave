@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.timeline.playback.PlaybackState;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.Vars;
 
@@ -19,6 +20,7 @@ public class Main extends ApplicationAdapter {
     private Root ui;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Future<?> updateFuture = null;
+    private boolean seekTask;
 
     public Main (NativeFileChooser fileChooser) {
         Vars.fileChooser = fileChooser;
@@ -34,6 +36,20 @@ public class Main extends ApplicationAdapter {
     public void render() {
         Project p = ui.getFrontendProject();
         if(p!= null) {
+            if(p.playhead.getStates().contains(PlaybackState.SEEKING)){
+                if(seekTask){
+                    if(updateFuture.isDone()){
+                        p.playhead.clearState(PlaybackState.SEEKING);
+                        seekTask = false;
+                    }
+                }else {
+                    if(updateFuture != null) {
+                        updateFuture.cancel(true);
+                    }
+                    updateFuture = executorService.submit(p::update);
+                    seekTask = true;
+                }
+            }
             p.playhead.update();
             if (updateFuture == null || updateFuture.isDone()) {
                 updateFuture = executorService.submit(p::update);

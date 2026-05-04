@@ -44,11 +44,6 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         return grabber.getLengthInVideoFrames();
     }
 
-    public long getLengthInTime() {
-        if (!initialized) throw new IllegalStateException("Not initialized");
-        return grabber.getLengthInTime();
-    }
-
     public long getTimestamp() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getTimestamp();
@@ -79,30 +74,31 @@ public class VdoDecRes extends DecRes<ImgFrame> {
             start();
         }
 
-        final long target = Math.min(Math.max(0,time), getLengthInTime());
+        long target = toValidTime(time);
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
-        final long diff = time - lastGrabTime;
+        final long diff = target - lastGrabTime;
 
         // 请求时间早于上次抓取时间，需要 seek 回退
         if (diff < 0) {
             seek(target);
             Gdx.app.debug(i18n("视频解码"), hashCode() +i18n("向前跳跃")+(lastGrabTime-getTimestamp())/SECOND + i18n("秒"));
-        }else if(diff > 2 * getLengthPerFrame()){// 如果请求时间间隔超过两帧间隔，则进行跳转
+        }else if(diff > 3 * getLengthPerFrame()){// 如果请求时间间隔超过3帧间隔，则进行跳转
             seek(target);
             Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
-            time=getTimestamp();//防止跳转误差造成的反复跳转
-        } else if ((target < nextFrameTime) && bufferedProd.getPixels() != null) {
-            // 目标时间在下一帧之前，且缓存有效，直接返回缓存
-            lastGrabTime = time;
-            return bufferedProd.getPixels();
-        }
 
-        // 需要抓取新帧
-        Frame output = grab();
-        if (output != null) {
-            bufferedProd.setPixels((ByteBuffer) output.image[0]);
         }
-        lastGrabTime = time;
+        if (!((target < nextFrameTime) && bufferedProd.getPixels() != null)) {
+            // 需要抓取新帧
+            Frame output;
+            do {
+                output = grab();
+            }
+            while (output == null);
+            bufferedProd.setPixels((ByteBuffer) output.image[0]);
+
+        }
+        // 目标时间在下一帧之前，且缓存有效，直接返回缓存
+        lastGrabTime = target;
         return bufferedProd.getPixels();
     }
 }

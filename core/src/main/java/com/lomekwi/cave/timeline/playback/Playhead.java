@@ -4,38 +4,38 @@ import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.util.Units;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 
 public class Playhead implements Serializable {
     private static final long serialVersionUID = 1L;
     private long time= 0L;
-    private transient boolean isPlaying;
-    private transient boolean isSought;
-    public void setPlaying(Boolean isPlaying){
-        this.isPlaying=isPlaying;
+    private transient EnumSet<PlaybackState> states = EnumSet.noneOf(PlaybackState.class);
+    public void setState(PlaybackState state){
+        if (state == PlaybackState.PLAYING) {
+            states.add(PlaybackState.PLAYING);
+        } else if (state == PlaybackState.SEEKING) {
+            states.add(PlaybackState.SEEKING);
+        }
     }
-    public boolean isPlaying(){
-        return isPlaying;
+    public void clearState(PlaybackState state){
+        states.remove(state);
     }
-    protected void seek(long time){
+    public EnumSet<PlaybackState> getStates(){
+        return states;
+    }
+    public void seek(long time){
         this.time=time;
-        isSought=true;
+        this.states.add(PlaybackState.SEEKING);
     }
     public void update(){
-        if(isPlaying){
+        if(states.contains(PlaybackState.PLAYING) && !states.contains(PlaybackState.SEEKING)){
             time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
         }
     }
     public long getTime(){
         return time;
     }
-    public void setTime(long time) {
+    protected void setTime(long time) {
         this.time = time;
-    }
-
-    public boolean isSought() {
-        return isSought;
-    }
-    protected void resetSought(){
-        isSought=false;
     }
 }
