@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.collections.Swapper;
 import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
@@ -25,8 +26,7 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group {
     private final Project project;
-    private List<ImgFrame> frontBuffer = new ArrayList<>();
-    private List<ImgFrame> backBuffer = new ArrayList<>();
+    private final Swapper<List<ImgFrame>> buffer = new Swapper<>(new ArrayList<>(), new ArrayList<>());
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
@@ -97,7 +97,7 @@ public class PreviewArea extends Group {
     }
 
     private void updateAllImages() {
-        for (ImgFrame frame : frontBuffer) {
+        for (ImgFrame frame : buffer.getFront()) {
             frame.getImage().setPosition(xOffset, yOffset);
             frame.getImage().setScale(scale);
             frame.applyTransform();
@@ -107,7 +107,7 @@ public class PreviewArea extends Group {
     @Subscribe
     public void sink(ImgFrame product) {
         Gdx.app.postRunnable(()-> {
-            backBuffer.add(product);
+            buffer.getBack().add(product);
             product.update();
             Image i = product.getImage();
             addActor(i);
@@ -120,19 +120,13 @@ public class PreviewArea extends Group {
     @Subscribe
     public void clear(PipelineEvents.LastFrameEndEvent event) {
         Gdx.app.postRunnable(() -> {
-            swapBuffers();
-            backBuffer.clear();
+            buffer.swap();
+            buffer.getBack().clear();
             clearChildren(false);
-            for (ImgFrame frame : frontBuffer) {
+            for (ImgFrame frame : buffer.getFront()) {
                 addActor(frame.getImage());
             }
         });
-    }
-    
-    private void swapBuffers() {
-        List<ImgFrame> temp = frontBuffer;
-        frontBuffer = backBuffer;
-        backBuffer = temp;
     }
 
     @Override
