@@ -37,7 +37,6 @@ public class Project implements Serializable, AutoCloseable {
         projEventBus=new EventBus(uuid.toString());
     }
     public void update() {
-        playhead.update();
         // 每帧开始时发送清除事件
         projEventBus.post(PipelineEvents.LastFrameEndEvent.INSTANCE);
         for(Track track:timeline.getTracks()){

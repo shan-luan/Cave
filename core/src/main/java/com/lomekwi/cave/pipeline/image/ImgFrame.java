@@ -3,7 +3,6 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Scaling;
 import com.lomekwi.cave.pipeline.Frame;
@@ -41,11 +40,6 @@ public class ImgFrame extends Frame implements Transformable {
         image.setScaling(Scaling.stretch);
         return this;
     }
-    public ImgFrame updateAndDraw(Batch batch){
-        update();
-        draw(batch);
-        return this;
-    }
 
     public void update() {
         if(changed) {
@@ -63,26 +57,6 @@ public class ImgFrame extends Frame implements Transformable {
             );
             changed = false;
         }
-    }
-
-    public void draw(Batch batch) {
-        batch.draw(
-            texture,
-            transform.x,
-            transform.y,
-            transform.width/2,
-            transform.height/2,
-            transform.width,
-            transform.height,
-            1,
-            1,
-            transform.rotation,
-            0,0,
-            texture.getWidth(),
-            texture.getHeight(),
-            false,
-            false
-        );
     }
     @Override
     public void close() {

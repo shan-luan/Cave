@@ -1,5 +1,6 @@
 package com.lomekwi.cave.ui.editpanel.previewarea;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -23,8 +24,9 @@ import java.util.List;
  */
 @NullMarked
 public class PreviewArea extends Group {
-    private final List<ImgFrame> frames = new ArrayList<>();
     private final Project project;
+    private List<ImgFrame> frontBuffer = new ArrayList<>();
+    private List<ImgFrame> backBuffer = new ArrayList<>();
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
@@ -95,28 +97,42 @@ public class PreviewArea extends Group {
     }
 
     private void updateAllImages() {
-        for (ImgFrame prod : frames) {
-            prod.getImage().setPosition(xOffset, yOffset);
-            prod.getImage().setScale(scale);
-            prod.applyTransform();
+        for (ImgFrame frame : frontBuffer) {
+            frame.getImage().setPosition(xOffset, yOffset);
+            frame.getImage().setScale(scale);
+            frame.applyTransform();
         }
     }
 
     @Subscribe
     public void sink(ImgFrame product) {
-        frames.add(product);
-        product.update();
-        Image i = product.getImage();
-        addActor(i);
-        i.setPosition(xOffset, yOffset);
-        i.setScale(scale);
-        product.applyTransform();
+        Gdx.app.postRunnable(()-> {
+            backBuffer.add(product);
+            product.update();
+            Image i = product.getImage();
+            addActor(i);
+            i.setPosition(xOffset, yOffset);
+            i.setScale(scale);
+            product.applyTransform();
+        });
     }
 
     @Subscribe
     public void clear(PipelineEvents.LastFrameEndEvent event) {
-        frames.clear();
-        clearChildren(false);
+        Gdx.app.postRunnable(() -> {
+            swapBuffers();
+            backBuffer.clear();
+            clearChildren(false);
+            for (ImgFrame frame : frontBuffer) {
+                addActor(frame.getImage());
+            }
+        });
+    }
+    
+    private void swapBuffers() {
+        List<ImgFrame> temp = frontBuffer;
+        frontBuffer = backBuffer;
+        backBuffer = temp;
     }
 
     @Override

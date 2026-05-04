@@ -1,5 +1,6 @@
 package com.lomekwi.cave.pipeline.image;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.pipeline.Source;
@@ -19,11 +20,14 @@ public class VdoClipSrc extends Source<ImgFrame> {
     @Override
     public ImgFrame generate(long time, Track track) {
         if(!initialized){
-            texture=new Texture(src.getWidth(),src.getHeight(), Pixmap.Format.RGBA8888);
-            frame=new ImgFrame();
+            Gdx.app.postRunnable(()-> {
+                texture = new Texture(src.getWidth(), src.getHeight(), Pixmap.Format.RGBA8888);
+            frame = new ImgFrame();
             frame.setTexture(texture)
-                .setTransform(new Transform(0,0,src.getWidth(),src.getHeight(),0));
-            initialized=true;
+                .setTransform(new Transform(0, 0, src.getWidth(), src.getHeight(), 0));
+            initialized = true;
+            });
+            return null;
         }
         ByteBuffer pixels;
         try {
