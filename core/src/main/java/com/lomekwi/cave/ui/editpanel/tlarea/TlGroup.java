@@ -331,7 +331,6 @@ public class TlGroup extends Group {
                 break;
             }
             case MIDDLE: {
-                playhead.setState(PlaybackState.SEEKING);
 
                 if (Float.isNaN(firstX)) {
                     firstX = diffToActorX;

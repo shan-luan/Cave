@@ -10,6 +10,10 @@ public class Playhead implements Serializable {
     private static final long serialVersionUID = 1L;
     private long time= 0L;
     private transient EnumSet<PlaybackState> states = EnumSet.noneOf(PlaybackState.class);
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        this.states = EnumSet.noneOf(PlaybackState.class);
+    }
     public void setState(PlaybackState state){
         if (state == PlaybackState.PLAYING) {
             states.add(PlaybackState.PLAYING);

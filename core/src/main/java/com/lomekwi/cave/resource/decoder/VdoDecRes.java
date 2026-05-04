@@ -88,13 +88,16 @@ public class VdoDecRes extends DecRes<ImgFrame> {
 
         }
         if (!((target < nextFrameTime) && bufferedProd.getPixels() != null)) {
-            // 需要抓取新帧
-            Frame output;
-            do {
+            Frame output = null;
+            int retryCount = 0;
+            final int maxRetries = 10;
+            while (output == null && retryCount < maxRetries) {
                 output = grab();
+                retryCount++;
             }
-            while (output == null);
-            bufferedProd.setPixels((ByteBuffer) output.image[0]);
+            if (output != null) {
+                bufferedProd.setPixels((ByteBuffer) output.image[0]);
+            }
 
         }
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
