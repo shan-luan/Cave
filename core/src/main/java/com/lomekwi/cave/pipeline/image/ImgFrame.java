@@ -14,7 +14,7 @@ public class ImgFrame extends Frame implements Transformable {
     private ByteBuffer pixels;
     private Texture texture;
     private Image image;
-    public boolean changed = true;
+    public volatile boolean changed = true;
     @Override
     public Transform getTransform() {
         return transform;

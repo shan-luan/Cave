@@ -12,7 +12,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
     private final VdoRes src;
     private transient Texture texture;
     private transient ImgFrame frame;
-    private transient boolean initialized;
+    private volatile transient boolean initialized;
     private static final long serialVersionUID = 1L;
     public VdoClipSrc(VdoRes src) {
         this.src = src;
