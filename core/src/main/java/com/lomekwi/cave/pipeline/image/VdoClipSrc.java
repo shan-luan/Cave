@@ -7,6 +7,7 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 
 public class VdoClipSrc extends Source<ImgFrame> {
     private final VdoRes src;
@@ -19,6 +20,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
     }
     @Override
     public ImgFrame generate(long time, Track track) {
+        CountDownLatch cd = new CountDownLatch(1);
         if(!initialized){
             Gdx.app.postRunnable(()-> {
                 texture = new Texture(src.getWidth(), src.getHeight(), Pixmap.Format.RGBA8888);
@@ -26,8 +28,13 @@ public class VdoClipSrc extends Source<ImgFrame> {
             frame.setTexture(texture)
                 .setTransform(new Transform(0, 0, src.getWidth(), src.getHeight(), 0));
             initialized = true;
+            cd.countDown();
             });
-            return null;
+            try {
+                cd.await();
+            } catch (InterruptedException e) {
+                return null;
+            }
         }
         ByteBuffer pixels;
         try {
