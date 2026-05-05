@@ -6,7 +6,7 @@ import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
 import com.lomekwi.cave.project.ProjectEvents;
 import com.lomekwi.cave.ui.Root;
-import com.lomekwi.cave.util.Vars;
+import com.lomekwi.cave.app.Vars;
 
 public class TopTabbedPane extends TabbedPane {
     public TopTabbedPane() {

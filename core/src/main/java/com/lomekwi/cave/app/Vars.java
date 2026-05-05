@@ -1,4 +1,4 @@
-package com.lomekwi.cave.util;
+package com.lomekwi.cave.app;
 
 
 import com.google.common.eventbus.EventBus;

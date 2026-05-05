@@ -1,6 +1,6 @@
 package com.lomekwi.cave.ui.topbar;
 
-import static com.lomekwi.cave.util.Vars.fileChooser;
+import static com.lomekwi.cave.app.Vars.fileChooser;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Application;
@@ -16,7 +16,7 @@ import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.tabs.TabEvents;
-import com.lomekwi.cave.util.Vars;
+import com.lomekwi.cave.app.Vars;
 
 import java.io.IOException;
 

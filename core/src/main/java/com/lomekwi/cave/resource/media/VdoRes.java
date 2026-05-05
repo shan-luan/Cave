@@ -3,9 +3,6 @@ package com.lomekwi.cave.resource.media;
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
 import com.lomekwi.cave.timeline.Track;
 
-import java.io.FileNotFoundException;
-import java.util.Set;
-
 public class VdoRes extends MedRes {
     private final int width;
     private final int height;
