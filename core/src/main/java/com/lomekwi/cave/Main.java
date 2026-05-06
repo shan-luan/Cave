@@ -3,11 +3,17 @@ package com.lomekwi.cave;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.AudioDevice;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.app.Vars;
+import com.lomekwi.cave.app.AppAudioOut;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+
+import java.nio.ShortBuffer;
 
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */

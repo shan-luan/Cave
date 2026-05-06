@@ -19,7 +19,7 @@ import java.util.Map;
 public abstract class MedRes implements Resource, Serializable {
     private static final long serialVersionUID = 1L;
     private final String path;
-    protected transient Map<Track,DecRes<?>> decRes=new HashMap<>();
+    protected transient Map<Track,DecRes> decRes=new HashMap<>();
 
     /**
      * 必须确保路径对应一个存在的文件
@@ -37,13 +37,13 @@ public abstract class MedRes implements Resource, Serializable {
     public String getPath() {
         return path;
     }
-    public DecRes<?> getDecoder(@Nullable Track track){
+    public DecRes getDecoder(@Nullable Track track){
         return decRes.computeIfAbsent(track, k -> newDecoder());
     }
 
     @Override
     public void close() throws Exception {
-        for(DecRes<?> decoder:decRes.values()){
+        for(DecRes decoder:decRes.values()){
             decoder.close();
         }
     }
@@ -58,5 +58,5 @@ public abstract class MedRes implements Resource, Serializable {
             throw new RuntimeException(e);
         }
     }
-    protected abstract DecRes<?> newDecoder();
+    protected abstract DecRes newDecoder();
 }

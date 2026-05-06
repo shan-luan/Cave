@@ -14,7 +14,7 @@ public class AudRes extends MedRes{
     }
 
     @Override
-    protected DecRes<?> newDecoder() {
+    protected DecRes newDecoder() {
         return new AudDecRes(this);
     }
 }

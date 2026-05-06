@@ -13,7 +13,8 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 
-public class VdoDecRes extends DecRes<ImgFrame> {
+public class VdoDecRes extends DecRes {
+    private ImgFrame bufferedFrame;
 
     public VdoDecRes(VdoRes source) {
         super(source);
@@ -58,7 +59,23 @@ public class VdoDecRes extends DecRes<ImgFrame> {
     public void start() throws FrameGrabber.Exception {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         super.start();
-        setBufferedProduct(new ImgFrame());
+        bufferedFrame = new ImgFrame();
+    }
+
+    public void setBufferedFrame(ImgFrame frame) {
+        bufferedFrame = frame;
+    }
+
+    public ImgFrame getBufferedFrame() {
+        return bufferedFrame;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (bufferedFrame != null) {
+            bufferedFrame.close();
+        }
+        super.close();
     }
 
     /**
@@ -87,7 +104,7 @@ public class VdoDecRes extends DecRes<ImgFrame> {
             Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
 
         }
-        if (!((target < nextFrameTime) && bufferedProd.getPixels() != null)) {
+        if (!((target < nextFrameTime) && bufferedFrame.getPixels() != null)) {
             Frame output = null;
             int retryCount = 0;
             final int maxRetries = 10;
@@ -96,12 +113,12 @@ public class VdoDecRes extends DecRes<ImgFrame> {
                 retryCount++;
             }
             if (output != null) {
-                bufferedProd.setPixels((ByteBuffer) output.image[0]);
+                bufferedFrame.setPixels((ByteBuffer) output.image[0]);
             }
 
         }
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
         lastGrabTime = target;
-        return bufferedProd.getPixels();
+        return bufferedFrame.getPixels();
     }
 }
