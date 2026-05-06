@@ -5,6 +5,7 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.pipeline.audio.AudioFrameListener;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.timeline.SegFactory;
 import com.lomekwi.cave.timeline.Timeline;
@@ -41,6 +42,7 @@ public class Project implements Serializable, AutoCloseable {
         Vars.appEventBus.register(this);
         name=i18n("未命名");
         projEventBus=new EventBus(uuid.toString());
+        projEventBus.register(new AudioFrameListener());
     }
     public void update() {
         if(playhead.getStates().contains(com.lomekwi.cave.timeline.playback.PlaybackState.SEEKING)){

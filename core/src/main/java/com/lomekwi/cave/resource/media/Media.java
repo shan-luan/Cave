@@ -12,6 +12,7 @@ public final class Media {
     private static final Map<String, Function<String, MedRes>> map = new HashMap<>();
     static {
         map.put("video/*", VdoRes::new);
+        map.put("audio/*", AudRes::new);
     }
     public static MedRes create(String mimeType, String path){
         Function<String, MedRes> constructor = findConstructor(mimeType);

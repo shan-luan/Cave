@@ -3,6 +3,7 @@ package com.lomekwi.cave.timeline;
 
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.Resource;
+import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.resource.media.Media;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.util.MimeType;
@@ -28,6 +29,7 @@ public class SegFactory implements Serializable {
     
     private void initDefaultMappings() {
         register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
+        register(AudRes.class, source -> new AudSeg((AudRes) source));
     }
     public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment> constructor){
         map.put(clazz,constructor);
