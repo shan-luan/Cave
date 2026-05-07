@@ -4,9 +4,14 @@ import com.lomekwi.cave.pipeline.Frame;
 
 public class AudFrame extends Frame {
     private short[] samples;
-    private int sampleRate;
-    private int channels;
+    private final int sampleRate;
+    private final int channels;
     private long time;
+
+    public AudFrame(int sampleRate, int channels) {
+        this.sampleRate = sampleRate;
+        this.channels = channels;
+    }
 
     public short[] getSamples() {
         return samples;
@@ -19,20 +24,6 @@ public class AudFrame extends Frame {
 
     public int getSampleRate() {
         return sampleRate;
-    }
-
-    public AudFrame setSampleRate(int sampleRate) {
-        this.sampleRate = sampleRate;
-        return this;
-    }
-
-    public int getChannels() {
-        return channels;
-    }
-
-    public AudFrame setChannels(int channels) {
-        this.channels = channels;
-        return this;
     }
 
     public long getTime() {

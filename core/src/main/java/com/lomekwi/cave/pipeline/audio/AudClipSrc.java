@@ -1,5 +1,6 @@
 package com.lomekwi.cave.pipeline.audio;
 
+import com.lomekwi.cave.app.AppAudioOut;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 import com.lomekwi.cave.resource.media.AudRes;
@@ -16,9 +17,6 @@ public class AudClipSrc extends Source<AudFrame> {
 
     @Override
     protected AudFrame generate(long time, Track track) {
-        if (frame == null) {
-            frame = new AudFrame();
-        }
         AudDecRes decoder = (AudDecRes) audRes.getDecoder(track);
         if (!decoder.isInitialized()) {
             try {
@@ -27,10 +25,15 @@ public class AudClipSrc extends Source<AudFrame> {
                 throw new RuntimeException(e);
             }
         }
+        
+        if (frame == null) {
+            frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2);
+        }
+        
         try {
             short[] samples = decoder.decodeFrameAtTime(time);
             if (samples == null) return null;
-            frame.setSamples(samples).setSampleRate(44100).setChannels(1).setTime(time);
+            frame.setSamples(samples).setTime(time);
             return frame;
         } catch (Exception e) {
             throw new RuntimeException(e);

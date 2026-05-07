@@ -9,13 +9,12 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.collections.Swapper;
 import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.ui.Root;
-
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,7 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group {
     private final Project project;
-    private final Swapper<List<ImgFrame>> buffer = new Swapper<>(new ArrayList<>(), new ArrayList<>());
+    private final List<@Nullable ImgFrame> frames = new ArrayList<>();
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
@@ -97,7 +96,7 @@ public class PreviewArea extends Group {
     }
 
     private void updateAllImages() {
-        for (ImgFrame frame : buffer.getFront()) {
+        for (ImgFrame frame : frames) {
             frame.getImage().setPosition(xOffset, yOffset);
             frame.getImage().setScale(scale);
             frame.applyTransform();
@@ -105,28 +104,45 @@ public class PreviewArea extends Group {
     }
 
     @Subscribe
-    public void sink(ImgFrame product) {
+    public void sink(ImgFrame frame) {
         Gdx.app.postRunnable(()-> {
-            buffer.getBack().add(product);
-            product.update();
-            Image i = product.getImage();
+            addFrame(frame);
+            frame.update();
+            Image i = frame.getImage();
             addActor(i);
             i.setPosition(xOffset, yOffset);
             i.setScale(scale);
-            product.applyTransform();
+            frame.applyTransform();
         });
+    }
+    private void addFrame(ImgFrame frame){
+        int idx = frame.trackIndex;
+        while (idx >= frames.size()) {
+            frames.add(null);
+        }
+        frames.set(frame.trackIndex, frame);
     }
 
     @Subscribe
-    public void clear(PipelineEvents.LastFrameEndEvent event) {
+    public void clear(PipelineEvents.NoFrameNowEvent event) {
         Gdx.app.postRunnable(() -> {
-            buffer.swap();
-            buffer.getBack().clear();
-            clearChildren(false);
-            for (ImgFrame frame : buffer.getFront()) {
-                addActor(frame.getImage());
-            }
-        });
+            int idx = event.track.index;
+                // 边界检查
+                if (idx < 0 || idx >= frames.size()) {
+                    return;
+                }
+                ImgFrame frame = frames.get(idx);
+                if (frame == null) {
+                    return;
+                }
+                Image image = frame.getImage();
+                if (image == null) {
+                    return;
+                }
+                // 所有条件满足，执行清理
+                removeActor(image);
+                frames.remove(idx);
+    });
     }
 
     @Override

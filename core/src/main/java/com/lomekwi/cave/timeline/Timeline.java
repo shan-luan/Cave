@@ -58,7 +58,7 @@ public class Timeline implements Serializable {
      */
     public Track getTrack(int index) {
         while (tracks.size() <= index) {
-            tracks.add(new Track());
+            tracks.add(new Track(tracks.size()));
         }
         return tracks.get(index);
     }

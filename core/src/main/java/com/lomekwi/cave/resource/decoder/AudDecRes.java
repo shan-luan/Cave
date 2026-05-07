@@ -4,6 +4,7 @@ import com.lomekwi.cave.resource.media.AudRes;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ShortBuffer;
 
@@ -24,5 +25,12 @@ public class AudDecRes extends DecRes {
         short[] out = new short[sb.remaining()];
         sb.get(out);
         return out;
+    }
+    @Override
+    public void start() throws FrameGrabber.Exception {
+        grabber.setSampleRate(44100);
+        grabber.setAudioChannels(2);
+        grabber.start();
+        initialized = true;
     }
 }

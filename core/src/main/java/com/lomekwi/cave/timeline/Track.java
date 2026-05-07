@@ -4,6 +4,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.pipeline.PipelineEvents;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @NullMarked
 public class Track implements Serializable {
+    public final int index;
     private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
     private transient Map.@Nullable Entry<Range<Long>, Segment> cache;
     private long length;
@@ -25,7 +27,10 @@ public class Track implements Serializable {
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
-    public Track() {
+    public final transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
+    public final transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
+    public Track(int index) {
+        this.index = index;
     }
 
     protected void add(Segment segment, long start, long duration) {
@@ -49,7 +54,7 @@ public class Track implements Serializable {
         if(cache == null){
             return null;
         }
-        return cache.getValue().get(time, this);
+        return cache.getValue().get(time, this).withTrack(this.index);
     }
     /**
      * 检查指定范围是否与给定的条目兼容（即该范围是否为空闲或仅被同一片段占用）

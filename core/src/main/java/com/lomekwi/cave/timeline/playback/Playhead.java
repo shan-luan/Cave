@@ -32,7 +32,7 @@ public class Playhead implements Serializable {
         this.states.add(PlaybackState.SEEKING);
     }
     public void update(){
-        if(states.contains(PlaybackState.PLAYING) && !states.contains(PlaybackState.SEEKING)){
+        if(states.contains(PlaybackState.PLAYING)){
             time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
         }
     }
