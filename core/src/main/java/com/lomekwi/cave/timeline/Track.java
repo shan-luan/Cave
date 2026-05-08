@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Phaser;
 
 @NullMarked
 public class Track implements Serializable {
@@ -29,6 +30,7 @@ public class Track implements Serializable {
     private static final long serialVersionUID = 1L;
     public final transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
     public final transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
+    private final transient Phaser framePhaser = new Phaser(1);
     public Track(int index) {
         this.index = index;
     }
@@ -129,5 +131,9 @@ public class Track implements Serializable {
         }
         serializationRanges=null;
         serializationSources=null;
+    }
+
+    public Phaser getFramePhaser() {
+        return framePhaser;
     }
 }

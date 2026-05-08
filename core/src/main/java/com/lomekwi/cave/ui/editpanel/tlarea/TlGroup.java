@@ -108,7 +108,7 @@ public class TlGroup extends Group {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
                 if (keycode == SPACE) {
-                    if (playhead.getStates().contains(PlaybackState.PLAYING)) {
+                    if (playhead.isPlaying()) {
                         playhead.clearState(PlaybackState.PLAYING);
                     } else {
                         playhead.setState(PlaybackState.PLAYING);

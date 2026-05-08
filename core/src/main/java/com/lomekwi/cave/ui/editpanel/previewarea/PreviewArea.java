@@ -12,6 +12,7 @@ import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.PipelineEvents;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.Root;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +26,7 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group {
     private final Project project;
+    //FIXME:多线程可见性
     private final List<@Nullable ImgFrame> frames = new ArrayList<>();
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
@@ -105,6 +107,8 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void sink(ImgFrame frame) {
+        Track track = project.timeline.getTracks().get(frame.trackIndex);
+        track.getFramePhaser().register();
         Gdx.app.postRunnable(()-> {
             addFrame(frame);
             frame.update();
@@ -113,6 +117,7 @@ public class PreviewArea extends Group {
             i.setPosition(xOffset, yOffset);
             i.setScale(scale);
             frame.applyTransform();
+            track.getFramePhaser().arriveAndDeregister();
         });
     }
     private void addFrame(ImgFrame frame){
@@ -122,7 +127,7 @@ public class PreviewArea extends Group {
         }
         frames.set(frame.trackIndex, frame);
     }
-
+//TODO:减少对象分配开销
     @Subscribe
     public void clear(PipelineEvents.NoFrameNowEvent event) {
         Gdx.app.postRunnable(() -> {
@@ -141,7 +146,7 @@ public class PreviewArea extends Group {
                 }
                 // 所有条件满足，执行清理
                 removeActor(image);
-                frames.remove(idx);
+                frames.set(idx,null);
     });
     }
 

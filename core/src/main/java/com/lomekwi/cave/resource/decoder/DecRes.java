@@ -12,7 +12,7 @@ import org.bytedeco.javacv.FrameGrabber;
 public abstract class DecRes implements Resource {
     protected final FFmpegFrameGrabber grabber;
     protected long lastGrabTime = -1;
-    protected boolean initialized;
+    protected volatile boolean initialized;
 
     protected DecRes(MedRes source) {
         this.grabber = new FFmpegFrameGrabber(source.getPath());

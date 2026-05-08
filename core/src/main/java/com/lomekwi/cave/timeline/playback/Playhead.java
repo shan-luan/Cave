@@ -4,35 +4,44 @@ import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.util.Units;
 
 import java.io.Serializable;
-import java.util.EnumSet;
 
 public class Playhead implements Serializable {
     private static final long serialVersionUID = 1L;
-    private long time= 0L;
-    private transient EnumSet<PlaybackState> states = EnumSet.noneOf(PlaybackState.class);
+    private volatile long time= 0L;
+    private transient volatile boolean isPlaying = false;
+    private transient volatile boolean isSeeking = false;
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
-        this.states = EnumSet.noneOf(PlaybackState.class);
+        this.isPlaying = false;
+        this.isSeeking = false;
     }
     public void setState(PlaybackState state){
         if (state == PlaybackState.PLAYING) {
-            states.add(PlaybackState.PLAYING);
+            isPlaying = true;
         } else if (state == PlaybackState.SEEKING) {
-            states.add(PlaybackState.SEEKING);
+            isSeeking = true;
         }
     }
     public void clearState(PlaybackState state){
-        states.remove(state);
+        if (state == PlaybackState.PLAYING) {
+            isPlaying = false;
+        } else if (state == PlaybackState.SEEKING) {
+            isSeeking = false;
+        }
     }
-    public EnumSet<PlaybackState> getStates(){
-        return states;
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+    
+    public boolean isSeeking() {
+        return isSeeking;
     }
     public void seek(long time){
         this.time=time;
-        this.states.add(PlaybackState.SEEKING);
+        this.isSeeking = true;
     }
     public void update(){
-        if(states.contains(PlaybackState.PLAYING)){
+        if(isPlaying){
             time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
         }
     }
