@@ -170,7 +170,7 @@ public class TlGroup extends Group {
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, Segment> entry : track.getSources().subRangeMap(visibleRange).asMapOfRanges().entrySet()) {
+                for (final Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapSnapshot(visibleRange).asMapOfRanges().entrySet()) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegment().getRange();
                     switch (actor.getDragSide()) {
@@ -286,7 +286,7 @@ public class TlGroup extends Group {
                     long minStart = 0;
                     Range<Long> hullRange = nr.span(r.getKey());
 
-                    Map<Range<Long>, Segment> occupiedRanges = t.getSources().subRangeMap(hullRange).asMapOfRanges();
+                    Map<Range<Long>, Segment> occupiedRanges = t.getSubRangeMapSnapshot(hullRange).asMapOfRanges();
                     for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
                         if (!entry.getValue().equals(r.getValue())) {
                             minStart = entry.getKey().upperEndpoint();
@@ -313,7 +313,7 @@ public class TlGroup extends Group {
                     long maxEnd = timeline.getLength();
                     Range<Long> hullRange = nr.span(r.getKey());
 
-                    Map<Range<Long>, Segment> occupiedRanges = t.getSources().subRangeMap(hullRange).asDescendingMapOfRanges();
+                    Map<Range<Long>, Segment> occupiedRanges = t.getSubRangeMapSnapshot(hullRange).asDescendingMapOfRanges();
                     for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
                         if (!entry.getValue().equals(r.getValue())) {
                             maxEnd = entry.getKey().lowerEndpoint();

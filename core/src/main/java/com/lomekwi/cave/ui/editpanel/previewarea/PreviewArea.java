@@ -99,9 +99,11 @@ public class PreviewArea extends Group {
 
     private void updateAllImages() {
         for (ImgFrame frame : frames) {
-            frame.getImage().setPosition(xOffset, yOffset);
-            frame.getImage().setScale(scale);
-            frame.applyTransform();
+            if(frame!=null) {
+                frame.getImage().setPosition(xOffset, yOffset);
+                frame.getImage().setScale(scale);
+                frame.applyTransform();
+            }
         }
     }
 
@@ -109,6 +111,7 @@ public class PreviewArea extends Group {
     public void sink(ImgFrame frame) {
         Track track = project.timeline.getTracks().get(frame.trackIndex);
         track.getFramePhaser().register();
+        //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
             addFrame(frame);
             frame.update();
