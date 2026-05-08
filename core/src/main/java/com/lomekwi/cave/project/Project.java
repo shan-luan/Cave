@@ -2,6 +2,7 @@ package com.lomekwi.cave.project;
 
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
+import com.badlogic.gdx.Gdx;
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.audio.AudioFrameListener;
