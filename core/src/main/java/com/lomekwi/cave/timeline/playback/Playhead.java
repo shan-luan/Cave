@@ -1,54 +1,76 @@
 package com.lomekwi.cave.timeline.playback;
 
-import com.badlogic.gdx.Gdx;
-import com.lomekwi.cave.util.Units;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-import java.io.Serializable;
+public class Playhead implements Externalizable {
 
-public class Playhead implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private volatile long time= 0L;
+    private volatile long anchor;
+    private transient volatile long frozenTime = 0L;
     private transient volatile boolean isPlaying = false;
     private transient volatile boolean isSeeking = false;
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        this.isPlaying = false;
-        this.isSeeking = false;
+
+    public Playhead() {
     }
-    public void setState(PlaybackState state){
-        if (state == PlaybackState.PLAYING) {
-            isPlaying = true;
-        } else if (state == PlaybackState.SEEKING) {
-            isSeeking = true;
+
+    public void setPlaying(boolean playing) {
+        if (playing == isPlaying) return;
+
+        if (playing) {
+            anchor = System.nanoTime() - frozenTime;
+        } else {
+            frozenTime = System.nanoTime() - anchor;
         }
+
+        isPlaying = playing;
     }
-    public void clearState(PlaybackState state){
-        if (state == PlaybackState.PLAYING) {
-            isPlaying = false;
-        } else if (state == PlaybackState.SEEKING) {
-            isSeeking = false;
-        }
+
+    public void setSeeking(boolean seeking) {
+        isSeeking = seeking;
     }
+
     public boolean isPlaying() {
         return isPlaying;
     }
-    
+
     public boolean isSeeking() {
         return isSeeking;
     }
-    public void seek(long time){
-        this.time=time;
-        this.isSeeking = true;
+
+    public void seek(long time) {
+        time *= 1000;
+
+        if (isPlaying) {
+            anchor = System.nanoTime() - time;
+        } else {
+            frozenTime = time;
+        }
+
+        isSeeking = true;
     }
-    public void update(){
-        if(isPlaying){
-            time+= (long) (Gdx.graphics.getDeltaTime()*Units.SECOND);
+
+    public long getTime() {
+        return getNanoTime() / 1000;
+    }
+
+    private long getNanoTime() {
+        if (isPlaying) {
+            return System.nanoTime() - anchor;
+        } else {
+            return frozenTime;
         }
     }
-    public long getTime(){
-        return time;
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeLong(getTime());
     }
-    protected void setTime(long time) {
-        this.time = time;
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException {
+        long savedTime = in.readLong();
+        this.frozenTime = savedTime * 1000;
     }
 }

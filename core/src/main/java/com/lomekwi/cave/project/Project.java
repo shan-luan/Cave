@@ -50,7 +50,6 @@ public class Project implements Serializable, AutoCloseable {
     }
 
     public void update() {
-        playhead.update();
         if(timeline.getTracks().size()!=trackCount){
             trackCount = timeline.getTracks().size();
             startTrackLoops();
