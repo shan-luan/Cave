@@ -29,8 +29,8 @@ public class Track implements Serializable {
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
-    public final transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
-    public final transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
+    private transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
+    private transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
     private transient Phaser framePhaser = new Phaser(1);
     public Track(int index) {
         this.index = index;
@@ -129,9 +129,20 @@ public class Track implements Serializable {
         serializationSources=null;
 
         framePhaser=new Phaser(1);
+
+        lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
+        noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
     }
 
     public Phaser getFramePhaser() {
         return framePhaser;
+    }
+
+    public PipelineEvents.LastFrameEndEvent getLastFrameEndEvent() {
+        return lastFrameEndEvent;
+    }
+
+    public PipelineEvents.NoFrameNowEvent getNoFrameNowEvent() {
+        return noFrameNowEvent;
     }
 }

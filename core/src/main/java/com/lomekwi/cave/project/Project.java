@@ -73,11 +73,11 @@ public class Project implements Serializable, AutoCloseable {
     private void updateTrack(Track track) {
         Frame frame = track.get(playhead.getTime());
         if (frame != null) {
-            projEventBus.post(track.lastFrameEndEvent);
+            projEventBus.post(track.getLastFrameEndEvent());
             projEventBus.post(frame);
             track.getFramePhaser().arriveAndAwaitAdvance();
         }else {
-            projEventBus.post(track.noFrameNowEvent);
+            projEventBus.post(track.getNoFrameNowEvent());
         }
     }
 
