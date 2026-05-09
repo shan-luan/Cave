@@ -4,7 +4,6 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Gdx;
-import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -14,7 +13,7 @@ import org.bytedeco.javacv.FrameGrabber;
 import java.nio.ByteBuffer;
 
 public class VdoDecRes extends DecRes {
-    private ImgFrame bufferedFrame;
+    private ByteBuffer bufferedPixels;
 
     public VdoDecRes(VdoRes source) {
         super(source);
@@ -59,22 +58,20 @@ public class VdoDecRes extends DecRes {
     public void start() throws FrameGrabber.Exception {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         super.start();
-        bufferedFrame = new ImgFrame();
+        bufferedPixels = null;
     }
 
-    public void setBufferedFrame(ImgFrame frame) {
-        bufferedFrame = frame;
+    public void setBufferedPixels(ByteBuffer pixels) {
+        bufferedPixels = pixels;
     }
 
-    public ImgFrame getBufferedFrame() {
-        return bufferedFrame;
+    public ByteBuffer getBufferedPixels() {
+        return bufferedPixels;
     }
 
     @Override
     public void close() throws Exception {
-        if (bufferedFrame != null) {
-            bufferedFrame.close();
-        }
+        // ByteBuffer 不需要手动关闭
         super.close();
     }
 
@@ -104,7 +101,7 @@ public class VdoDecRes extends DecRes {
             Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
 
         }
-        if (!((target < nextFrameTime) && bufferedFrame.getPixels() != null)) {
+        if (!((target < nextFrameTime) && bufferedPixels != null)) {
             Frame output = null;
             int retryCount = 0;
             final int maxRetries = 10;
@@ -113,12 +110,12 @@ public class VdoDecRes extends DecRes {
                 retryCount++;
             }
             if (output != null) {
-                bufferedFrame.setPixels((ByteBuffer) output.image[0]);
+                bufferedPixels = (ByteBuffer) output.image[0];
             }
 
         }
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
         lastGrabTime = target;
-        return bufferedFrame.getPixels();
+        return bufferedPixels;
     }
 }

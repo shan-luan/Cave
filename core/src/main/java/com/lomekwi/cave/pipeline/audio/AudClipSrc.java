@@ -18,18 +18,11 @@ public class AudClipSrc extends Source<AudFrame> {
     @Override
     protected AudFrame generate(long time, Track track) {
         AudDecRes decoder = (AudDecRes) audRes.getDecoder(track);
-        if (!decoder.isInitialized()) {
-            try {
-                decoder.start();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        
+
         if (frame == null) {
             frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2);
         }
-        
+
         try {
             short[] samples = decoder.decodeFrameAtTime(time);
             if (samples == null) return null;
