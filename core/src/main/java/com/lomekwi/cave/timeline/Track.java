@@ -6,6 +6,8 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.PipelineEvents;
+import com.lomekwi.cave.app.Vars;
+import com.badlogic.gdx.Gdx;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -17,11 +19,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.locks.LockSupport;
 
 @NullMarked
-public class Track implements Serializable {
+public class Track implements Serializable, Runnable {
     public final int index;
+    private final Timeline timeline;
     private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
 
     private long length;
@@ -32,7 +37,9 @@ public class Track implements Serializable {
     private transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
     private transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
     private transient Phaser framePhaser = new Phaser(1);
-    public Track(int index) {
+    private @Nullable transient Future<?> future;
+    public Track(Timeline timeline, int index) {
+        this.timeline = timeline;
         this.index = index;
     }
 
@@ -144,5 +151,45 @@ public class Track implements Serializable {
 
     public PipelineEvents.NoFrameNowEvent getNoFrameNowEvent() {
         return noFrameNowEvent;
+    }
+
+    public Timeline getTimeline() {
+        return timeline;
+    }
+
+    public @Nullable Future<?> getFuture() {
+        return future;
+    }
+    public void setFuture(@Nullable Future<?> future) {
+        this.future = future;
+    }
+
+    @Override
+    public void run() {
+        Gdx.app.log("Track", "轨道线程启动: " + this);
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    update();
+                } catch (Exception e) {
+                    Gdx.app.error("Track", "在更新轨道时发生错误", e);
+                    LockSupport.parkNanos(1000000L);
+                }
+            }
+        } finally {
+            Gdx.app.log("Track", "轨道线程结束: " + this);
+        }
+    }
+
+    private void update() {
+        Frame frame = get(timeline.getProject().playhead.getTime());
+        if (frame != null) {
+            timeline.getProject().projEventBus.post(lastFrameEndEvent);
+            timeline.getProject().projEventBus.post(frame);
+            framePhaser.arriveAndAwaitAdvance();
+        } else {
+            timeline.getProject().projEventBus.post(noFrameNowEvent);
+            LockSupport.parkNanos(1000000L);
+        }
     }
 }

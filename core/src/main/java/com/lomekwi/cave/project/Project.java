@@ -30,17 +30,15 @@ import java.util.concurrent.locks.LockSupport;
 public class Project implements Serializable, AutoCloseable {
     private static final long serialVersionUID = 1L;
     protected transient Path savePath;
-    public final Timeline timeline = new Timeline();
+    public final Timeline timeline;
     public final Playhead playhead = new Playhead();
     public final Map<File, Resource> resources = new HashMap<>();
     public final SegFactory segFactory = new SegFactory(this);
     public transient EventBus projEventBus;
     public String name;
     public final UUID uuid = UUID.randomUUID();
-    private int trackCount;
 
     private transient boolean isActive = false;
-    private transient List<Future<?>> trackFutures = new ArrayList<>();
 
     protected Project() {
         Vars.appEventBus.register(this);
@@ -48,33 +46,19 @@ public class Project implements Serializable, AutoCloseable {
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(new AudioFrameListener());
         projEventBus.register(this);
+        timeline = new Timeline(this);
     }
 
     public void update() {
-        int currentTrackCount = timeline.getTracks().size();
-        if(currentTrackCount != trackCount){
-            if (isActive && currentTrackCount > trackCount) {
-                for (int i = trackCount; i < currentTrackCount; i++) {
-                    Track track = timeline.getTracks().get(i);
-                    Future<?> future = Vars.trackExecutor.submit(() -> {
-                        Gdx.app.log("Project", "轨道线程启动: " + track);
-                        try {
-                            while (!Thread.currentThread().isInterrupted()) {
-                                try {
-                                    updateTrack(track);
-                                }catch (Exception e){
-                                    Gdx.app.error("Project", "在更新轨道时发生错误", e);
-                                    LockSupport.parkNanos(1000000L);
-                                }
-                            }
-                        } finally {
-                            Gdx.app.log("Project", "轨道线程结束: " + track);
-                        }
-                    });
-                    trackFutures.add(future);
-                }
+        if (!isActive) {
+            return;
+        }
+
+        for (Track track : timeline.getTracks()) {
+            if (track.getFuture() == null || track.getFuture().isDone()) {
+                Future<?> future = Vars.trackExecutor.submit(track);
+                track.setFuture(future);
             }
-            trackCount = currentTrackCount;
         }
     }
 
@@ -83,7 +67,7 @@ public class Project implements Serializable, AutoCloseable {
         if (!isActive) {
             isActive = true;
             Gdx.app.log("Project", "项目 [" + name + "] 激活，开始轨道循环");
-            startTrackLoops();
+            update();
         }
     }
 
@@ -96,46 +80,16 @@ public class Project implements Serializable, AutoCloseable {
         }
     }
 
-    private void startTrackLoops() {
-        for (Track track : timeline.getTracks()) {
-            Future<?> future = Vars.trackExecutor.submit(() -> {
-                Gdx.app.log("Project", "轨道线程启动: " + track);
-                try {
-                    while (!Thread.currentThread().isInterrupted()) {
-                        try {
-                            updateTrack(track);
-                        }catch (Exception e){
-                            Gdx.app.error("Project", "在更新轨道时发生错误", e);
-                            LockSupport.parkNanos(1000000L);
-                        }
-                    }
-                } finally {
-                    Gdx.app.log("Project", "轨道线程结束: " + track);
-                }
-            });
-            trackFutures.add(future);
-        }
-    }
-
     private void stopTrackLoops() {
-        for (Future<?> future : trackFutures) {
-            future.cancel(true);
-        }
-        trackFutures.clear();
-    }
-
-
-    private void updateTrack(Track track) {
-        Frame frame = track.get(playhead.getTime());
-        if (frame != null) {
-            projEventBus.post(track.getLastFrameEndEvent());
-            projEventBus.post(frame);
-            track.getFramePhaser().arriveAndAwaitAdvance();
-        }else {
-            projEventBus.post(track.getNoFrameNowEvent());
-            LockSupport.parkNanos(1000000L);
+        for (Track track : timeline.getTracks()) {
+            Future<?> future = track.getFuture();
+            if (future != null) {
+                future.cancel(true);
+                track.setFuture(null);
+            }
         }
     }
+
 
     public void close() {
         Vars.appEventBus.unregister(this);
@@ -156,7 +110,6 @@ public class Project implements Serializable, AutoCloseable {
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(this);
         isActive = false;
-        trackFutures = new ArrayList<>();
     }
 
     public Path getSavePath() {

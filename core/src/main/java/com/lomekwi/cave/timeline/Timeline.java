@@ -2,6 +2,7 @@ package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.project.Project;
 
 import org.jspecify.annotations.NullMarked;
 
@@ -13,10 +14,15 @@ import java.util.Map;
 
 @NullMarked
 public class Timeline implements Serializable {
+    private final Project project;
     private final List<Track> tracks = new ArrayList<>();
     private long length;
     private boolean lengthChanged = true;
     private static final long serialVersionUID = 1L;
+    
+    public Timeline(Project project) {
+        this.project = project;
+    }
     public Timeline getActiveElements(long time, Collection<Frame> collector) {
         for(Track track:tracks){
             Frame frame = track.get(time);
@@ -58,7 +64,7 @@ public class Timeline implements Serializable {
      */
     public Track getTrack(int index) {
         while (tracks.size() <= index) {
-            tracks.add(new Track(tracks.size()));
+            tracks.add(new Track(this, tracks.size()));
         }
         return tracks.get(index);
     }
@@ -85,5 +91,9 @@ public class Timeline implements Serializable {
     }
     public List<Track> getTracks() {
         return tracks;
+    }
+    
+    public Project getProject() {
+        return project;
     }
 }
