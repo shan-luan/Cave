@@ -7,8 +7,6 @@ public class AudioFrameListener {
 
     @Subscribe
     public void onAudFrame(AudFrame frame) {
-        System.out.println("p"+System.nanoTime());
         AppAudioOut.getInstance().getAudioDevice().writeSamples(frame.getSamples(), 0, frame.getSamples().length);
-        System.out.println("P"+System.nanoTime());
     }
 }

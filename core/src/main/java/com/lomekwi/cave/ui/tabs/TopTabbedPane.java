@@ -9,6 +9,8 @@ import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.app.Vars;
 
 public class TopTabbedPane extends TabbedPane {
+    private ProjectTab currentProjectTab;
+
     public TopTabbedPane() {
         super();
         Vars.appEventBus.register(this);
@@ -17,14 +19,29 @@ public class TopTabbedPane extends TabbedPane {
             public void switchedTab(Tab tab) {
                 Root.getInstance().getMajorArea().clear();
                 Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
-                if (tab instanceof ProjectTab) {
-                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectFrontedEvent.INSTANCE);
+                
+                if (currentProjectTab != null && currentProjectTab != tab) {
+                    currentProjectTab.getProject().projEventBus.post(ProjectEvents.ProjectBackgroundedEvent.INSTANCE);
                 }
+                
+                if (tab instanceof ProjectTab) {
+                    currentProjectTab = (ProjectTab) tab;
+                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectFrontedEvent.INSTANCE);
+                } else {
+                    currentProjectTab = null;
+                }
+                
                 Vars.appEventBus.post(TabEvents.TabSwitchedEvent.INSTANCE);
             }
 
             @Override
             public void removedTab(Tab tab) {
+                if (tab instanceof ProjectTab) {
+                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectBackgroundedEvent.INSTANCE);
+                    if (currentProjectTab == tab) {
+                        currentProjectTab = null;
+                    }
+                }
             }
 
             @Override

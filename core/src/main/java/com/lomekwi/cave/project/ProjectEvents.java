@@ -17,5 +17,9 @@ public class ProjectEvents {
         public static final ProjectFrontedEvent INSTANCE=new ProjectFrontedEvent();
         private ProjectFrontedEvent(){}
     }
+    public static class ProjectBackgroundedEvent{
+        public static final ProjectBackgroundedEvent INSTANCE=new ProjectBackgroundedEvent();
+        private ProjectBackgroundedEvent(){}
+    }
 
 }

@@ -71,7 +71,6 @@ public class VdoDecRes extends DecRes {
 
     @Override
     public void close() throws Exception {
-        // ByteBuffer 不需要手动关闭
         super.close();
     }
 
