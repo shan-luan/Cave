@@ -1,5 +1,7 @@
 # Cave — CAVE's Another Video Editor
 
+![截图！（其实这差不多就是全部功能了）](screenshot.png)
+
 > **开发中，不可用于生产环境。**
 
 ## 简介
