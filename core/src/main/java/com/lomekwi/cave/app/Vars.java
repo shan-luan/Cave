@@ -11,5 +11,9 @@ import java.util.concurrent.Executors;
 public final class Vars {
     public static NativeFileChooser fileChooser;
     public static final EventBus appEventBus = new EventBus();
-    public static final ExecutorService trackExecutor = Executors.newCachedThreadPool();
+    public static final ExecutorService trackExecutor = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 }

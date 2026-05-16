@@ -12,7 +12,6 @@ import java.util.concurrent.CountDownLatch;
 public class VdoClipSrc extends Source<ImgFrame> {
     private final VdoRes src;
     private transient Texture texture;
-    private transient ImgFrame frame;
     private volatile transient boolean initialized;
     private static final long serialVersionUID = 1L;
     public VdoClipSrc(VdoRes src) {
