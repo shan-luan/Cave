@@ -156,11 +156,6 @@ public class PreviewArea extends Group {
         clearFrames(event.track.index);
     }
 
-    @Subscribe
-    public void clear(PipelineEvents.LastFrameEndEvent event) {
-        clearFrames(event.track.index);
-    }
-
     @Override
     public void act(float delta) {
         super.act(delta);
