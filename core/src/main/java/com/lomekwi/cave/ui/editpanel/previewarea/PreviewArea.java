@@ -131,26 +131,34 @@ public class PreviewArea extends Group {
         frames.set(frame.trackIndex, frame);
     }
 //TODO:减少对象分配开销
+    public void clearFrames(int idx) {
+        Gdx.app.postRunnable(() -> {
+            // 边界检查
+            if (idx < 0 || idx >= frames.size()) {
+                return;
+            }
+            ImgFrame frame = frames.get(idx);
+            if (frame == null) {
+                return;
+            }
+            Image image = frame.getImage();
+            if (image == null) {
+                return;
+            }
+            // 所有条件满足，执行清理
+            removeActor(image);
+            frames.set(idx,null);
+        });
+    }
+
     @Subscribe
     public void clear(PipelineEvents.NoFrameNowEvent event) {
-        Gdx.app.postRunnable(() -> {
-            int idx = event.track.index;
-                // 边界检查
-                if (idx < 0 || idx >= frames.size()) {
-                    return;
-                }
-                ImgFrame frame = frames.get(idx);
-                if (frame == null) {
-                    return;
-                }
-                Image image = frame.getImage();
-                if (image == null) {
-                    return;
-                }
-                // 所有条件满足，执行清理
-                removeActor(image);
-                frames.set(idx,null);
-    });
+        clearFrames(event.track.index);
+    }
+
+    @Subscribe
+    public void clear(PipelineEvents.LastFrameEndEvent event) {
+        clearFrames(event.track.index);
     }
 
     @Override

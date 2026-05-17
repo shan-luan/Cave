@@ -20,7 +20,7 @@ public abstract class Segment implements Serializable {
     /**
      * 源的0秒在时间轴中的位置
      */
-    public long origin;
+    public volatile long origin;
     protected Segment(Source<?> source) {
         this.source = source;
         actor= setupActor();
