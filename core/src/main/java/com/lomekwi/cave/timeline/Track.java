@@ -17,8 +17,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.locks.LockSupport;
@@ -147,8 +149,8 @@ public class Track implements Serializable, Runnable {
         }
         return length;
     }
-    synchronized public RangeMap<Long, Segment> getSubRangeMapSnapshot(Range<Long> range) {
-        return ImmutableRangeMap.copyOf(sources.subRangeMap(range));
+    synchronized public Set<Map.Entry<Range<Long>, Segment>> getSubRangeMapAsEntrySet(Range<Long> range) {
+        return Collections.unmodifiableSet(sources.subRangeMap(range).asMapOfRanges().entrySet());
     }
 
     private void writeObject(ObjectOutputStream oos) throws IOException {

@@ -165,7 +165,7 @@ public class TlGroup extends Group {
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapSnapshot(visibleRange).asMapOfRanges().entrySet()) {
+                for (final Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapAsEntrySet(visibleRange)) {
                     SegActor actor = entry.getValue().getActor();
                     Range<Long> r = actor.getSegment().getRange();
                     switch (actor.getDragSide()) {
