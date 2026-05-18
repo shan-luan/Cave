@@ -105,6 +105,36 @@ public class Track implements Serializable, Runnable {
     synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time) {
         return sources.getEntry(time);
     }
+    /**
+     * 获取指定时间点的片段条目，支持偏移查找
+     *
+     * @param time      查询的时间点
+     * @param offset    偏移量，0表示精确匹配时间点；正数表示查找该时间之后的第一个片段；负数表示查找该时间之前的最后一个片段。建议只使用-1,0,1，防止接口变动。
+     * @param excludeHit 是否排除命中时间点的片段本身。true表示跳过包含time的片段，false表示可以返回包含time的片段
+     * @return 找到的片段条目，如果未找到则返回null
+     */
+    synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time,int offset,boolean excludeHit) {
+        if(offset==0){
+            if(excludeHit){
+                return null;//为什么会有人使用这个参数组合啊喂
+            }else {
+                return sources.getEntry(time);
+            }
+        } else if (offset > 0) {
+            Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atLeast(time)).asMapOfRanges();
+            for(Map.Entry<Range<Long>, Segment> entry:m.entrySet()){
+                if(excludeHit&&entry.getKey().contains(time)) continue;
+                return entry;
+            }
+        }else {
+            Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges();
+            for(Map.Entry<Range<Long>, Segment> entry:m.entrySet()){
+                if(excludeHit&&entry.getKey().contains(time)) continue;
+                return entry;
+            }
+        }
+        return null;
+    }
 
     synchronized public long getLength() {
         if (lengthChanged) {
@@ -117,7 +147,6 @@ public class Track implements Serializable, Runnable {
         }
         return length;
     }
-
     synchronized public RangeMap<Long, Segment> getSubRangeMapSnapshot(Range<Long> range) {
         return ImmutableRangeMap.copyOf(sources.subRangeMap(range));
     }

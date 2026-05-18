@@ -266,7 +266,8 @@ public class TlGroup extends Group {
 
     protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegment().getTrack();
-        Map.Entry<Range<Long>, Segment> r = actor.getSegment().getEntry();
+        Map.Entry<Range<Long>, Segment> e = actor.getSegment().getEntry();
+        Range<Long> r = e.getKey();
 
         switch (actor.getDragSide()) {
             case FRONT: {
@@ -275,54 +276,35 @@ public class TlGroup extends Group {
                 if (target >= upper) return;
                 target = Math.max(target, absoluteTimeToX(0));
 
-                Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
+                //nr:new range
+                Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
 
-                if (!t.isFree(r, nr)) {
-                    long minStart = 0;
-                    Range<Long> hullRange = nr.span(r.getKey());
-
-                    Map<Range<Long>, Segment> occupiedRanges = t.getSubRangeMapSnapshot(hullRange).asMapOfRanges();
-                    for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
-                        if (!entry.getValue().equals(r.getValue())) {
-                            minStart = entry.getKey().upperEndpoint();
-                            break;
-                        }
-                    }
-
+                if (!t.isFree(e, nr)) {
+                    long minStart = t.getEntry(r.lowerEndpoint()+1,-1,true).getKey().upperEndpoint();
                     target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
-                    nr = Range.closedOpen(xToAbsoluteTime(target), r.getKey().upperEndpoint());
+                    nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
                 }
 
                 actor.setX(target);
                 actor.setWidth(upper - target);
-                timeline.resize(t, r, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                timeline.resize(t, e, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
                 break;
             }
             case BEHIND: {
                 if (diffToActorX < 1f) return;
                 float newWidth = diffToActorX;
                 float upper = actor.getX() + newWidth;
-                Range<Long> nr = Range.closedOpen(r.getKey().lowerEndpoint(), xToAbsoluteTime(upper));
+                Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
 
-                if (!t.isFree(r, nr)) {
-                    long maxEnd = timeline.getLength();
-                    Range<Long> hullRange = nr.span(r.getKey());
-
-                    Map<Range<Long>, Segment> occupiedRanges = t.getSubRangeMapSnapshot(hullRange).asDescendingMapOfRanges();
-                    for (Map.Entry<Range<Long>, Segment> entry : occupiedRanges.entrySet()) {
-                        if (!entry.getValue().equals(r.getValue())) {
-                            maxEnd = entry.getKey().lowerEndpoint();
-                            break;
-                        }
-                    }
-
+                if (!t.isFree(e, nr)) {
+                    long maxEnd = t.getEntry(r.upperEndpoint()-1,1,true).getKey().lowerEndpoint();
                     upper = absoluteTimeToX(maxEnd);
                     newWidth = upper - actor.getX();
-                    nr = Range.closedOpen(r.getKey().lowerEndpoint(), xToAbsoluteTime(upper));
+                    nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
                 }
 
                 actor.setWidth(newWidth);
-                timeline.resize(t, r, r.getKey().lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                timeline.resize(t, e, r.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
                 break;
             }
             case MIDDLE: {
@@ -341,15 +323,15 @@ public class TlGroup extends Group {
                     targetY = Math.min(actor.getY() + deltaY, getHeight() - trackYShift - trackHeight);
 
                 long target = xToAbsoluteTime(targetX);
-                long duration = r.getKey().upperEndpoint() - r.getKey().lowerEndpoint();
+                long duration = r.upperEndpoint() - r.lowerEndpoint();
                 Range<Long> nr = Range.closedOpen(target, target + duration);
 
                 Track newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
                 actor.setPosition(targetX, targetY);
-                if(newTrack.isFree(r, nr)) {
-                    timeline.move(t, newTrack, r, target, duration);
+                if(newTrack.isFree(e, nr)) {
+                    timeline.move(t, newTrack, e, target, duration);
                     long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
-                    r.getValue().origin += deltaTime;
+                    e.getValue().origin += deltaTime;
                 }
             }
         }
