@@ -37,7 +37,9 @@ public class Track implements Serializable, Runnable {
     private transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
     private transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
     private transient Phaser framePhaser = new Phaser(1);
-    private @Nullable transient Future<?> future;
+    private @Nullable
+    transient Future<?> future;
+
     public Track(Timeline timeline, int index) {
         this.timeline = timeline;
         this.index = index;
@@ -50,6 +52,7 @@ public class Track implements Serializable, Runnable {
         segment.setRange(r);
         lengthChanged = true;
     }
+
     synchronized protected void remove(long start, long duration) {
         sources.remove(Range.closedOpen(start, start + duration));
         lengthChanged = true;
@@ -66,6 +69,7 @@ public class Track implements Serializable, Runnable {
         }
         return segment.get(time, this).withTrack(this.index);
     }
+
     /**
      * 检查指定范围是否与给定的条目兼容（即该范围是否为空闲或仅被同一片段占用）
      *
@@ -75,7 +79,7 @@ public class Track implements Serializable, Runnable {
      */
     synchronized public boolean isFree(Map.Entry<Range<Long>, Segment> entry, Range<Long> range) {
         Map<Range<Long>, Segment> m = sources.subRangeMap(range).asMapOfRanges();
-        if(m.size()>1) return false;
+        if (m.size() > 1) return false;
         if (m.isEmpty()) return true;
         return m.containsValue(entry.getValue());
     }
@@ -87,55 +91,62 @@ public class Track implements Serializable, Runnable {
         }
         lengthChanged = true;
     }
-    synchronized protected void remove(Range<Long> range){
+
+    synchronized protected void remove(Range<Long> range) {
         sources.remove(range);
         lengthChanged = true;
     }
-    synchronized protected void resize(Map.Entry<Range<Long>, Segment> e , long start, long duration){
+
+    synchronized protected void resize(Map.Entry<Range<Long>, Segment> e, long start, long duration) {
         remove(e.getKey());
-        add(e.getValue(),start,duration);
+        add(e.getValue(), start, duration);
     }
-    synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time){
+
+    synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time) {
         return sources.getEntry(time);
     }
-    synchronized public long getLength(){
-        if(lengthChanged){
-            if(sources.asMapOfRanges().isEmpty()){
-                length=0;
-            }else {
+
+    synchronized public long getLength() {
+        if (lengthChanged) {
+            if (sources.asMapOfRanges().isEmpty()) {
+                length = 0;
+            } else {
                 length = sources.span().upperEndpoint();
             }
             lengthChanged = false;
         }
         return length;
     }
-    synchronized public RangeMap<Long, Segment> getSubRangeMapSnapshot(Range<Long> range){
-        return  ImmutableRangeMap.copyOf(sources.subRangeMap(range));
+
+    synchronized public RangeMap<Long, Segment> getSubRangeMapSnapshot(Range<Long> range) {
+        return ImmutableRangeMap.copyOf(sources.subRangeMap(range));
     }
-    private void writeObject(ObjectOutputStream oos) throws IOException{
+
+    private void writeObject(ObjectOutputStream oos) throws IOException {
         Map<Range<Long>, Segment> ranges = sources.asMapOfRanges();
         serializationRanges = new long[ranges.size() * 2];
         serializationSources = new ArrayList<>(ranges.values());
-        int i=0;
-        for(Range<Long> r : ranges.keySet()){
-            serializationRanges[i]=r.lowerEndpoint();
-            serializationRanges[i+1]=r.upperEndpoint();
-            i+=2;
+        int i = 0;
+        for (Range<Long> r : ranges.keySet()) {
+            serializationRanges[i] = r.lowerEndpoint();
+            serializationRanges[i + 1] = r.upperEndpoint();
+            i += 2;
         }
         oos.defaultWriteObject();
-        serializationRanges=null;
-        serializationSources=null;
+        serializationRanges = null;
+        serializationSources = null;
     }
+
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        sources=TreeRangeMap.create();
-        for(int i=0;i<serializationRanges.length;i+=2){
-            sources.put(Range.closedOpen(serializationRanges[i],serializationRanges[i+1]),serializationSources.get(i/2));
+        sources = TreeRangeMap.create();
+        for (int i = 0; i < serializationRanges.length; i += 2) {
+            sources.put(Range.closedOpen(serializationRanges[i], serializationRanges[i + 1]), serializationSources.get(i / 2));
         }
-        serializationRanges=null;
-        serializationSources=null;
+        serializationRanges = null;
+        serializationSources = null;
 
-        framePhaser=new Phaser(1);
+        framePhaser = new Phaser(1);
 
         lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
         noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
@@ -145,14 +156,6 @@ public class Track implements Serializable, Runnable {
         return framePhaser;
     }
 
-    public PipelineEvents.LastFrameEndEvent getLastFrameEndEvent() {
-        return lastFrameEndEvent;
-    }
-
-    public PipelineEvents.NoFrameNowEvent getNoFrameNowEvent() {
-        return noFrameNowEvent;
-    }
-
     public Timeline getTimeline() {
         return timeline;
     }
@@ -160,6 +163,7 @@ public class Track implements Serializable, Runnable {
     public @Nullable Future<?> getFuture() {
         return future;
     }
+
     public void setFuture(@Nullable Future<?> future) {
         this.future = future;
     }
@@ -169,27 +173,24 @@ public class Track implements Serializable, Runnable {
         Gdx.app.log("Track", "轨道线程启动: " + this);
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    update();
-                } catch (Exception e) {
-                    Gdx.app.error("Track", "在更新轨道时发生错误", e);
+                Frame frame = get(timeline.getProject().playhead.getTime());
+                if (frame != null) {
+                    timeline.getProject().projEventBus.post(lastFrameEndEvent);
+                    timeline.getProject().projEventBus.post(frame);
+                    framePhaser.arriveAndAwaitAdvance();
+                } else {
+                    timeline.getProject().projEventBus.post(noFrameNowEvent);
                     LockSupport.parkNanos(1000000L);
                 }
             }
-        } finally {
+        } catch (Exception e) {
+            Gdx.app.error("Track", "在更新轨道时发生错误", e);
+            Gdx.app.postRunnable(() -> {
+                throw e;
+            });
+        }finally {
             Gdx.app.log("Track", "轨道线程结束: " + this);
         }
     }
-
-    private void update() {
-        Frame frame = get(timeline.getProject().playhead.getTime());
-        if (frame != null) {
-            timeline.getProject().projEventBus.post(lastFrameEndEvent);
-            timeline.getProject().projEventBus.post(frame);
-            framePhaser.arriveAndAwaitAdvance();
-        } else {
-            timeline.getProject().projEventBus.post(noFrameNowEvent);
-            LockSupport.parkNanos(1000000L);
-        }
-    }
 }
+
