@@ -31,7 +31,7 @@ public class Project implements Serializable, AutoCloseable {
     private static final long serialVersionUID = 1L;
     protected transient Path savePath;
     public final Timeline timeline;
-    public final Playhead playhead = new Playhead();
+    public transient Playhead playhead;
     public final Map<File, Resource> resources = new HashMap<>();
     public final SegFactory segFactory = new SegFactory(this);
     public transient EventBus projEventBus;
@@ -47,6 +47,7 @@ public class Project implements Serializable, AutoCloseable {
         projEventBus.register(new AudioFrameListener());
         projEventBus.register(this);
         timeline = new Timeline(this);
+        playhead = new Playhead(projEventBus);
     }
 
     public void update() {
@@ -109,6 +110,7 @@ public class Project implements Serializable, AutoCloseable {
         Vars.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(this);
+        playhead = new Playhead(projEventBus);
         isActive = false;
     }
 

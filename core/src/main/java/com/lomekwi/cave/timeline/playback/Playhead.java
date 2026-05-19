@@ -1,18 +1,18 @@
 package com.lomekwi.cave.timeline.playback;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import com.google.common.eventbus.EventBus;
 
-public class Playhead implements Externalizable {
+import org.jspecify.annotations.NonNull;
+
+public class Playhead {
 
     private volatile long anchor;
-    private transient volatile long frozenTime = 0L;
-    private transient volatile boolean isPlaying = false;
-    private transient volatile boolean isSeeking = false;
+    private volatile long frozenTime = 0L;
+    private volatile boolean isPlaying = false;
+    private final transient @NonNull EventBus projEventBus;
 
-    public Playhead() {
+    public Playhead(@NonNull EventBus projEventBus) {
+        this.projEventBus = projEventBus;
     }
 
     public void setPlaying(boolean playing) {
@@ -27,16 +27,8 @@ public class Playhead implements Externalizable {
         isPlaying = playing;
     }
 
-    public void setSeeking(boolean seeking) {
-        isSeeking = seeking;
-    }
-
     public boolean isPlaying() {
         return isPlaying;
-    }
-
-    public boolean isSeeking() {
-        return isSeeking;
     }
 
     public void seek(long time) {
@@ -48,7 +40,7 @@ public class Playhead implements Externalizable {
             frozenTime = time;
         }
 
-        isSeeking = true;
+        projEventBus.post(SeekingEvent.INSTANCE);
     }
 
     public long getTime() {
@@ -61,16 +53,5 @@ public class Playhead implements Externalizable {
         } else {
             return frozenTime;
         }
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeLong(getTime());
-    }
-
-    @Override
-    public void readExternal(ObjectInput in) throws IOException {
-        long savedTime = in.readLong();
-        this.frozenTime = savedTime * 1000;
     }
 }
