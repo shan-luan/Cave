@@ -31,7 +31,6 @@ public abstract class DecRes implements Resource {
         grabber.stop();
         grabber.close();
     }
-    @Deprecated
     public abstract org.bytedeco.javacv.Frame grab() throws FFmpegFrameGrabber.Exception;
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
         if (!initialized) throw new IllegalStateException("Not initialized");

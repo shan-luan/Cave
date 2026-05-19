@@ -4,7 +4,9 @@ import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
-import com.lomekwi.cave.project.ProjectEvents;
+import com.lomekwi.cave.project.ProjectBackgroundedEvent;
+import com.lomekwi.cave.project.ProjectFrontedEvent;
+import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.app.Vars;
 
@@ -21,23 +23,23 @@ public class TopTabbedPane extends TabbedPane {
                 Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
                 
                 if (currentProjectTab != null && currentProjectTab != tab) {
-                    currentProjectTab.getProject().projEventBus.post(ProjectEvents.ProjectBackgroundedEvent.INSTANCE);
+                    currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
                 }
                 
                 if (tab instanceof ProjectTab) {
                     currentProjectTab = (ProjectTab) tab;
-                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectFrontedEvent.INSTANCE);
+                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectFrontedEvent.INSTANCE);
                 } else {
                     currentProjectTab = null;
                 }
                 
-                Vars.appEventBus.post(TabEvents.TabSwitchedEvent.INSTANCE);
+                Vars.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
 
             @Override
             public void removedTab(Tab tab) {
                 if (tab instanceof ProjectTab) {
-                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectEvents.ProjectBackgroundedEvent.INSTANCE);
+                    ((ProjectTab) tab).getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
                     if (currentProjectTab == tab) {
                         currentProjectTab = null;
                     }
@@ -47,7 +49,7 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void removedAllTabs() {
                 Root.getInstance().getMajorArea().clear();
-                Vars.appEventBus.post(TabEvents.TabSwitchedEvent.INSTANCE);
+                Vars.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
         });
     }
@@ -58,13 +60,13 @@ public class TopTabbedPane extends TabbedPane {
         }
     }
     @Subscribe
-    public void onNewProject(ProjectEvents.ProjectLoadedEvent event){
+    public void onNewProject(ProjectLoadedEvent event){
         ProjectTab pt = new ProjectTab(event.getNewProject());
         add(pt);
         switchTab(pt);
     }
     @Subscribe
-    public void onSettingsOpened(TabEvents.SettingsOpenedEvent event){
+    public void onSettingsOpened(SettingsOpenedEvent event){
         SettingsTab st = new SettingsTab();
         add(st);
         switchTab(st);

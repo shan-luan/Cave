@@ -5,7 +5,8 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Frame;
-import com.lomekwi.cave.pipeline.PipelineEvents;
+import com.lomekwi.cave.pipeline.LastFrameEndEvent;
+import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.lomekwi.cave.app.Vars;
 import com.badlogic.gdx.Gdx;
 
@@ -36,8 +37,8 @@ public class Track implements Serializable, Runnable {
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
-    private transient PipelineEvents.LastFrameEndEvent lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
-    private transient PipelineEvents.NoFrameNowEvent noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
+    private transient LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(this);
+    private transient NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(this);
     private transient Phaser framePhaser = new Phaser(1);
     private @Nullable
     transient Future<?> future;
@@ -179,8 +180,8 @@ public class Track implements Serializable, Runnable {
 
         framePhaser = new Phaser(1);
 
-        lastFrameEndEvent = new PipelineEvents.LastFrameEndEvent(this);
-        noFrameNowEvent = new PipelineEvents.NoFrameNowEvent(this);
+        lastFrameEndEvent = new LastFrameEndEvent(this);
+        noFrameNowEvent = new NoFrameNowEvent(this);
     }
 
     public Phaser getFramePhaser() {

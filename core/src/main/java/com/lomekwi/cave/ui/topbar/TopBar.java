@@ -11,11 +11,12 @@ import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
-import com.lomekwi.cave.project.ProjectEvents;
+import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
-import com.lomekwi.cave.ui.tabs.TabEvents;
+import com.lomekwi.cave.ui.tabs.SettingsOpenedEvent;
+import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
 import com.lomekwi.cave.app.Vars;
 
 import java.io.IOException;
@@ -86,7 +87,7 @@ public class TopBar extends MenuBar {
 
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(()->{
-                Vars.appEventBus.post(TabEvents.SettingsOpenedEvent.INSTANCE);
+                Vars.appEventBus.post(SettingsOpenedEvent.INSTANCE);
             })))
         );
     }
@@ -104,7 +105,7 @@ public class TopBar extends MenuBar {
      */
     private Boolean newProject() {
         try {
-            Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.create()));
+            Vars.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
             Root.getInstance().getToastManager().show(i18n("项目已新建"), toastTimeOut);
         } catch (Exception e) {
             e.printStackTrace();
@@ -127,7 +128,7 @@ public class TopBar extends MenuBar {
                 @Override
                 public void onFileChosen(FileHandle file) {
                     try {
-                        Vars.appEventBus.post(new ProjectEvents.ProjectLoadedEvent(Projects.open(file)));
+                        Vars.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
                         Root.getInstance().getToastManager().show(i18n("项目已打开"), toastTimeOut);
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
@@ -248,7 +249,7 @@ public class TopBar extends MenuBar {
             setDisabled(true);
         }
         @Subscribe
-        public void onTabSwitched(TabEvents.TabSwitchedEvent event){
+        public void onTabSwitched(TabSwitchedEvent event){
             setDisabled(Root.getInstance().getFrontendProject()==null);
         }
     }

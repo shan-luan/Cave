@@ -9,7 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.pipeline.PipelineEvents;
+import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.timeline.Track;
@@ -152,7 +152,7 @@ public class PreviewArea extends Group {
     }
 
     @Subscribe
-    public void clear(PipelineEvents.NoFrameNowEvent event) {
+    public void clear(NoFrameNowEvent event) {
         clearFrames(event.track.index);
     }
 

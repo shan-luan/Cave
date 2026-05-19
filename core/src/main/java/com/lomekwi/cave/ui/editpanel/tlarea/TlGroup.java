@@ -18,7 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.resource.media.Media;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.project.ProjectEvents;
+import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
@@ -257,7 +257,7 @@ public class TlGroup extends Group {
     }
 
     @Subscribe
-    public void onProjectFronted(ProjectEvents.ProjectFrontedEvent e) {
+    public void onProjectFronted(ProjectFrontedEvent e) {
         Root.getInstance().getStage().setScrollFocus(this);
         Root.getInstance().getStage().setKeyboardFocus(this);
     }

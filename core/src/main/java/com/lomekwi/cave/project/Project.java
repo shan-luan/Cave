@@ -63,7 +63,7 @@ public class Project implements Serializable, AutoCloseable {
     }
 
     @Subscribe
-    public void onProjectFronted(ProjectEvents.ProjectFrontedEvent event) {
+    public void onProjectFronted(ProjectFrontedEvent event) {
         if (!isActive) {
             isActive = true;
             Gdx.app.log("Project", "项目 [" + name + "] 激活，开始轨道循环");
@@ -72,7 +72,7 @@ public class Project implements Serializable, AutoCloseable {
     }
 
     @Subscribe
-    public void onProjectBackgrounded(ProjectEvents.ProjectBackgroundedEvent event) {
+    public void onProjectBackgrounded(ProjectBackgroundedEvent event) {
         if (isActive) {
             isActive = false;
             Gdx.app.log("Project", "项目 [" + name + "] 后台化，停止轨道循环");
