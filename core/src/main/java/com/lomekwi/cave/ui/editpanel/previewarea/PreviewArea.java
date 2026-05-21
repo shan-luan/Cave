@@ -110,7 +110,7 @@ public class PreviewArea extends Group {
     @Subscribe
     public void sink(ImgFrame frame) {
         Track track = project.timeline.getTracks().get(frame.trackIndex);
-        track.getFramePhaser().register();
+        track.getWorker().getFramePhaser().register();
         //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
             addFrame(frame);
@@ -120,7 +120,7 @@ public class PreviewArea extends Group {
             i.setPosition(xOffset, yOffset);
             i.setScale(scale);
             frame.applyTransform();
-            track.getFramePhaser().arriveAndDeregister();
+            track.getWorker().getFramePhaser().arriveAndDeregister();
         });
     }
     private void addFrame(ImgFrame frame){

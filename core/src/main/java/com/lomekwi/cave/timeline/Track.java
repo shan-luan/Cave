@@ -1,13 +1,11 @@
 package com.lomekwi.cave.timeline;
 
-import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.LastFrameEndEvent;
 import com.lomekwi.cave.pipeline.NoFrameNowEvent;
-import com.lomekwi.cave.app.Vars;
 import com.badlogic.gdx.Gdx;
 
 import org.jspecify.annotations.NullMarked;
@@ -27,7 +25,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.locks.LockSupport;
 
 @NullMarked
-public class Track implements Serializable, Runnable {
+public class Track implements Serializable {
     public final int index;
     private final Timeline timeline;
     private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
@@ -37,11 +35,7 @@ public class Track implements Serializable, Runnable {
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
-    private transient LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(this);
-    private transient NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(this);
-    private transient Phaser framePhaser = new Phaser(1);
-    private @Nullable
-    transient Future<?> future;
+    private transient TrackWorker worker = new TrackWorker();
 
     public Track(Timeline timeline, int index) {
         this.timeline = timeline;
@@ -177,51 +171,58 @@ public class Track implements Serializable, Runnable {
         }
         serializationRanges = null;
         serializationSources = null;
-
-        framePhaser = new Phaser(1);
-
-        lastFrameEndEvent = new LastFrameEndEvent(this);
-        noFrameNowEvent = new NoFrameNowEvent(this);
-    }
-
-    public Phaser getFramePhaser() {
-        return framePhaser;
+        worker = new TrackWorker();
     }
 
     public Timeline getTimeline() {
         return timeline;
     }
 
-    public @Nullable Future<?> getFuture() {
-        return future;
+    public TrackWorker getWorker() {
+        return worker;
     }
 
-    public void setFuture(@Nullable Future<?> future) {
-        this.future = future;
-    }
+    public class TrackWorker implements Runnable {
+        private transient LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
+        private transient NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
+        private transient Phaser framePhaser = new Phaser(1);
+        private @Nullable transient Future<?> future;
 
-    @Override
-    public void run() {
-        Gdx.app.log("Track", "轨道线程启动: " + this);
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                Frame frame = get(timeline.getProject().playhead.getTime());
-                if (frame != null) {
-                    timeline.getProject().projEventBus.post(lastFrameEndEvent);
-                    timeline.getProject().projEventBus.post(frame);
-                    framePhaser.arriveAndAwaitAdvance();
-                } else {
-                    timeline.getProject().projEventBus.post(noFrameNowEvent);
-                    LockSupport.parkNanos(1000000L);
+        public Phaser getFramePhaser() {
+            return framePhaser;
+        }
+
+        public @Nullable Future<?> getFuture() {
+            return future;
+        }
+
+        public void setFuture(@Nullable Future<?> future) {
+            this.future = future;
+        }
+
+        @Override
+        public void run() {
+            Gdx.app.log("Track", "轨道线程启动: " + Track.this);
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Frame frame = get(timeline.getProject().playhead.getTime());
+                    if (frame != null) {
+                        timeline.getProject().projEventBus.post(lastFrameEndEvent);
+                        timeline.getProject().projEventBus.post(frame);
+                        framePhaser.arriveAndAwaitAdvance();
+                    } else {
+                        timeline.getProject().projEventBus.post(noFrameNowEvent);
+                        LockSupport.parkNanos(1000000L);
+                    }
                 }
+            } catch (Exception e) {
+                Gdx.app.error("Track", "在更新轨道时发生错误", e);
+                Gdx.app.postRunnable(() -> {
+                    throw e;
+                });
+            }finally {
+                Gdx.app.log("Track", "轨道线程结束: " + Track.this);
             }
-        } catch (Exception e) {
-            Gdx.app.error("Track", "在更新轨道时发生错误", e);
-            Gdx.app.postRunnable(() -> {
-                throw e;
-            });
-        }finally {
-            Gdx.app.log("Track", "轨道线程结束: " + this);
         }
     }
 }

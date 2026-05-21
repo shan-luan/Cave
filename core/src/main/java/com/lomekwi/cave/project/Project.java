@@ -56,9 +56,9 @@ public class Project implements Serializable, AutoCloseable {
         }
 
         for (Track track : timeline.getTracks()) {
-            if (track.getFuture() == null || track.getFuture().isDone()) {
-                Future<?> future = Vars.trackExecutor.submit(track);
-                track.setFuture(future);
+            if (track.getWorker().getFuture() == null || track.getWorker().getFuture().isDone()) {
+                Future<?> future = Vars.trackExecutor.submit(track.getWorker());
+                track.getWorker().setFuture(future);
             }
         }
     }
@@ -83,10 +83,10 @@ public class Project implements Serializable, AutoCloseable {
 
     private void stopTrackLoops() {
         for (Track track : timeline.getTracks()) {
-            Future<?> future = track.getFuture();
+            Future<?> future = track.getWorker().getFuture();
             if (future != null) {
                 future.cancel(true);
-                track.setFuture(null);
+                track.getWorker().setFuture(null);
             }
         }
     }
