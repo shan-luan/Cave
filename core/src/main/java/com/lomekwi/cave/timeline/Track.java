@@ -183,12 +183,12 @@ public class Track implements Serializable {
     }
 
     public class TrackWorker implements Runnable {
-        private transient LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
-        private transient NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
-        private transient Phaser framePhaser = new Phaser(1);
-        private @Nullable transient Future<?> future;
+        private final LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
+        private final NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
+        private @Nullable Phaser framePhaser;
+        private @Nullable Future<?> future;
 
-        public Phaser getFramePhaser() {
+        public @Nullable Phaser getFramePhaser() {
             return framePhaser;
         }
 
@@ -202,6 +202,7 @@ public class Track implements Serializable {
 
         @Override
         public void run() {
+            framePhaser = new Phaser(1);
             Gdx.app.log("Track", "轨道线程启动: " + Track.this);
             try {
                 while (!Thread.currentThread().isInterrupted()) {
@@ -221,6 +222,7 @@ public class Track implements Serializable {
                     throw e;
                 });
             }finally {
+                framePhaser.forceTermination();
                 Gdx.app.log("Track", "轨道线程结束: " + Track.this);
             }
         }
