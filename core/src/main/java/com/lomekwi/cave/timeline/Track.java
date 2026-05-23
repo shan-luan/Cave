@@ -50,7 +50,7 @@ public class Track implements Serializable {
     }
 
     synchronized protected void add(Segment segment, long start, long duration) {
-        Range<Long> r = Range.closedOpen(start, start + duration);
+        var r = Range.closedOpen(start, start + duration);
         sources.put(r, segment);
         segment.setTrack(this);
         segment.setRange(r);
@@ -65,7 +65,7 @@ public class Track implements Serializable {
     public @Nullable Frame get(long time) {
         Segment segment;
         synchronized (this) {
-            Entry<Range<Long>, Segment> entry = sources.getEntry(time);
+            var entry = sources.getEntry(time);
             if (entry == null) {
                 return null;
             }
@@ -82,7 +82,7 @@ public class Track implements Serializable {
      * @return 如果范围内没有其他片段占用则返回true；如果范围内只有与entry相同的片段也返回true；否则返回false
      */
     synchronized public boolean isFree(Entry<Range<Long>, Segment> entry, Range<Long> range) {
-        Map<Range<Long>, Segment> m = sources.subRangeMap(range).asMapOfRanges();
+        var m = sources.subRangeMap(range).asMapOfRanges();
         if (m.size() > 1) return false;
         if (m.isEmpty()) return true;
         return m.containsValue(entry.getValue());
@@ -125,14 +125,14 @@ public class Track implements Serializable {
                 return sources.getEntry(time);
             }
         } else if (offset > 0) {
-            Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atLeast(time)).asMapOfRanges();
-            for(Entry<Range<Long>, Segment> entry:m.entrySet()){
+            var m =sources.subRangeMap(Range.atLeast(time)).asMapOfRanges();
+            for(var entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
                 return entry;
             }
         }else {
-            Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges();
-            for(Entry<Range<Long>, Segment> entry:m.entrySet()){
+            var m =sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges();
+            for(var entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
                 return entry;
             }
@@ -156,7 +156,7 @@ public class Track implements Serializable {
     }
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
-        Map<Range<Long>, Segment> ranges = sources.asMapOfRanges();
+        var ranges = sources.asMapOfRanges();
         serializationRanges = new long[ranges.size() * 2];
         serializationSources = new ArrayList<>(ranges.values());
         int i = 0;
@@ -221,11 +221,11 @@ public class Track implements Serializable {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     long t=timeline.project.playhead.getTime();
-                    Entry<Range<@NonNull Long>, Segment> e = getEntry(t);
+                    var e = getEntry(t);
                     if(e == null){
                         timeline.project.projEventBus.post(noFrameNowEvent);
                         long parkTime = Long.MAX_VALUE;
-                        Entry<Range<@NonNull Long>, Segment> next = getEntry(t,1,false);
+                        var next = getEntry(t,1,false);
                         if(next!=null){
                             parkTime = next.getKey().lowerEndpoint()-t;
                             parkTime*=1000;//μs->ns

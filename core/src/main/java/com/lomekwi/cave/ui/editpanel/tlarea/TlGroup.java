@@ -161,13 +161,13 @@ public class TlGroup extends Group {
         if (dirty) {
             clearChildren(false);
 
-            final Range<Long> visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
+            var visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
-                for (final Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapAsEntrySet(visibleRange)) {
+                for (var entry : track.getSubRangeMapAsEntrySet(visibleRange)) {
                     SegActor actor = entry.getValue().getActor();
-                    Range<Long> r = actor.getSegment().getRange();
+                    var r = actor.getSegment().getRange();
                     switch (actor.getDragSide()) {
                         case FRONT:
                         case BEHIND:
@@ -266,8 +266,8 @@ public class TlGroup extends Group {
 
     protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         Track t = actor.getSegment().getTrack();
-        Map.Entry<Range<Long>, Segment> e = actor.getSegment().getEntry();
-        Range<Long> r = e.getKey();
+        var e = actor.getSegment().getEntry();
+        var r = e.getKey();
 
         switch (actor.getDragSide()) {
             case FRONT: {
@@ -324,9 +324,9 @@ public class TlGroup extends Group {
 
                 long target = xToAbsoluteTime(targetX);
                 long duration = r.upperEndpoint() - r.lowerEndpoint();
-                Range<Long> nr = Range.closedOpen(target, target + duration);
+                var nr = Range.closedOpen(target, target + duration);
 
-                Track newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
+                var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
                 actor.setPosition(targetX, targetY);
                 if(newTrack.isFree(e, nr)) {
                     timeline.move(t, newTrack, e, target, duration);
