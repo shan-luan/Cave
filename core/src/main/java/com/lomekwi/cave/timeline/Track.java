@@ -8,7 +8,7 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.LastFrameEndEvent;
 import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.badlogic.gdx.Gdx;
-import com.lomekwi.cave.timeline.playback.PlayEvent;
+import com.lomekwi.cave.timeline.playback.PlayStateChangedEvent;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
 
@@ -227,10 +227,11 @@ public class Track implements Serializable {
                 Playhead p=timeline.project.playhead;
                 while (!Thread.currentThread().isInterrupted()) {
                     if(!p.isPlaying()){
+                        Gdx.app.debug("Track", "因为播放头而尝试park...");
                         LockSupport.park();
-                        if(Thread.currentThread().isInterrupted()){
-                            break;
-                        }
+                        continue;//防止之前持有许可,一次park不够
+                    }else {
+                        dirty = false;
                     }
                     long t=p.getTime();
                     var e = getEntry(t);
@@ -260,7 +261,6 @@ public class Track implements Serializable {
                             }
                         }
                     }
-                    dirty = false;
                 }
             } catch (Exception e) {
                 Gdx.app.error("Track", "在更新轨道时发生错误", e);
@@ -275,7 +275,7 @@ public class Track implements Serializable {
             }
         }
         @Subscribe
-        public void onPlay(PlayEvent event){
+        public void onPlay(PlayStateChangedEvent event){
             wakeUp();
         }
         @Subscribe
