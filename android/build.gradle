@@ -47,8 +47,8 @@ android {
     }
   }
   compileOptions {
-    sourceCompatibility "8"
-    targetCompatibility "8"
+    sourceCompatibility "11"
+    targetCompatibility "11"
     coreLibraryDesugaringEnabled true
   }
   buildTypes {

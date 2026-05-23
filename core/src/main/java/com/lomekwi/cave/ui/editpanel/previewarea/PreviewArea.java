@@ -13,6 +13,7 @@ import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.timeline.playback.SeekEvent;
 import com.lomekwi.cave.ui.Root;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -146,14 +147,21 @@ public class PreviewArea extends Group {
                 return;
             }
             // 所有条件满足，执行清理
-            removeActor(image);
             frames.set(idx,null);
+            removeActor(image);
         });
     }
 
     @Subscribe
     public void clear(NoFrameNowEvent event) {
         clearFrames(event.track.index);
+    }
+    //FIXME:当seek到a点,获取帧中途,seek到b点,此时前帧才完成获取到达,那么这里的清除逻辑无法作用.
+    @Subscribe
+    public void clear(SeekEvent event){
+        for(int i = 0; i < frames.size(); i++){
+            clearFrames(i);
+        }
     }
 
     @Override
