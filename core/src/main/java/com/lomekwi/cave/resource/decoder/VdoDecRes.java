@@ -4,6 +4,7 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Gdx;
+import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -12,7 +13,7 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 
-public class VdoDecRes extends DecRes {
+public class VdoDecRes extends DecRes<ImgFrame> {
     private ByteBuffer bufferedPixels;
 
     public VdoDecRes(VdoRes source) {
@@ -75,14 +76,15 @@ public class VdoDecRes extends DecRes {
     }
 
     /**
-     * 解码指定时间戳的视频帧，并返回像素数据（ByteBuffer）。
+     * 解码指定时间戳的视频帧，并将像素数据更新到提供的帧对象中。
      * 内部会根据时间戳判断是否使用缓存、跳转或抓取新帧。
      *
-     * @param time 目标时间
-     * @return 解码后的像素数据 ByteBuffer
+     * @param time  目标时间
+     * @param frame 要更新的帧对象
      * @throws Exception 解码过程中的异常
      */
-    public ByteBuffer decodeFrameAtTime(long time) throws Exception {
+    @Override
+    public void get(long time, ImgFrame frame) throws Exception {
         if (!initialized) {
             start();
         }
@@ -91,15 +93,16 @@ public class VdoDecRes extends DecRes {
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
         final long diff = target - lastGrabTime;
 
-        // 请求时间早于上次抓取时间，需要 seek 回退
         if (diff < 0) {
+            // 请求时间早于上次抓取时间，需要 seek 回退
             seek(target);
             Gdx.app.debug(i18n("视频解码"), hashCode() +i18n("向前跳跃")+(lastGrabTime-getTimestamp())/SECOND + i18n("秒"));
-        }else if(diff > 3 * getLengthPerFrame()){// 如果请求时间间隔超过3帧间隔，则进行跳转
+        } else if (diff > 3 * getLengthPerFrame()) {
+            // 如果请求时间间隔超过3帧间隔，则进行跳转
             seek(target);
             Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
-
         }
+
         if (!((target < nextFrameTime) && bufferedPixels != null)) {
             Frame output = null;
             int retryCount = 0;
@@ -111,10 +114,10 @@ public class VdoDecRes extends DecRes {
             if (output != null) {
                 bufferedPixels = (ByteBuffer) output.image[0];
             }
-
         }
+
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
         lastGrabTime = target;
-        return bufferedPixels;
+        frame.setPixels(bufferedPixels);
     }
 }

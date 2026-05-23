@@ -1,7 +1,6 @@
 package com.lomekwi.cave.resource.media;
 
 import com.lomekwi.cave.resource.decoder.AudDecRes;
-import com.lomekwi.cave.resource.decoder.DecRes;
 
 public class AudRes extends MedRes{
     private static final long serialVersionUID = 1L;
@@ -14,7 +13,7 @@ public class AudRes extends MedRes{
     }
 
     @Override
-    protected DecRes newDecoder() {
+    protected AudDecRes newDecoder() {
         return new AudDecRes(this);
     }
 }

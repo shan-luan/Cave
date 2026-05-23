@@ -1,5 +1,6 @@
 package com.lomekwi.cave.resource.decoder;
 
+import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.resource.media.AudRes;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -8,7 +9,7 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ShortBuffer;
 
-public class AudDecRes extends DecRes {
+public class AudDecRes extends DecRes<AudFrame> {
     public AudDecRes(AudRes source) {
         super(source);
     }
@@ -18,13 +19,17 @@ public class AudDecRes extends DecRes {
         return grabber.grabSamples();
     }
 
-    public short[] decodeFrameAtTime(long time) throws Exception {
+    @Override
+    public void get(long time, AudFrame frame) throws Exception {
         Frame f = grab();
-        if (f == null || f.samples == null || f.samples.length == 0) return null;
+        if (f == null || f.samples == null || f.samples.length == 0) {
+            frame.setSamples(null);
+            return;
+        }
         ShortBuffer sb = (ShortBuffer) f.samples[0];
         short[] out = new short[sb.remaining()];
         sb.get(out);
-        return out;
+        frame.setSamples(out).setTime(time);
     }
     @Override
     public void start() throws FrameGrabber.Exception {

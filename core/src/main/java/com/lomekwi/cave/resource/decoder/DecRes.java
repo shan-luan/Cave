@@ -1,5 +1,6 @@
 package com.lomekwi.cave.resource.decoder;
 
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MedRes;
 
@@ -8,8 +9,9 @@ import org.bytedeco.javacv.FrameGrabber;
 
 /**
  * 解码器类。
+ * @param <F> 产生的帧类型
  */
-public abstract class DecRes implements Resource {
+public abstract class DecRes<F extends Frame> implements Resource {
     protected final FFmpegFrameGrabber grabber;
     protected long lastGrabTime = -1;
     protected volatile boolean initialized;
@@ -32,6 +34,14 @@ public abstract class DecRes implements Resource {
         grabber.close();
     }
     public abstract org.bytedeco.javacv.Frame grab() throws FFmpegFrameGrabber.Exception;
+
+    /**
+     * 解码指定时间的数据并更新到提供的帧对象中。
+     * @param time  局部时间
+     * @param frame 要更新的帧对象
+     */
+    public abstract void get(long time, F frame) throws Exception;
+
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
         if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.setTimestamp(time);

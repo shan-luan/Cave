@@ -24,9 +24,8 @@ public class AudClipSrc extends Source<AudFrame> {
         }
 
         try {
-            short[] samples = decoder.decodeFrameAtTime(time);
-            if (samples == null) return null;
-            frame.setSamples(samples).setTime(time);
+            decoder.get(time, frame);
+            if (frame.getSamples() == null) return null;
             return frame;
         } catch (Exception e) {
             throw new RuntimeException(e);

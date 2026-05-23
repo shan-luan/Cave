@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
-import java.nio.ByteBuffer;
+
 import java.util.concurrent.CountDownLatch;
 
 public class VdoClipSrc extends Source<ImgFrame> {
@@ -35,14 +35,12 @@ public class VdoClipSrc extends Source<ImgFrame> {
                 return null;
             }
         }
-        ByteBuffer pixels;
         try {
-            pixels=src.getDecoder(track).decodeFrameAtTime(time);
+            src.getDecoder(track).get(time, frame);
         } catch (Exception e) {
             e.printStackTrace();
-            pixels=null;
+            frame.setPixels(null);
         }
-        frame.setPixels(pixels);
         Transform t=frame.getTransform();
         t.x=0;
         t.y=0;
