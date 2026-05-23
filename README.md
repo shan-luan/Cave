@@ -39,4 +39,4 @@ android/   Android 启动器
 
 ## 许可证
 
-GPLv3
+GNU Affero General Public License v3.0
