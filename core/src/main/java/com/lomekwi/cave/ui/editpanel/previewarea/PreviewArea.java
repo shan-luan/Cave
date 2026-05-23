@@ -156,7 +156,6 @@ public class PreviewArea extends Group {
     public void clear(NoFrameNowEvent event) {
         clearFrames(event.track.index);
     }
-    //FIXME:当seek到a点,获取帧中途,seek到b点,此时前帧才完成获取到达,那么这里的清除逻辑无法作用.
     @Subscribe
     public void clear(SeekEvent event){
         for(int i = 0; i < frames.size(); i++){

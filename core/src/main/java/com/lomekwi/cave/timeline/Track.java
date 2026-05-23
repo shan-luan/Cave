@@ -228,6 +228,9 @@ public class Track implements Serializable {
                 while (!Thread.currentThread().isInterrupted()) {
                     if(!p.isPlaying()){
                         LockSupport.park();
+                        if(Thread.currentThread().isInterrupted()){
+                            break;
+                        }
                     }
                     long t=p.getTime();
                     var e = getEntry(t);
@@ -248,10 +251,12 @@ public class Track implements Serializable {
                         while (t< end && !dirty){
                             t=timeline.project.playhead.getTime();
                             Frame frame = get(t);
+                            if(dirty) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
+                                if(dirty) timeline.project.projEventBus.post(noFrameNowEvent);
                             }
                         }
                     }
@@ -281,8 +286,9 @@ public class Track implements Serializable {
             wakeUp();
         }
         private void wakeUp(){
-            if(workerThread != null){
-                LockSupport.unpark(workerThread);
+            var t = workerThread;
+            if(t != null){
+                LockSupport.unpark(t);
             }
             dirty = true;
         }
