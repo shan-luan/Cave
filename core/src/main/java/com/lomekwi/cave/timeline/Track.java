@@ -201,7 +201,7 @@ public class Track implements Serializable {
         private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
-        private volatile boolean reevaluable;
+        private volatile boolean updatable;
         public TrackWorker() {
             timeline.project.projEventBus.register( this);
         }
@@ -239,7 +239,7 @@ public class Track implements Serializable {
                         LockSupport.park();
                         continue;//防止之前持有许可,一次park不够
                     }else {
-                        reevaluable = false;
+                        updatable = false;
                     }
                     var e = getEntry(t);
                     if(e == null){
@@ -256,15 +256,15 @@ public class Track implements Serializable {
                     }else{
                         Gdx.app.debug("Track", "找到片段: " + e.getValue());
                         long end = e.getKey().upperEndpoint();
-                        while (t< end && !reevaluable){
+                        while (t< end && !updatable){
                             t=timeline.project.playhead.getTime();
                             Frame frame = get(t);
-                            if(reevaluable) break;
+                            if(updatable) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
-                                if(reevaluable && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
+                                if(updatable && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
                             }
                         }
                     }
@@ -283,21 +283,21 @@ public class Track implements Serializable {
         }
         @Subscribe
         public void onPlayStateChanged(PlayStateChangedEvent event){
-            reevaluate();
+            update();
         }
         @Subscribe
         public void onSeek(SeekEvent event){
-            reevaluate();
+            update();
         }
         protected void onTrackChanged(){
-            reevaluate();
+            update();
         }
-        private void reevaluate(){
+        private void update(){
             var t = workerThread;
             if(t != null){
                 LockSupport.unpark(t);
             }
-            reevaluable = true;
+            updatable = true;
         }
     }
 }
