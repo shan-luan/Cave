@@ -3,12 +3,16 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
+import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.LastFrameEndEvent;
 import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.badlogic.gdx.Gdx;
+import com.lomekwi.cave.timeline.playback.SeekEvent;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -24,6 +28,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.Map.Entry;
+
 @NullMarked
 public class Track implements Serializable {
     public final int index;
@@ -35,11 +41,12 @@ public class Track implements Serializable {
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
     private static final long serialVersionUID = 1L;
-    private transient TrackWorker worker = new TrackWorker();
+    private transient TrackWorker worker;
 
     public Track(Timeline timeline, int index) {
         this.timeline = timeline;
         this.index = index;
+        this.worker = new TrackWorker();
     }
 
     synchronized protected void add(Segment segment, long start, long duration) {
@@ -58,7 +65,7 @@ public class Track implements Serializable {
     public @Nullable Frame get(long time) {
         Segment segment;
         synchronized (this) {
-            Map.Entry<Range<Long>, Segment> entry = sources.getEntry(time);
+            Entry<Range<Long>, Segment> entry = sources.getEntry(time);
             if (entry == null) {
                 return null;
             }
@@ -74,7 +81,7 @@ public class Track implements Serializable {
      * @param range 要检查的时间范围
      * @return 如果范围内没有其他片段占用则返回true；如果范围内只有与entry相同的片段也返回true；否则返回false
      */
-    synchronized public boolean isFree(Map.Entry<Range<Long>, Segment> entry, Range<Long> range) {
+    synchronized public boolean isFree(Entry<Range<Long>, Segment> entry, Range<Long> range) {
         Map<Range<Long>, Segment> m = sources.subRangeMap(range).asMapOfRanges();
         if (m.size() > 1) return false;
         if (m.isEmpty()) return true;
@@ -82,7 +89,7 @@ public class Track implements Serializable {
     }
 
     synchronized protected void remove(long time) {
-        Map.Entry<Range<Long>, Segment> entry = sources.getEntry(time);
+        Entry<Range<Long>, Segment> entry = sources.getEntry(time);
         if (entry != null) {
             sources.remove(entry.getKey());
         }
@@ -94,7 +101,7 @@ public class Track implements Serializable {
         lengthChanged = true;
     }
 
-    synchronized protected void resize(Map.Entry<Range<Long>, Segment> e, long start, long duration) {
+    synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
         remove(e.getKey());
         add(e.getValue(), start, duration);
     }
@@ -119,13 +126,13 @@ public class Track implements Serializable {
             }
         } else if (offset > 0) {
             Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atLeast(time)).asMapOfRanges();
-            for(Map.Entry<Range<Long>, Segment> entry:m.entrySet()){
+            for(Entry<Range<Long>, Segment> entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
                 return entry;
             }
         }else {
             Map<Range<Long>, Segment> m =sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges();
-            for(Map.Entry<Range<Long>, Segment> entry:m.entrySet()){
+            for(Entry<Range<Long>, Segment> entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
                 return entry;
             }
@@ -144,7 +151,7 @@ public class Track implements Serializable {
         }
         return length;
     }
-    synchronized public Set<Map.Entry<Range<Long>, Segment>> getSubRangeMapAsEntrySet(Range<Long> range) {
+    synchronized public Set<Entry<Range<Long>, Segment>> getSubRangeMapAsEntrySet(Range<Long> range) {
         return Collections.unmodifiableSet(sources.subRangeMap(range).asMapOfRanges().entrySet());
     }
 
@@ -182,39 +189,64 @@ public class Track implements Serializable {
         return worker;
     }
 
+    @NullUnmarked
     public class TrackWorker implements Runnable {
         private final LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
         private final NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
-        private @Nullable Phaser framePhaser;
-        private @Nullable Future<?> future;
+        private Phaser framePhaser;
+        private Future<?> future;
+        private volatile Thread workerThread;
+        private volatile boolean sought;
+        public TrackWorker() {
+            timeline.project.projEventBus.register( this);
+        }
 
-        public @Nullable Phaser getFramePhaser() {
+        public Phaser getFramePhaser() {
             return framePhaser;
         }
 
-        public @Nullable Future<?> getFuture() {
+        public Future<?> getFuture() {
             return future;
         }
 
-        public void setFuture(@Nullable Future<?> future) {
+        public void setFuture(Future<?> future) {
             this.future = future;
         }
 
         @Override
         public void run() {
+            workerThread = Thread.currentThread();
             framePhaser = new Phaser(1);
             Gdx.app.log("Track", "轨道线程启动: " + Track.this);
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    Frame frame = get(timeline.getProject().playhead.getTime());
-                    if (frame != null) {
-                        timeline.getProject().projEventBus.post(lastFrameEndEvent);
-                        timeline.getProject().projEventBus.post(frame);
-                        framePhaser.arriveAndAwaitAdvance();
-                    } else {
-                        timeline.getProject().projEventBus.post(noFrameNowEvent);
-                        LockSupport.parkNanos(1000000L);
+                    long t=timeline.project.playhead.getTime();
+                    Entry<Range<@NonNull Long>, Segment> e = getEntry(t);
+                    if(e == null){
+                        timeline.project.projEventBus.post(noFrameNowEvent);
+                        long parkTime = Long.MAX_VALUE;
+                        Entry<Range<@NonNull Long>, Segment> next = getEntry(t,1,false);
+                        if(next!=null){
+                            parkTime = next.getKey().lowerEndpoint()-t;
+                            parkTime*=1000;//μs->ns
+                            parkTime=Math.max(parkTime,1);
+                        }
+                        Gdx.app.debug("Track", "轨道线程等待: " + parkTime/1e9 + "秒");
+                        LockSupport.parkNanos(parkTime);
+                    }else{
+                        Gdx.app.debug("Track", "找到片段: " + e.getValue());
+                        long end = e.getKey().upperEndpoint();
+                        while (t< end && !sought){
+                            t=timeline.project.playhead.getTime();
+                            Frame frame = get(t);
+                            if (frame != null) {
+                                timeline.project.projEventBus.post(lastFrameEndEvent);
+                                timeline.project.projEventBus.post(frame);
+                                framePhaser.arriveAndAwaitAdvance();
+                            }
+                        }
                     }
+                    sought = false;
                 }
             } catch (Exception e) {
                 Gdx.app.error("Track", "在更新轨道时发生错误", e);
@@ -222,9 +254,18 @@ public class Track implements Serializable {
                     throw e;
                 });
             }finally {
+                workerThread = null;
                 framePhaser.forceTermination();
+                framePhaser = null;
                 Gdx.app.log("Track", "轨道线程结束: " + Track.this);
             }
+        }
+        @Subscribe
+        public void onSeek(SeekEvent event){
+            if(workerThread != null){
+                LockSupport.unpark(workerThread);
+            }
+            sought = true;
         }
     }
 }

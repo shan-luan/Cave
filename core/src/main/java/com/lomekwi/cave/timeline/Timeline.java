@@ -14,12 +14,12 @@ import java.util.Map;
 
 @NullMarked
 public class Timeline implements Serializable {
-    private final Project project;
+    public final Project project;
     private final List<Track> tracks = new ArrayList<>();
     private long length;
     private boolean lengthChanged = true;
     private static final long serialVersionUID = 1L;
-    
+
     public Timeline(Project project) {
         this.project = project;
     }
@@ -91,9 +91,5 @@ public class Timeline implements Serializable {
     }
     public List<Track> getTracks() {
         return tracks;
-    }
-    
-    public Project getProject() {
-        return project;
     }
 }

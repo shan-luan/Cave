@@ -40,7 +40,7 @@ public class Playhead {
             frozenTime = time;
         }
 
-        projEventBus.post(SeekingEvent.INSTANCE);
+        projEventBus.post(SeekEvent.INSTANCE);
     }
 
     public long getTime() {
