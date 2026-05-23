@@ -20,6 +20,7 @@ public class Playhead {
 
         if (playing) {
             anchor = System.nanoTime() - frozenTime;
+            projEventBus.post(PlayEvent.INSTANCE);
         } else {
             frozenTime = System.nanoTime() - anchor;
         }

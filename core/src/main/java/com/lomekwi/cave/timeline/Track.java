@@ -8,9 +8,10 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.LastFrameEndEvent;
 import com.lomekwi.cave.pipeline.NoFrameNowEvent;
 import com.badlogic.gdx.Gdx;
+import com.lomekwi.cave.timeline.playback.PlayEvent;
+import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
@@ -55,11 +56,13 @@ public class Track implements Serializable {
         segment.setTrack(this);
         segment.setRange(r);
         lengthChanged = true;
+        worker.onTrackChanged();
     }
 
     synchronized protected void remove(long start, long duration) {
         sources.remove(Range.closedOpen(start, start + duration));
         lengthChanged = true;
+        worker.onTrackChanged();
     }
 
     public @Nullable Frame get(long time) {
@@ -89,16 +92,18 @@ public class Track implements Serializable {
     }
 
     synchronized protected void remove(long time) {
-        Entry<Range<Long>, Segment> entry = sources.getEntry(time);
+        var entry = sources.getEntry(time);
         if (entry != null) {
             sources.remove(entry.getKey());
         }
         lengthChanged = true;
+        worker.onTrackChanged();
     }
 
     synchronized protected void remove(Range<Long> range) {
         sources.remove(range);
         lengthChanged = true;
+        worker.onTrackChanged();
     }
 
     synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
@@ -193,16 +198,16 @@ public class Track implements Serializable {
     public class TrackWorker implements Runnable {
         private final LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
         private final NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
-        private Phaser framePhaser;
+        private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
-        private volatile boolean sought;
+        private volatile boolean dirty;
         public TrackWorker() {
             timeline.project.projEventBus.register( this);
         }
 
-        public Phaser getFramePhaser() {
-            return framePhaser;
+        public Phaser getSinkPhaser() {
+            return sinkPhaser;
         }
 
         public Future<?> getFuture() {
@@ -216,11 +221,15 @@ public class Track implements Serializable {
         @Override
         public void run() {
             workerThread = Thread.currentThread();
-            framePhaser = new Phaser(1);
+            sinkPhaser = new Phaser(1);
             Gdx.app.log("Track", "轨道线程启动: " + Track.this);
             try {
+                Playhead p=timeline.project.playhead;
                 while (!Thread.currentThread().isInterrupted()) {
-                    long t=timeline.project.playhead.getTime();
+                    if(!p.isPlaying()){
+                        LockSupport.park();
+                    }
+                    long t=p.getTime();
                     var e = getEntry(t);
                     if(e == null){
                         timeline.project.projEventBus.post(noFrameNowEvent);
@@ -236,17 +245,17 @@ public class Track implements Serializable {
                     }else{
                         Gdx.app.debug("Track", "找到片段: " + e.getValue());
                         long end = e.getKey().upperEndpoint();
-                        while (t< end && !sought){
+                        while (t< end && !dirty){
                             t=timeline.project.playhead.getTime();
                             Frame frame = get(t);
                             if (frame != null) {
                                 timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
-                                framePhaser.arriveAndAwaitAdvance();
+                                sinkPhaser.arriveAndAwaitAdvance();
                             }
                         }
                     }
-                    sought = false;
+                    dirty = false;
                 }
             } catch (Exception e) {
                 Gdx.app.error("Track", "在更新轨道时发生错误", e);
@@ -255,17 +264,27 @@ public class Track implements Serializable {
                 });
             }finally {
                 workerThread = null;
-                framePhaser.forceTermination();
-                framePhaser = null;
+                sinkPhaser.forceTermination();
+                sinkPhaser = null;
                 Gdx.app.log("Track", "轨道线程结束: " + Track.this);
             }
         }
         @Subscribe
+        public void onPlay(PlayEvent event){
+            wakeUp();
+        }
+        @Subscribe
         public void onSeek(SeekEvent event){
+            wakeUp();
+        }
+        protected void onTrackChanged(){
+            wakeUp();
+        }
+        private void wakeUp(){
             if(workerThread != null){
                 LockSupport.unpark(workerThread);
             }
-            sought = true;
+            dirty = true;
         }
     }
 }

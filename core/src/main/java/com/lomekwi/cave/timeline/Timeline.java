@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import static java.util.Map.Entry;
 
 @NullMarked
 public class Timeline implements Serializable {
@@ -46,12 +46,12 @@ public class Timeline implements Serializable {
         lengthChanged = true;
         return this;
     }
-    public Timeline resize(Track track, Map.Entry<Range<Long>, Segment> e, long start, long duration) {
+    public Timeline resize(Track track, Entry<Range<Long>, Segment> e, long start, long duration) {
         track.resize(e,start,duration);
         lengthChanged = true;
         return this;
     }
-    public Timeline move(Track track, Track newTrack, Map.Entry<Range<Long>, Segment> e, long start, long duration) {
+    public Timeline move(Track track, Track newTrack, Entry<Range<Long>, Segment> e, long start, long duration) {
         track.remove(e.getKey());
         newTrack.add(e.getValue(),start,duration);
         lengthChanged = true;
