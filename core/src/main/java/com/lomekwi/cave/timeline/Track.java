@@ -201,7 +201,7 @@ public class Track implements Serializable {
         private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
-        private volatile boolean dirty;
+        private volatile boolean reevaluable;
         public TrackWorker() {
             timeline.project.projEventBus.register( this);
         }
@@ -226,14 +226,21 @@ public class Track implements Serializable {
             try {
                 Playhead p=timeline.project.playhead;
                 while (!Thread.currentThread().isInterrupted()) {
+                    long t=p.getTime();
                     if(!p.isPlaying()){
                         Gdx.app.debug("Track", "因为播放头而尝试park...");
+
+                        //当暂停时seek也更新一下
+                        var f = get(t);
+                        if (f != null) {
+                            timeline.project.projEventBus.post(f);
+                        }
+
                         LockSupport.park();
                         continue;//防止之前持有许可,一次park不够
                     }else {
-                        dirty = false;
+                        reevaluable = false;
                     }
-                    long t=p.getTime();
                     var e = getEntry(t);
                     if(e == null){
                         timeline.project.projEventBus.post(noFrameNowEvent);
@@ -249,15 +256,15 @@ public class Track implements Serializable {
                     }else{
                         Gdx.app.debug("Track", "找到片段: " + e.getValue());
                         long end = e.getKey().upperEndpoint();
-                        while (t< end && !dirty){
+                        while (t< end && !reevaluable){
                             t=timeline.project.playhead.getTime();
                             Frame frame = get(t);
-                            if(dirty) break;
+                            if(reevaluable) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
-                                if(dirty) timeline.project.projEventBus.post(noFrameNowEvent);
+                                if(reevaluable && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
                             }
                         }
                     }
@@ -275,22 +282,22 @@ public class Track implements Serializable {
             }
         }
         @Subscribe
-        public void onPlay(PlayStateChangedEvent event){
-            wakeUp();
+        public void onPlayStateChanged(PlayStateChangedEvent event){
+            reevaluate();
         }
         @Subscribe
         public void onSeek(SeekEvent event){
-            wakeUp();
+            reevaluate();
         }
         protected void onTrackChanged(){
-            wakeUp();
+            reevaluate();
         }
-        private void wakeUp(){
+        private void reevaluate(){
             var t = workerThread;
             if(t != null){
                 LockSupport.unpark(t);
             }
-            dirty = true;
+            reevaluable = true;
         }
     }
 }
