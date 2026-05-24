@@ -178,11 +178,15 @@ public class Track implements Serializable {
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         sources = TreeRangeMap.create();
-        for (int i = 0; i < serializationRanges.length; i += 2) {
-            sources.put(Range.closedOpen(serializationRanges[i], serializationRanges[i + 1]), serializationSources.get(i / 2));
+        if (serializationRanges == null || serializationSources == null) {
+            Gdx.app.error("Track", "Track 序列化数据为 null");
+        } else {
+            for (int i = 0; i < serializationRanges.length; i += 2) {
+                sources.put(Range.closedOpen(serializationRanges[i], serializationRanges[i + 1]), serializationSources.get(i / 2));
+            }
+            serializationRanges = null;
+            serializationSources = null;
         }
-        serializationRanges = null;
-        serializationSources = null;
         worker = new TrackWorker();
     }
 
