@@ -89,21 +89,23 @@ public class VdoDecRes extends DecRes<ImgFrame> {
             start();
         }
 
-        long target = toValidTime(time);
+        time = toValidTime(time);
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
-        final long diff = target - lastGrabTime;
+        final long diff = time - lastGrabTime;
 
         if (diff < 0) {
             // 请求时间早于上次抓取时间，需要 seek 回退
-            seek(target);
+            seek(time);
             Gdx.app.debug(i18n("视频解码"), hashCode() +i18n("向前跳跃")+(lastGrabTime-getTimestamp())/SECOND + i18n("秒"));
+            bufferedPixels = null;
         } else if (diff > 3 * getLengthPerFrame()) {
             // 如果请求时间间隔超过3帧间隔，则进行跳转
-            seek(target);
+            seek(time);
             Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
+            bufferedPixels = null;
         }
 
-        if (!((target < nextFrameTime) && bufferedPixels != null)) {
+        if (!((time < nextFrameTime) && bufferedPixels != null)) {
             Frame output = null;
             int retryCount = 0;
             final int maxRetries = 10;
@@ -117,7 +119,7 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         }
 
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
-        lastGrabTime = target;
+        lastGrabTime = time;
         frame.setPixels(bufferedPixels);
     }
 }

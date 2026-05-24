@@ -234,6 +234,8 @@ public class Track implements Serializable {
                         var f = get(t);
                         if (f != null) {
                             timeline.project.projEventBus.post(f);
+                        }else {
+                            timeline.project.projEventBus.post(noFrameNowEvent);
                         }
 
                         LockSupport.park();
