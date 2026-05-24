@@ -6,6 +6,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 帧源。仅应该被单个片段访问。
+ * @param <T>
+ */
 public abstract class Source<T extends Frame> implements Serializable {
     protected transient T frame;
     private static final long serialVersionUID = 1L;

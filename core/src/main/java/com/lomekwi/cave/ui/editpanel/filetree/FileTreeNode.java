@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Tree;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.lomekwi.cave.ui.Root;
 
@@ -29,7 +30,7 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
     @Override
     public void setExpanded(boolean expanded) {
         super.setExpanded(expanded);
-        
+
         if (expanded && !childrenLoaded) {
             Gdx.app.debug("FileTreeNode", i18n("展开目录，开始加载子节点: ") + getValue().getName());
             loadChildren();
@@ -42,7 +43,7 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
         File file = getValue();
         if (file != null && file.isDirectory()) {
             getChildren().removeValue(PLACEHOLDER_NODE, true);
-            
+
             File[] children = file.listFiles();
             if (children != null) {
                 Gdx.app.debug("FileTreeNode", i18n("找到 ") + children.length + i18n(" 个子项"));

@@ -91,16 +91,13 @@ public class Root implements ApplicationListener {
         // 添加TopBar
         topBar = new TopBar();
         mainLayout.top();
-        mainLayout.add(topBar.getTable()).fillX().expandX().row();
+        mainLayout.add(topBar.getTable()).fillX().top().row();
 
         // 添加TabbedPane
         tabbedPane = new TopTabbedPane();
-        mainLayout.add(tabbedPane.getTable()).fillX().expandX().row();
+        mainLayout.add(tabbedPane.getTable()).fillX().top().row();
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
-
-        new FileTree();
-        new EditPanelFrame();
 
         stage.addActor(mainLayout);
 

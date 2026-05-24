@@ -20,19 +20,19 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void switchedTab(Tab tab) {
                 Root.getInstance().getMajorArea().clear();
-                Root.getInstance().getMajorArea().add(tab.getContentTable()).expand().fill();
-                
+                Root.getInstance().getMajorArea().add(tab.getContentTable()).grow();
+
                 if (currentProjectTab != null && currentProjectTab != tab) {
                     currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
                 }
-                
+
                 if (tab instanceof ProjectTab) {
                     currentProjectTab = (ProjectTab) tab;
                     ((ProjectTab) tab).getProject().projEventBus.post(ProjectFrontedEvent.INSTANCE);
                 } else {
                     currentProjectTab = null;
                 }
-                
+
                 Vars.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
 

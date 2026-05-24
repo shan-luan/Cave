@@ -201,7 +201,7 @@ public class Track implements Serializable {
         private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
-        private volatile boolean updatable;
+        private volatile boolean updateNeeded;
         public TrackWorker() {
             timeline.project.projEventBus.register( this);
         }
@@ -239,7 +239,7 @@ public class Track implements Serializable {
                         LockSupport.park();
                         continue;//防止之前持有许可,一次park不够
                     }else {
-                        updatable = false;
+                        updateNeeded = false;
                     }
                     var e = getEntry(t);
                     if(e == null){
@@ -256,15 +256,15 @@ public class Track implements Serializable {
                     }else{
                         Gdx.app.debug("Track"+index, "找到片段: " + e.getValue());
                         long end = e.getKey().upperEndpoint();
-                        while (t< end && !updatable){
+                        while (t< end && !updateNeeded){
                             t=timeline.project.playhead.getTime();
                             Frame frame = get(t);
-                            if(updatable) break;
+                            if(updateNeeded) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
-                                if(updatable && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
+                                if(updateNeeded && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
                             }
                         }
                     }
@@ -297,7 +297,7 @@ public class Track implements Serializable {
             if(t != null){
                 LockSupport.unpark(t);
             }
-            updatable = true;
+            updateNeeded = true;
         }
     }
 }

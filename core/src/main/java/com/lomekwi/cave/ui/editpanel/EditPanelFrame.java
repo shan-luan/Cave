@@ -1,5 +1,6 @@
 package com.lomekwi.cave.ui.editpanel;
 
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.kotcrab.vis.ui.widget.VisSplitPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisScrollPane;
@@ -13,16 +14,18 @@ public class EditPanelFrame extends VisTable {
     private final VisSplitPane mainAndTimelineSplitPane;
     private final VisSplitPane resourceAndPreviewSplitPane;
     private EditPanel editPanel;
-    public EditPanelFrame() {
-        INSTANCE = this;
+    private EditPanelFrame() {
         resourceAndPreviewSplitPane = new VisSplitPane(null,null,false);
         mainAndTimelineSplitPane = new VisSplitPane( resourceAndPreviewSplitPane,null,true);
-        VisScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
+        ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
         fileTreeAndMainSplitPane = new VisSplitPane(fileTreeScrollPane,mainAndTimelineSplitPane,false);
         fileTreeAndMainSplitPane.setSplitAmount(0.18f);
-        add(fileTreeAndMainSplitPane).fill().expand();
+        add(fileTreeAndMainSplitPane).grow();
     }
     public static EditPanelFrame getINSTANCE() {
+        if (INSTANCE == null) {
+            INSTANCE = new EditPanelFrame();
+        }
         return INSTANCE;
     }
     public EditPanelFrame with(@NonNull EditPanel editPanel) {
@@ -33,5 +36,21 @@ public class EditPanelFrame extends VisTable {
             mainAndTimelineSplitPane.setSecondWidget(editPanel.tl.fill().clip().minSize(0,0));
         }
         return this;
+    }
+    @Override
+    public float getMinHeight() {
+        return 0;
+    }
+    @Override
+    public float getMinWidth() {
+        return 0;
+    }
+    @Override
+    public float getPrefHeight() {
+        return 0;
+    }
+    @Override
+    public float getPrefWidth() {
+        return 0;
     }
 }
