@@ -52,7 +52,7 @@ public class VdoDecRes extends DecRes<ImgFrame> {
 
     public long getLengthPerFrame() {
         if (!initialized) throw new IllegalStateException("Not initialized");
-        return grabber.getLengthInTime() / grabber.getLengthInVideoFrames();
+        return Math.round(SECOND / grabber.getFrameRate());
     }
 
     @Override
