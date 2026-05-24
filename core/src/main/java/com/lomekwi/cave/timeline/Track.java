@@ -222,13 +222,13 @@ public class Track implements Serializable {
         public void run() {
             workerThread = Thread.currentThread();
             sinkPhaser = new Phaser(1);
-            Gdx.app.log("Track", "轨道线程启动: " + Track.this);
+            Gdx.app.log("Track"+index, "轨道线程启动: " + Track.this);
             try {
                 Playhead p=timeline.project.playhead;
                 while (!Thread.currentThread().isInterrupted()) {
                     long t=p.getTime();
                     if(!p.isPlaying()){
-                        Gdx.app.debug("Track", "因为播放头而尝试park...");
+                        Gdx.app.debug("Track"+index, "因为播放头而尝试park...");
 
                         //当暂停时seek也更新一下
                         var f = get(t);
@@ -251,10 +251,10 @@ public class Track implements Serializable {
                             parkTime*=1000;//μs->ns
                             parkTime=Math.max(parkTime,1);
                         }
-                        Gdx.app.debug("Track", "轨道线程等待: " + parkTime/1e9 + "秒");
+                        Gdx.app.debug("Track"+index, "轨道线程等待: " + parkTime/1e9 + "秒");
                         LockSupport.parkNanos(parkTime);
                     }else{
-                        Gdx.app.debug("Track", "找到片段: " + e.getValue());
+                        Gdx.app.debug("Track"+index, "找到片段: " + e.getValue());
                         long end = e.getKey().upperEndpoint();
                         while (t< end && !updatable){
                             t=timeline.project.playhead.getTime();
@@ -270,7 +270,7 @@ public class Track implements Serializable {
                     }
                 }
             } catch (Exception e) {
-                Gdx.app.error("Track", "在更新轨道时发生错误", e);
+                Gdx.app.error("Track"+index, "在更新轨道时发生错误", e);
                 Gdx.app.postRunnable(() -> {
                     throw e;
                 });
@@ -278,7 +278,7 @@ public class Track implements Serializable {
                 workerThread = null;
                 sinkPhaser.forceTermination();
                 sinkPhaser = null;
-                Gdx.app.log("Track", "轨道线程结束: " + Track.this);
+                Gdx.app.log("Track"+index, "轨道线程结束: " + Track.this);
             }
         }
         @Subscribe

@@ -8,7 +8,6 @@ import com.lomekwi.cave.timeline.Track;
 
 public class AudClipSrc extends Source<AudFrame> {
     private final AudRes audRes;
-    private AudFrame frame;
     private static final long serialVersionUID = 1L;
 
     public AudClipSrc(AudRes audRes) {

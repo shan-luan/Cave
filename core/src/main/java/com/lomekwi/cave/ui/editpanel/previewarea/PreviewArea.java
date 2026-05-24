@@ -27,7 +27,7 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group {
     private final Project project;
-    //FIXME:多线程可见性
+    //此列表仅应在主线程读取.
     private final List<@Nullable ImgFrame> frames = new ArrayList<>();
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
