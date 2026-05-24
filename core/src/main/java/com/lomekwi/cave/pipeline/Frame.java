@@ -7,4 +7,6 @@ public abstract class Frame implements AutoCloseable{
         this.trackIndex =trackIndex;
         return this;
     }
+    @Override
+    public void close() {}
 }

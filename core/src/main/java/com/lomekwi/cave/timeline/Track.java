@@ -5,8 +5,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.Frame;
-import com.lomekwi.cave.pipeline.LastFrameEndEvent;
-import com.lomekwi.cave.pipeline.NoFrameNowEvent;
+import com.lomekwi.cave.pipeline.GapFrame;
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.timeline.playback.PlayStateChangedEvent;
 import com.lomekwi.cave.timeline.playback.Playhead;
@@ -24,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
@@ -196,8 +196,7 @@ public class Track implements Serializable {
 
     @NullUnmarked
     public class TrackWorker implements Runnable {
-        private final LastFrameEndEvent lastFrameEndEvent = new LastFrameEndEvent(Track.this);
-        private final NoFrameNowEvent noFrameNowEvent = new NoFrameNowEvent(Track.this);
+        private final GapFrame gapFrame = new GapFrame(Track.this);
         private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
@@ -230,13 +229,9 @@ public class Track implements Serializable {
                     if(!p.isPlaying()){
                         Gdx.app.debug("Track"+index, "因为播放头而尝试park...");
 
-                        //当暂停时seek也更新一下
+                        //用于暂停时seek了或修改了轨道
                         var f = get(t);
-                        if (f != null) {
-                            timeline.project.projEventBus.post(f);
-                        }else {
-                            timeline.project.projEventBus.post(noFrameNowEvent);
-                        }
+                        timeline.project.projEventBus.post(Objects.requireNonNullElse(f, gapFrame));
 
                         LockSupport.park();
                         continue;//防止之前持有许可,一次park不够
@@ -245,7 +240,7 @@ public class Track implements Serializable {
                     }
                     var e = getEntry(t);
                     if(e == null){
-                        timeline.project.projEventBus.post(noFrameNowEvent);
+                        timeline.project.projEventBus.post(gapFrame);
                         long parkTime = Long.MAX_VALUE;
                         var next = getEntry(t,1,false);
                         if(next!=null){
@@ -263,10 +258,9 @@ public class Track implements Serializable {
                             Frame frame = get(t);
                             if(updateNeeded) break;
                             if (frame != null) {
-                                timeline.project.projEventBus.post(lastFrameEndEvent);
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
-                                if(updateNeeded && p.isPlaying()) timeline.project.projEventBus.post(noFrameNowEvent);
+                                if(updateNeeded && p.isPlaying()) timeline.project.projEventBus.post(gapFrame);
                             }
                         }
                     }
