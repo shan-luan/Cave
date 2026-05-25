@@ -166,6 +166,13 @@ public class PreviewArea extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
+        int i = 0;
+        for(ImgFrame frame : frames){
+            if(frame!=null){
+                frame.getImage().setZIndex(getChildren().size-1-i);
+                i++;
+            }
+        }
     }
 
     @Override
