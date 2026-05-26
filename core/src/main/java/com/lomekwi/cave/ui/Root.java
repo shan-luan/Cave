@@ -27,7 +27,6 @@ import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
-import com.lomekwi.cave.app.HotkeyManager;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
@@ -71,7 +70,7 @@ public class Root implements ApplicationListener {
 
         VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
-        multiplexer.setProcessors(HotkeyManager.getInstance(),stage);
+        multiplexer.setProcessors(stage);
         Gdx.input.setInputProcessor(multiplexer);
 
         toastManager=new ToastManager(stage);

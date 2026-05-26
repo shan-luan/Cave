@@ -10,7 +10,5 @@ public class EntryTree extends VisTree<EntryNode,EntryTable> {
                 SettingsTable.getInstance().onEntrySelected(getSelection().first().getValue());
             }
         }));
-
-        add(new EntryNode(new HotKeyEntry()));
     }
 }

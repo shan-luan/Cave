@@ -27,51 +27,11 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-import com.lomekwi.cave.app.HotkeyManager;
-
 public class TopBar extends MenuBar {
     private final float toastTimeOut = 2f;
 
     public TopBar() {
         super();
-
-        // 注册热键并创建菜单项
-        HotkeyManager hotkeyManager = HotkeyManager.getInstance();
-
-        // 新建项目：Ctrl+N
-        hotkeyManager.registerHotkey(
-            new HotkeyManager.KeyCombo(true, false, N),
-            this::newProject,
-            i18n("新建")
-        );
-
-        // 打开项目：Ctrl+O
-        hotkeyManager.registerHotkey(
-            new HotkeyManager.KeyCombo(true, false, O),
-            this::openProject,
-            i18n("打开")
-        );
-
-        // 保存项目：Ctrl+S
-        hotkeyManager.registerHotkey(
-            new HotkeyManager.KeyCombo(true, false, S),
-            this::saveProject,
-            i18n("保存")
-        );
-
-        // 另存为：Ctrl+Shift+S
-        hotkeyManager.registerHotkey(
-            new HotkeyManager.KeyCombo(true, true, S),
-            this::saveAsProject,
-            i18n("另存为")
-        );
-
-        // 关闭：Ctrl+W
-        hotkeyManager.registerHotkey(
-            new HotkeyManager.KeyCombo(true, false, W),
-            this::closeApplication,
-            i18n("关闭")
-        );
 
         addMenu(new MenuX(i18n("文件"))
             .withItem(new MenuItem(i18n("新建"), new ChangeListenerX(this::newProject))
