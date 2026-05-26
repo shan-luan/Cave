@@ -10,7 +10,7 @@ apply plugin: 'com.android.application'
 
 android {
   namespace "com.lomekwi.cave"
-  compileSdk 35
+  compileSdk 36
   sourceSets {
     main {
       manifest.srcFile 'AndroidManifest.xml'
@@ -39,7 +39,7 @@ android {
   defaultConfig {
     applicationId 'com.lomekwi.cave'
     minSdkVersion 26
-    targetSdkVersion 35
+    targetSdkVersion 36
     versionCode 1
     versionName "1.0"
     ndk {
