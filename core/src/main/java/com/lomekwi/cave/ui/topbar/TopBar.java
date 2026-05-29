@@ -6,11 +6,16 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
+import com.kotcrab.vis.ui.util.dialog.Dialogs;
+import com.kotcrab.vis.ui.widget.LinkLabel;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
+import com.kotcrab.vis.ui.widget.VisDialog;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.ui.Root;
@@ -69,6 +74,7 @@ public class TopBar extends MenuBar {
                     e.printStackTrace();
                 }
             })).setShortcut(CONTROL_LEFT, O))
+            .withSeparator()
             .withItem(new MenuItemP(i18n("保存"), new ChangeListenerX(() -> {
                 try {
                     if (Root.getInstance().getFrontendProject() == null) {
@@ -136,6 +142,7 @@ public class TopBar extends MenuBar {
                     e.printStackTrace();
                 }
             })).setShortcut(CONTROL_LEFT, SHIFT_LEFT, S))
+            .withSeparator()
             .withItem(new MenuItem(i18n("关闭"), new ChangeListenerX(() -> {
                 try {
                     Gdx.app.exit();
@@ -149,6 +156,23 @@ public class TopBar extends MenuBar {
                 Vars.appEventBus.post(SettingsOpenedEvent.INSTANCE);
             })))
         );
+
+        addMenu(new MenuX(i18n("帮助"))
+            .withItem(new MenuItem(i18n("关于"), new ChangeListenerX(() -> {
+                VisDialog about = new VisDialog(i18n("关于"));
+                var ct = about.getContentTable();
+                ct.add(new Label(i18n("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件"), about.getSkin())).left();
+                ct.row();
+                ct.add(new Label(i18n("由shan_luan_开发.此软件以AGPLv3分发并不提供任何保修."), about.getSkin())).left();
+                ct.row();
+                ct.add(new LinkLabel("Github","https://github.com/shan-luan/Cave")).left();
+                ct.row();
+                ct.add(new LinkLabel(i18n("B站"),"https://space.bilibili.com/1655518235")).left();
+                ct.row();
+                about.button(i18n("确定"), true);
+                about.show(Root.getInstance().getStage());
+            }))
+        ));
     }
 
     public static class MenuX extends Menu {
@@ -157,6 +181,10 @@ public class TopBar extends MenuBar {
         }
         public MenuX withItem(MenuItem item) {
             super.addItem(item);
+            return this;
+        }
+        public MenuX withSeparator() {
+            super.addSeparator();
             return this;
         }
     }

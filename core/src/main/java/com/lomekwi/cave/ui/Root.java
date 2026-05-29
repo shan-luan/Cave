@@ -21,9 +21,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.util.ToastManager;
+import com.kotcrab.vis.ui.widget.LinkLabel;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisTable;
+import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
@@ -166,6 +168,8 @@ public class Root implements ApplicationListener {
         skin.get("default", Menu.MenuStyle.class).openButtonStyle.font = font;
         skin.get("default", TabbedPane.TabbedPaneStyle.class).buttonStyle.font = font;
         skin.get("default", Window.WindowStyle.class).titleFont = font;
+        skin.get("default", LinkLabel.LinkLabelStyle.class).font = font;
+        skin.get("default", VisTextButton.VisTextButtonStyle.class).font = font;
        return skin;
     }
 
