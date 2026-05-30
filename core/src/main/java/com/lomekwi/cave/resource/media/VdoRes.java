@@ -1,18 +1,17 @@
 package com.lomekwi.cave.resource.media;
 
+import com.lomekwi.cave.resource.decoder.DecRes;
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
 
 import java.io.Serial;
 
 public class VdoRes extends MedRes {
-    private final int width;
-    private final int height;
+    private int width;
+    private int height;
     @Serial
     private static final long serialVersionUID = 1L;
     public VdoRes(String path){
         super(path);
-        width=((VdoDecRes)metadataDecRes).getWidth();
-        height=((VdoDecRes)metadataDecRes).getHeight();
     }
     @Override
     public VdoDecRes getDecoder(int trackIndex) {
@@ -24,6 +23,13 @@ public class VdoRes extends MedRes {
     public int getHeight(){
         return height;
     }
+    @Override
+    protected void generateMetadata(DecRes<?> metadataDecRes) {
+        VdoDecRes vdr = (VdoDecRes) metadataDecRes;
+        width = vdr.getWidth();
+        height = vdr.getHeight();
+    }
+
     @Override
     protected VdoDecRes newDecoder() {
         return new VdoDecRes(this);

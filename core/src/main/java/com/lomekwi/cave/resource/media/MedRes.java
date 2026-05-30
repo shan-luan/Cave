@@ -3,8 +3,6 @@ package com.lomekwi.cave.resource.media;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.decoder.DecRes;
 
-import org.bytedeco.javacv.FrameGrabber;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
@@ -19,17 +17,16 @@ public abstract class MedRes implements Resource, Serializable {
     private static final long serialVersionUID = 1L;
     private final String path;
     protected transient ArrayList<DecRes<?>> decRes=new ArrayList<>();
-    protected transient DecRes<?> metadataDecRes;
 
     /**
      * 必须确保路径对应一个存在的文件
      */
     public MedRes(String path) {
         this.path = path;
-        try {
-            metadataDecRes = newDecoder();
+        try (var metadataDecRes = newDecoder()) {
             metadataDecRes.start();
-        } catch (FrameGrabber.Exception e) {
+            generateMetadata(metadataDecRes);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -56,21 +53,13 @@ public abstract class MedRes implements Resource, Serializable {
                 decoder.close();
             }
         }
-        if(metadataDecRes!=null){
-            metadataDecRes.close();
-        }
     }
 
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         decRes = new ArrayList<>();
-        try {
-            metadataDecRes = newDecoder();
-            metadataDecRes.start();
-        } catch (FrameGrabber.Exception e) {
-            throw new RuntimeException(e);
-        }
     }
     protected abstract DecRes<?> newDecoder();
+    protected abstract void generateMetadata(DecRes<?> metadataDecRes);
 }

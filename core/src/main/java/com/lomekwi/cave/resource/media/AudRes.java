@@ -1,6 +1,7 @@
 package com.lomekwi.cave.resource.media;
 
 import com.lomekwi.cave.resource.decoder.AudDecRes;
+import com.lomekwi.cave.resource.decoder.DecRes;
 
 import java.io.Serial;
 
@@ -13,6 +14,11 @@ public class AudRes extends MedRes{
      */
     public AudRes(String path) {
         super(path);
+    }
+
+    @Override
+    protected void generateMetadata(DecRes<?> metadataDecRes) {
+        // AudRes 无元数据字段
     }
 
     @Override
