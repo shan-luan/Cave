@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline;
 
 import com.lomekwi.cave.timeline.Track;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
  */
 public abstract class Source<T extends Frame> implements Serializable {
     protected transient T frame;
+    @Serial
     private static final long serialVersionUID = 1L;
         private final List<Filter<? super T>> filters = new ArrayList<>();
 

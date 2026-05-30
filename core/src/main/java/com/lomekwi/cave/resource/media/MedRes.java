@@ -9,6 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.Map;
  *媒体资源类，指代一个在磁盘中存在，占有编解码器的资源
  */
 public abstract class MedRes implements Resource, Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private final String path;
     protected transient Map<Track,DecRes<?>> decRes=new HashMap<>();
@@ -48,6 +50,7 @@ public abstract class MedRes implements Resource, Serializable {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         decRes = new HashMap<>();

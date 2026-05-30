@@ -17,6 +17,7 @@ import com.lomekwi.cave.app.Vars;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 
 public class Project implements Serializable, AutoCloseable {
+    @Serial
     private static final long serialVersionUID = 1L;
     protected transient Path savePath;
     public final Timeline timeline;
@@ -105,6 +107,7 @@ public class Project implements Serializable, AutoCloseable {
         });
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         Vars.appEventBus.register(this);

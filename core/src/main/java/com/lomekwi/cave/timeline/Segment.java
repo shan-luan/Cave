@@ -7,10 +7,12 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractMap;
 
 public abstract class Segment implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
     private Track track;
@@ -58,6 +60,7 @@ public abstract class Segment implements Serializable {
     }
     protected abstract SegActor setupActor();
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         actor = setupActor();

@@ -6,6 +6,7 @@ import com.lomekwi.cave.project.Project;
 
 import org.jspecify.annotations.NullMarked;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,7 @@ public class Timeline implements Serializable {
     private final List<Track> tracks = new ArrayList<>();
     private long length;
     private boolean lengthChanged = true;
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public Timeline(Project project) {

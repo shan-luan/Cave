@@ -6,8 +6,11 @@ import com.lomekwi.cave.resource.decoder.AudDecRes;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Track;
 
+import java.io.Serial;
+
 public class AudClipSrc extends Source<AudFrame> {
     private final AudRes audRes;
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public AudClipSrc(AudRes audRes) {

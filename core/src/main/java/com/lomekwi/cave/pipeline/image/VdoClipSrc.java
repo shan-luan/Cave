@@ -7,12 +7,14 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
 
+import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
 
 public class VdoClipSrc extends Source<ImgFrame> {
     private final VdoRes src;
     private transient Texture texture;
     private volatile transient boolean initialized;
+    @Serial
     private static final long serialVersionUID = 1L;
     public VdoClipSrc(VdoRes src) {
         this.src = src;

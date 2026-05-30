@@ -18,6 +18,7 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +42,7 @@ public class Track implements Serializable {
     private boolean lengthChanged = true;
     private long @Nullable [] serializationRanges;
     private @Nullable List<Segment> serializationSources;
+    @Serial
     private static final long serialVersionUID = 1L;
     private transient TrackWorker worker;
 
@@ -160,6 +162,7 @@ public class Track implements Serializable {
         return Collections.unmodifiableSet(sources.subRangeMap(range).asMapOfRanges().entrySet());
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
         var ranges = sources.asMapOfRanges();
         serializationRanges = new long[ranges.size() * 2];
@@ -175,6 +178,7 @@ public class Track implements Serializable {
         serializationSources = null;
     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         sources = TreeRangeMap.create();

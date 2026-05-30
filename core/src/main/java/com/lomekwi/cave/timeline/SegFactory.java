@@ -11,6 +11,7 @@ import com.lomekwi.cave.util.MimeType;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.function.Function;
 public class SegFactory implements Serializable {
     private Project project;
     private transient Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map;
+    @Serial
     private static final long serialVersionUID = 1L;
     public SegFactory(Project project){
         this.project = project;
@@ -53,6 +55,7 @@ public class SegFactory implements Serializable {
         return ((Function<R, Segment>) fn).apply(resource);
     }
     
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         this.map = new HashMap<>();

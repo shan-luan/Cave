@@ -2,8 +2,11 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.lomekwi.cave.pipeline.Filter;
 
+import java.io.Serial;
+
 public class TransFilter implements Filter<Transformable> {
     private final float dx,dy,scaleX,scaleY,dRotation;
+    @Serial
     private static final long serialVersionUID = 1L;
     public TransFilter(float dx, float dy, float scaleX, float scaleY, float dRotation) {
         this.dx = dx;

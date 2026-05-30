@@ -2,7 +2,10 @@ package com.lomekwi.cave.resource.media;
 
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 
+import java.io.Serial;
+
 public class AudRes extends MedRes{
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
