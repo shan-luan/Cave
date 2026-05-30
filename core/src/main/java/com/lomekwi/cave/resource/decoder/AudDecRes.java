@@ -75,4 +75,7 @@ public class AudDecRes extends DecRes<AudFrame> {
         grabber.start();
         initialized = true;
     }
+    public long getLengthPerFrame() {
+        return grabber.getLengthInTime()/grabber.getLengthInAudioFrames();
+    }
 }

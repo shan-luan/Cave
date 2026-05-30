@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public final class Media {
-    private Media(){
+public final class MediaFactory {
+    private MediaFactory(){
     }
     private static final Map<String, Function<String, MedRes>> map = new HashMap<>();
     static {

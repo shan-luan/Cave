@@ -8,6 +8,7 @@ import java.io.Serial;
 public class VdoRes extends MedRes {
     private int width;
     private int height;
+    private long frameLength;
     @Serial
     private static final long serialVersionUID = 1L;
     public VdoRes(String path){
@@ -28,6 +29,11 @@ public class VdoRes extends MedRes {
         VdoDecRes vdr = (VdoDecRes) metadataDecRes;
         width = vdr.getWidth();
         height = vdr.getHeight();
+        frameLength = vdr.getLengthPerFrame();
+    }
+
+    public long getFrameLength() {
+        return frameLength;
     }
 
     @Override

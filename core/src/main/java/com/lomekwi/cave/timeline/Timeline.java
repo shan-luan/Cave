@@ -3,18 +3,21 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.util.Duplicatable;
 
 import org.jspecify.annotations.NullMarked;
 
+import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import static java.util.Map.Entry;
 
 @NullMarked
-public class Timeline implements Serializable {
+public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Timeline> {
     public final Project project;
     private final List<Track> tracks = new ArrayList<>();
     private long length;
@@ -93,5 +96,36 @@ public class Timeline implements Serializable {
     }
     public List<Track> getTracks() {
         return tracks;
+    }
+
+    /**
+     * 迭代有元素的轨道
+     * @return 轨道迭代器
+     */
+    @Override
+    public Iterator<Track> iterator() {
+        return new IteratorImpl();
+    }
+
+    public class IteratorImpl implements Iterator<Track> {
+        private int index = 0;
+
+        private void skipEmpty() {
+            while (index < tracks.size() && tracks.get(index).isEmpty()) {
+                index++;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            skipEmpty();
+            return index < tracks.size();
+        }
+
+        @Override
+        public Track next() {
+            if (!hasNext()) throw new java.util.NoSuchElementException();
+            return tracks.get(index++);
+        }
     }
 }

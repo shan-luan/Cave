@@ -23,7 +23,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.Root;
-import com.lomekwi.cave.app.Vars;
+import com.lomekwi.cave.app.App;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
@@ -31,9 +31,10 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private Root ui;
+    private boolean backgrounded;
 
     public Main (NativeFileChooser fileChooser) {
-        Vars.fileChooser = fileChooser;
+        App.fileChooser = fileChooser;
     }
     @Override
     public void create() {
@@ -48,7 +49,9 @@ public class Main extends ApplicationAdapter {
         if(p!= null) {
             p.update();
         }
-        ui.render();
+        if(!backgrounded){
+            ui.render();
+        }
     }
 
     @Override
@@ -62,9 +65,11 @@ public class Main extends ApplicationAdapter {
     @Override
     public void pause() {
         ui.pause();
+        backgrounded = true;
     }
     @Override
     public void resume() {
         ui.resume();
+        backgrounded = false;
     }
 }

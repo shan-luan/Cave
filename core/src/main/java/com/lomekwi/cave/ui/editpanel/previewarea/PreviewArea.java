@@ -114,7 +114,7 @@ public class PreviewArea extends Group {
         track.getWorker().getSinkPhaser().register();
         //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
-            addFrame(frame);
+            setFrame(frame);
             frame.update();
             Image i = frame.getImage();
             addActor(i);
@@ -124,12 +124,15 @@ public class PreviewArea extends Group {
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
     }
-    private void addFrame(ImgFrame frame){
+    private void setFrame(ImgFrame frame){
         int idx = frame.trackIndex;
         while (idx >= frames.size()) {
             frames.add(null);
         }
-        frames.set(frame.trackIndex, frame);
+        var legacy=frames.set(frame.trackIndex, frame);
+        if (legacy != null){
+            removeActor(legacy.getImage());
+        }
     }
 //TODO:减少对象分配开销
     public void clearFrames(int idx) {
@@ -155,12 +158,6 @@ public class PreviewArea extends Group {
     @Subscribe
     public void clear(GapFrame event) {
         clearFrames(event.trackIndex);
-    }
-    @Subscribe
-    public void clear(SeekEvent event){
-        for(int i = 0; i < frames.size(); i++){
-            clearFrames(i);
-        }
     }
 
     @Override

@@ -1,16 +1,14 @@
 package com.lomekwi.cave.ui.topbar;
 
-import static com.lomekwi.cave.app.Vars.fileChooser;
+import static com.lomekwi.cave.app.App.fileChooser;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
-import com.kotcrab.vis.ui.util.dialog.Dialogs;
 import com.kotcrab.vis.ui.widget.LinkLabel;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
@@ -18,12 +16,14 @@ import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisDialog;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
+import com.lomekwi.cave.task.VideoExportTask;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.tabs.SettingsOpenedEvent;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
-import com.lomekwi.cave.app.Vars;
+import com.lomekwi.cave.app.App;
 
+import java.io.File;
 import java.io.IOException;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
@@ -41,7 +41,7 @@ public class TopBar extends MenuBar {
         addMenu(new MenuX(i18n("文件"))
             .withItem(new MenuItem(i18n("新建"), new ChangeListenerX(() -> {
                 try {
-                    Vars.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
+                    App.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
                     Root.getInstance().getToastManager().show(i18n("项目已新建"), toastTimeOut);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -59,7 +59,7 @@ public class TopBar extends MenuBar {
                         @Override
                         public void onFileChosen(FileHandle file) {
                             try {
-                                Vars.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
+                                App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
                                 Root.getInstance().getToastManager().show(i18n("项目已打开"), toastTimeOut);
                             } catch (IOException | ClassNotFoundException e) {
                                 e.printStackTrace();
@@ -143,6 +143,20 @@ public class TopBar extends MenuBar {
                 }
             })).setShortcut(CONTROL_LEFT, SHIFT_LEFT, S))
             .withSeparator()
+            .withItem(new MenuItemP(i18n("导出"), new ChangeListenerX(() -> {
+
+                var project = Root.getInstance().getFrontendProject();
+                if (project == null) return;
+                var outputFile = new File(System.getProperty("java.io.tmpdir"), "cave_export_test.mp4");
+                var task = new VideoExportTask(
+                    project.timeline.duplicate(),
+                    outputFile,
+                    1920, 1080, 30.0,
+                    0f, 0f
+                );
+                App.taskPool.submit(task);
+            })))
+            .withSeparator()
             .withItem(new MenuItem(i18n("关闭"), new ChangeListenerX(() -> {
                 try {
                     Gdx.app.exit();
@@ -153,13 +167,14 @@ public class TopBar extends MenuBar {
 
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {
-                Vars.appEventBus.post(SettingsOpenedEvent.INSTANCE);
+                App.appEventBus.post(SettingsOpenedEvent.INSTANCE);
             })))
         );
 
         addMenu(new MenuX(i18n("帮助"))
             .withItem(new MenuItem(i18n("关于"), new ChangeListenerX(() -> {
                 VisDialog about = new VisDialog(i18n("关于"));
+                about.addCloseButton();
                 var ct = about.getContentTable();
                 ct.add(new Label(i18n("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件"), about.getSkin())).left();
                 ct.row();
@@ -169,7 +184,6 @@ public class TopBar extends MenuBar {
                 ct.row();
                 ct.add(new LinkLabel(i18n("B站"),"https://space.bilibili.com/1655518235")).left();
                 ct.row();
-                about.button(i18n("确定"), true);
                 about.show(Root.getInstance().getStage());
             }))
         ));
@@ -195,12 +209,12 @@ public class TopBar extends MenuBar {
     public static class MenuItemP extends MenuItem {
         public MenuItemP(String text) {
             super(text);
-            Vars.appEventBus.register(this);
+            App.appEventBus.register(this);
             setDisabled(true);
         }
         public MenuItemP(String text, ChangeListener changeListener) {
             super(text, changeListener);
-            Vars.appEventBus.register(this);
+            App.appEventBus.register(this);
             setDisabled(true);
         }
         @Subscribe

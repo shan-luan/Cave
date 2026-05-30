@@ -22,6 +22,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,7 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.Map.Entry;
 
 @NullMarked
-public class Track implements Serializable {
+public class Track implements Serializable,Iterable<Segment> {
     public final int index;
     private final Timeline timeline;
     private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
@@ -44,12 +45,16 @@ public class Track implements Serializable {
     private @Nullable List<Segment> serializationSources;
     @Serial
     private static final long serialVersionUID = 1L;
-    private transient TrackWorker worker;
+    private transient @Nullable TrackWorker worker;
 
     public Track(Timeline timeline, int index) {
         this.timeline = timeline;
         this.index = index;
         this.worker = new TrackWorker();
+    }
+
+    synchronized protected boolean isEmpty() {
+        return sources.asMapOfRanges().isEmpty();
     }
 
     synchronized protected void add(Segment segment, long start, long duration) {
@@ -58,13 +63,13 @@ public class Track implements Serializable {
         segment.setTrack(this);
         segment.setRange(r);
         lengthChanged = true;
-        worker.onTrackChanged();
+        getWorker().onTrackChanged();
     }
 
     synchronized protected void remove(long start, long duration) {
         sources.remove(Range.closedOpen(start, start + duration));
         lengthChanged = true;
-        worker.onTrackChanged();
+        getWorker().onTrackChanged();
     }
 
     public @Nullable Frame get(long time) {
@@ -76,7 +81,7 @@ public class Track implements Serializable {
             }
             segment = entry.getValue();
         }
-        return segment.get(time, this).withTrack(this.index);
+        return segment.get(time, this).withTrack(this.index).withTime(time);
     }
 
     /**
@@ -99,13 +104,13 @@ public class Track implements Serializable {
             sources.remove(entry.getKey());
         }
         lengthChanged = true;
-        worker.onTrackChanged();
+        getWorker().onTrackChanged();
     }
 
     synchronized protected void remove(Range<Long> range) {
         sources.remove(range);
         lengthChanged = true;
-        worker.onTrackChanged();
+        getWorker().onTrackChanged();
     }
 
     synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
@@ -191,7 +196,6 @@ public class Track implements Serializable {
             serializationRanges = null;
             serializationSources = null;
         }
-        worker = new TrackWorker();
     }
 
     public Timeline getTimeline() {
@@ -199,7 +203,15 @@ public class Track implements Serializable {
     }
 
     public TrackWorker getWorker() {
+        if(worker==null){
+            worker = new TrackWorker();
+        }
         return worker;
+    }
+
+    @Override
+    public Iterator<Segment> iterator() {
+        return sources.asMapOfRanges().values().iterator();
     }
 
     @NullUnmarked
@@ -268,7 +280,6 @@ public class Track implements Serializable {
                             if (frame != null) {
                                 timeline.project.projEventBus.post(frame);
                                 sinkPhaser.arriveAndAwaitAdvance();
-                                if(updateNeeded && p.isPlaying()) timeline.project.projEventBus.post(gapFrame);
                             }
                         }
                     }

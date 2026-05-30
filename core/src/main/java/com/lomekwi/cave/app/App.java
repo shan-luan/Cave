@@ -2,17 +2,17 @@ package com.lomekwi.cave.app;
 
 
 import com.google.common.eventbus.EventBus;
+import com.lomekwi.cave.task.TaskPool;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
-public final class Vars {
+public final class App {
     public static NativeFileChooser fileChooser;
     public static final EventBus appEventBus = new EventBus();
-    public static final ExecutorService trackExecutor = Executors.newCachedThreadPool(r -> {
+    public static final ExecutorService workerExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);
         thread.setDaemon(true);
         return thread;
@@ -23,4 +23,5 @@ public final class Vars {
         thread.setPriority(Thread.MAX_PRIORITY);
         return thread;
     });
+    public static final TaskPool taskPool = new TaskPool();
 }

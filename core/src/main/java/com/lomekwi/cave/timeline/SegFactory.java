@@ -4,7 +4,7 @@ package com.lomekwi.cave.timeline;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.AudRes;
-import com.lomekwi.cave.resource.media.Media;
+import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.util.MimeType;
 
@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,7 +27,7 @@ public class SegFactory implements Serializable {
         this.map = new HashMap<>();
         initDefaultMappings();
     }
-    
+
     private void initDefaultMappings() {
         register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
         register(AudRes.class, source -> new AudSeg((AudRes) source));
@@ -46,7 +45,7 @@ public class SegFactory implements Serializable {
             if (mimeType == null) {
                 throw new IOException("无法检测文件MIME类型: " + file.getName());
             }
-            resource = Media.create(mimeType, file.getPath());
+            resource = MediaFactory.create(mimeType, file.getPath());
         }
         return applyUnchecked(map.get(resource.getClass()), resource);
     }
@@ -54,7 +53,7 @@ public class SegFactory implements Serializable {
     private <R extends Resource> Segment applyUnchecked(Function<? extends Resource, Segment> fn, R resource) {
         return ((Function<R, Segment>) fn).apply(resource);
     }
-    
+
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();

@@ -8,6 +8,7 @@ import java.io.Serial;
 public class AudRes extends MedRes{
     @Serial
     private static final long serialVersionUID = 1L;
+    private long frameLength;
 
     /**
      * 必须确保路径对应一个存在的文件
@@ -18,11 +19,16 @@ public class AudRes extends MedRes{
 
     @Override
     protected void generateMetadata(DecRes<?> metadataDecRes) {
-        // AudRes 无元数据字段
+        frameLength=((AudDecRes)metadataDecRes).getLengthPerFrame();
+
     }
 
     @Override
     protected AudDecRes newDecoder() {
         return new AudDecRes(this);
+    }
+
+    public long getFrameLength() {
+        return frameLength;
     }
 }

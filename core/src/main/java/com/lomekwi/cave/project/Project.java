@@ -5,14 +5,13 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 import com.badlogic.gdx.Gdx;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.audio.AudioFrameListener;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.timeline.SegFactory;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
-import com.lomekwi.cave.app.Vars;
+import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,13 +19,10 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.LockSupport;
 
 public class Project implements Serializable, AutoCloseable {
     @Serial
@@ -43,7 +39,7 @@ public class Project implements Serializable, AutoCloseable {
     private transient boolean isActive = false;
 
     protected Project() {
-        Vars.appEventBus.register(this);
+        App.appEventBus.register(this);
         name = i18n("未命名");
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(new AudioFrameListener());
@@ -59,7 +55,7 @@ public class Project implements Serializable, AutoCloseable {
 
         for (Track track : timeline.getTracks()) {
             if (track.getWorker().getFuture() == null || track.getWorker().getFuture().isDone()) {
-                Future<?> future = Vars.trackExecutor.submit(track.getWorker());
+                Future<?> future = App.workerExecutor.submit(track.getWorker());
                 track.getWorker().setFuture(future);
             }
         }
@@ -95,7 +91,7 @@ public class Project implements Serializable, AutoCloseable {
 
 
     public void close() {
-        Vars.appEventBus.unregister(this);
+        App.appEventBus.unregister(this);
         isActive = false;
         stopTrackLoops();
         resources.values().forEach(resource -> {
@@ -110,7 +106,7 @@ public class Project implements Serializable, AutoCloseable {
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        Vars.appEventBus.register(this);
+        App.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(this);
         playhead = new Playhead(projEventBus);

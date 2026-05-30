@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline.image;
 
+import static com.lomekwi.cave.util.i18n.I18N.i18n;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,6 +19,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
     @Serial
     private static final long serialVersionUID = 1L;
     public VdoClipSrc(VdoRes src) {
+        super();
         this.src = src;
     }
     @Override
@@ -51,5 +54,9 @@ public class VdoClipSrc extends Source<ImgFrame> {
         t.rotation=0;
         frame.changed=true;
         return frame;
+    }
+    @Override
+    public long getLengthPerExportFrame() {
+        return src.getFrameLength();
     }
 }

@@ -10,14 +10,15 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractMap;
+import java.util.Iterator;
 
-public abstract class Segment implements Serializable {
+public abstract class Segment implements Serializable,Iterable<Frame> {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
     private Track track;
     private transient SegActor actor;
-    private Range<Long> range;//TODO:transient
+    private Range<Long> range;
     private AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     /**
      * 源的0秒在时间轴中的位置
@@ -64,5 +65,22 @@ public abstract class Segment implements Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         actor = setupActor();
+    }
+    @Override
+    public Iterator<Frame> iterator() {
+        return new IteratorImpl();
+    }
+    public class IteratorImpl implements Iterator<Frame> {
+        private long time = range.lowerEndpoint() % source.getLengthPerExportFrame();
+        @Override
+        public boolean hasNext() {
+            return time <= range.upperEndpoint();
+        }
+        @Override
+        public Frame next() {
+            Frame f = get(time, track);
+            time += source.getLengthPerExportFrame();
+            return f;
+        }
     }
 }

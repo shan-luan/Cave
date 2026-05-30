@@ -15,7 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.resource.media.Media;
+import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
@@ -135,7 +135,7 @@ public class TlGroup extends Group {
                 }
                 File file = (File) payload.getObject();
                 String mimeType = MimeType.detectMimeType(file);
-                return mimeType != null && Media.isSupported(mimeType);
+                return mimeType != null && MediaFactory.isSupported(mimeType);
             }
 
             @Override

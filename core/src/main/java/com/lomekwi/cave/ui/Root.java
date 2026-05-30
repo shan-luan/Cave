@@ -55,6 +55,9 @@ public class Root implements ApplicationListener {
 
     private ShapeDrawer shapeDrawer;
 
+    private FreeTypeFontGenerator generator;
+
+
     public Root(Main main) {
         this.main = main;
         INSTANCE = this;
@@ -132,6 +135,7 @@ public class Root implements ApplicationListener {
     public void dispose() {
         if (stage != null) stage.dispose();
         VisUI.dispose();
+        generator.dispose();
     }
     public Stage getStage() {
         return stage;
@@ -146,9 +150,7 @@ public class Root implements ApplicationListener {
     private Skin injectChineseFont(VisUI.SkinScale scale) {
         Skin skin = new Skin(scale.getSkinFile());
 
-        //TODO:释放generator
-        FreeTypeFontGenerator generator =
-            new FreeTypeFontGenerator(Gdx.files.internal("font/noto.otf"));
+        generator = new FreeTypeFontGenerator(Gdx.files.internal("font/noto.otf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter param =
             new FreeTypeFontGenerator.FreeTypeFontParameter();

@@ -14,6 +14,7 @@ public class AudClipSrc extends Source<AudFrame> {
     private static final long serialVersionUID = 1L;
 
     public AudClipSrc(AudRes audRes) {
+        super();
         this.audRes = audRes;
     }
 
@@ -32,5 +33,10 @@ public class AudClipSrc extends Source<AudFrame> {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public long getLengthPerExportFrame() {
+        return audRes.getFrameLength();
     }
 }

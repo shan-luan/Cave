@@ -15,7 +15,7 @@ public abstract class Source<T extends Frame> implements Serializable {
     protected transient T frame;
     @Serial
     private static final long serialVersionUID = 1L;
-        private final List<Filter<? super T>> filters = new ArrayList<>();
+    private final List<Filter<? super T>> filters = new ArrayList<>();
 
     /**
      *  获取指定时间的产品
@@ -41,4 +41,8 @@ public abstract class Source<T extends Frame> implements Serializable {
        filters.add(filter);
             return this;
     }
+    public Source() {
+    }
+
+    public abstract long getLengthPerExportFrame();
 }

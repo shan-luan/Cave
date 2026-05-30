@@ -8,14 +8,14 @@ import com.lomekwi.cave.project.ProjectBackgroundedEvent;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.ui.Root;
-import com.lomekwi.cave.app.Vars;
+import com.lomekwi.cave.app.App;
 
 public class TopTabbedPane extends TabbedPane {
     private ProjectTab currentProjectTab;
 
     public TopTabbedPane() {
         super();
-        Vars.appEventBus.register(this);
+        App.appEventBus.register(this);
         addListener(new TabbedPaneListener() {
             @Override
             public void switchedTab(Tab tab) {
@@ -33,7 +33,7 @@ public class TopTabbedPane extends TabbedPane {
                     currentProjectTab = null;
                 }
 
-                Vars.appEventBus.post(TabSwitchedEvent.INSTANCE);
+                App.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
 
             @Override
@@ -49,7 +49,7 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void removedAllTabs() {
                 Root.getInstance().getMajorArea().clear();
-                Vars.appEventBus.post(TabSwitchedEvent.INSTANCE);
+                App.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
         });
     }
