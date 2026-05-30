@@ -1,7 +1,6 @@
 package com.lomekwi.cave.resource.media;
 
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
-import com.lomekwi.cave.timeline.Track;
 
 import java.io.Serial;
 
@@ -12,12 +11,12 @@ public class VdoRes extends MedRes {
     private static final long serialVersionUID = 1L;
     public VdoRes(String path){
         super(path);
-        width=((VdoDecRes)decRes.get(null)).getWidth();
-        height=((VdoDecRes)decRes.get(null)).getHeight();
+        width=((VdoDecRes)metadataDecRes).getWidth();
+        height=((VdoDecRes)metadataDecRes).getHeight();
     }
     @Override
-    public VdoDecRes getDecoder(Track track) {
-        return (VdoDecRes) super.getDecoder(track);
+    public VdoDecRes getDecoder(int trackIndex) {
+        return (VdoDecRes) super.getDecoder(trackIndex);
     }
     public int getWidth(){
         return width;

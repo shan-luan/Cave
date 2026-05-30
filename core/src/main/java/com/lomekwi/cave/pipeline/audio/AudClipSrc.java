@@ -19,7 +19,7 @@ public class AudClipSrc extends Source<AudFrame> {
 
     @Override
     protected AudFrame generate(long time, Track track) {
-        AudDecRes decoder = (AudDecRes) audRes.getDecoder(track);
+        AudDecRes decoder = (AudDecRes) audRes.getDecoder(track.index);
 
         if (frame == null) {
             frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2);
