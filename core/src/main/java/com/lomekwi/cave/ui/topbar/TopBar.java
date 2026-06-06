@@ -1,12 +1,15 @@
 package com.lomekwi.cave.ui.topbar;
 
 import static com.lomekwi.cave.app.App.fileChooser;
+import static com.lomekwi.cave.util.Units.MEGA;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.LinkLabel;
@@ -14,8 +17,12 @@ import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisDialog;
+import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kotcrab.vis.ui.widget.VisProgressBar;
+import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
+import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.task.VideoExportTask;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
@@ -25,6 +32,8 @@ import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
@@ -152,7 +161,7 @@ public class TopBar extends MenuBar {
                     project.timeline.duplicate(),
                     outputFile,
                     1920, 1080, 30.0,
-                    0f, 0f
+                    0f, 0f, (int) (6*MEGA)
                 );
                 App.taskPool.submit(task);
             })))
@@ -168,6 +177,54 @@ public class TopBar extends MenuBar {
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {
                 App.appEventBus.post(SettingsOpenedEvent.INSTANCE);
+            })))
+            .withItem(new MenuItem(i18n("后台任务"), new ChangeListenerX(() -> {
+
+                VisDialog taskWin = new VisDialog(i18n("后台任务")) {
+                    final HashMap<Task, VisTable> rows = new HashMap<>();
+                    final HashSet<Task> current = new HashSet<>();
+                    boolean dirty;
+
+                    @Override
+                    public void act(float delta) {
+                        super.act(delta);
+                        Table content = getContentTable();
+
+                        current.clear();
+                        for (Task task : App.taskPool) {
+                            current.add(task);
+                            VisTable row = rows.get(task);
+                            if (row == null) {
+                                dirty = true;
+                                row = new VisTable();
+                                VisProgressBar bar = new VisProgressBar(0, 1, 0.01f, false);
+                                row.add(new VisLabel(task.getName())).left();
+                                row.add(bar).growX();
+                                row.setUserObject(bar);
+                                rows.put(task, row);
+                                content.add(row).growX();
+                                content.row();
+                            }
+                            ((VisProgressBar) row.getUserObject()).setValue(task.getProgress());
+                        }
+
+                        rows.entrySet().removeIf(entry -> {
+                            if (!current.contains(entry.getKey())) {
+                                dirty = true;
+                                content.removeActor(entry.getValue());
+                                return true;
+                            }
+                            return false;
+                        });
+                        if (dirty) {
+                            content.pack();
+                            pack();
+                            dirty = false;
+                        }
+                    }
+                };
+                taskWin.addCloseButton();
+                taskWin.show(Root.getInstance().getStage());
             })))
         );
 
