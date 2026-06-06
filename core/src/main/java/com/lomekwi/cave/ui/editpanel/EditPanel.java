@@ -5,19 +5,30 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.previewarea.PreviewArea;
 import com.lomekwi.cave.ui.editpanel.mediapool.MediaPool;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
+import com.lomekwi.cave.ui.editpanel.tlarea.TlRuler;
+import com.kotcrab.vis.ui.widget.VisTable;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 public class EditPanel {
-    PreviewArea previewArea;
-    Container<TlGroup> tl;
-    Container<MediaPool> res;
+    final PreviewArea previewArea;
+    final VisTable tl;
+    final Container<TlGroup> tlMain;
+    final Container<MediaPool> res;
+
     public EditPanel(Project project) {
         super();
-        previewArea=new PreviewArea(project);
-        tl=new Container<>(new TlGroup(project));
-        res=new Container<>(new MediaPool(project.resources));
+        previewArea = new PreviewArea(project);
+        tlMain = new Container<>(new TlGroup(project)).fill().clip().minSize(0, 0);
+        tl = new VisTable();
+        tl.add(new TlRuler(tlMain.getActor())).fillX().expandX().row();
+        tl.add(tlMain).grow();
+        res = new Container<>(new MediaPool(project.resources));
     }
+
     public void dispose() {
         previewArea.dispose();
-        tl.getActor().dispose();
+        tlMain.getActor().dispose();
     }
 }

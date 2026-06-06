@@ -40,8 +40,8 @@ public class TlGroup extends Group {
     private final Playhead playhead;
     private final Project project;
 
-    private long viewStartTime;
-    private long viewDurationTime;
+    long viewStartTime;
+    long viewDurationTime;
 
     private float trackHeight;
     /**
@@ -247,11 +247,11 @@ public class TlGroup extends Group {
         project.projEventBus.unregister(this);
     }
 
-    private float absoluteTimeToX(long time) {
+    float absoluteTimeToX(long time) {
         return (float) (time - viewStartTime) / viewDurationTime * getWidth();
     }
 
-    private long xToAbsoluteTime(float x) {
+    long xToAbsoluteTime(float x) {
         return viewStartTime + (long) ((x / getWidth()) * viewDurationTime);
     }
 

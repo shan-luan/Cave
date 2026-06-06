@@ -29,11 +29,11 @@ public class EditPanelFrame extends VisTable {
         return INSTANCE;
     }
     public EditPanelFrame with(@NonNull EditPanel editPanel) {
-        if(!editPanel.equals(this.editPanel)){
+        if (!editPanel.equals(this.editPanel)) {
             this.editPanel = editPanel;
             resourceAndPreviewSplitPane.setFirstWidget(editPanel.res.fill());
             resourceAndPreviewSplitPane.setSecondWidget(editPanel.previewArea);
-            mainAndTimelineSplitPane.setSecondWidget(editPanel.tl.fill().clip().minSize(0,0));
+            mainAndTimelineSplitPane.setSecondWidget(editPanel.tl);
         }
         return this;
     }
