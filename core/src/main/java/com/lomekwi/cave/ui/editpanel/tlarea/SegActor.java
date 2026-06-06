@@ -11,7 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Null;
 import com.lomekwi.cave.timeline.Segment;
-import com.lomekwi.cave.ui.Root;
+
+import com.lomekwi.cave.app.App;
 
 public abstract class SegActor extends Actor {
     private static final Color blue = new Color(0x1ba1e2ff);
@@ -75,8 +76,8 @@ public abstract class SegActor extends Actor {
     }
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        Root.getInstance().getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
-        Root.getInstance().getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
+        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
     }
 
     public Segment getSegment() {

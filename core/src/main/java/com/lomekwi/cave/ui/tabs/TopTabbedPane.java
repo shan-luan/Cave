@@ -7,7 +7,6 @@ import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
 import com.lomekwi.cave.project.ProjectBackgroundedEvent;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
-import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.app.App;
 
 public class TopTabbedPane extends TabbedPane {
@@ -19,8 +18,8 @@ public class TopTabbedPane extends TabbedPane {
         addListener(new TabbedPaneListener() {
             @Override
             public void switchedTab(Tab tab) {
-                Root.getInstance().getMajorArea().clear();
-                Root.getInstance().getMajorArea().add(tab.getContentTable()).grow();
+                App.root.getMajorArea().clear();
+                App.root.getMajorArea().add(tab.getContentTable()).grow();
 
                 if (currentProjectTab != null && currentProjectTab != tab) {
                     currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
@@ -48,7 +47,7 @@ public class TopTabbedPane extends TabbedPane {
 
             @Override
             public void removedAllTabs() {
-                Root.getInstance().getMajorArea().clear();
+                App.root.getMajorArea().clear();
                 App.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
         });

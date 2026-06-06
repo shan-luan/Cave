@@ -3,6 +3,7 @@ package com.lomekwi.cave.app;
 
 import com.google.common.eventbus.EventBus;
 import com.lomekwi.cave.task.TaskPool;
+import com.lomekwi.cave.ui.Root;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
@@ -24,4 +25,5 @@ public final class App {
         return thread;
     });
     public static final TaskPool taskPool = new TaskPool();
+    public static Root root;
 }

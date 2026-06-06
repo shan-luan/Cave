@@ -24,7 +24,6 @@ import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.task.VideoExportTask;
-import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.tabs.SettingsOpenedEvent;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
@@ -51,7 +50,7 @@ public class TopBar extends MenuBar {
             .withItem(new MenuItem(i18n("新建"), new ChangeListenerX(() -> {
                 try {
                     App.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
-                    Root.getInstance().getToastManager().show(i18n("项目已新建"), toastTimeOut);
+                    App.root.getToastManager().show(i18n("项目已新建"), toastTimeOut);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -69,7 +68,7 @@ public class TopBar extends MenuBar {
                         public void onFileChosen(FileHandle file) {
                             try {
                                 App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
-                                Root.getInstance().getToastManager().show(i18n("项目已打开"), toastTimeOut);
+                                App.root.getToastManager().show(i18n("项目已打开"), toastTimeOut);
                             } catch (IOException | ClassNotFoundException e) {
                                 e.printStackTrace();
                             }
@@ -86,11 +85,11 @@ public class TopBar extends MenuBar {
             .withSeparator()
             .withItem(new MenuItemP(i18n("保存"), new ChangeListenerX(() -> {
                 try {
-                    if (Root.getInstance().getFrontendProject() == null) {
+                    if (App.root.getFrontendProject() == null) {
                         return;
                     }
 
-                    if (Root.getInstance().getFrontendProject().getSavePath() == null) {
+                    if (App.root.getFrontendProject().getSavePath() == null) {
                         NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                         conf.title = i18n("选择保存位置...");
                         conf.mimeFilter = "*/*";
@@ -99,9 +98,9 @@ public class TopBar extends MenuBar {
                             @Override
                             public void onFileChosen(FileHandle file) {
                                 try {
-                                    if (Root.getInstance().getFrontendProject() != null) {
-                                        Projects.save(Root.getInstance().getFrontendProject(), file);
-                                        Root.getInstance().getToastManager().show(i18n("项目已保存"), toastTimeOut);
+                                    if (App.root.getFrontendProject() != null) {
+                                        Projects.save(App.root.getFrontendProject(), file);
+                                        App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
                                     }
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -113,8 +112,8 @@ public class TopBar extends MenuBar {
                             public void onError(Exception exception) {}
                         });
                     } else {
-                        Projects.save(Root.getInstance().getFrontendProject());
-                        Root.getInstance().getToastManager().show(i18n("项目已保存"), toastTimeOut);
+                        Projects.save(App.root.getFrontendProject());
+                        App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -122,7 +121,7 @@ public class TopBar extends MenuBar {
             })).setShortcut(CONTROL_LEFT, S))
             .withItem(new MenuItemP(i18n("另存为"), new ChangeListenerX(() -> {
                 try {
-                    if (Root.getInstance().getFrontendProject() == null) {
+                    if (App.root.getFrontendProject() == null) {
                         return;
                     }
 
@@ -134,9 +133,9 @@ public class TopBar extends MenuBar {
                         @Override
                         public void onFileChosen(FileHandle file) {
                             try {
-                                if (Root.getInstance().getFrontendProject() != null) {
-                                    Projects.save(Root.getInstance().getFrontendProject(), file);
-                                    Root.getInstance().getToastManager().show(i18n("项目已保存"), toastTimeOut);
+                                if (App.root.getFrontendProject() != null) {
+                                    Projects.save(App.root.getFrontendProject(), file);
+                                    App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -154,7 +153,7 @@ public class TopBar extends MenuBar {
             .withSeparator()
             .withItem(new MenuItemP(i18n("导出"), new ChangeListenerX(() -> {
 
-                var project = Root.getInstance().getFrontendProject();
+                var project = App.root.getFrontendProject();
                 if (project == null) return;
                 var outputFile = new File(System.getProperty("java.io.tmpdir"), "cave_export_test.mp4");
                 var task = new VideoExportTask(
@@ -224,7 +223,7 @@ public class TopBar extends MenuBar {
                     }
                 };
                 taskWin.addCloseButton();
-                taskWin.show(Root.getInstance().getStage());
+                taskWin.show(App.root.getStage());
             })))
         );
 
@@ -241,7 +240,7 @@ public class TopBar extends MenuBar {
                 ct.row();
                 ct.add(new LinkLabel(i18n("B站"),"https://space.bilibili.com/1655518235")).left();
                 ct.row();
-                about.show(Root.getInstance().getStage());
+                about.show(App.root.getStage());
             }))
         ));
     }
@@ -276,7 +275,7 @@ public class TopBar extends MenuBar {
         }
         @Subscribe
         public void onTabSwitched(TabSwitchedEvent event) {
-            setDisabled(Root.getInstance().getFrontendProject() == null);
+            setDisabled(App.root.getFrontendProject() == null);
         }
     }
 }

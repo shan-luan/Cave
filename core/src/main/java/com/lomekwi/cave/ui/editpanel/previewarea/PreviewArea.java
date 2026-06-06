@@ -14,7 +14,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
-import com.lomekwi.cave.ui.Root;
+import com.lomekwi.cave.app.App;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -92,7 +92,7 @@ public class PreviewArea extends Group {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
                 if (pointer == -1) {
-                    Root.getInstance().getStage().setScrollFocus(PreviewArea.this);
+                    App.root.getStage().setScrollFocus(PreviewArea.this);
                 }
             }
         });
@@ -174,7 +174,7 @@ public class PreviewArea extends Group {
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        Root.getInstance().getShapeDrawer().filledRectangle(getX(),getY(),getWidth(),getHeight(), Color.BLACK);
+        App.root.getShapeDrawer().filledRectangle(getX(),getY(),getWidth(),getHeight(), Color.BLACK);
         super.draw(batch, parentAlpha);
     }
 

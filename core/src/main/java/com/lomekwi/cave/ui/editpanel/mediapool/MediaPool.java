@@ -9,7 +9,8 @@ import com.kotcrab.vis.ui.widget.VisImage;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.resource.Resource;
-import com.lomekwi.cave.ui.Root;
+
+import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class MediaPool extends FlowGroup {
         test = new TextureRegionDrawable(new Texture("libgdx.png"));
         setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
 
-        DragAndDrop dnd = Root.getInstance().getDragAndDrop();
+        DragAndDrop dnd = App.root.getDragAndDrop();
 
         dnd.addTarget(new DragAndDrop.Target(this) {
             @Override

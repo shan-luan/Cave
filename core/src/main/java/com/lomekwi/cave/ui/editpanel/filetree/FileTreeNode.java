@@ -6,7 +6,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Tree;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.kotcrab.vis.ui.widget.VisLabel;
-import com.lomekwi.cave.ui.Root;
+
+import com.lomekwi.cave.app.App;
 
 import java.io.File;
 
@@ -58,7 +59,7 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
         private VisLabel dragActor;
         public DraggableLabel(String text) {
             super(text);
-            Root.getInstance().getDragAndDrop().addSource(new DragAndDrop.Source(this) {
+            App.root.getDragAndDrop().addSource(new DragAndDrop.Source(this) {
                 @Override
                 public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
                     DragAndDrop.Payload payload = new DragAndDrop.Payload();

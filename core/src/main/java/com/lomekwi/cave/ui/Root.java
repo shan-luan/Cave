@@ -35,13 +35,14 @@ import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
+import com.lomekwi.cave.app.App;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class Root implements ApplicationListener {
-    private static Root INSTANCE;
-    private Stage stage;
     private final Main main;
+
+    private Stage stage;
 
     private ToastManager toastManager;
 
@@ -60,12 +61,9 @@ public class Root implements ApplicationListener {
 
     public Root(Main main) {
         this.main = main;
-        INSTANCE = this;
+        App.root = this;
     }
 
-    public static Root getInstance() {
-        return INSTANCE;
-    }
 
     @Override
     public void create() {

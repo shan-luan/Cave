@@ -22,8 +22,9 @@ import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
-import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.util.MimeType;
+
+import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +35,7 @@ import static com.badlogic.gdx.Input.Keys.*;
 
 public class TlGroup extends Group {
 
-    private final ShapeDrawer shapeDrawer = Root.getInstance().getShapeDrawer();
+    private final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
 
     private final Timeline timeline;
     private final Playhead playhead;
@@ -113,8 +114,8 @@ public class TlGroup extends Group {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                Root.getInstance().getStage().setScrollFocus(TlGroup.this);
-                Root.getInstance().getStage().setKeyboardFocus(TlGroup.this);
+                App.root.getStage().setScrollFocus(TlGroup.this);
+                App.root.getStage().setKeyboardFocus(TlGroup.this);
             }
         });
 
@@ -127,7 +128,7 @@ public class TlGroup extends Group {
         });
 
 
-        Root.getInstance().getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
+        App.root.getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 if (!(payload.getObject() instanceof File)) {
@@ -257,8 +258,8 @@ public class TlGroup extends Group {
 
     @Subscribe
     public void onProjectFronted(ProjectFrontedEvent e) {
-        Root.getInstance().getStage().setScrollFocus(this);
-        Root.getInstance().getStage().setKeyboardFocus(this);
+        App.root.getStage().setScrollFocus(this);
+        App.root.getStage().setKeyboardFocus(this);
     }
 
     float firstX = Float.NaN, firstY = Float.NaN;
