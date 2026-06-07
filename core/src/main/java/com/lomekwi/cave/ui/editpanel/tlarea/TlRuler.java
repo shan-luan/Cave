@@ -14,6 +14,7 @@ public class TlRuler extends Widget {
     private final TlGroup tlGroup;
     private final BitmapFont font = VisUI.getSkin().getFont("default-font");
     private final StringBuilder sb = new StringBuilder(8);
+    private static final Color MORE_DARK_GRAY = new Color(0.2f, 0.2f, 0.2f, 1f);
 
     public TlRuler(TlGroup tlGroup) {
         super();
@@ -28,7 +29,7 @@ public class TlRuler extends Widget {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.DARK_GRAY);
+        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), MORE_DARK_GRAY);
 
         final long interval = calcInterval((long) (tlGroup.viewDurationTime * PIXELS_PER_TICK / getWidth()));
         final long start = (tlGroup.viewStartTime / interval) * interval;

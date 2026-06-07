@@ -62,14 +62,23 @@ public class Track implements Serializable,Iterable<Segment> {
         sources.put(r, segment);
         segment.setTrack(this);
         segment.setRange(r);
-        lengthChanged = true;
-        getWorker().onTrackChanged();
+        onChanged();
     }
 
     synchronized protected void remove(long start, long duration) {
         sources.remove(Range.closedOpen(start, start + duration));
-        lengthChanged = true;
-        getWorker().onTrackChanged();
+        onChanged();
+    }
+    synchronized protected void remove(Range<Long> range) {
+        sources.remove(range);
+        onChanged();
+    }
+    synchronized protected void remove(long time) {
+        var entry = sources.getEntry(time);
+        if (entry != null) {
+            sources.remove(entry.getKey());
+        }
+        onChanged();
     }
 
     public @Nullable Frame get(long time) {
@@ -98,19 +107,16 @@ public class Track implements Serializable,Iterable<Segment> {
         return m.containsValue(entry.getValue());
     }
 
-    synchronized protected void remove(long time) {
+    synchronized protected void split(long time){
         var entry = sources.getEntry(time);
-        if (entry != null) {
-            sources.remove(entry.getKey());
-        }
-        lengthChanged = true;
-        getWorker().onTrackChanged();
-    }
-
-    synchronized protected void remove(Range<Long> range) {
-        sources.remove(range);
-        lengthChanged = true;
-        getWorker().onTrackChanged();
+        if (entry == null) return;
+        var s=entry.getValue();
+        long start = entry.getKey().lowerEndpoint();
+        long duration = entry.getKey().upperEndpoint() - start;
+        long offset=time-start;
+        var ns=s.duplicate();
+        add(ns,time,duration-offset);
+        s.setRange(Range.closedOpen(start,start+offset));
     }
 
     synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
@@ -166,6 +172,12 @@ public class Track implements Serializable,Iterable<Segment> {
     synchronized public Set<Entry<Range<Long>, Segment>> getSubRangeMapAsEntrySet(Range<Long> range) {
         return Collections.unmodifiableSet(sources.subRangeMap(range).asMapOfRanges().entrySet());
     }
+    private void onChanged() {
+        lengthChanged = true;
+        if(worker != null){
+            worker.onTrackChanged();
+        }
+    }
 
     @Serial
     private void writeObject(ObjectOutputStream oos) throws IOException {
@@ -191,7 +203,10 @@ public class Track implements Serializable,Iterable<Segment> {
             Gdx.app.error("Track", "Track 序列化数据为 null");
         } else {
             for (int i = 0; i < serializationRanges.length; i += 2) {
-                sources.put(Range.closedOpen(serializationRanges[i], serializationRanges[i + 1]), serializationSources.get(i / 2));
+                var r =Range.closedOpen(serializationRanges[i], serializationRanges[i + 1]);
+                var s =serializationSources.get(i / 2);
+                sources.put(r, s);
+                s.setRange(r);
             }
             serializationRanges = null;
             serializationSources = null;

@@ -144,7 +144,7 @@ public class TlGroup extends Group {
                 try {
                     File file = (File) payload.getObject();
                     Segment s = project.segFactory.get(file);
-                    s.origin = xToAbsoluteTime(x);
+                    s.setOrigin(xToAbsoluteTime(x));
                     timeline.add(timeline.getTrack(yToTrackIndex(y)), s, xToAbsoluteTime(x), 10*SECOND);
                     dirty = true;
                 } catch (IOException e) {
@@ -331,7 +331,7 @@ public class TlGroup extends Group {
                 if(newTrack.isFree(e, nr)) {
                     timeline.move(t, newTrack, e, target, duration);
                     long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
-                    e.getValue().origin += deltaTime;
+                    e.getValue().offsetOrigin(deltaTime);
                 }
             }
         }
@@ -339,7 +339,11 @@ public class TlGroup extends Group {
     public void removeSeg(SegActor segActor){
         removeActor(segActor);
         Segment s = segActor.getSegment();
-        timeline.remove(s.getTrack(),s.getRange().lowerEndpoint(),s.getRange().upperEndpoint()-s.getRange().lowerEndpoint());
+        timeline.remove(s.getTrack(),s.getRange());
+    }
+    public void split(SegActor segActor,long time){
+        dirty=true;
+        timeline.split(segActor.getSegment().getTrack(),time);
     }
 
     private int yToTrackIndex(float y) {

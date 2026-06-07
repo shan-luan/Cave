@@ -4,6 +4,7 @@ import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
+import com.lomekwi.cave.util.Duplicatable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,21 +13,31 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
 
-public abstract class Segment implements Serializable,Iterable<Frame> {
+public abstract class Segment implements Serializable,Iterable<Frame>, Duplicatable<Segment> {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
     private Track track;
     private transient SegActor actor;
-    private Range<Long> range;
+    private transient Range<Long> range;
     private AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     /**
      * 源的0秒在时间轴中的位置
      */
-    public volatile long origin;
+    private volatile long origin;
+    public long getOrigin() {
+        return origin;
+    }
+    public void setOrigin(long origin) {
+        this.origin = origin;
+    }
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")//单写多读
+    public void offsetOrigin(long offset) {
+        this.origin += offset;
+    }
     protected Segment(Source<?> source) {
         this.source = source;
-        actor= setupActor();
+        actor = setupActor();
     }
     protected void setTrack(Track track) {
         this.track = track;

@@ -51,6 +51,11 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         lengthChanged = true;
         return this;
     }
+    public Timeline remove(Track track,Range<Long> range) {
+        track.remove(range);
+        lengthChanged = true;
+        return this;
+    }
     public Timeline resize(Track track, Entry<Range<Long>, Segment> e, long start, long duration) {
         track.resize(e,start,duration);
         lengthChanged = true;
@@ -60,6 +65,10 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         track.remove(e.getKey());
         newTrack.add(e.getValue(),start,duration);
         lengthChanged = true;
+        return this;
+    }
+    public Timeline split(Track track,long time) {
+        track.split(time);
         return this;
     }
     /**

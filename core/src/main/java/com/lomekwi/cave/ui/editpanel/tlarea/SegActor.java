@@ -58,7 +58,7 @@ public abstract class SegActor extends Actor {
                     event.stop();
                     return true;
                 } else {
-                    getMenu().setContext((TlGroup) getParent(), SegActor.this);
+                    getMenu().setContext((TlGroup) getParent(), SegActor.this,((TlGroup)getParent()).xToAbsoluteTime(getX()+x));
                     return false;
                 }
             }
