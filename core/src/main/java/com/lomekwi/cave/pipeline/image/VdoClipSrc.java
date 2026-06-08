@@ -39,7 +39,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
             }
         }
         try {
-            vdoRes.getDecoder(track.index).get(time, frame);
+            vdoRes.get(track.index, time, frame);
         } catch (Exception e) {
             e.printStackTrace();
             frame.setPixels(null);

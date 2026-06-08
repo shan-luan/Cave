@@ -1,5 +1,6 @@
 package com.lomekwi.cave.resource.media;
 
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.decoder.DecRes;
 
@@ -44,6 +45,11 @@ public abstract class MedRes implements Resource, Serializable {
             decRes.set(trackIndex,decoder);
         }
         return decoder;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void get(int trackIndex, long time, Frame frame) throws Exception {
+        ((DecRes<Frame>) getDecoder(trackIndex)).get(time, frame);
     }
 
     @Override
