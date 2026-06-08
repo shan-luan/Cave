@@ -40,13 +40,18 @@ public class SegFactory implements Serializable {
     }
     public Segment get(File file) throws IOException {
         Resource resource = project.resources.get(file);
-        if(resource == null){
+
+        if (resource == null) {
             String mimeType = MimeType.detectMimeType(file);
             if (mimeType == null) {
                 throw new IOException("无法检测文件MIME类型: " + file.getName());
             }
+
             resource = MediaFactory.create(mimeType, file.getPath());
+
+            project.resources.put(file, resource); // ← 关键
         }
+
         return applyUnchecked(map.get(resource.getClass()), resource);
     }
     @SuppressWarnings("unchecked")

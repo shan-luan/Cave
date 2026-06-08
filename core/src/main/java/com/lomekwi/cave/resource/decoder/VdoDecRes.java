@@ -58,6 +58,7 @@ public class VdoDecRes extends DecRes<ImgFrame> {
     @Override
     public void start() throws FrameGrabber.Exception {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
+        grabber.setAudioChannels(0);
         super.start();
         bufferedPixels = null;
     }

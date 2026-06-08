@@ -1,5 +1,6 @@
 package com.lomekwi.cave.resource.decoder;
 
+import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MedRes;
@@ -22,6 +23,7 @@ public abstract class DecRes<F extends Frame> implements Resource {
     public void start() throws FrameGrabber.Exception {
         grabber.start();
         initialized = true;
+        Gdx.app.debug("DecRes", this +"初始化");
     }
     public void stop() throws FrameGrabber.Exception {
         if (!initialized) throw new IllegalStateException("Not initialized");
