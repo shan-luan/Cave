@@ -45,11 +45,8 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         return grabber.getLengthInVideoFrames();
     }
 
-    public long getTimestamp() {
-        if (!initialized) throw new IllegalStateException("Not initialized");
-        return grabber.getTimestamp();
-    }
 
+    @Override
     public long getLengthPerFrame() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return Math.round(SECOND / grabber.getFrameRate());
@@ -83,14 +80,13 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         }
 
         time = toValidTime(time);
-        final long diff = time - lastGrabTime;
+        final long diff = time - getLastFrameTime();
 
-        if (diff < 0 || diff > 3 * getLengthPerFrame()) {
-            // 请求时间早于上次抓取时间或时间间隔超过3帧，需要 seek
+        if (diff < 0 || diff > 2 * getLengthPerFrame()) {
             seek(time);
-            Gdx.app.debug(i18n("视频解码"), hashCode() + "同步到" + time / SECOND + i18n("秒"));
             bufferedPixels = null;
         }
+        Gdx.app.debug(i18n("视频解码"), hashCode() + "同步到" + time / SECOND + i18n("秒"));
     }
 
     /**
@@ -124,7 +120,6 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         }
 
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
-        lastGrabTime = time;
         frame.setPixels(bufferedPixels);
     }
 }

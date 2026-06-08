@@ -15,7 +15,6 @@ import org.bytedeco.javacv.FrameGrabber;
 import java.nio.ShortBuffer;
 
 public class AudDecRes extends DecRes<AudFrame> {
-    private static final long AUDIO_SEEK_THRESHOLD = 30*MILLISECOND;
 
     public AudDecRes(AudRes source) {
         super(source);
@@ -31,12 +30,12 @@ public class AudDecRes extends DecRes<AudFrame> {
         if (!initialized) {
             start();
         }
-        long target = toValidTime(time);
-        long diff = target - lastGrabTime;
+        time = toValidTime(time);
+        long diff = time - getLastFrameTime();
 
-        if (diff < 0 || diff > AUDIO_SEEK_THRESHOLD) {
-            seek(target);
-            Gdx.app.debug(i18n("音频解码"), hashCode() + "同步到" + target / SECOND + i18n("秒"));
+        if (diff < 0 || diff > getLengthPerFrame()) {
+            seek(time);
+            Gdx.app.debug(i18n("音频解码"), hashCode() + "同步到" + time / SECOND + i18n("秒"));
         }
     }
 
@@ -62,14 +61,12 @@ public class AudDecRes extends DecRes<AudFrame> {
 
         if (f == null || f.samples == null || f.samples.length == 0) {
             frame.setSamples(null);
-            lastGrabTime = target;
             return;
         }
 
         ShortBuffer sb = (ShortBuffer) f.samples[0];
         short[] out = new short[sb.remaining()];
         sb.get(out);
-        lastGrabTime = target;
         frame.setSamples(out).setTime(time);
     }
 
@@ -80,6 +77,7 @@ public class AudDecRes extends DecRes<AudFrame> {
         grabber.start();
         initialized = true;
     }
+    @Override
     public long getLengthPerFrame() {
         return grabber.getLengthInTime()/grabber.getLengthInAudioFrames();
     }

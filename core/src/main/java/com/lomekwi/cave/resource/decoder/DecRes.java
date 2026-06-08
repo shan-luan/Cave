@@ -14,7 +14,6 @@ import org.bytedeco.javacv.FrameGrabber;
  */
 public abstract class DecRes<F extends Frame> implements Resource {
     protected final FFmpegFrameGrabber grabber;
-    protected long lastGrabTime = -1;
     protected volatile boolean initialized;
 
     protected DecRes(MedRes source) {
@@ -52,18 +51,10 @@ public abstract class DecRes<F extends Frame> implements Resource {
 
     public void seek(long time) throws FFmpegFrameGrabber.Exception{
         if (!initialized) throw new IllegalStateException("Not initialized");
-        grabber.setTimestamp(time);
+        grabber.setTimestamp(time,false);
     }
     public boolean isInitialized() {
         return initialized;
-    }
-
-    public long getLastGrabTime() {
-        return lastGrabTime;
-    }
-
-    public void setLastGrabTime(long lastGrabTime) {
-        this.lastGrabTime = lastGrabTime;
     }
     protected long toValidTime(long time) {
         return Math.min(Math.max(0,time), getLengthInTime());
@@ -71,5 +62,13 @@ public abstract class DecRes<F extends Frame> implements Resource {
     public long getLengthInTime() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getLengthInTime();
+    }
+    public long getTimestamp() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getTimestamp();
+    }
+    public abstract long getLengthPerFrame();
+    public long getLastFrameTime() {
+        return getTimestamp()-getTimestamp()%getLengthPerFrame();
     }
 }
