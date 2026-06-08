@@ -46,15 +46,15 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     /**
      * @param time 绝对时间
      */
-    public Frame get(long time, Track track) {
-        return source.get(toLocalTime(time), track);
+    public Frame get(long time) {
+        return source.get(toLocalTime(time), track).withTrack(track.index).withTime(time);
     }
 
     /**
      * 同步到指定时间
      * @param time 绝对时间
      */
-    public void sync(long time, Track track) throws Exception {
+    public void sync(long time) throws Exception {
         source.sync(toLocalTime(time), track);
     }
     public SegActor getActor() {
@@ -97,7 +97,7 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
         }
         @Override
         public Frame next() {
-            Frame f = get(time, track);
+            Frame f = get(time);
             time += source.getLengthPerExportFrame();
             return f;
         }

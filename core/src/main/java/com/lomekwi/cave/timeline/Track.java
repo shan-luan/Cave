@@ -90,7 +90,7 @@ public class Track implements Serializable,Iterable<Segment> {
             }
             segment = entry.getValue();
         }
-        return segment.get(time, this).withTrack(this.index).withTime(time);
+        return segment.get(time);
     }
 
     /**
@@ -268,8 +268,8 @@ public class Track implements Serializable,Iterable<Segment> {
                         var s = getEntry(t);
                         Frame f = null;
                         if (s != null) {
-                            s.getValue().sync(t, Track.this);
-                            f = s.getValue().get(t, Track.this);
+                            s.getValue().sync(t);
+                            f = s.getValue().get(t);
                         }
                         timeline.project.projEventBus.post(Objects.requireNonNullElse(f, gapFrame));
 
@@ -294,11 +294,11 @@ public class Track implements Serializable,Iterable<Segment> {
                         var s=e.getValue();
                         var r=e.getKey();
                         Gdx.app.debug("Track"+index, "找到片段: " + s);
-                        s.sync(t, Track.this);
+                        s.sync(t);
                         long end = r.upperEndpoint();
                         while (t< end && !updateNeeded){
                             t=timeline.project.playhead.getTime();
-                            Frame frame = s.get(t,Track.this);
+                            Frame frame = s.get(t);
                             if(updateNeeded) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(frame);
