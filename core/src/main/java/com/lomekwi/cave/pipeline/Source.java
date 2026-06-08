@@ -45,4 +45,6 @@ public abstract class Source<T extends Frame> implements Serializable {
     }
 
     public abstract long getLengthPerExportFrame();
+    public void onDuplicate(Source<?> original){
+    }
 }

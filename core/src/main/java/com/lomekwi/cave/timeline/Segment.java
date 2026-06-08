@@ -94,4 +94,10 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
             return f;
         }
     }
+    @Override
+    public Segment duplicate() {
+        var segment =  Duplicatable.super.duplicate();
+        segment.source.onDuplicate(source);
+        return segment;
+    }
 }

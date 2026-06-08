@@ -1,7 +1,5 @@
 package com.lomekwi.cave.pipeline.image;
 
-import static com.lomekwi.cave.util.i18n.I18N.i18n;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -13,24 +11,24 @@ import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
 
 public class VdoClipSrc extends Source<ImgFrame> {
-    private final VdoRes src;
+    private VdoRes vdoRes;
     private transient Texture texture;
     private volatile transient boolean initialized;
     @Serial
     private static final long serialVersionUID = 1L;
-    public VdoClipSrc(VdoRes src) {
+    public VdoClipSrc(VdoRes vdoRes) {
         super();
-        this.src = src;
+        this.vdoRes = vdoRes;
     }
     @Override
     public ImgFrame generate(long time, Track track) {
         CountDownLatch cd = new CountDownLatch(1);
         if(!initialized){
             Gdx.app.postRunnable(()-> {
-                texture = new Texture(src.getWidth(), src.getHeight(), Pixmap.Format.RGBA8888);
+                texture = new Texture(vdoRes.getWidth(), vdoRes.getHeight(), Pixmap.Format.RGBA8888);
             frame = new ImgFrame();
             frame.setTexture(texture)
-                .setTransform(new Transform(0, 0, src.getWidth(), src.getHeight(), 0));
+                .setTransform(new Transform(0, 0, vdoRes.getWidth(), vdoRes.getHeight(), 0));
             initialized = true;
             cd.countDown();
             });
@@ -41,7 +39,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
             }
         }
         try {
-            src.getDecoder(track.index).get(time, frame);
+            vdoRes.getDecoder(track.index).get(time, frame);
         } catch (Exception e) {
             e.printStackTrace();
             frame.setPixels(null);
@@ -49,14 +47,19 @@ public class VdoClipSrc extends Source<ImgFrame> {
         Transform t=frame.getTransform();
         t.x=0;
         t.y=0;
-        t.width=src.getWidth();
-        t.height=src.getHeight();
+        t.width= vdoRes.getWidth();
+        t.height= vdoRes.getHeight();
         t.rotation=0;
         frame.changed=true;
         return frame;
     }
     @Override
     public long getLengthPerExportFrame() {
-        return src.getFrameLength();
+        return vdoRes.getFrameLength();
+    }
+    @Override
+    public void onDuplicate(Source<?> original) {
+        VdoClipSrc src = (VdoClipSrc) original;
+        this.vdoRes =src.vdoRes;
     }
 }
