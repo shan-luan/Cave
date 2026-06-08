@@ -36,6 +36,12 @@ public abstract class DecRes<F extends Frame> implements Resource {
     public abstract org.bytedeco.javacv.Frame grab() throws FFmpegFrameGrabber.Exception;
 
     /**
+     * 同步到指定时间
+     * @param time 局部时间
+     */
+    public abstract void sync(long time) throws Exception;
+
+    /**
      * 解码指定时间的数据并更新到提供的帧对象中。
      * @param time  局部时间
      * @param frame 要更新的帧对象

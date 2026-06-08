@@ -20,6 +20,12 @@ public class VdoClipSrc extends Source<ImgFrame> {
         super();
         this.vdoRes = vdoRes;
     }
+
+    @Override
+    public void sync(long time, Track track) throws Exception {
+        vdoRes.sync(track.index, time);
+    }
+
     @Override
     public ImgFrame generate(long time, Track track) {
         CountDownLatch cd = new CountDownLatch(1);

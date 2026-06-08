@@ -265,7 +265,12 @@ public class Track implements Serializable,Iterable<Segment> {
                         Gdx.app.debug("Track"+index, "因为播放头而尝试park...");
 
                         //用于暂停时seek了或修改了轨道
-                        var f = get(t);
+                        var s = getEntry(t);
+                        Frame f = null;
+                        if (s != null) {
+                            s.getValue().sync(t, Track.this);
+                            f = s.getValue().get(t, Track.this);
+                        }
                         timeline.project.projEventBus.post(Objects.requireNonNullElse(f, gapFrame));
 
                         LockSupport.park();
@@ -286,11 +291,14 @@ public class Track implements Serializable,Iterable<Segment> {
                         Gdx.app.debug("Track"+index, "轨道线程等待: " + parkTime/1e9 + "秒");
                         LockSupport.parkNanos(parkTime);
                     }else{
-                        Gdx.app.debug("Track"+index, "找到片段: " + e.getValue());
-                        long end = e.getKey().upperEndpoint();
+                        var s=e.getValue();
+                        var r=e.getKey();
+                        Gdx.app.debug("Track"+index, "找到片段: " + s);
+                        s.sync(t, Track.this);
+                        long end = r.upperEndpoint();
                         while (t< end && !updateNeeded){
                             t=timeline.project.playhead.getTime();
-                            Frame frame = get(t);
+                            Frame frame = s.get(t,Track.this);
                             if(updateNeeded) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(frame);
@@ -302,7 +310,7 @@ public class Track implements Serializable,Iterable<Segment> {
             } catch (Exception e) {
                 Gdx.app.error("Track"+index, "在更新轨道时发生错误", e);
                 Gdx.app.postRunnable(() -> {
-                    throw e;
+                    throw new RuntimeException(e);
                 });
             }finally {
                 workerThread = null;

@@ -18,6 +18,11 @@ public class AudClipSrc extends Source<AudFrame> {
     }
 
     @Override
+    public void sync(long time, Track track) throws Exception {
+        audRes.sync(track.index, time);
+    }
+
+    @Override
     protected AudFrame generate(long time, Track track) {
 
         if (frame == null) {

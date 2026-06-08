@@ -51,6 +51,9 @@ public abstract class MedRes implements Resource, Serializable {
     public void get(int trackIndex, long time, Frame frame) throws Exception {
         ((DecRes<Frame>) getDecoder(trackIndex)).get(time, frame);
     }
+    public void sync(int trackIndex, long time) throws Exception {
+        getDecoder(trackIndex).sync(time);
+    }
 
     @Override
     public void close() throws Exception {

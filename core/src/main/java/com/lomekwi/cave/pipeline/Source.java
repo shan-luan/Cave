@@ -18,6 +18,12 @@ public abstract class Source<T extends Frame> implements Serializable {
     private final List<Filter<? super T>> filters = new ArrayList<>();
 
     /**
+     * 同步到指定时间
+     * @param time 绝对时间
+     */
+    public abstract void sync(long time, Track track) throws Exception;
+
+    /**
      *  获取指定时间的产品
      * @param time 绝对时间
      * @return 产品

@@ -75,6 +75,23 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         super.close();
     }
 
+    @Override
+    public void sync(long time) throws Exception {
+        if (!initialized) {
+            start();
+        }
+
+        time = toValidTime(time);
+        final long diff = time - lastGrabTime;
+
+        if (diff < 0 || diff > 3 * getLengthPerFrame()) {
+            // 请求时间早于上次抓取时间或时间间隔超过3帧，需要 seek
+            seek(time);
+            Gdx.app.debug(i18n("视频解码"), hashCode() + "同步到" + time / SECOND + i18n("秒"));
+            bufferedPixels = null;
+        }
+    }
+
     /**
      * 解码指定时间戳的视频帧，并将像素数据更新到提供的帧对象中。
      * 内部会根据时间戳判断是否使用缓存、跳转或抓取新帧。
@@ -91,19 +108,6 @@ public class VdoDecRes extends DecRes<ImgFrame> {
 
         time = toValidTime(time);
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
-        final long diff = time - lastGrabTime;
-
-        if (diff < 0) {
-            // 请求时间早于上次抓取时间，需要 seek 回退
-            seek(time);
-            Gdx.app.debug(i18n("视频解码"), hashCode() +i18n("向前跳跃")+(lastGrabTime-getTimestamp())/SECOND + i18n("秒"));
-            bufferedPixels = null;
-        } else if (diff > 3 * getLengthPerFrame()) {
-            // 如果请求时间间隔超过3帧间隔，则进行跳转
-            seek(time);
-            Gdx.app.debug(i18n("视频解码"),hashCode() +i18n("向后跳跃")+(-lastGrabTime+getTimestamp())/SECOND + i18n("秒"));
-            bufferedPixels = null;
-        }
 
         if (!((time < nextFrameTime) && bufferedPixels != null)) {
             Frame output = null;

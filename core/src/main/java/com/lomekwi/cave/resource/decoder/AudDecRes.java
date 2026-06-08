@@ -27,21 +27,26 @@ public class AudDecRes extends DecRes<AudFrame> {
     }
 
     @Override
+    public void sync(long time) throws Exception {
+        if (!initialized) {
+            start();
+        }
+        long target = toValidTime(time);
+        long diff = target - lastGrabTime;
+
+        if (diff < 0 || diff > AUDIO_SEEK_THRESHOLD) {
+            seek(target);
+            Gdx.app.debug(i18n("音频解码"), hashCode() + "同步到" + target / SECOND + i18n("秒"));
+        }
+    }
+
+    @Override
     public void get(long time, AudFrame frame) throws Exception {
         if (!initialized) {
             start();
         }
 
         long target = toValidTime(time);
-        long diff = target - lastGrabTime;
-
-        if (diff < 0) {
-            seek(target);
-            Gdx.app.debug(i18n("音频解码"), hashCode() + i18n("向前跳") + (lastGrabTime - grabber.getTimestamp()) / SECOND + i18n("秒"));
-        } else if (diff > AUDIO_SEEK_THRESHOLD) {
-            seek(target);
-            Gdx.app.debug(i18n("音频解码"), hashCode() + i18n("向后跳") + (grabber.getTimestamp() - lastGrabTime) / SECOND + i18n("秒"));
-        }
 
         // 持续抓取音频采样直至到达目标时间位置
         Frame f = null;

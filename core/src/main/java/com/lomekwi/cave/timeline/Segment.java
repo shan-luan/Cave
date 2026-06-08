@@ -49,6 +49,14 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     public Frame get(long time, Track track) {
         return source.get(toLocalTime(time), track);
     }
+
+    /**
+     * 同步到指定时间
+     * @param time 绝对时间
+     */
+    public void sync(long time, Track track) throws Exception {
+        source.sync(toLocalTime(time), track);
+    }
     public SegActor getActor() {
         return actor;
     }
