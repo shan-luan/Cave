@@ -1,14 +1,12 @@
 package com.lomekwi.cave.ui.topbar;
 
 import static com.lomekwi.cave.app.App.fileChooser;
-import static com.lomekwi.cave.util.Units.MEGA;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
@@ -23,13 +21,11 @@ import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.task.Task;
-import com.lomekwi.cave.task.VideoExportTask;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.tabs.SettingsOpenedEvent;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
 import com.lomekwi.cave.app.App;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -152,17 +148,9 @@ public class TopBar extends MenuBar {
             })).setShortcut(CONTROL_LEFT, SHIFT_LEFT, S))
             .withSeparator()
             .withItem(new MenuItemP(i18n("导出"), new ChangeListenerX(() -> {
-
                 var project = App.root.getFrontendProject();
                 if (project == null) return;
-                var outputFile = new File(System.getProperty("java.io.tmpdir"), "cave_export_test.mp4");
-                var task = new VideoExportTask(
-                    project.timeline.duplicate(),
-                    outputFile,
-                    1920, 1080, 30.0,
-                    0f, 0f, (int) (6*MEGA)
-                );
-                App.taskPool.submit(task);
+                new ExportDialog(project).show(App.root.getStage());
             })))
             .withSeparator()
             .withItem(new MenuItem(i18n("关闭"), new ChangeListenerX(() -> {
