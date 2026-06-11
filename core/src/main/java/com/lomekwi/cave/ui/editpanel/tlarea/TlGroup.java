@@ -52,6 +52,10 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
 
+    private boolean keyWPressed, keySPressed, keyAPressed, keyDPressed;
+    private static final float KEY_HORIZONTAL_SPEED = 1200f;
+    private static final float KEY_VERTICAL_SPEED = 600f;
+
     private final Vector2 pointer = new Vector2();
 
     private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
@@ -79,6 +83,12 @@ public class TlGroup extends Group {
                     trackHeight = Math.max(trackHeight + amountY * 10, 10);
 
                 } else if (ip.isKeyPressed(CONTROL_LEFT)) {
+                    trackYShift = Math.max(0, trackYShift + amountY * 10);
+
+                } else if (ip.isKeyPressed(SHIFT_LEFT)) {
+                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY * 30) - xToAbsoluteTime(0)), 0);
+
+                } else {
                     final float ratio = x / getWidth();
                     final long oldDuration = viewDurationTime;
 
@@ -92,12 +102,6 @@ public class TlGroup extends Group {
 
                     viewDurationTime = newDuration;
                     viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
-
-                } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY * 30) - xToAbsoluteTime(0)), 0);
-
-                } else {
-                    trackYShift = Math.max(0, trackYShift + amountY * 10);
                 }
 
                 dirty = true;
@@ -106,8 +110,25 @@ public class TlGroup extends Group {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if (keycode == SPACE) {
-                    playhead.setPlaying(!playhead.isPlaying());
+                switch (keycode) {
+                    case A: keyAPressed = true; break;
+                    case D: keyDPressed = true; break;
+                    case W: keyWPressed = true; break;
+                    case S: keySPressed = true; break;
+                    case SPACE:
+                        playhead.setPlaying(!playhead.isPlaying());
+                        break;
+                }
+                return true;
+            }
+
+            @Override
+            public boolean keyUp(InputEvent event, int keycode) {
+                switch (keycode) {
+                    case A: keyAPressed = false; break;
+                    case D: keyDPressed = false; break;
+                    case W: keyWPressed = false; break;
+                    case S: keySPressed = false; break;
                 }
                 return true;
             }
@@ -157,6 +178,25 @@ public class TlGroup extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
+
+        if (keyAPressed || keyDPressed || keyWPressed || keySPressed) {
+            final float timePerPixel = (float) viewDurationTime / getWidth();
+
+            if (keyDPressed) {
+                viewStartTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
+            }
+            if (keyAPressed) {
+                viewStartTime = Math.max(0, viewStartTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
+            }
+            if (keySPressed) {
+                trackYShift = Math.max(0, trackYShift + KEY_VERTICAL_SPEED * delta);
+            }
+            if (keyWPressed) {
+                trackYShift = Math.max(0, trackYShift - KEY_VERTICAL_SPEED * delta);
+            }
+
+            dirty = true;
+        }
 
         if (dirty) {
             clearChildren(false);
