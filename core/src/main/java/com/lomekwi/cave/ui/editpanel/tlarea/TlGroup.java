@@ -41,14 +41,7 @@ public class TlGroup extends Group {
     private final Playhead playhead;
     private final Project project;
 
-    long viewStartTime;
-    long viewDurationTime;
-
-    private float trackHeight;
-    /**
-     * 轨道的y偏移，一个非负数。当值大于0，则将所有轨道向下移动y偏移量
-     */
-    private float trackYShift;
+    final ViewState view = new ViewState();
 
     private boolean dirty = true;
 
@@ -70,9 +63,9 @@ public class TlGroup extends Group {
         project.projEventBus.register(this);
 
 
-        this.viewStartTime = 0;
-        this.viewDurationTime = Math.max(project.timeline.getLength(), 30 * SECOND);
-        this.trackHeight = 80;
+        this.view.startTime = 0;
+        this.view.durationTime = Math.max(project.timeline.getLength(), 30 * SECOND);
+        this.view.trackHeight = 80;
 
         addListener(new InputListener() {
             @Override
@@ -80,28 +73,16 @@ public class TlGroup extends Group {
                 final Input ip = Gdx.input;
 
                 if (ip.isKeyPressed(CONTROL_LEFT) && ip.isKeyPressed(SHIFT_LEFT)) {
-                    trackHeight = Math.max(trackHeight + amountY * 10, 10);
+                    view.adjustTrackHeight(amountY * 10);
 
                 } else if (ip.isKeyPressed(CONTROL_LEFT)) {
-                    trackYShift = Math.max(0, trackYShift + amountY * 10);
+                    view.scrollVertical(amountY * 10);
 
                 } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    viewStartTime = Math.max(viewStartTime + (xToAbsoluteTime(amountY * 30) - xToAbsoluteTime(0)), 0);
+                    view.scrollHorizontal(amountY * 30, getWidth());
 
                 } else {
-                    final float ratio = x / getWidth();
-                    final long oldDuration = viewDurationTime;
-
-                    final float scaleFactor = 1f + amountY * 0.1f;
-                    if (scaleFactor <= 0f) return true;
-
-                    long newDuration = (long) (oldDuration * scaleFactor);
-                    if (newDuration <= SECOND) newDuration = SECOND;
-
-                    final long anchorTime = viewStartTime + (long) (ratio * oldDuration);
-
-                    viewDurationTime = newDuration;
-                    viewStartTime = Math.max(anchorTime - (long) (ratio * newDuration), 0);
+                    if (!view.zoom(amountY, x / getWidth())) return true;
                 }
 
                 dirty = true;
@@ -180,19 +161,19 @@ public class TlGroup extends Group {
         super.act(delta);
 
         if (keyAPressed || keyDPressed || keyWPressed || keySPressed) {
-            final float timePerPixel = (float) viewDurationTime / getWidth();
+            final float timePerPixel = (float) view.durationTime / getWidth();
 
             if (keyDPressed) {
-                viewStartTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
+                view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
             }
             if (keyAPressed) {
-                viewStartTime = Math.max(0, viewStartTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
+                view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
             }
             if (keySPressed) {
-                trackYShift = Math.max(0, trackYShift + KEY_VERTICAL_SPEED * delta);
+                view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
             }
             if (keyWPressed) {
-                trackYShift = Math.max(0, trackYShift - KEY_VERTICAL_SPEED * delta);
+                view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
             }
 
             dirty = true;
@@ -201,7 +182,7 @@ public class TlGroup extends Group {
         if (dirty) {
             clearChildren(false);
 
-            var visibleRange = Range.closedOpen(viewStartTime, viewStartTime + viewDurationTime);
+            var visibleRange = view.visibleRange();
             for (int i = 0; i < timeline.getTracks().size(); i++) {
                 final Track track = timeline.getTracks().get(i);
 
@@ -213,26 +194,26 @@ public class TlGroup extends Group {
                         case BEHIND:
                             actor.setPosition(
                                 absoluteTimeToX(r.lowerEndpoint()),
-                                getHeight() + trackYShift - (i + 1) * trackHeight
+                                getHeight() + view.trackYShift - (i + 1) * view.trackHeight
                             );
                             Stage s = getStage();
                             segDrag(actor, stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x - actor.getX(), Float.NaN/*此时不可能用到*/);
-                            actor.setHeight(trackHeight);
+                            actor.setHeight(view.trackHeight);
                             break;
                         case MIDDLE:
                             actor.setSize(
                                 absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
-                                trackHeight
+                                view.trackHeight
                             );
                             break;
                         case NONE:
                             actor.setPosition(
                                 absoluteTimeToX(r.lowerEndpoint()),
-                                getHeight() + trackYShift - (i + 1) * trackHeight
+                                getHeight() + view.trackYShift - (i + 1) * view.trackHeight
                             );
                             actor.setSize(
                                 absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
-                                trackHeight
+                                view.trackHeight
                             );
                             break;
                     }
@@ -262,10 +243,10 @@ public class TlGroup extends Group {
     }
 
     private void drawSplitters() {
-        float offset = ((trackYShift % trackHeight) + trackHeight) % trackHeight;
+        float offset = ((view.trackYShift % view.trackHeight) + view.trackHeight) % view.trackHeight;
         float startY = getHeight() + offset;
 
-        for (float y = startY; y > -trackHeight; y -= trackHeight) {
+        for (float y = startY; y > -view.trackHeight; y -= view.trackHeight) {
             shapeDrawer.line(0, y, getWidth(), y, black);
         }
     }
@@ -289,11 +270,11 @@ public class TlGroup extends Group {
     }
 
     float absoluteTimeToX(long time) {
-        return (float) (time - viewStartTime) / viewDurationTime * getWidth();
+        return view.timeToX(time, getWidth());
     }
 
     long xToAbsoluteTime(float x) {
-        return viewStartTime + (long) ((x / getWidth()) * viewDurationTime);
+        return view.xToTime(x, getWidth());
     }
 
     @Subscribe
@@ -360,13 +341,13 @@ public class TlGroup extends Group {
                 float deltaX = diffToActorX - firstX,
                     deltaY = diffToActorY - firstY,
                     targetX = Math.max(oldx + deltaX, 0f),
-                    targetY = Math.min(actor.getY() + deltaY, getHeight() - trackYShift - trackHeight);
+                    targetY = Math.min(actor.getY() + deltaY, getHeight() - view.trackYShift - view.trackHeight);
 
                 long target = xToAbsoluteTime(targetX);
                 long duration = r.upperEndpoint() - r.lowerEndpoint();
                 var nr = Range.closedOpen(target, target + duration);
 
-                var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + trackHeight / 2)));
+                var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
                 actor.setPosition(targetX, targetY);
                 if(newTrack.isFree(e, nr)) {
                     timeline.move(t, newTrack, e, target, duration);
@@ -387,17 +368,17 @@ public class TlGroup extends Group {
     }
 
     private int yToTrackIndex(float y) {
-        final float top = getHeight() - trackYShift;
+        final float top = getHeight() - view.trackYShift;
         final float distance = top - y;
-        return (int) Math.floor(distance / trackHeight);
+        return (int) Math.floor(distance / view.trackHeight);
     }
 
     private float trackIndexToTopY(int index) {
-        return getHeight() + trackYShift - index * trackHeight;
+        return getHeight() + view.trackYShift - index * view.trackHeight;
     }
 
     private float trackIndexToBottomY(int index) {
-        return trackIndexToTopY(index) - trackHeight;
+        return trackIndexToTopY(index) - view.trackHeight;
     }
 
     protected void segDragEnd(SegActor actor) {
@@ -408,5 +389,63 @@ public class TlGroup extends Group {
     @Override
     public void sizeChanged() {
         dirty = true;
+    }
+
+    // -------------------------------------------------------------------------
+    // 内部类：视图状态
+    // -------------------------------------------------------------------------
+
+    static class ViewState {
+        long startTime;
+        long durationTime;
+        float trackHeight;
+        float trackYShift;
+
+        /** 时间 -> 像素 x 坐标 */
+        float timeToX(long time, float width) {
+            return (float) (time - startTime) / durationTime * width;
+        }
+
+        /** 像素 x 坐标 -> 时间 */
+        long xToTime(float x, float width) {
+            return startTime + (long) ((x / width) * durationTime);
+        }
+
+        /** 可见时间范围 */
+        Range<Long> visibleRange() {
+            return Range.closedOpen(startTime, startTime + durationTime);
+        }
+
+        /**
+         * 以锚点为中心缩放。返回 false 表示缩放无效（缩放因子 <= 0）
+         */
+        boolean zoom(float amountY, float anchorXRatio) {
+            final long oldDuration = durationTime;
+            final float scaleFactor = 1f + amountY * 0.1f;
+            if (scaleFactor <= 0f) return false;
+
+            long newDuration = (long) (oldDuration * scaleFactor);
+            if (newDuration <= SECOND) newDuration = SECOND;
+
+            final long anchorTime = startTime + (long) (anchorXRatio * oldDuration);
+            durationTime = newDuration;
+            startTime = Math.max(anchorTime - (long) (anchorXRatio * newDuration), 0);
+            return true;
+        }
+
+        /** 水平滚动（左右移动视图），deltaPixels > 0 向右 */
+        void scrollHorizontal(float deltaPixels, float width) {
+            startTime = Math.max(startTime + (xToTime(deltaPixels, width) - xToTime(0, width)), 0);
+        }
+
+        /** 垂直滚动（上下移动轨道偏移），delta > 0 向下 */
+        void scrollVertical(float delta) {
+            trackYShift = Math.max(0, trackYShift + delta);
+        }
+
+        /** 调整轨道高度，不小于 10 */
+        void adjustTrackHeight(float delta) {
+            trackHeight = Math.max(trackHeight + delta, 10);
+        }
     }
 }

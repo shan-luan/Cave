@@ -31,10 +31,10 @@ public class TlRuler extends Widget {
         super.draw(batch, parentAlpha);
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), MORE_DARK_GRAY);
 
-        final long interval = calcInterval((long) (tlGroup.viewDurationTime * PIXELS_PER_TICK / getWidth()));
-        final long start = (tlGroup.viewStartTime / interval) * interval;
+        final long interval = calcInterval((long) (tlGroup.view.durationTime * PIXELS_PER_TICK / getWidth()));
+        final long start = (tlGroup.view.startTime / interval) * interval;
 
-        for (long t = start; t < tlGroup.viewStartTime + tlGroup.viewDurationTime; t += interval) {
+        for (long t = start; t < tlGroup.view.startTime + tlGroup.view.durationTime; t += interval) {
             float x = tlGroup.absoluteTimeToX(t) + getX();
             App.root.getShapeDrawer().filledRectangle(x, getY(), 1, getHeight(), Color.WHITE);
             formatTime(t, interval);
