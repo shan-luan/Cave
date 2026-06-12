@@ -28,14 +28,6 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     public Timeline(Project project) {
         this.project = project;
     }
-    public Timeline getActiveElements(long time, Collection<Frame> collector) {
-        for(Track track:tracks){
-            Frame frame = track.get(time);
-            if(frame ==null) continue;
-            collector.add(frame);
-        }
-        return this;
-    }
     public Timeline add(Track track, Segment segment, long start, long duration) {
         track.add(segment, start, duration);
         lengthChanged = true;

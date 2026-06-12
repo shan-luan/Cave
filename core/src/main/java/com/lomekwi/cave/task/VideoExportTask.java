@@ -12,12 +12,12 @@ import com.badlogic.gdx.math.Matrix4;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.pipeline.image.Transform;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Timeline;
 
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.FrameRecorder;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.util.concurrent.SynchronousQueue;
@@ -28,6 +28,7 @@ public class VideoExportTask implements Task{
     private final float xOffset;
     private final float yOffset;
     private final AtomicReferenceArray<Frame> frames;
+    private final Segment[] activeSegments;
     private final FrameBuffer fb;
     private final SpriteBatch batch;
     private volatile long t=0;
@@ -46,6 +47,7 @@ public class VideoExportTask implements Task{
             i++;
         }
         frames= new AtomicReferenceArray<>(i);
+        activeSegments=new Segment[i];
         fb=new FrameBuffer(Pixmap.Format.RGBA8888,width,height,true);
         batch=new SpriteBatch();
         frameLen= (long) (SECOND/fps);
@@ -68,10 +70,24 @@ public class VideoExportTask implements Task{
             while (t<timeline.getLength()){
                 i=0;
                 for(var track : timeline){
-                    frames.set(i,track.get(t));
+                    var seg = activeSegments[i];
+                    if(seg==null||!seg.getRange().contains(t)){
+                        var e= track.getEntry(t);
+                        seg = null;
+                        if(e!=null){
+                            seg=e.getValue();
+                            seg.sync(t);
+                        }
+                        activeSegments[i]=seg;
+                    }
+                    if (seg == null) {
+                        frames.set(i, null);
+                    } else {
+                        frames.set(i, seg.get(t));
+                    }
                     i++;
                 }
-                Gdx.app.postRunnable(this::mixVideoFrame);
+                Gdx.app.postRunnable(this::mixVideoFrame);//TODO：z-index.
                 recorder.record(queue.take());
                 System.out.println(t);
                 t+=frameLen;

@@ -81,18 +81,6 @@ public class Track implements Serializable,Iterable<Segment> {
         onChanged();
     }
 
-    public @Nullable Frame get(long time) {
-        Segment segment;
-        synchronized (this) {
-            var entry = sources.getEntry(time);
-            if (entry == null) {
-                return null;
-            }
-            segment = entry.getValue();
-        }
-        return segment.get(time);
-    }
-
     /**
      * 检查指定范围是否与给定的条目兼容（即该范围是否为空闲或仅被同一片段占用）
      *
