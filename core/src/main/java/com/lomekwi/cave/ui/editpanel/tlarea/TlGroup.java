@@ -45,7 +45,6 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
 
-    private boolean keyWPressed, keySPressed, keyAPressed, keyDPressed;
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 600f;
 
@@ -91,25 +90,8 @@ public class TlGroup extends Group {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                switch (keycode) {
-                    case A: keyAPressed = true; break;
-                    case D: keyDPressed = true; break;
-                    case W: keyWPressed = true; break;
-                    case S: keySPressed = true; break;
-                    case SPACE:
-                        playhead.setPlaying(!playhead.isPlaying());
-                        break;
-                }
-                return true;
-            }
-
-            @Override
-            public boolean keyUp(InputEvent event, int keycode) {
-                switch (keycode) {
-                    case A: keyAPressed = false; break;
-                    case D: keyDPressed = false; break;
-                    case W: keyWPressed = false; break;
-                    case S: keySPressed = false; break;
+                if (keycode == SPACE) {
+                    playhead.setPlaying(!playhead.isPlaying());
                 }
                 return true;
             }
@@ -160,19 +142,22 @@ public class TlGroup extends Group {
     public void act(float delta) {
         super.act(delta);
 
-        if (keyAPressed || keyDPressed || keyWPressed || keySPressed) {
+        final Input ip = Gdx.input;
+
+        if (getStage() != null && getStage().getKeyboardFocus() == this
+            && (ip.isKeyPressed(D) || ip.isKeyPressed(A) || ip.isKeyPressed(S) || ip.isKeyPressed(W))) {
             final float timePerPixel = (float) view.durationTime / getWidth();
 
-            if (keyDPressed) {
+            if (ip.isKeyPressed(D)) {
                 view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
             }
-            if (keyAPressed) {
+            if (ip.isKeyPressed(A)) {
                 view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
             }
-            if (keySPressed) {
+            if (ip.isKeyPressed(S)) {
                 view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
             }
-            if (keyWPressed) {
+            if (ip.isKeyPressed(W)) {
                 view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
             }
 
