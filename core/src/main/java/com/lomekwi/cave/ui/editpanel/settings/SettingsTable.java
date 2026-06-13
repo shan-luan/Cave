@@ -7,21 +7,18 @@ import com.kotcrab.vis.ui.widget.VisSplitPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 
 public class SettingsTable extends VisTable {
-    private static SettingsTable INSTANCE;
     private final VisSplitPane sp;
-    private SettingsTable() {
+
+    public SettingsTable() {
         VisLabel l = new VisLabel(i18n("选择一个条目"));
-        sp = new VisSplitPane(new EntryTree(),l, false);
+        EntryTree tree = new EntryTree(this);
+        tree.add(new EntryNode(i18n("快捷键"), ShortcutKeysTable::new));
+        sp = new VisSplitPane(tree, l, false);
         l.setAlignment(1);
         add(sp).grow();
         sp.setSplitAmount(0.2f);
     }
-    public static SettingsTable getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new SettingsTable();
-        }
-        return INSTANCE;
-    }
+
     public void onEntrySelected(EntryTable entryTable) {
         sp.setSecondWidget(entryTable);
     }

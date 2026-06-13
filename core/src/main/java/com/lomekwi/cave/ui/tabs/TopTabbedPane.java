@@ -64,10 +64,4 @@ public class TopTabbedPane extends TabbedPane {
         add(pt);
         switchTab(pt);
     }
-    @Subscribe
-    public void onSettingsOpened(SettingsOpenedEvent event){
-        SettingsTab st = new SettingsTab();
-        add(st);
-        switchTab(st);
-    }
 }

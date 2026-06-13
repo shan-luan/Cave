@@ -22,7 +22,7 @@ import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
-import com.lomekwi.cave.ui.tabs.SettingsOpenedEvent;
+import com.lomekwi.cave.ui.editpanel.settings.SettingsDialog;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
 import com.lomekwi.cave.app.App;
 
@@ -163,7 +163,7 @@ public class TopBar extends MenuBar {
 
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {
-                App.appEventBus.post(SettingsOpenedEvent.INSTANCE);
+                new SettingsDialog();
             })))
             .withItem(new MenuItem(i18n("后台任务"), new ChangeListenerX(() -> {
 
