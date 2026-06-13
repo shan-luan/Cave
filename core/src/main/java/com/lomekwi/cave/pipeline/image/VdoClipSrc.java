@@ -64,6 +64,10 @@ public class VdoClipSrc extends Source<ImgFrame> {
         return vdoRes.getFrameLength();
     }
     @Override
+    public long getDuration() {
+        return vdoRes.getDuration();
+    }
+    @Override
     public void onDuplicate(Source<?> original) {
         VdoClipSrc src = (VdoClipSrc) original;
         this.vdoRes =src.vdoRes;

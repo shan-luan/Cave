@@ -17,6 +17,7 @@ public abstract class MedRes implements Resource, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final String path;
+    protected long duration; // 媒体总时长（微秒）
     protected transient ArrayList<DecRes<?>> decRes=new ArrayList<>();
 
     /**
@@ -27,9 +28,14 @@ public abstract class MedRes implements Resource, Serializable {
         try (var metadataDecRes = newDecoder()) {
             metadataDecRes.start();
             generateMetadata(metadataDecRes);
+            this.duration = Math.max(0, metadataDecRes.getLengthInTime());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public long getDuration() {
+        return duration;
     }
 
     public String getPath() {

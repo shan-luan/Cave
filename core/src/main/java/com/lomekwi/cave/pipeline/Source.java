@@ -51,6 +51,8 @@ public abstract class Source<T extends Frame> implements Serializable {
     }
 
     public abstract long getLengthPerExportFrame();
+    /** 媒体源的总时长（微秒） */
+    public abstract long getDuration();
     public void onDuplicate(Source<?> original){
     }
 }

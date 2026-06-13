@@ -8,18 +8,18 @@ import com.kotcrab.vis.ui.layout.FlowGroup;
 import com.kotcrab.vis.ui.widget.VisImage;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
+import com.google.common.collect.Multimap;
 import com.lomekwi.cave.resource.Resource;
 
 import com.lomekwi.cave.app.App;
 
 import java.io.File;
-import java.util.Map;
 
 
 public class MediaPool extends FlowGroup {
     private final TextureRegionDrawable test;
 
-    public MediaPool(Map<File, Resource> resources){
+    public MediaPool(Multimap<File, Resource> resources){
         super(false);
 
         test = new TextureRegionDrawable(new Texture("libgdx.png"));

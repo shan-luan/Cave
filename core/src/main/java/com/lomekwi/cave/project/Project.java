@@ -13,14 +13,15 @@ import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.app.App;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -30,7 +31,7 @@ public class Project implements Serializable, AutoCloseable {
     protected transient Path savePath;
     public final Timeline timeline;
     public transient Playhead playhead;
-    public final Map<File, Resource> resources = new HashMap<>();
+    public final Multimap<File, Resource> resources = ArrayListMultimap.create();
     public final SegFactory segFactory = new SegFactory(this);
     public transient EventBus projEventBus;
     public String name;

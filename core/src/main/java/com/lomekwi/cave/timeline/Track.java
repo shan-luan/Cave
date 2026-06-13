@@ -95,6 +95,11 @@ public class Track implements Serializable,Iterable<Segment> {
         return m.containsValue(entry.getValue());
     }
 
+    /** 检查指定时间范围是否完全空闲（没有任何片段占据） */
+    synchronized public boolean isFree(Range<Long> range) {
+        return sources.subRangeMap(range).asMapOfRanges().isEmpty();
+    }
+
     synchronized protected void split(long time){
         var entry = sources.getEntry(time);
         if (entry == null) return;

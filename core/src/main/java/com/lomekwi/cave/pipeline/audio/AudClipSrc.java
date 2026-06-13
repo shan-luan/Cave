@@ -42,4 +42,8 @@ public class AudClipSrc extends Source<AudFrame> {
     public long getLengthPerExportFrame() {
         return audRes.getFrameLength();
     }
+    @Override
+    public long getDuration() {
+        return audRes.getDuration();
+    }
 }

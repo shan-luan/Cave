@@ -63,6 +63,10 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     public long toLocalTime(long time) {
         return time - origin;
     }
+    /** 该片段对应的媒体源总时长（微秒） */
+    public long getDuration() {
+        return source.getDuration();
+    }
     public Track getTrack(){
         return track;
     }

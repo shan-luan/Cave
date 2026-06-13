@@ -28,6 +28,7 @@ import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
@@ -127,9 +128,22 @@ public class TlGroup extends Group {
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 try {
                     File file = (File) payload.getObject();
-                    Segment s = project.segFactory.get(file);
-                    s.setOrigin(xToAbsoluteTime(x));
-                    timeline.add(timeline.getTrack(yToTrackIndex(y)), s, xToAbsoluteTime(x), 10*SECOND);
+                    List<Segment> segments = project.segFactory.getAll(file);
+                    long startTime = xToAbsoluteTime(x);
+                    int baseTrack = yToTrackIndex(y);
+                    int trackOffset = 0;
+                    for (Segment seg : segments) {
+                        seg.setOrigin(startTime);
+                        long duration = seg.getDuration();
+                        if (duration <= 0) continue;
+                        int targetTrack = baseTrack + trackOffset;
+                        var range = Range.closedOpen(startTime, startTime + duration);
+                        while (!timeline.getTrack(targetTrack).isFree(range)) {
+                            targetTrack++;
+                        }
+                        timeline.add(timeline.getTrack(targetTrack), seg, startTime, duration);
+                        trackOffset = targetTrack - baseTrack + 1;
+                    }
                     dirty = true;
                 } catch (IOException e) {
                     Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage());
