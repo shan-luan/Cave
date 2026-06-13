@@ -46,7 +46,7 @@ public class TlGroup extends Group {
     private boolean dirty = true;
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
-    private static final float KEY_VERTICAL_SPEED = 600f;
+    private static final float KEY_VERTICAL_SPEED = 1200f;
 
     private final Vector2 pointer = new Vector2();
 

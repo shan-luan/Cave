@@ -26,12 +26,10 @@ import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
-import com.kotcrab.vis.ui.widget.VisWindow;
+import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.ui.editpanel.EditPanelFrame;
-import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
@@ -170,6 +168,7 @@ public class Root implements ApplicationListener {
         skin.get("default", Window.WindowStyle.class).titleFont = font;
         skin.get("default", LinkLabel.LinkLabelStyle.class).font = font;
         skin.get("default", VisTextButton.VisTextButtonStyle.class).font = font;
+        skin.get("default", VisTextField.VisTextFieldStyle.class).font = font;
        return skin;
     }
 
