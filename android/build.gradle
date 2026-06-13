@@ -43,7 +43,7 @@ android {
     versionCode 1
     versionName "1.0"
     ndk {
-      abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+      abiFilters 'arm64-v8a', 'x86_64'
     }
   }
   compileOptions {
@@ -76,17 +76,11 @@ dependencies {
   implementation project(':core')
 
   natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
-  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
-  natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
   natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
-  natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
-  natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
 
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:android-arm64-gpl"
-  implementation "org.bytedeco:ffmpeg:$ffmpegVersion:android-arm-gpl"
-  implementation "org.bytedeco:ffmpeg:$ffmpegVersion:android-x86-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:android-x86_64-gpl"
 
   implementation "games.spooky.gdx:gdx-nativefilechooser-android:$gdxNativefilechooserVersion"
@@ -97,17 +91,13 @@ dependencies {
 // so they get packed with the APK.
 tasks.register('copyAndroidNatives') {
   doFirst {
-    file("libs/armeabi-v7a/").mkdirs()
     file("libs/arm64-v8a/").mkdirs()
     file("libs/x86_64/").mkdirs()
-    file("libs/x86/").mkdirs()
 
     configurations.natives.copy().files.each { jar ->
       def outputDir = null
-      if(jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
       if(jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
       if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
-      if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
       if(outputDir != null) {
         copy {
           from zipTree(jar)

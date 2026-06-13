@@ -32,13 +32,10 @@ dependencies {
   implementation project(':core')
 
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:windows-x86_64-gpl"
-  implementation "org.bytedeco:ffmpeg:$ffmpegVersion:windows-x86-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:macosx-x86_64-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:macosx-arm64-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86_64-gpl"
-  implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-x86-gpl"
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-arm64-gpl"
-  implementation "org.bytedeco:ffmpeg:$ffmpegVersion:linux-armhf-gpl"
 
   implementation "games.spooky.gdx:gdx-nativefilechooser-desktop:$gdxNativefilechooserVersion"
 }
@@ -81,10 +78,10 @@ tasks.register("jarMac") {
   dependsOn("jar")
   group("build")
   jar.archiveFileName.set("${appName}-${projectVersion}-mac.jar")
-  jar.exclude("windows/x86/**", "windows/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**", "**/*.dll", "**/*.so",
+  jar.exclude("windows/x64/**", "linux/arm64/**", "linux/x64/**", "**/*.dll", "**/*.so",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
-    jar.exclude("windows/x86/**", "windows/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**",
+    jar.exclude("windows/x64/**", "linux/arm64/**", "linux/x64/**",
       'META-INF/INDEX.LIST', 'META-INF/maven/**')
   }
 }
@@ -95,10 +92,10 @@ tasks.register("jarLinux") {
   dependsOn("jar")
   group("build")
   jar.archiveFileName.set("${appName}-${projectVersion}-linux.jar")
-  jar.exclude("windows/x86/**", "windows/x64/**", "macos/arm64/**", "macos/x64/**", "**/*.dll", "**/*.dylib",
+  jar.exclude("windows/x64/**", "macos/arm64/**", "macos/x64/**", "**/*.dll", "**/*.dylib",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
-    jar.exclude("windows/x86/**", "windows/x64/**", "macos/arm64/**", "macos/x64/**",
+    jar.exclude("windows/x64/**", "macos/arm64/**", "macos/x64/**",
       'META-INF/INDEX.LIST', 'META-INF/maven/**')
   }
 }
@@ -109,10 +106,10 @@ tasks.register("jarWin") {
   dependsOn("jar")
   group("build")
   jar.archiveFileName.set("${appName}-${projectVersion}-win.jar")
-  jar.exclude("macos/arm64/**", "macos/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**", "**/*.dylib", "**/*.so",
+  jar.exclude("macos/arm64/**", "macos/x64/**", "linux/arm64/**", "linux/x64/**", "**/*.dylib", "**/*.so",
     'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
   dependencies {
-    jar.exclude("macos/arm64/**", "macos/x64/**", "linux/arm32/**", "linux/arm64/**", "linux/x64/**",
+    jar.exclude("macos/arm64/**", "macos/x64/**", "linux/arm64/**", "linux/x64/**",
       'META-INF/INDEX.LIST', 'META-INF/maven/**')
   }
 }
