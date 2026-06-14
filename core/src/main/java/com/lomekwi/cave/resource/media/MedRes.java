@@ -4,11 +4,12 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.decoder.DecRes;
 
+import com.badlogic.gdx.utils.IntMap;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 
 /**
  *媒体资源类，指代一个在磁盘中存在，占有编解码器的资源
@@ -18,7 +19,7 @@ public abstract class MedRes implements Resource, Serializable {
     private static final long serialVersionUID = 1L;
     private final String path;
     protected long duration; // 媒体总时长（微秒）
-    protected transient ArrayList<DecRes<?>> decRes=new ArrayList<>();
+    protected transient IntMap<DecRes<?>> decRes = new IntMap<>();
 
     /**
      * 必须确保路径对应一个存在的文件
@@ -42,13 +43,10 @@ public abstract class MedRes implements Resource, Serializable {
         return path;
     }
     public DecRes<?> getDecoder(int trackIndex){
-        while(decRes.size()<=trackIndex){
-            decRes.add(null);
-        }
-        var decoder=decRes.get(trackIndex);
+        DecRes<?> decoder = decRes.get(trackIndex);
         if(decoder==null){
             decoder=newDecoder();
-            decRes.set(trackIndex,decoder);
+            decRes.put(trackIndex, decoder);
         }
         return decoder;
     }
@@ -63,17 +61,15 @@ public abstract class MedRes implements Resource, Serializable {
 
     @Override
     public void close() throws Exception {
-        for(var decoder:decRes){
-            if(decoder!=null) {
-                decoder.close();
-            }
+        for(var decoder : decRes.values()) {
+            decoder.close();
         }
     }
 
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        decRes = new ArrayList<>();
+        decRes = new IntMap<>();
     }
     protected abstract DecRes<?> newDecoder();
     protected abstract void generateMetadata(DecRes<?> metadataDecRes);
