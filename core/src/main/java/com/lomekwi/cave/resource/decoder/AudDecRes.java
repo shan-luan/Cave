@@ -41,6 +41,7 @@ public class AudDecRes extends DecRes<AudFrame> {
 
     @Override
     public void get(long time, AudFrame frame) throws Exception {
+        var a = System.currentTimeMillis();
         if (!initialized) {
             start();
         }
@@ -48,26 +49,30 @@ public class AudDecRes extends DecRes<AudFrame> {
         long target = toValidTime(time);
 
         // 持续抓取音频采样直至到达目标时间位置
-        Frame f = null;
+        Frame f = grab();
+        if(false){
         int retryCount = 0;
         final int maxRetries = 50;
         while (retryCount < maxRetries) {
             f = grab();
             if (f == null) break;
             if (f.samples == null || f.samples.length == 0) break;
-            if (grabber.getTimestamp() >= target) break;
+            if (f.timestamp+getLengthPerFrame() >= target) break;
             retryCount++;
         }
-
+}
         if (f == null || f.samples == null || f.samples.length == 0) {
             frame.setSamples(null);
             return;
         }
 
+
         ShortBuffer sb = (ShortBuffer) f.samples[0];
         short[] out = new short[sb.remaining()];
         sb.get(out);
-        frame.setSamples(out).setTime(time);
+        frame.setSamples(out);
+        var b= System.currentTimeMillis();
+        System.out.println(this+";cdc:"+(b-a));
     }
 
     @Override
@@ -79,6 +84,6 @@ public class AudDecRes extends DecRes<AudFrame> {
     }
     @Override
     public long getLengthPerFrame() {
-        return grabber.getLengthInTime()/grabber.getLengthInAudioFrames();
+        return (long) (SECOND/grabber.getAudioFrameRate());
     }
 }

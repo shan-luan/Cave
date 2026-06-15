@@ -4,6 +4,6 @@ import com.lomekwi.cave.timeline.Track;
 
 public class GapFrame extends Frame {
     public GapFrame(Track track) {
-        trackIndex = track.index;
+        this.track = track;
     }
 }

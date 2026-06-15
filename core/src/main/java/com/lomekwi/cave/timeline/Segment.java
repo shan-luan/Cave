@@ -47,7 +47,9 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
      * @param time 绝对时间
      */
     public Frame get(long time) {
-        return source.get(toLocalTime(time), track).withTrack(track.index).withTime(time);
+        var f = source.get(toLocalTime(time), track);
+        if (f == null) return null;
+        return f.withTrack(track).withTime(time);
     }
 
     /**

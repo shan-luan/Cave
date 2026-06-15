@@ -5,7 +5,7 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 import com.badlogic.gdx.Gdx;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.lomekwi.cave.pipeline.audio.AudioFrameMixer;
+import com.lomekwi.cave.pipeline.audio.AudioFrameSink;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.timeline.SegFactory;
 import com.lomekwi.cave.timeline.Timeline;
@@ -43,7 +43,7 @@ public class Project implements Serializable, AutoCloseable {
         App.appEventBus.register(this);
         name = i18n("未命名");
         projEventBus = new EventBus(uuid.toString());
-        projEventBus.register(new AudioFrameMixer());
+        projEventBus.register(new AudioFrameSink());
         projEventBus.register(this);
         timeline = new Timeline(this);
         playhead = new Playhead(projEventBus);

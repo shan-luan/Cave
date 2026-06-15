@@ -110,7 +110,7 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void sink(ImgFrame frame) {
-        Track track = project.timeline.getTracks().get(frame.trackIndex);
+        Track track = frame.track;
         track.getWorker().getSinkPhaser().register();
         //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
@@ -125,11 +125,11 @@ public class PreviewArea extends Group {
         });
     }
     private void setFrame(ImgFrame frame){
-        int idx = frame.trackIndex;
+        int idx = frame.track.index;
         while (idx >= frames.size()) {
             frames.add(null);
         }
-        var legacy=frames.set(frame.trackIndex, frame);
+        var legacy=frames.set(frame.track.index, frame);
         if (legacy != null){
             removeActor(legacy.getImage());
         }
@@ -157,7 +157,7 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void clear(GapFrame event) {
-        clearFrames(event.trackIndex);
+        clearFrames(event.track.index);
     }
 
     @Override
