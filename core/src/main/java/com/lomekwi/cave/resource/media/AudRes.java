@@ -19,7 +19,7 @@ public class AudRes extends MedRes{
 
     @Override
     protected void generateMetadata(DecRes<?> metadataDecRes) {
-        frameLength=((AudDecRes)metadataDecRes).getLengthPerFrame();
+        frameLength= metadataDecRes.getLengthPerFrame();
 
     }
 

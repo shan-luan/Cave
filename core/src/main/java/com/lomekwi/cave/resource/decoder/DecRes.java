@@ -49,10 +49,7 @@ public abstract class DecRes<F extends Frame> implements Resource {
      */
     public abstract void get(long time, F frame) throws Exception;
 
-    public void seek(long time) throws FFmpegFrameGrabber.Exception{
-        if (!initialized) throw new IllegalStateException("Not initialized");
-        grabber.setTimestamp(time,false);
-    }
+    public abstract void seek(long time) throws FFmpegFrameGrabber.Exception;
     public boolean isInitialized() {
         return initialized;
     }
@@ -61,7 +58,7 @@ public abstract class DecRes<F extends Frame> implements Resource {
     }
     public long getLengthInTime() {
         if (!initialized) throw new IllegalStateException("Not initialized");
-        return grabber.getLengthInTime();
+        return Math.max(grabber.getLengthInTime(),0);
     }
     public long getTimestamp() {
         if (!initialized) throw new IllegalStateException("Not initialized");

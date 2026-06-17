@@ -122,4 +122,9 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
         frame.setPixels(bufferedPixels);
     }
+
+    @Override
+    public void seek(long time) throws FFmpegFrameGrabber.Exception {
+        grabber.setVideoTimestamp(time);
+    }
 }
