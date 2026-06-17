@@ -103,7 +103,9 @@ public class VdoDecRes extends DecRes<ImgFrame> {
             start();
         }
 
-        time = toValidTime(time);
+        if(!isTimeLegal(time)){
+            return;
+        }
         final long nextFrameTime = getTimestamp() + getLengthPerFrame();
 
         if (!((time < nextFrameTime) && bufferedPixels != null)) {

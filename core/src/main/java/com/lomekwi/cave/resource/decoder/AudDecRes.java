@@ -62,6 +62,11 @@ public class AudDecRes extends DecRes<AudFrame> {
             start();
         }
 
+        if(!isTimeLegal(time)){
+            frame.setSamples(null);
+            return;
+        }
+
         short[] output = new short[FRAME_SIZE];
         int written = 0;
 
@@ -77,14 +82,13 @@ public class AudDecRes extends DecRes<AudFrame> {
                 bufLen = 0;
             }
         } else {
-            long target = toValidTime(time);
             for (int i = 0; i < 50; i++) {
                 Frame f = grab();
                 if (f == null || f.samples == null || f.samples.length == 0) {
                     frame.setSamples(null);
                     return;
                 }
-                if (f.timestamp + getLengthPerFrame() >= target) {
+                if (f.timestamp + getLengthPerFrame() >= time) {
                     ShortBuffer sb = (ShortBuffer) f.samples[0];
                     int remaining = sb.remaining();
                     if (remaining <= FRAME_SIZE) {

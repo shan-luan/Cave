@@ -56,6 +56,9 @@ public abstract class DecRes<F extends Frame> implements Resource {
     protected long toValidTime(long time) {
         return Math.min(Math.max(0,time), getLengthInTime());
     }
+    protected boolean isTimeLegal(long time){
+        return toValidTime(time)==time;
+    }
     public long getLengthInTime() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return Math.max(grabber.getLengthInTime(),0);
