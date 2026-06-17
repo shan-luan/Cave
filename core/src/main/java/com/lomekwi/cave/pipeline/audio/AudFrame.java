@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.audio;
 import com.lomekwi.cave.pipeline.Frame;
 
 public class AudFrame extends Frame {
-    private short[] samples;
+    private float[] samples;
     private final int sampleRate;
     private final int channels;
     private long time;
@@ -13,11 +13,11 @@ public class AudFrame extends Frame {
         this.channels = channels;
     }
 
-    public short[] getSamples() {
+    public float[] getSamples() {
         return samples;
     }
 
-    public AudFrame setSamples(short[] samples) {
+    public AudFrame setSamples(float[] samples) {
         this.samples = samples;
         return this;
     }

@@ -3,6 +3,8 @@ package com.lomekwi.cave.resource.decoder;
 import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
+import static org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_FLT;
+
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.resource.media.AudRes;
@@ -11,12 +13,12 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 
-import java.nio.ShortBuffer;
+import java.nio.FloatBuffer;
 
 public class AudDecRes extends DecRes<AudFrame> {
 
     private static final int FRAME_SIZE = 1024;
-    private final short[] sampleBuf = new short[FRAME_SIZE * 8];
+    private final float[] sampleBuf = new float[FRAME_SIZE * 8];
     private int bufLen;
 
     public AudDecRes(AudRes source) {
@@ -67,7 +69,7 @@ public class AudDecRes extends DecRes<AudFrame> {
             return;
         }
 
-        short[] output = new short[FRAME_SIZE];
+        float[] output = new float[FRAME_SIZE];
         int written = 0;
 
         // 先使用缓冲区中遗留的采样点，没有则轻量同步到目标时间
@@ -89,7 +91,7 @@ public class AudDecRes extends DecRes<AudFrame> {
                     return;
                 }
                 if (f.timestamp + getLengthPerFrame() >= time) {
-                    ShortBuffer sb = (ShortBuffer) f.samples[0];
+                    FloatBuffer sb = (FloatBuffer) f.samples[0];
                     int remaining = sb.remaining();
                     if (remaining <= FRAME_SIZE) {
                         sb.get(output, 0, remaining);
@@ -118,7 +120,7 @@ public class AudDecRes extends DecRes<AudFrame> {
                 break;
             }
 
-            ShortBuffer sb = (ShortBuffer) f.samples[0];
+            FloatBuffer sb = (FloatBuffer) f.samples[0];
             int remaining = sb.remaining();
             int need = FRAME_SIZE - written;
 
@@ -141,6 +143,7 @@ public class AudDecRes extends DecRes<AudFrame> {
     public void start() throws FrameGrabber.Exception {
         grabber.setSampleRate(44100);
         grabber.setAudioChannels(2);
+        grabber.setSampleFormat(AV_SAMPLE_FMT_FLT);
         grabber.start();
         initialized = true;
     }

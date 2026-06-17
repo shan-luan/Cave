@@ -14,7 +14,7 @@ public class AudioFrameSink {
 
     @Subscribe
     public void sink(AudFrame frame) {
-        AppAudioOut.getInstance().getAudioDevice().writeSamples(frame.getSamples(),0,frame.getSamples().length);
+        AppAudioOut.getInstance().getAudioDevice().writeSamples(frame.getSamples(), 0, frame.getSamples().length);
     }
 
     @Subscribe
