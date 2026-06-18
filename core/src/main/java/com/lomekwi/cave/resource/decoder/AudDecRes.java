@@ -1,11 +1,9 @@
 package com.lomekwi.cave.resource.decoder;
 
 import static com.lomekwi.cave.util.Units.SECOND;
-import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import static org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_FLT;
 
-import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.resource.media.AudRes;
 
@@ -14,11 +12,13 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class AudDecRes extends DecRes<AudFrame> {
 
     private static final int FRAME_SIZE = 1024;
     private final float[] sampleBuf = new float[FRAME_SIZE * 8];
+    private final float[] output = new float[FRAME_SIZE];
     private int bufLen;
 
     public AudDecRes(AudRes source) {
@@ -54,7 +54,6 @@ public class AudDecRes extends DecRes<AudFrame> {
             start();
         }
         time = toValidTime(time);
-        System.out.println(time);
         seek(time);
     }
 
@@ -69,8 +68,8 @@ public class AudDecRes extends DecRes<AudFrame> {
             return;
         }
 
-        float[] output = new float[FRAME_SIZE];
         int written = 0;
+        Arrays.fill(output, 0);
 
         // 先使用缓冲区中遗留的采样点，没有则轻量同步到目标时间
         if (bufLen > 0) {
@@ -116,7 +115,7 @@ public class AudDecRes extends DecRes<AudFrame> {
                     frame.setSamples(null);
                     return;
                 }
-                // 文件末尾不足部分以静音填充（output 已初始化为 0）
+                // 文件末尾不足部分以静音填充
                 break;
             }
 
