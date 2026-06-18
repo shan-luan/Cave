@@ -5,16 +5,10 @@ import com.badlogic.gdx.audio.AudioDevice;
 
 public class AppAudioOut {
     public static final int SAMPLE_RATE = 44100;
-    private static AppAudioOut INSTANCE;
-    private AudioDevice audioDevice;
-    private AppAudioOut() {
+    private final AudioDevice audioDevice;
+
+    public AppAudioOut() {
         audioDevice = Gdx.audio.newAudioDevice(SAMPLE_RATE, false);
-    }
-    public static AppAudioOut getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new AppAudioOut();
-        }
-        return INSTANCE;
     }
 
     public AudioDevice getAudioDevice() {

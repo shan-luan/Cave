@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 
 public final class App {
     public static NativeFileChooser fileChooser;
+    public static AppAudioOut audioOut;
     public static final EventBus appEventBus = new EventBus();
     public static final ExecutorService workerExecutor = Executors.newCachedThreadPool(r -> {
         Thread thread = new Thread(r);

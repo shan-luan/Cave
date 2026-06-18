@@ -2,7 +2,6 @@ package com.lomekwi.cave.pipeline.audio;
 
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.app.AppAudioOut;
 import com.lomekwi.cave.project.ProjectBackgroundedEvent;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
@@ -60,7 +59,7 @@ public class AudioFrameSink {
                     f.track.getWorker().getSinkPhaser().arriveAndDeregister();
                 } while ((f = frames.poll()) != null);
                 clamp(output);
-                AppAudioOut.getInstance().getAudioDevice().writeSamples(output,0,AudDecRes.FRAME_SIZE);
+                App.audioOut.getAudioDevice().writeSamples(output,0,AudDecRes.FRAME_SIZE);
             }
         }
         private void clamp(float[] samples){

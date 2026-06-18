@@ -24,6 +24,7 @@ import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.Root;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.app.AppAudioOut;
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
@@ -38,6 +39,7 @@ public class Main extends ApplicationAdapter {
     }
     @Override
     public void create() {
+        App.audioOut = new AppAudioOut();
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         ui = new Root(this);
         ui.create();
