@@ -2,6 +2,7 @@ package com.lomekwi.cave.task;
 
 import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
+import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_AAC;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -9,20 +10,32 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
+import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.pipeline.image.Transform;
+import com.lomekwi.cave.resource.decoder.AudDecRes;
+import com.lomekwi.cave.timeline.AudSeg;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Timeline;
+import com.lomekwi.cave.timeline.Track;
 
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.FrameRecorder;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
+import java.nio.FloatBuffer;
+import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 public class VideoExportTask implements Task{
+    private static final int AUDIO_FRAME_SIZE = AudDecRes.FRAME_SIZE;
+    private static final int AUDIO_SAMPLE_RATE = 44100;
+    private static final int AUDIO_CHANNELS = 2;
+    private static final long AUDIO_FRAME_DURATION = AUDIO_FRAME_SIZE * SECOND / AUDIO_SAMPLE_RATE / AUDIO_CHANNELS;
+
     private final Timeline timeline;
     private final FFmpegFrameRecorder recorder;
     private final float xOffset;
@@ -65,6 +78,9 @@ public class VideoExportTask implements Task{
     public void run() {
         try {
             recorder.setVideoBitrate(bitrate);
+            recorder.setAudioChannels(AUDIO_CHANNELS);
+            recorder.setSampleRate(AUDIO_SAMPLE_RATE);
+            recorder.setAudioCodec(AV_CODEC_ID_AAC);
             recorder.start();
             int i;
             while (t<timeline.getLength()){
@@ -89,13 +105,70 @@ public class VideoExportTask implements Task{
                 }
                 Gdx.app.postRunnable(this::mixVideoFrame);
                 recorder.record(queue.take());
+                System.out.println(t);
                 t+=frameLen;
             }
+
+            // ----- 音频导出 -----
+            exportAudio();
+
             recorder.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+    private void exportAudio() throws Exception {
+        int sampleRate = AUDIO_SAMPLE_RATE;
+        int channels = AUDIO_CHANNELS;
+        long totalFrames = timeline.getLength() * sampleRate / SECOND;
+        int totalSamples = (int)(totalFrames * channels);
+        if (totalSamples == 0) return;
+
+        float[] mixBuf = new float[totalSamples];
+
+        // 遍历每条轨道，水平方向累加
+        for (Track track : timeline.getTracks()) {
+            if (track.getLength() == 0) continue;
+
+            for (Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapAsEntrySet(Range.<Long>all())) {
+                Segment seg = entry.getValue();
+                if (!(seg instanceof AudSeg)) continue;
+
+                Range<Long> range = entry.getKey();
+                long segStart = range.lowerEndpoint();
+                long segEnd = range.upperEndpoint();
+                int bufStart = (int)(segStart * sampleRate / SECOND * channels);
+
+                seg.sync(segStart);
+                long audioT = segStart;
+                int bufOffset = bufStart;
+                while (audioT < segEnd) {
+                    var frame = seg.get(audioT);
+                    if (frame instanceof AudFrame af && af.getSamples() != null) {
+                        float[] samples = af.getSamples();
+                        for (int si = 0; si < samples.length && bufOffset + si < mixBuf.length; si++) {
+                            mixBuf[bufOffset + si] += samples[si];
+                        }
+                        bufOffset += samples.length;
+                    }
+                    audioT += AUDIO_FRAME_DURATION;
+                }
+            }
+        }
+
+        // 钳位
+        for (int i = 0; i < mixBuf.length; i++) {
+            mixBuf[i] = Math.max(-1.0f, Math.min(1.0f, mixBuf[i]));
+        }
+
+        // 按 audio frame 大小分块写入
+        for (int off = 0; off < mixBuf.length; off += AUDIO_FRAME_SIZE) {
+            int count = Math.min(AUDIO_FRAME_SIZE, mixBuf.length - off);
+            recorder.recordSamples(FloatBuffer.wrap(mixBuf, off, count));
+        }
+    }
+
     private void mixVideoFrame() {
         fb.begin();
 
