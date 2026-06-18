@@ -87,9 +87,8 @@ public class VideoExportTask implements Task{
                     }
                     i++;
                 }
-                Gdx.app.postRunnable(this::mixVideoFrame);//TODO：z-index.
+                Gdx.app.postRunnable(this::mixVideoFrame);
                 recorder.record(queue.take());
-                System.out.println(t);
                 t+=frameLen;
             }
             recorder.stop();
@@ -104,7 +103,7 @@ public class VideoExportTask implements Task{
         batch.setProjectionMatrix(projMatrix);
         Gdx.gl.glClearColor(0,0,0,1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        for(int i=0;i<frames.length();i++){
+        for(int i=frames.length()-1;i>=0;i--){
             Frame frame=frames.get(i);
             if(frame instanceof ImgFrame f){
                 Transform t=f.getTransform();
