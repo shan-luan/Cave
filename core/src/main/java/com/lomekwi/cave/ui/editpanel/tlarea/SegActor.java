@@ -1,7 +1,5 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
-import static org.bytedeco.librealsense.global.RealSense.camera;
-
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -21,7 +19,7 @@ import com.lomekwi.cave.app.App;
 public abstract class SegActor extends Actor {
     protected static final Color blue = new Color(0x1ba1e2ff);
     protected static final Color lightBlue = new Color(0x5ebdecff);
-    protected static final Color waveColor = new Color(0x1ba1e2cc);
+    protected static final Color darkBlue = new Color(0x1ba1e2ff);
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
     private final Rectangle scissors = new Rectangle();

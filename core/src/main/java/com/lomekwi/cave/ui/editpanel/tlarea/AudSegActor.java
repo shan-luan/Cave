@@ -49,7 +49,7 @@ public class AudSegActor extends SegActor {
 
                 float barH = maxPeak * halfH;
                 float pxX = getX() + px;
-                sd.line(pxX, centerY - barH, pxX, centerY + barH, waveColor, 1);
+                sd.line(pxX, centerY - barH, pxX, centerY + barH, darkBlue, 1);
             }
         }
     }
