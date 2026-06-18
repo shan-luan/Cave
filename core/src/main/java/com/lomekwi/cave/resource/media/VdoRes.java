@@ -10,13 +10,13 @@ import com.lomekwi.cave.resource.decoder.DecRes;
 import com.lomekwi.cave.resource.decoder.VdoDecRes;
 import org.bytedeco.javacv.Frame;
 
+import com.badlogic.gdx.utils.IntMap;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class VdoRes extends MedRes {
@@ -29,14 +29,22 @@ public class VdoRes extends MedRes {
     // ---- thumbnail ----
     private static final int THUMB_HEIGHT = 80;
     private final transient long thumbInterval = SECOND;
-    private transient ConcurrentSkipListMap<Long, Texture> thumbnailCache =
-        new ConcurrentSkipListMap<>();
-    private final transient ConcurrentLinkedQueue<Long> pendingSlots =
+    private transient int slotCount;
+    private transient IntMap<Texture> thumbnails; // GL 线程独占
+    private transient boolean[] queued;           // GL 线程独占，防重复入队
+    private final transient ConcurrentLinkedQueue<Integer> pendingSlots =
         new ConcurrentLinkedQueue<>();
     private final transient AtomicBoolean workerRunning = new AtomicBoolean(false);
 
+    private void initCache() {
+        slotCount = (int)(duration / thumbInterval) + 1;
+        thumbnails = new IntMap<>();
+        queued = new boolean[slotCount];
+    }
+
     public VdoRes(String path){
         super(path);
+        initCache();
     }
     @Override
     public VdoDecRes getDecoder(int trackIndex) {
@@ -68,19 +76,26 @@ public class VdoRes extends MedRes {
     // ---- thumbnail ----
 
     /**
-     * 非阻塞：若 srcTime 对应的 slot 未缓存，加入待生成队列。
-     * 始终返回 floor entry（最接近的前一个缩略图），缓存为空时返回 null。
+     * 非阻塞：返回 srcTime 处或之前最近的缩略图。未命中时触发后台生成。
      */
     public Texture getThumbnail(long srcTime) {
-        long slot = (srcTime / thumbInterval) * thumbInterval;
+        int idx = (int)(srcTime / thumbInterval);
+        if (idx < 0) idx = 0;
+        if (idx >= slotCount) idx = slotCount - 1;
 
-        if (!thumbnailCache.containsKey(slot)) {
-            pendingSlots.offer(slot);
+        // 按需触发生成（同一 slot 只入队一次）
+        if (!thumbnails.containsKey(idx) && !queued[idx]) {
+            queued[idx] = true;
+            pendingSlots.offer(idx);
             ensureWorker();
         }
 
-        Map.Entry<Long, Texture> entry = thumbnailCache.floorEntry(slot);
-        return entry != null ? entry.getValue() : null;
+        // 向前扫描 floor entry
+        for (int i = idx; i >= 0; i--) {
+            Texture t = thumbnails.get(i);
+            if (t != null) return t;
+        }
+        return null;
     }
 
     public long getThumbInterval() {
@@ -93,10 +108,6 @@ public class VdoRes extends MedRes {
         }
     }
 
-    /**
-     * Worker 线程：循环从队列取 slot，seek 解码，post 纹理到 GL 线程写入缓存。
-     * 队列空则退出，退出前检查是否有新请求进来。
-     */
     private void processPendingSlots() {
         VdoDecRes dec = newDecoder();
         try {
@@ -105,14 +116,11 @@ public class VdoRes extends MedRes {
             int thumbW = Math.max(1, (int)(THUMB_HEIGHT * aspect));
 
             while (true) {
-                Long slot = pendingSlots.poll();
-                if (slot == null) break;
-
-                // 可能已被之前的请求处理过
-                if (thumbnailCache.containsKey(slot)) continue;
+                Integer idx = pendingSlots.poll();
+                if (idx == null) break;
 
                 try {
-                    long t = slot;
+                    long t = (long)idx * thumbInterval;
                     dec.sync(t);
                     Frame f = dec.grab();
                     if (f != null && f.image != null && f.image[0] instanceof ByteBuffer) {
@@ -125,16 +133,16 @@ public class VdoRes extends MedRes {
                         small.drawPixmap(full, 0, 0, width, height, 0, 0, thumbW, THUMB_HEIGHT);
                         full.dispose();
 
-                        final long srcTime = t;
+                        final int slot = idx;
                         Gdx.app.postRunnable(() -> {
-                            if (!thumbnailCache.containsKey(srcTime)) {
-                                thumbnailCache.put(srcTime, new Texture(small));
+                            if (!thumbnails.containsKey(slot)) {
+                                thumbnails.put(slot, new Texture(small));
                             }
                             small.dispose();
                         });
                     }
                 } catch (Exception e) {
-                    // 单个 slot 失败不影响其他，跳过继续
+                    // 单个 slot 失败不影响其他
                 }
             }
             dec.stop();
@@ -143,9 +151,18 @@ public class VdoRes extends MedRes {
         } finally {
             try { dec.close(); } catch (Exception ignored) {}
             workerRunning.set(false);
-            // 处理期间新来的请求
             if (!pendingSlots.isEmpty()) {
                 ensureWorker();
+            }
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        super.close();
+        if (thumbnails != null) {
+            for (Texture t : thumbnails.values()) {
+                t.dispose();
             }
         }
     }
@@ -153,7 +170,6 @@ public class VdoRes extends MedRes {
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        thumbnailCache = new ConcurrentSkipListMap<>();
-        // pendingSlots / workerRunning 保持默认即可
+        initCache();
     }
 }
