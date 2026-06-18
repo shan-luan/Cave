@@ -31,7 +31,7 @@ public class AudSegActor extends SegActor {
         if (peaks != null && peaks.length > 0 && segDuration > 0) {
             float centerY = getY() + getHeight() / 2;
             float halfH = getHeight() / 2;
-            float bucketUs = 1_000_000f / AudRes.PEAKS_PER_SECOND;
+            float bucketUs = res.getBucketDuration();
             int pixWidth = (int) getWidth();
 
             for (int px = 0; px < pixWidth; px++) {
