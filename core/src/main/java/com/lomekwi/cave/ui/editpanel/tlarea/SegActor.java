@@ -1,24 +1,31 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
+import static org.bytedeco.librealsense.global.RealSense.camera;
+
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 import com.badlogic.gdx.utils.Null;
 import com.lomekwi.cave.timeline.Segment;
 
 import com.lomekwi.cave.app.App;
 
 public abstract class SegActor extends Actor {
-    private static final Color blue = new Color(0x1ba1e2ff);
-    private static final Color lightBlue = new Color(0x5ebdecff);
+    protected static final Color blue = new Color(0x1ba1e2ff);
+    protected static final Color lightBlue = new Color(0x5ebdecff);
+    protected static final Color waveColor = new Color(0x1ba1e2cc);
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
+    private final Rectangle scissors = new Rectangle();
+    private final Rectangle bounds = new Rectangle();
     public SegActor(Segment segment) {
         this.segment = segment;
         addListener(getMenu().getDefaultInputListener());
@@ -76,8 +83,19 @@ public abstract class SegActor extends Actor {
     }
     @Override
     public void draw(Batch batch, float parentAlpha) {
+            ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(),bounds , scissors);
+        if (ScissorStack.pushScissors(scissors)) {
+            drawContent(batch,parentAlpha);
+            batch.flush();
+            ScissorStack.popScissors();
+        }
+        drawBorder();
+    }
+    protected void drawContent(Batch batch, float parentAlpha){
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
-        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 4);
+    }
+    protected void drawBorder(){
+        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 2);
     }
 
     public Segment getSegment() {
@@ -92,5 +110,13 @@ public abstract class SegActor extends Actor {
     }
     public SegMenu getMenu() {
         return SegMenu.getInstance();
+    }
+    @Override
+    protected void positionChanged(){
+        bounds.set(getX(),getY(),getWidth(),getHeight());
+    }
+    @Override
+    protected void sizeChanged(){
+        bounds.set(getX(),getY(),getWidth(),getHeight());
     }
 }

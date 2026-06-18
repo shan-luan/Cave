@@ -1,6 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
 import static com.lomekwi.cave.util.Units.SECOND;
+import static com.lomekwi.cave.util.Units.niceScale;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -31,7 +32,7 @@ public class TlRuler extends Widget {
         super.draw(batch, parentAlpha);
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), MORE_DARK_GRAY);
 
-        final long interval = calcInterval((long) (tlGroup.view.durationTime * PIXELS_PER_TICK / getWidth()));
+        final long interval = niceScale((long) (tlGroup.view.durationTime * PIXELS_PER_TICK / getWidth()));
         final long start = (tlGroup.view.startTime / interval) * interval;
 
         for (long t = start; t < tlGroup.view.startTime + tlGroup.view.durationTime; t += interval) {
@@ -57,13 +58,5 @@ public class TlRuler extends Widget {
             if (cs < 10) sb.append('0');
             sb.append(cs);
         }
-    }
-
-    private static long calcInterval(long raw) {
-        double mag = Math.pow(10, Math.floor(Math.log10(raw)));
-        double r = raw / mag;
-        if (r < 2) return (long) mag;
-        if (r < 5) return (long) (2 * mag);
-        return (long) (5 * mag);
     }
 }

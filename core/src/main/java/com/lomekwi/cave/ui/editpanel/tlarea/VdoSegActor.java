@@ -1,10 +1,62 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
+import static com.lomekwi.cave.util.Units.niceScale;
+
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.VdoSeg;
+import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class VdoSegActor extends SegActor {
 
     public VdoSegActor(Segment segment) {
         super(segment);
+    }
+
+    @Override
+    public void drawContent(Batch batch, float parentAlpha) {
+        ShapeDrawer sd = App.root.getShapeDrawer();
+        Segment seg = getSegment();
+        var range = seg.getRange();
+        long segLocalStart = range.lowerEndpoint() - seg.getOrigin();
+        long segLocalEnd = range.upperEndpoint() - seg.getOrigin();
+        long segDuration = segLocalEnd - segLocalStart;
+
+        // 背景
+        sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+
+        if (segDuration > 0) {
+            VdoRes res = ((VdoSeg) getSegment()).getVdoRes();
+            float pxPerUs = getWidth() / (float) segDuration;
+            float aspect = (float) res.getWidth() / res.getHeight();
+            float thumbDisplayW = getHeight() * aspect;
+
+            // 用 niceScale 把步长 snap 到干净的整数，缩放时视觉更稳定
+            long rawStep = (long)(thumbDisplayW / pxPerUs);
+            if (rawStep <= 0) rawStep = 1;
+            long timeStep = niceScale(rawStep);
+
+            // 首个查询时间按时间推算，不从 actor 左边界对齐
+            long firstT = Math.max(0, segLocalStart - timeStep);
+
+            float lastRightEdge = Float.NEGATIVE_INFINITY;
+
+            for (long t = firstT; t < segLocalEnd; t += timeStep) {
+                Texture tex = res.getThumbnail(t);
+                if (tex == null) continue;
+
+                // x 由显示时间决定；slot 只决定选哪张纹理，不影响定位
+                float x = getX() + (t - segLocalStart) * pxPerUs;
+
+                // 完全被上一张覆盖则跳过
+                if (x + thumbDisplayW <= lastRightEdge) continue;
+
+                batch.draw(tex, x, getY(), thumbDisplayW, getHeight());
+                lastRightEdge = x + thumbDisplayW;
+            }
+        }
     }
 }
