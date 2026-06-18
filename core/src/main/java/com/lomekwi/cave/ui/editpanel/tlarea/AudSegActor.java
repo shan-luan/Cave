@@ -14,11 +14,10 @@ public class AudSegActor extends SegActor {
     }
 
     @Override
-    public void draw(Batch batch, float parentAlpha) {
+    public void drawContent(Batch batch, float parentAlpha) {
         ShapeDrawer sd = App.root.getShapeDrawer();
 
-        // 背景
-        sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+        super.drawContent(batch,parentAlpha);
 
         AudRes res = ((AudSeg) getSegment()).getAudRes();
         float[] peaks = res.getPeaks();
@@ -53,8 +52,5 @@ public class AudSegActor extends SegActor {
                 sd.line(pxX, centerY - barH, pxX, centerY + barH, waveColor, 1);
             }
         }
-
-        // 边框始终绘制
-        sd.rectangle(getX(), getY(), getWidth(), getHeight(), blue, 2);
     }
 }
