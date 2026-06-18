@@ -5,8 +5,11 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.app.AppAudioOut;
 import com.lomekwi.cave.project.ProjectBackgroundedEvent;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
+import com.lomekwi.cave.resource.decoder.AudDecRes;
 
+import java.util.Arrays;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class AudioFrameSink {
     private final AudioFrameMixer afm = new AudioFrameMixer();
@@ -14,7 +17,8 @@ public class AudioFrameSink {
 
     @Subscribe
     public void sink(AudFrame frame) {
-        AppAudioOut.getInstance().getAudioDevice().writeSamples(frame.getSamples(), 0, frame.getSamples().length);
+        frame.track.getWorker().getSinkPhaser().register();
+        afm.submit(frame);
     }
 
     @Subscribe
@@ -35,9 +39,37 @@ public class AudioFrameSink {
     }
 
     protected class AudioFrameMixer implements Runnable {
+        private final LinkedBlockingQueue<AudFrame> frames=new LinkedBlockingQueue<>();
+        private final float[] output=new float[AudDecRes.FRAME_SIZE];
         @Override
         public void run() {
-            //TODO
+            while (!Thread.currentThread().isInterrupted()) {
+                Arrays.fill(output,0f);
+                AudFrame f;
+                try {
+                    f = frames.take();
+                } catch (InterruptedException e) {
+                    break;
+                }
+                do {
+                    int j=0;
+                    for(var sample : f.getSamples()){
+                        output[j]+=sample;
+                        j++;
+                    }
+                    f.track.getWorker().getSinkPhaser().arriveAndDeregister();
+                } while ((f = frames.poll()) != null);
+                clamp(output);
+                AppAudioOut.getInstance().getAudioDevice().writeSamples(output,0,AudDecRes.FRAME_SIZE);
+            }
+        }
+        private void clamp(float[] samples){
+            for(int i=0;i<samples.length;i++){
+                samples[i]=Math.max(-1.0f,Math.min(1.0f,samples[i]));
+            }
+        }
+        public void submit(AudFrame f){
+            frames.add(f);
         }
     }
 }

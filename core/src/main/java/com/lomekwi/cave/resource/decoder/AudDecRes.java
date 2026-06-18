@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 public class AudDecRes extends DecRes<AudFrame> {
 
-    private static final int FRAME_SIZE = 1024;
+    public static final int FRAME_SIZE = 1024;
     private final float[] sampleBuf = new float[FRAME_SIZE * 8];
     private final float[] output = new float[FRAME_SIZE];
     private int bufLen;
