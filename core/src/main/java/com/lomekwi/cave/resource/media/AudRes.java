@@ -14,7 +14,7 @@ import java.io.Serial;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AudRes extends MedRes{
+public class AudRes extends MedRes implements Previewable {
     @Serial
     private static final long serialVersionUID = 1L;
     private long frameLength;
@@ -39,40 +39,23 @@ public class AudRes extends MedRes{
         return frameLength;
     }
 
-    public Texture getWaveTexture() {
-        return waveformer.getTexture();
+    public Waveformer waveformer() {
+        return waveformer;
     }
 
-    public int getWaveTexWidth() {
-        return waveformer.texWidth;
-    }
-
-    public int getWaveTexHeight() {
-        return waveformer.texHeight;
-    }
-
-    public long getBucketDuration() {
-        return waveformer.bucketDuration;
-    }
-
-    public int getTotalBuckets() {
-        return waveformer.totalBuckets;
-    }
-
+    @Override
     public void ensureVisible(long startTime, long endTime) {
         waveformer.ensureVisible(startTime, endTime);
     }
 
-    public boolean isWaveDirty() {
-        return waveformer.dirty;
+    @Override
+    public Texture getPreview(long time) {
+        return waveformer.getTexture();
     }
 
-    public void clearWaveDirty() {
-        waveformer.dirty = false;
-    }
-
-    public Pixmap getWavePixmap() {
-        return waveformer.pixmap;
+    @Override
+    public long getPreviewInterval() {
+        return waveformer.bucketDuration;
     }
 
     @Serial
@@ -81,17 +64,17 @@ public class AudRes extends MedRes{
         waveformer = new Waveformer();
     }
 
-    private class Waveformer {
+    public class Waveformer {
         static final int DECIMATED_RATE = 400;
-        final long bucketDuration = 1_000_000L / DECIMATED_RATE;
-        final int totalBuckets;
-        final int texWidth = 512;
-        final int texHeight;
+        public final long bucketDuration = 1_000_000L / DECIMATED_RATE;
+        public final int totalBuckets;
+        public final int texWidth = 512;
+        public final int texHeight;
 
-        private transient Pixmap pixmap;
-        private transient Texture waveTex;
+        public transient Pixmap pixmap;
+        public transient Texture waveTex;
         private transient boolean[] queued;
-        private transient volatile boolean dirty;
+        public transient volatile boolean dirty;
 
         private static final int BATCH_SIZE = 64;
         private transient int[] batchSlots = new int[BATCH_SIZE];

@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class VdoRes extends MedRes {
+public class VdoRes extends MedRes implements Previewable {
     private int width;
     private int height;
     private long frameLength;
@@ -55,6 +55,21 @@ public class VdoRes extends MedRes {
     @Override
     protected VdoDecRes newDecoder() {
         return new VdoDecRes(this);
+    }
+
+    @Override
+    public void ensureVisible(long startTime, long endTime) {
+        thumbnailer.ensureVisible(startTime, endTime);
+    }
+
+    @Override
+    public Texture getPreview(long time) {
+        return thumbnailer.get(time);
+    }
+
+    @Override
+    public long getPreviewInterval() {
+        return thumbnailer.interval;
     }
 
     public Texture getThumbnail(long srcTime) {
@@ -98,6 +113,25 @@ public class VdoRes extends MedRes {
         Thumbnailer() {
             slotCount = (int)(duration / interval) + 1;
             queued = new boolean[slotCount];
+        }
+
+        void ensureVisible(long startTime, long endTime) {
+            int start = (int)(startTime / interval);
+            int end = (int)(endTime / interval);
+            if (start < 0) start = 0;
+            if (end > slotCount) end = slotCount;
+
+            boolean needWorker = false;
+            for (int i = start; i < end; i++) {
+                if (!queued[i]) {
+                    queued[i] = true;
+                    pendingSlots.offer(i);
+                    needWorker = true;
+                }
+            }
+            if (needWorker) {
+                ensureWorker();
+            }
         }
 
         Texture get(long srcTime) {

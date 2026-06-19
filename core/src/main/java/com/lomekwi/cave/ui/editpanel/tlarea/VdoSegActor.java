@@ -29,6 +29,8 @@ public class VdoSegActor extends SegActor {
 
         if (segDuration > 0) {
             VdoRes res = ((VdoSeg) getSegment()).getVdoRes();
+            res.ensureVisible(segLocalStart, segLocalEnd);
+
             float pxPerUs = getWidth() / (float) segDuration;
             float aspect = (float) res.getWidth() / res.getHeight();
             float thumbDisplayW = getHeight() * aspect;
@@ -42,7 +44,7 @@ public class VdoSegActor extends SegActor {
             float lastRightEdge = Float.NEGATIVE_INFINITY;
 
             for (long t = firstT; t < segLocalEnd; t += timeStep) {
-                Texture tex = res.getThumbnail(t);
+                Texture tex = res.getPreview(t);
                 if (tex == null) continue;
 
                 float x = getX() + (t - segLocalStart) * pxPerUs;

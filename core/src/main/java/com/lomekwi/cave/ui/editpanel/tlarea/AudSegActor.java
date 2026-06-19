@@ -31,7 +31,8 @@ public class AudSegActor extends SegActor {
         super.drawContent(batch, parentAlpha);
 
         AudRes res = ((AudSeg) getSegment()).getAudRes();
-        Texture waveTex = res.getWaveTexture();
+        AudRes.Waveformer wf = res.waveformer();
+        Texture waveTex = wf.waveTex;
         if (waveTex == null) return;
 
         Segment seg = getSegment();
@@ -43,13 +44,13 @@ public class AudSegActor extends SegActor {
 
         res.ensureVisible(segLocalStart, segLocalEnd);
 
-        if (res.isWaveDirty()) {
-            waveTex.draw(res.getWavePixmap(), 0, 0);
-            res.clearWaveDirty();
+        if (wf.dirty) {
+            waveTex.draw(wf.pixmap, 0, 0);
+            wf.dirty = false;
         }
 
-        long bucketUs = res.getBucketDuration();
-        int totalBuckets = res.getTotalBuckets();
+        long bucketUs = wf.bucketDuration;
+        int totalBuckets = wf.totalBuckets;
         if (totalBuckets <= 0) return;
 
         float startBucket = (float) segLocalStart / bucketUs;
@@ -59,8 +60,8 @@ public class AudSegActor extends SegActor {
         if (!shader.isCompiled()) return;
 
         batch.setShader(shader);
-        shader.setUniformf("u_texWidth", res.getWaveTexWidth());
-        shader.setUniformf("u_texHeight", res.getWaveTexHeight());
+        shader.setUniformf("u_texWidth", wf.texWidth);
+        shader.setUniformf("u_texHeight", wf.texHeight);
         shader.setUniformf("u_startBucket", startBucket);
         shader.setUniformf("u_endBucket", endBucket);
         shader.setUniformf("u_totalBuckets", totalBuckets);
