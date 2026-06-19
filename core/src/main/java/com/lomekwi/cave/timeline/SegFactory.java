@@ -4,6 +4,7 @@ package com.lomekwi.cave.timeline;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.AudRes;
+import com.lomekwi.cave.resource.media.MediaCreatedEvent;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.resource.media.MedRes;
 import com.lomekwi.cave.resource.media.VdoRes;
@@ -58,6 +59,7 @@ public class SegFactory implements Serializable {
 
             for (MedRes medRes : MediaFactory.createAll(mimeType, file.getPath())) {
                 project.resources.put(file, medRes);
+                project.projEventBus.post(new MediaCreatedEvent(file, medRes));
             }
             existing = project.resources.get(file);
         }

@@ -4,12 +4,15 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.layout.FlowGroup;
 import com.kotcrab.vis.ui.widget.VisImage;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.google.common.collect.Multimap;
 import com.lomekwi.cave.resource.Resource;
+import com.lomekwi.cave.resource.media.MediaCreatedEvent;
 
 import com.lomekwi.cave.app.App;
 
@@ -18,14 +21,15 @@ import java.io.File;
 
 public class MediaPool extends FlowGroup {
     private final TextureRegionDrawable test;
+    private final DragAndDrop dnd;
 
-    public MediaPool(Multimap<File, Resource> resources){
+    public MediaPool(Multimap<File, Resource> resources, EventBus eventBus){
         super(false);
 
         test = new TextureRegionDrawable(new Texture("libgdx.png"));
         setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
 
-        DragAndDrop dnd = App.root.getDragAndDrop();
+        dnd = App.root.getDragAndDrop();
 
         dnd.addTarget(new DragAndDrop.Target(this) {
             @Override
@@ -41,7 +45,7 @@ public class MediaPool extends FlowGroup {
                 if(!resources.containsKey(file)){
                     MediaPoolItem item = new MediaPoolItem(file);
                     addActor(item);
-                    registerDragSource(dnd, item);
+                    registerDragSource(item);
                 }
             }
         });
@@ -49,11 +53,26 @@ public class MediaPool extends FlowGroup {
         resources.keySet().forEach(file -> {
             MediaPoolItem item = new MediaPoolItem(file);
             addActor(item);
-            registerDragSource(dnd, item);
+            registerDragSource(item);
         });
+
+        eventBus.register(this);
     }
 
-    private void registerDragSource(DragAndDrop dnd, MediaPoolItem item) {
+    @Subscribe
+    public void onMediaCreated(MediaCreatedEvent event) {
+        File file = event.file();
+        for (com.badlogic.gdx.scenes.scene2d.Actor actor : getChildren()) {
+            if (actor instanceof MediaPoolItem && ((MediaPoolItem) actor).getFile().equals(file)) {
+                return;
+            }
+        }
+        MediaPoolItem item = new MediaPoolItem(file);
+        addActor(item);
+        registerDragSource(item);
+    }
+
+    private void registerDragSource(MediaPoolItem item) {
         dnd.addSource(new DragAndDrop.Source(item) {
             @Override
             public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {

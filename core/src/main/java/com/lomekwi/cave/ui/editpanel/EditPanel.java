@@ -24,7 +24,7 @@ public class EditPanel {
         tl = new VisTable();
         tl.add(new TlRuler(tlMain.getActor())).fillX().expandX().row();
         tl.add(tlMain).grow();
-        res = new Container<>(new MediaPool(project.resources));
+        res = new Container<>(new MediaPool(project.resources, project.projEventBus));
     }
 
     public void dispose() {
