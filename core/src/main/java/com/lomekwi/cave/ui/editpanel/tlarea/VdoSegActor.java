@@ -29,7 +29,6 @@ public class VdoSegActor extends SegActor {
 
         if (segDuration > 0) {
             VdoRes res = ((VdoSeg) getSegment()).getVdoRes();
-            res.ensureVisible(segLocalStart, segLocalEnd);
 
             float pxPerUs = getWidth() / (float) segDuration;
             float aspect = (float) res.getWidth() / res.getHeight();
@@ -38,6 +37,8 @@ public class VdoSegActor extends SegActor {
             long rawStep = (long)(thumbDisplayW / pxPerUs);
             if (rawStep <= 0) rawStep = 1;
             long timeStep = niceScale(rawStep);
+
+            res.ensureVisible(segLocalStart, segLocalEnd, timeStep);
 
             long firstT = Math.max(0, segLocalStart - timeStep);
 

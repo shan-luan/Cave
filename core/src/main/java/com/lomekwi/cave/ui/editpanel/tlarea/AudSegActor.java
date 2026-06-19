@@ -42,7 +42,7 @@ public class AudSegActor extends SegActor {
         long segDuration = segLocalEnd - segLocalStart;
         if (segDuration <= 0) return;
 
-        res.ensureVisible(segLocalStart, segLocalEnd);
+        res.ensureVisible(segLocalStart, segLocalEnd, wf.bucketDuration);
 
         if (wf.dirty) {
             waveTex.draw(wf.pixmap, 0, 0);

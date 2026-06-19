@@ -44,8 +44,8 @@ public class AudRes extends MedRes implements Previewable {
     }
 
     @Override
-    public void ensureVisible(long startTime, long endTime) {
-        waveformer.ensureVisible(startTime, endTime);
+    public void ensureVisible(long startTime, long endTime, long step) {
+        waveformer.ensureVisible(startTime, endTime, step);
     }
 
     @Override
@@ -105,14 +105,16 @@ public class AudRes extends MedRes implements Previewable {
             return waveTex;
         }
 
-        void ensureVisible(long startTime, long endTime) {
+        void ensureVisible(long startTime, long endTime, long step) {
             int start = (int)(startTime / bucketDuration);
             int end = (int)(endTime / bucketDuration);
+            int s = (int)(step / bucketDuration);
+            if (s <= 0) s = 1;
             if (start < 0) start = 0;
             if (end > totalBuckets) end = totalBuckets;
 
             boolean needWorker = false;
-            for (int i = start; i < end; i++) {
+            for (int i = start; i < end; i += s) {
                 if (!queued[i]) {
                     queued[i] = true;
                     pendingSlots.offer(i);

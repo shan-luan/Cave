@@ -3,7 +3,7 @@ package com.lomekwi.cave.ui.editpanel.mediapool;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.graphics.Texture;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.layout.FlowGroup;
@@ -11,8 +11,11 @@ import com.kotcrab.vis.ui.widget.VisImage;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimap;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
+import com.lomekwi.cave.resource.media.MedRes;
+import com.lomekwi.cave.resource.media.Previewable;
 
 import com.lomekwi.cave.app.App;
 
@@ -20,13 +23,13 @@ import java.io.File;
 
 
 public class MediaPool extends FlowGroup {
-    private final TextureRegionDrawable test;
+    private final Multimap<File, Resource> resources;
     private final DragAndDrop dnd;
 
     public MediaPool(Multimap<File, Resource> resources, EventBus eventBus){
         super(false);
 
-        test = new TextureRegionDrawable(new Texture("libgdx.png"));
+        this.resources = resources;
         setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
 
         dnd = App.root.getDragAndDrop();
@@ -43,7 +46,7 @@ public class MediaPool extends FlowGroup {
 
                 File file = (File) payload.getObject();
                 if(!resources.containsKey(file)){
-                    MediaPoolItem item = new MediaPoolItem(file);
+                    MediaPoolItem item = new MediaPoolItem(file, findPreviewable(file));
                     addActor(item);
                     registerDragSource(item);
                 }
@@ -51,12 +54,19 @@ public class MediaPool extends FlowGroup {
         });
 
         resources.keySet().forEach(file -> {
-            MediaPoolItem item = new MediaPoolItem(file);
+            MediaPoolItem item = new MediaPoolItem(file, findPreviewable(file));
             addActor(item);
             registerDragSource(item);
         });
 
         eventBus.register(this);
+    }
+
+    private Previewable findPreviewable(File file) {
+        for (Resource r : resources.get(file)) {
+            if (r instanceof Previewable) return (Previewable) r;
+        }
+        return null;
     }
 
     @Subscribe
@@ -67,7 +77,9 @@ public class MediaPool extends FlowGroup {
                 return;
             }
         }
-        MediaPoolItem item = new MediaPoolItem(file);
+        Previewable pv = event.medRes() instanceof Previewable
+            ? (Previewable) event.medRes() : null;
+        MediaPoolItem item = new MediaPoolItem(file, pv);
         addActor(item);
         registerDragSource(item);
     }
@@ -78,7 +90,7 @@ public class MediaPool extends FlowGroup {
             public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
                 DragAndDrop.Payload payload = new DragAndDrop.Payload();
                 payload.setObject(item.getFile());
-                payload.setDragActor(new MediaPoolItem(item.getFile()));
+                payload.setDragActor(new MediaPoolItem(item.getFile(), item.previewable));
                 return payload;
             }
         });
@@ -86,12 +98,36 @@ public class MediaPool extends FlowGroup {
 
     public class MediaPoolItem extends VisTable {
         private final File file;
+        final Previewable previewable;
+        private final VisImage image;
+        private boolean requested;
 
-        public MediaPoolItem(File file){
+        public MediaPoolItem(File file, Previewable previewable){
             super();
             this.file = file;
-            add(new VisImage(test)).size(100).row();
+            this.previewable = previewable;
+
+            image = new VisImage(new Texture("libgdx.png"));
+            add(image).size(100).row();
             add(new VisLabel(file.getName()));
+
+            if (previewable != null) {
+                previewable.ensureVisible(0, previewable.getPreviewInterval(), previewable.getPreviewInterval());
+                requested = true;
+            }
+        }
+
+        @Override
+        public void act(float delta) {
+            super.act(delta);
+            if (requested) {
+                Texture tex = previewable.getPreview(0);
+                if (tex != null) {
+                    image.setDrawable((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
+                    image.setDrawable(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(tex));
+                    requested = false;
+                }
+            }
         }
 
         public File getFile() {
