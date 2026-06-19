@@ -39,8 +39,6 @@ public class AudRes extends MedRes{
         return frameLength;
     }
 
-    // ---- 委托给 Waveformer ----
-
     public Texture getWaveTexture() {
         return waveformer.getTexture();
     }
@@ -61,7 +59,6 @@ public class AudRes extends MedRes{
         return waveformer.totalBuckets;
     }
 
-    /** 确保指定时间范围内的峰值已被请求生成 */
     public void ensureVisible(long startTime, long endTime) {
         waveformer.ensureVisible(startTime, endTime);
     }
@@ -84,10 +81,6 @@ public class AudRes extends MedRes{
         waveformer = new Waveformer();
     }
 
-    // -----------------------------------------------------------------
-    // 内部类：波形峰值纹理（按需生成）
-    // -----------------------------------------------------------------
-
     private class Waveformer {
         static final int DECIMATED_RATE = 400;
         final long bucketDuration = 1_000_000L / DECIMATED_RATE;
@@ -95,16 +88,19 @@ public class AudRes extends MedRes{
         final int texWidth = 512;
         final int texHeight;
 
-        // 缓存（GL 线程访问）
         private transient Pixmap pixmap;
         private transient Texture waveTex;
         private transient boolean[] queued;
         private transient volatile boolean dirty;
 
-        // Worker
+        private static final int BATCH_SIZE = 64;
+        private transient int[] batchSlots = new int[BATCH_SIZE];
+        private transient float[] batchPeaks = new float[BATCH_SIZE];
+        private transient int batchCount;
+
+        private final transient AtomicBoolean workerRunning = new AtomicBoolean(false);
         private final transient ConcurrentLinkedQueue<Integer> pendingSlots =
             new ConcurrentLinkedQueue<>();
-        private final transient AtomicBoolean workerRunning = new AtomicBoolean(false);
 
         Waveformer() {
             totalBuckets = Math.max(1, (int)(duration / 1_000_000L * DECIMATED_RATE));
@@ -151,56 +147,84 @@ public class AudRes extends MedRes{
             }
         }
 
+        private transient AudDecRes cachedDec;
+
+        private AudDecRes getCachedDecoder() {
+            if (cachedDec == null) {
+                cachedDec = newDecoder();
+            }
+            return cachedDec;
+        }
+
         private void processPendingSlots() {
-            AudDecRes dec = newDecoder();
+            AudDecRes dec = getCachedDecoder();
             try {
-                dec.start();
+                if (!dec.isInitialized()) {
+                    dec.start();
+                }
                 AudFrame frame = new AudFrame(44100, 2);
+                int[] slots = new int[BATCH_SIZE];
 
                 while (true) {
-                    Integer idx = pendingSlots.poll();
-                    if (idx == null) break;
-
-                    if (pixmap != null) {
-                        // 在 GL 线程检查是否已生成（通过 pixmap 的 R 通道判断）
-                        // 简化：已经在 queued 里做过去重，直接生成
+                    int count = 0;
+                    for (int i = 0; i < BATCH_SIZE; i++) {
+                        Integer idx = pendingSlots.poll();
+                        if (idx == null) break;
+                        slots[count++] = idx;
                     }
+                    if (count == 0) break;
 
-                    try {
-                        long t = (long)idx * bucketDuration;
-                        dec.sync(t);
-                        dec.get(t, frame);
-                        float[] samples = frame.getSamples();
-                        if (samples != null) {
-                            float max = 0;
-                            for (float s : samples) {
-                                float abs = s < 0 ? -s : s;
-                                if (abs > max) max = abs;
+                    java.util.Arrays.sort(slots, 0, count);
+                    dec.sync((long)slots[0] * bucketDuration);
+
+                    for (int i = 0; i < count; i++) {
+                        try {
+                            long t = (long)slots[i] * bucketDuration;
+                            dec.get(t, frame);
+                            float[] samples = frame.getSamples();
+                            if (samples != null) {
+                                float max = 0;
+                                for (float s : samples) {
+                                    float abs = s < 0 ? -s : s;
+                                    if (abs > max) max = abs;
+                                }
+                                batchSlots[batchCount] = slots[i];
+                                batchPeaks[batchCount] = Math.min(max, 1f);
+                                batchCount++;
+                                if (batchCount >= BATCH_SIZE) {
+                                    flushBatch();
+                                }
                             }
-                            final float peak = Math.min(max, 1f);
-                            final int slot = idx;
-                            Gdx.app.postRunnable(() -> {
-                                int px = slot % texWidth;
-                                int py = slot / texWidth;
-                                pixmap.setColor(peak, 0, 0, 1);
-                                pixmap.drawPixel(px, py);
-                                dirty = true;
-                            });
+                        } catch (Exception ignored) {
                         }
-                    } catch (Exception e) {
-                        // 单个 bucket 失败不影响
                     }
                 }
-                dec.stop();
+                flushBatch();
             } catch (Exception e) {
                 Gdx.app.error("AudRes", "Waveform worker failed for " + getPath(), e);
             } finally {
-                try { dec.close(); } catch (Exception ignored) {}
                 workerRunning.set(false);
                 if (!pendingSlots.isEmpty()) {
                     ensureWorker();
                 }
             }
+        }
+
+        private void flushBatch() {
+            if (batchCount == 0) return;
+            final int n = batchCount;
+            final int[] slots = java.util.Arrays.copyOf(batchSlots, n);
+            final float[] peaks = java.util.Arrays.copyOf(batchPeaks, n);
+            Gdx.app.postRunnable(() -> {
+                for (int i = 0; i < n; i++) {
+                    int px = slots[i] % texWidth;
+                    int py = slots[i] / texWidth;
+                    pixmap.setColor(peaks[i], 0, 0, 1);
+                    pixmap.drawPixel(px, py);
+                }
+                dirty = true;
+            });
+            batchCount = 0;
         }
     }
 }

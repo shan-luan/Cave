@@ -77,19 +77,23 @@ public class VdoRes extends MedRes {
         thumbnailer = new Thumbnailer();
     }
 
-    // -----------------------------------------------------------------
-    // 内部类：缩略图缓存与按需生成
-    // -----------------------------------------------------------------
-
     private class Thumbnailer {
         private static final int THUMB_HEIGHT = 80;
+        private static final int BATCH_SIZE = 16;
         final long interval = SECOND;
         final int slotCount;
         private final IntMap<Texture> cache = new IntMap<>();
         private final boolean[] queued;
+        private final AtomicBoolean workerRunning = new AtomicBoolean(false);
         private final ConcurrentLinkedQueue<Integer> pendingSlots =
             new ConcurrentLinkedQueue<>();
-        private final AtomicBoolean workerRunning = new AtomicBoolean(false);
+
+        private transient Pixmap fullPixmap;
+        private transient int thumbW;
+
+        private final int[] batchSlots = new int[BATCH_SIZE];
+        private final Pixmap[] batchPixmaps = new Pixmap[BATCH_SIZE];
+        private int batchCount;
 
         Thumbnailer() {
             slotCount = (int)(duration / interval) + 1;
@@ -120,12 +124,26 @@ public class VdoRes extends MedRes {
             }
         }
 
+        private transient VdoDecRes cachedDec;
+
+        private VdoDecRes getCachedDecoder() {
+            if (cachedDec == null) {
+                cachedDec = newDecoder();
+            }
+            return cachedDec;
+        }
+
         private void processPendingSlots() {
-            VdoDecRes dec = newDecoder();
+            VdoDecRes dec = getCachedDecoder();
             try {
-                dec.start();
-                float aspect = (float) width / height;
-                int thumbW = Math.max(1, (int)(THUMB_HEIGHT * aspect));
+                if (!dec.isInitialized()) {
+                    dec.start();
+                }
+                if (fullPixmap == null) {
+                    fullPixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
+                    float aspect = (float) width / height;
+                    thumbW = Math.max(1, (int)(THUMB_HEIGHT * aspect));
+                }
 
                 while (true) {
                     Integer idx = pendingSlots.poll();
@@ -138,35 +156,49 @@ public class VdoRes extends MedRes {
                         if (f != null && f.image != null && f.image[0] instanceof ByteBuffer) {
                             ByteBuffer buf = (ByteBuffer) f.image[0];
                             buf.rewind();
-                            Pixmap full = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-                            full.getPixels().put(buf);
+                            fullPixmap.getPixels().clear();
+                            fullPixmap.getPixels().put(buf);
 
-                            Pixmap small = new Pixmap(thumbW, THUMB_HEIGHT, Pixmap.Format.RGBA8888);
-                            small.drawPixmap(full, 0, 0, width, height, 0, 0, thumbW, THUMB_HEIGHT);
-                            full.dispose();
+                            Pixmap small = new Pixmap(thumbW, THUMB_HEIGHT,
+                                Pixmap.Format.RGBA8888);
+                            small.drawPixmap(fullPixmap,
+                                0, 0, width, height, 0, 0, thumbW, THUMB_HEIGHT);
 
-                            final int slot = idx;
-                            Gdx.app.postRunnable(() -> {
-                                if (!cache.containsKey(slot)) {
-                                    cache.put(slot, new Texture(small));
-                                }
-                                small.dispose();
-                            });
+                            batchSlots[batchCount] = idx;
+                            batchPixmaps[batchCount] = small;
+                            batchCount++;
+                            if (batchCount >= BATCH_SIZE) {
+                                flushBatch();
+                            }
                         }
-                    } catch (Exception e) {
-                        // 单个 slot 失败不影响其他
+                    } catch (Exception ignored) {
                     }
                 }
-                dec.stop();
+                flushBatch();
             } catch (Exception e) {
                 Gdx.app.error("VdoRes", "Thumbnail worker failed for " + getPath(), e);
             } finally {
-                try { dec.close(); } catch (Exception ignored) {}
                 workerRunning.set(false);
                 if (!pendingSlots.isEmpty()) {
                     ensureWorker();
                 }
             }
+        }
+
+        private void flushBatch() {
+            if (batchCount == 0) return;
+            final int n = batchCount;
+            final int[] slots = java.util.Arrays.copyOf(batchSlots, n);
+            final Pixmap[] pixmaps = java.util.Arrays.copyOf(batchPixmaps, n);
+            Gdx.app.postRunnable(() -> {
+                for (int i = 0; i < n; i++) {
+                    if (!cache.containsKey(slots[i])) {
+                        cache.put(slots[i], new Texture(pixmaps[i]));
+                    }
+                    pixmaps[i].dispose();
+                }
+            });
+            batchCount = 0;
         }
 
         void dispose() {

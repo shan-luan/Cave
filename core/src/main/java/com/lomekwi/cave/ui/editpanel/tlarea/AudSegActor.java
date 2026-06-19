@@ -41,10 +41,8 @@ public class AudSegActor extends SegActor {
         long segDuration = segLocalEnd - segLocalStart;
         if (segDuration <= 0) return;
 
-        // 按需请求可见范围内的峰值
         res.ensureVisible(segLocalStart, segLocalEnd);
 
-        // 有新解码数据则重新上传纹理
         if (res.isWaveDirty()) {
             waveTex.draw(res.getWavePixmap(), 0, 0);
             res.clearWaveDirty();
