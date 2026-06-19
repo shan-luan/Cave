@@ -1,56 +1,115 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.lomekwi.cave.app.App;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.AudSeg;
 import com.lomekwi.cave.timeline.Segment;
-import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class AudSegActor extends SegActor {
+
+    private static ShaderProgram waveShader;
+
+    private static ShaderProgram getWaveShader() {
+        if (waveShader == null) {
+            waveShader = new ShaderProgram(VERT, FRAG);
+            if (!waveShader.isCompiled()) {
+                Gdx.app.error("AudSegActor", "Wave shader failed:\n" + waveShader.getLog());
+            }
+        }
+        return waveShader;
+    }
 
     public AudSegActor(Segment segment) {
         super(segment);
     }
 
     @Override
-    public void drawContent(Batch batch, float parentAlpha) {
-        ShapeDrawer sd = App.root.getShapeDrawer();
-
-        super.drawContent(batch,parentAlpha);
+    protected void drawContent(Batch batch, float parentAlpha) {
+        super.drawContent(batch, parentAlpha);
 
         AudRes res = ((AudSeg) getSegment()).getAudRes();
-        float[] peaks = res.getPeaks();
+        Texture waveTex = res.getWaveTexture();
+        if (waveTex == null) return;
+
         Segment seg = getSegment();
         var range = seg.getRange();
         long segLocalStart = range.lowerEndpoint() - seg.getOrigin();
-        long segDuration = range.upperEndpoint() - range.lowerEndpoint();
+        long segLocalEnd = range.upperEndpoint() - seg.getOrigin();
+        long segDuration = segLocalEnd - segLocalStart;
+        if (segDuration <= 0) return;
 
-        // 绘制波形（仅当数据就绪）
-        if (peaks != null && peaks.length > 0 && segDuration > 0) {
-            float centerY = getY() + getHeight() / 2;
-            float halfH = getHeight() / 2;
-            float bucketUs = res.getBucketDuration();
-            int pixWidth = (int) getWidth();
+        // 按需请求可见范围内的峰值
+        res.ensureVisible(segLocalStart, segLocalEnd);
 
-            for (int px = 0; px < pixWidth; px++) {
-                long pxStart = segLocalStart + px * segDuration / pixWidth;
-                long pxEnd = segLocalStart + (px + 1) * segDuration / pixWidth;
-
-                int startIdx = (int)(pxStart / bucketUs);
-                int endIdx = (int)(pxEnd / bucketUs);
-                startIdx = Math.max(0, Math.min(startIdx, peaks.length - 1));
-                endIdx = Math.max(0, Math.min(endIdx, peaks.length - 1));
-
-                float maxPeak = 0;
-                for (int pi = startIdx; pi <= endIdx; pi++) {
-                    if (peaks[pi] > maxPeak) maxPeak = peaks[pi];
-                }
-
-                float barH = maxPeak * halfH;
-                float pxX = getX() + px;
-                sd.line(pxX, centerY - barH, pxX, centerY + barH, darkBlue, 1);
-            }
+        // 有新解码数据则重新上传纹理
+        if (res.isWaveDirty()) {
+            waveTex.draw(res.getWavePixmap(), 0, 0);
+            res.clearWaveDirty();
         }
+
+        long bucketUs = res.getBucketDuration();
+        int totalBuckets = res.getTotalBuckets();
+        if (totalBuckets <= 0) return;
+
+        float startBucket = (float) segLocalStart / bucketUs;
+        float endBucket = startBucket + (float) segDuration / bucketUs;
+
+        ShaderProgram shader = getWaveShader();
+        if (!shader.isCompiled()) return;
+
+        batch.setShader(shader);
+        shader.setUniformf("u_texWidth", res.getWaveTexWidth());
+        shader.setUniformf("u_texHeight", res.getWaveTexHeight());
+        shader.setUniformf("u_startBucket", startBucket);
+        shader.setUniformf("u_endBucket", endBucket);
+        shader.setUniformf("u_totalBuckets", totalBuckets);
+        shader.setUniformf("u_color",
+            darkBlue.r, darkBlue.g, darkBlue.b, darkBlue.a * parentAlpha);
+
+        batch.draw(waveTex, getX(), getY(), getWidth(), getHeight());
+        batch.setShader(null);
     }
+
+    private static final String VERT =
+        """
+            attribute vec4 a_position;
+            attribute vec4 a_color;
+            attribute vec2 a_texCoord0;
+            uniform mat4 u_projTrans;
+            varying vec2 v_texCoord;
+            void main() {
+                v_texCoord = a_texCoord0;
+                gl_Position = u_projTrans * a_position;
+            }""";
+
+    private static final String FRAG =
+        """
+            #ifdef GL_ES
+            precision mediump float;
+            #endif
+            varying vec2 v_texCoord;
+            uniform sampler2D u_texture;
+            uniform float u_texWidth;
+            uniform float u_texHeight;
+            uniform float u_startBucket;
+            uniform float u_endBucket;
+            uniform float u_totalBuckets;
+            uniform vec4 u_color;
+            void main() {
+                float bucket = u_startBucket + v_texCoord.x * (u_endBucket - u_startBucket);
+                if (bucket < 0.0 || bucket >= u_totalBuckets) { discard; return; }
+                float pixelIdx = floor(bucket);
+                float u = mod(pixelIdx, u_texWidth) / u_texWidth;
+                float v = floor(pixelIdx / u_texWidth) / u_texHeight;
+                float amp = texture2D(u_texture, vec2(u, v)).r;
+                float dist = abs(v_texCoord.y - 0.5) * 2.0;
+                if (dist <= amp) {
+                    gl_FragColor = u_color;
+                } else {
+                    discard;
+                }
+            }""";
 }

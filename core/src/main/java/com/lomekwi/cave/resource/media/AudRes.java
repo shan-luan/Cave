@@ -1,6 +1,8 @@
 package com.lomekwi.cave.resource.media;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
@@ -9,6 +11,8 @@ import com.lomekwi.cave.resource.decoder.DecRes;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudRes extends MedRes{
     @Serial
@@ -17,9 +21,6 @@ public class AudRes extends MedRes{
 
     private transient Waveformer waveformer = new Waveformer();
 
-    /**
-     * 必须确保路径对应一个存在的文件
-     */
     public AudRes(String path) {
         super(path);
     }
@@ -27,7 +28,6 @@ public class AudRes extends MedRes{
     @Override
     protected void generateMetadata(DecRes<?> metadataDecRes) {
         frameLength= metadataDecRes.getLengthPerFrame();
-
     }
 
     @Override
@@ -39,12 +39,43 @@ public class AudRes extends MedRes{
         return frameLength;
     }
 
-    public float[] getPeaks() {
-        return waveformer.getPeaks();
+    // ---- 委托给 Waveformer ----
+
+    public Texture getWaveTexture() {
+        return waveformer.getTexture();
+    }
+
+    public int getWaveTexWidth() {
+        return waveformer.texWidth;
+    }
+
+    public int getWaveTexHeight() {
+        return waveformer.texHeight;
     }
 
     public long getBucketDuration() {
         return waveformer.bucketDuration;
+    }
+
+    public int getTotalBuckets() {
+        return waveformer.totalBuckets;
+    }
+
+    /** 确保指定时间范围内的峰值已被请求生成 */
+    public void ensureVisible(long startTime, long endTime) {
+        waveformer.ensureVisible(startTime, endTime);
+    }
+
+    public boolean isWaveDirty() {
+        return waveformer.dirty;
+    }
+
+    public void clearWaveDirty() {
+        waveformer.dirty = false;
+    }
+
+    public Pixmap getWavePixmap() {
+        return waveformer.pixmap;
     }
 
     @Serial
@@ -54,65 +85,122 @@ public class AudRes extends MedRes{
     }
 
     // -----------------------------------------------------------------
-    // 内部类：波形数据
+    // 内部类：波形峰值纹理（按需生成）
     // -----------------------------------------------------------------
 
     private class Waveformer {
-        static final int PEAKS_PER_SECOND = 100;
-        final long bucketDuration = 1_000_000L / PEAKS_PER_SECOND;
-        private transient volatile boolean ready;
-        private transient volatile boolean generating;
-        private transient float[] peaks;
+        static final int DECIMATED_RATE = 400;
+        final long bucketDuration = 1_000_000L / DECIMATED_RATE;
+        final int totalBuckets;
+        final int texWidth = 512;
+        final int texHeight;
 
-        float[] getPeaks() {
-            if (!ready && !generating) {
-                generating = true;
-                App.workerExecutor.submit(this::decode);
-            }
-            return ready ? peaks : null;
+        // 缓存（GL 线程访问）
+        private transient Pixmap pixmap;
+        private transient Texture waveTex;
+        private transient boolean[] queued;
+        private transient volatile boolean dirty;
+
+        // Worker
+        private final transient ConcurrentLinkedQueue<Integer> pendingSlots =
+            new ConcurrentLinkedQueue<>();
+        private final transient AtomicBoolean workerRunning = new AtomicBoolean(false);
+
+        Waveformer() {
+            totalBuckets = Math.max(1, (int)(duration / 1_000_000L * DECIMATED_RATE));
+            texHeight = (totalBuckets + texWidth - 1) / texWidth;
+            queued = new boolean[totalBuckets];
+
+            pixmap = new Pixmap(texWidth, texHeight, Pixmap.Format.RGBA8888);
+            pixmap.setColor(0, 0, 0, 1);
+            pixmap.fill();
+
+            Gdx.app.postRunnable(() -> {
+                waveTex = new Texture(pixmap);
+                waveTex.setFilter(
+                    Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            });
         }
 
-        private void decode() {
-            if (duration <= 0) {
-                Gdx.app.postRunnable(() -> generating = false);
-                return;
+        Texture getTexture() {
+            return waveTex;
+        }
+
+        void ensureVisible(long startTime, long endTime) {
+            int start = (int)(startTime / bucketDuration);
+            int end = (int)(endTime / bucketDuration);
+            if (start < 0) start = 0;
+            if (end > totalBuckets) end = totalBuckets;
+
+            boolean needWorker = false;
+            for (int i = start; i < end; i++) {
+                if (!queued[i]) {
+                    queued[i] = true;
+                    pendingSlots.offer(i);
+                    needWorker = true;
+                }
             }
+            if (needWorker) {
+                ensureWorker();
+            }
+        }
 
-            int total = Math.max(1, (int)(duration / 1_000_000L * PEAKS_PER_SECOND));
-            float[] result = new float[total];
+        private void ensureWorker() {
+            if (workerRunning.compareAndSet(false, true)) {
+                App.workerExecutor.submit(this::processPendingSlots);
+            }
+        }
 
+        private void processPendingSlots() {
             AudDecRes dec = newDecoder();
             try {
                 dec.start();
                 AudFrame frame = new AudFrame(44100, 2);
 
-                for (int i = 0; i < total; i++) {
-                    long time = i * bucketDuration;
-                    dec.sync(time);
-                    dec.get(time, frame);
-                    float[] samples = frame.getSamples();
-                    if (samples != null) {
-                        float max = 0;
-                        for (float s : samples) {
-                            float abs = s < 0 ? -s : s;
-                            if (abs > max) max = abs;
+                while (true) {
+                    Integer idx = pendingSlots.poll();
+                    if (idx == null) break;
+
+                    if (pixmap != null) {
+                        // 在 GL 线程检查是否已生成（通过 pixmap 的 R 通道判断）
+                        // 简化：已经在 queued 里做过去重，直接生成
+                    }
+
+                    try {
+                        long t = (long)idx * bucketDuration;
+                        dec.sync(t);
+                        dec.get(t, frame);
+                        float[] samples = frame.getSamples();
+                        if (samples != null) {
+                            float max = 0;
+                            for (float s : samples) {
+                                float abs = s < 0 ? -s : s;
+                                if (abs > max) max = abs;
+                            }
+                            final float peak = Math.min(max, 1f);
+                            final int slot = idx;
+                            Gdx.app.postRunnable(() -> {
+                                int px = slot % texWidth;
+                                int py = slot / texWidth;
+                                pixmap.setColor(peak, 0, 0, 1);
+                                pixmap.drawPixel(px, py);
+                                dirty = true;
+                            });
                         }
-                        result[i] = Math.min(max, 1f);
+                    } catch (Exception e) {
+                        // 单个 bucket 失败不影响
                     }
                 }
                 dec.stop();
             } catch (Exception e) {
-                Gdx.app.error("AudRes", "Waveform decode failed for " + getPath(), e);
-                Gdx.app.postRunnable(() -> generating = false);
-                return;
+                Gdx.app.error("AudRes", "Waveform worker failed for " + getPath(), e);
             } finally {
                 try { dec.close(); } catch (Exception ignored) {}
+                workerRunning.set(false);
+                if (!pendingSlots.isEmpty()) {
+                    ensureWorker();
+                }
             }
-
-            Gdx.app.postRunnable(() -> {
-                peaks = result;
-                ready = true;
-            });
         }
     }
 }
