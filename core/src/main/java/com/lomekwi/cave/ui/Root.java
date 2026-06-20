@@ -30,10 +30,13 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
 import com.lomekwi.cave.app.App;
+
+import static com.badlogic.gdx.Input.Keys.*;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
@@ -88,18 +91,18 @@ public class Root implements ApplicationListener {
         mainLayout.setBackground("window-bg");
         mainLayout.setFillParent(true);
 
-        // 添加TopBar
         topBar = new TopBar();
         mainLayout.top();
         mainLayout.add(topBar.getTable()).fillX().top().row();
 
-        // 添加TabbedPane
         tabbedPane = new TopTabbedPane();
         mainLayout.add(tabbedPane.getTable()).fillX().top().row();
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
 
         stage.addActor(mainLayout);
+
+        registerDefaultShortcuts();
 
         toastManager.toFront();
 
@@ -178,6 +181,13 @@ public class Root implements ApplicationListener {
         }else{
             return null;
         }
+    }
+
+    private void registerDefaultShortcuts() {
+        App.shortcutManager.register(TlGroup.Actions.SCROLL_LEFT, A);
+        App.shortcutManager.register(TlGroup.Actions.SCROLL_RIGHT, D);
+        App.shortcutManager.register(TlGroup.Actions.SCROLL_UP, W);
+        App.shortcutManager.register(TlGroup.Actions.SCROLL_DOWN, S);
     }
 
     public DragAndDrop getDragAndDrop() {

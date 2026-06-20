@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.project.Project;
@@ -54,19 +55,20 @@ public class TlGroup extends Group {
     private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
 
     public TlGroup(Project project) {
-
-
         this.project = project;
         this.timeline = project.timeline;
         this.playhead = project.playhead;
 
         project.projEventBus.register(this);
 
-
         this.view.startTime = 0;
         this.view.durationTime = Math.max(project.timeline.getLength(), 30 * SECOND);
         this.view.trackHeight = 80;
 
+        addDefaultListeners();
+    }
+
+    private void addDefaultListeners() {
         addListener(new InputListener() {
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
@@ -112,7 +114,6 @@ public class TlGroup extends Group {
             }
         });
 
-
         App.root.getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
@@ -156,26 +157,28 @@ public class TlGroup extends Group {
     public void act(float delta) {
         super.act(delta);
 
-        final Input ip = Gdx.input;
-
-        if (getStage() != null && getStage().getKeyboardFocus() == this
-            && (ip.isKeyPressed(D) || ip.isKeyPressed(A) || ip.isKeyPressed(S) || ip.isKeyPressed(W))) {
+        if (getStage() != null && getStage().getKeyboardFocus() == this) {
             final float timePerPixel = (float) view.durationTime / getWidth();
+            boolean acted = false;
 
-            if (ip.isKeyPressed(D)) {
+            if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {
                 view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
+                acted = true;
             }
-            if (ip.isKeyPressed(A)) {
+            if (App.shortcutManager.isActive(Actions.SCROLL_LEFT)) {
                 view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
+                acted = true;
             }
-            if (ip.isKeyPressed(S)) {
+            if (App.shortcutManager.isActive(Actions.SCROLL_DOWN)) {
                 view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
+                acted = true;
             }
-            if (ip.isKeyPressed(W)) {
+            if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
                 view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
+                acted = true;
             }
 
-            dirty = true;
+            if (acted) dirty = true;
         }
 
         if (dirty) {
@@ -388,6 +391,13 @@ public class TlGroup extends Group {
     @Override
     public void sizeChanged() {
         dirty = true;
+    }
+
+    public enum Actions implements ShortcutAction {
+        SCROLL_LEFT,
+        SCROLL_RIGHT,
+        SCROLL_UP,
+        SCROLL_DOWN,
     }
 
     // -------------------------------------------------------------------------
