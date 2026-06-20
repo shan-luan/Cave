@@ -2,6 +2,7 @@ package com.lomekwi.cave.app;
 
 
 import com.google.common.eventbus.EventBus;
+import com.lomekwi.cave.app.shortcut.ShortcutManager;
 import com.lomekwi.cave.task.TaskPool;
 import com.lomekwi.cave.ui.Root;
 
@@ -27,4 +28,5 @@ public final class App {
     });
     public static final TaskPool taskPool = new TaskPool();
     public static Root root;
+    public static final ShortcutManager shortcutManager = new ShortcutManager();
 }
