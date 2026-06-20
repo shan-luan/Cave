@@ -39,6 +39,7 @@ public class TlRuler extends Widget {
             float x = tlGroup.absoluteTimeToX(t) + getX();
             App.root.getShapeDrawer().filledRectangle(x, getY(), 1, getHeight(), Color.WHITE);
             formatTime(t, interval);
+            font.setColor(Color.WHITE);
             font.draw(batch, sb, x + 2, getY() + getHeight() - 2);
         }
     }

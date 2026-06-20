@@ -105,7 +105,6 @@ public class VideoExportTask implements Task{
                 }
                 Gdx.app.postRunnable(this::mixVideoFrame);
                 recorder.record(queue.take());
-                System.out.println(t);
                 t+=frameLen;
             }
 
