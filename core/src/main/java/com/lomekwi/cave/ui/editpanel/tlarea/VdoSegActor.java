@@ -38,8 +38,6 @@ public class VdoSegActor extends SegActor {
             if (rawStep <= 0) rawStep = 1;
             long timeStep = niceScale(rawStep);
 
-            res.ensureVisible(segLocalStart, segLocalEnd, timeStep);
-
             long firstT = Math.max(0, segLocalStart - timeStep);
 
             float lastRightEdge = Float.NEGATIVE_INFINITY;

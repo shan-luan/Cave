@@ -58,11 +58,6 @@ public class VdoRes extends MedRes implements Previewable {
     }
 
     @Override
-    public void ensureVisible(long startTime, long endTime, long step) {
-        thumbnailer.ensureVisible(startTime, endTime, step);
-    }
-
-    @Override
     public Texture getPreview(long time) {
         return thumbnailer.get(time);
     }
@@ -113,27 +108,6 @@ public class VdoRes extends MedRes implements Previewable {
         Thumbnailer() {
             slotCount = (int)(duration / interval) + 1;
             queued = new boolean[slotCount];
-        }
-
-        void ensureVisible(long startTime, long endTime, long step) {
-            int start = (int)(startTime / interval);
-            int end = (int)(endTime / interval);
-            int s = (int)(step / interval);
-            if (s <= 0) s = 1;
-            if (start < 0) start = 0;
-            if (end > slotCount) end = slotCount;
-
-            boolean needWorker = false;
-            for (int i = start; i < end; i += s) {
-                if (!queued[i]) {
-                    queued[i] = true;
-                    pendingSlots.offer(i);
-                    needWorker = true;
-                }
-            }
-            if (needWorker) {
-                ensureWorker();
-            }
         }
 
         Texture get(long srcTime) {

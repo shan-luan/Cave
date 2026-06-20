@@ -112,7 +112,6 @@ public class MediaPool extends FlowGroup {
             add(new VisLabel(file.getName()));
 
             if (previewable != null) {
-                previewable.ensureVisible(0, previewable.getPreviewInterval(), previewable.getPreviewInterval());
                 requested = true;
             }
         }
