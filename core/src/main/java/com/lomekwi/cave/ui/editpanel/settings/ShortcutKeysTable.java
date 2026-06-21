@@ -43,6 +43,7 @@ public class ShortcutKeysTable extends EntryTable {
             keys.add(keycode);
 
             App.shortcutManager.register(recordingAction, keys.stream().mapToInt(i -> i).toArray());
+            App.shortcutManager.persist();
             finishRecording(true);
             return true;
         }
@@ -93,6 +94,7 @@ public class ShortcutKeysTable extends EntryTable {
                 public void changed(ChangeEvent event, Actor actor) {
                     if (recordingAction != null) stopRecording();
                     App.shortcutManager.resetToDefault(action);
+                    App.shortcutManager.persist();
                     rebuild();
                 }
             });
