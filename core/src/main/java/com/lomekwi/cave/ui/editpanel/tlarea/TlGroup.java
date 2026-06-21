@@ -498,14 +498,32 @@ public class TlGroup extends Group {
     }
 
     public enum Actions implements ShortcutAction {
-        SCROLL_LEFT,
-        SCROLL_RIGHT,
-        SCROLL_UP,
-        SCROLL_DOWN,
-        SPLIT,
-        DELETE,
-        UNDO,
-        REDO,
+        SCROLL_LEFT("向左滚动", A),
+        SCROLL_RIGHT("向右滚动", D),
+        SCROLL_UP("向上滚动", W),
+        SCROLL_DOWN("向下滚动", S),
+        SPLIT("分割", Q),
+        DELETE("删除", X),
+        UNDO("撤销", CONTROL_LEFT, Z),
+        REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z);
+
+        private final String displayName;
+        private final int[] defaultKeys;
+
+        Actions(String displayName, int... defaultKeys) {
+            this.displayName = displayName;
+            this.defaultKeys = defaultKeys;
+        }
+
+        @Override
+        public String displayName() {
+            return displayName;
+        }
+
+        @Override
+        public int[] defaultKeys() {
+            return defaultKeys.clone();
+        }
     }
 
     // -------------------------------------------------------------------------
