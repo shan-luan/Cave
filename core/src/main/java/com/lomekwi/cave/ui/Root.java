@@ -190,6 +190,8 @@ public class Root implements ApplicationListener {
         App.shortcutManager.register(TlGroup.Actions.SCROLL_DOWN, S);
         App.shortcutManager.register(TlGroup.Actions.SPLIT, Q);
         App.shortcutManager.register(TlGroup.Actions.DELETE, X);
+        App.shortcutManager.register(TlGroup.Actions.UNDO, CONTROL_LEFT, Z);
+        App.shortcutManager.register(TlGroup.Actions.REDO, CONTROL_LEFT, SHIFT_LEFT, Z);
     }
 
     public DragAndDrop getDragAndDrop() {

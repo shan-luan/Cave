@@ -22,6 +22,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.util.MimeType;
 
@@ -29,6 +30,7 @@ import com.lomekwi.cave.app.App;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -102,6 +104,14 @@ public class TlGroup extends Group {
                 if (App.shortcutManager.isActive(Actions.DELETE)) {
                     deleteAtCursor();
                 }
+                if (App.shortcutManager.isActive(Actions.UNDO)) {
+                    project.undoManager.undo();
+                    dirty = true;
+                }
+                if (App.shortcutManager.isActive(Actions.REDO)) {
+                    project.undoManager.redo();
+                    dirty = true;
+                }
                 return true;
             }
 
@@ -139,6 +149,7 @@ public class TlGroup extends Group {
                     long startTime = xToAbsoluteTime(x);
                     int baseTrack = yToTrackIndex(y);
                     int trackOffset = 0;
+                    var cmds = new ArrayList<UndoManager.UndoableCommand>();
                     for (Segment seg : segments) {
                         seg.setOrigin(startTime);
                         long duration = seg.getDuration();
@@ -149,7 +160,11 @@ public class TlGroup extends Group {
                             targetTrack++;
                         }
                         timeline.add(timeline.getTrack(targetTrack), seg, startTime, duration);
+                        cmds.add(new UndoManager.AddSegCommand(timeline.getTrack(targetTrack), seg, startTime, duration));
                         trackOffset = targetTrack - baseTrack + 1;
+                    }
+                    if (!cmds.isEmpty()) {
+                        project.undoManager.push(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
                     }
                     dirty = true;
                 } catch (IOException e) {
@@ -293,7 +308,21 @@ public class TlGroup extends Group {
 
     float firstX = Float.NaN, firstY = Float.NaN;
 
+    private long dragOldStart;
+    private long dragOldDuration;
+    private Track dragOldTrack;
+    private boolean dragActive;
+
     protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+        if (!dragActive) {
+            var seg = actor.getSegment();
+            var r = seg.getRange();
+            dragOldStart = r.lowerEndpoint();
+            dragOldDuration = r.upperEndpoint() - dragOldStart;
+            dragOldTrack = seg.getTrack();
+            dragActive = true;
+        }
+
         Track t = actor.getSegment().getTrack();
         var e = actor.getSegment().getEntry();
         var r = e.getKey();
@@ -368,11 +397,22 @@ public class TlGroup extends Group {
     public void removeSeg(SegActor segActor){
         removeActor(segActor);
         Segment s = segActor.getSegment();
-        timeline.remove(s.getTrack(),s.getRange());
+        var r = s.getRange();
+        long start = r.lowerEndpoint();
+        long duration = r.upperEndpoint() - start;
+        Track track = s.getTrack();
+        project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration));
+        dirty = true;
     }
     public void split(SegActor segActor,long time){
-        dirty=true;
-        timeline.split(segActor.getSegment().getTrack(),time);
+        var s = segActor.getSegment();
+        Track track = s.getTrack();
+        var r = s.getRange();
+        long start = r.lowerEndpoint();
+        long duration = r.upperEndpoint() - start;
+        var ns = s.duplicate();
+        project.undoManager.execute(new UndoManager.SplitSegCommand(track, s, start, duration, ns, time));
+        dirty = true;
     }
 
     private void splitAtCursor() {
@@ -382,7 +422,16 @@ public class TlGroup extends Group {
             s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
         int trackIndex = yToTrackIndex(local.y);
         if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
-        timeline.split(timeline.getTrack(trackIndex), xToAbsoluteTime(local.x));
+        long time = xToAbsoluteTime(local.x);
+        Track track = timeline.getTrack(trackIndex);
+        var entry = track.getEntry(time);
+        if (entry == null) return;
+        var seg = entry.getValue();
+        var r = entry.getKey();
+        long start = r.lowerEndpoint();
+        long duration = r.upperEndpoint() - start;
+        var ns = seg.duplicate();
+        project.undoManager.execute(new UndoManager.SplitSegCommand(track, seg, start, duration, ns, time));
         dirty = true;
     }
 
@@ -396,7 +445,10 @@ public class TlGroup extends Group {
         Track track = timeline.getTrack(trackIndex);
         var entry = track.getEntry(xToAbsoluteTime(local.x));
         if (entry != null) {
-            timeline.remove(track, entry.getValue().getRange());
+            var r = entry.getValue().getRange();
+            long start = r.lowerEndpoint();
+            long duration = r.upperEndpoint() - start;
+            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, entry.getValue(), start, duration));
         }
         dirty = true;
     }
@@ -418,6 +470,26 @@ public class TlGroup extends Group {
     protected void segDragEnd(SegActor actor) {
         dirty = true;
         firstX = Float.NaN;
+
+        if (dragActive) {
+            var seg = actor.getSegment();
+            var r = seg.getRange();
+            long newStart = r.lowerEndpoint();
+            long newDuration = r.upperEndpoint() - newStart;
+            Track newTrack = seg.getTrack();
+
+            if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
+                if (actor.getDragSide() == DragSide.MIDDLE) {
+                    project.undoManager.push(new UndoManager.MoveSegCommand(
+                        dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                } else {
+                    project.undoManager.push(new UndoManager.ResizeSegCommand(
+                        newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                }
+            }
+
+            dragActive = false;
+        }
     }
 
     @Override
@@ -432,6 +504,8 @@ public class TlGroup extends Group {
         SCROLL_DOWN,
         SPLIT,
         DELETE,
+        UNDO,
+        REDO,
     }
 
     // -------------------------------------------------------------------------
