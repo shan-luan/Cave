@@ -187,7 +187,11 @@ public class Root implements ApplicationListener {
         for (TlGroup.Actions action : TlGroup.Actions.values()) {
             App.shortcutManager.register(action, action.defaultKeys());
         }
+        for (TopBar.TopActions action : TopBar.TopActions.values()) {
+            App.shortcutManager.register(action, action.defaultKeys());
+        }
         App.shortcutManager.load();
+        topBar.applyCustomShortcuts();
     }
 
     public DragAndDrop getDragAndDrop() {

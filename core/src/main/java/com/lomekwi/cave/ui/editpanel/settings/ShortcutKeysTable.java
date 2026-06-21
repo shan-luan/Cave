@@ -89,6 +89,7 @@ public class ShortcutKeysTable extends EntryTable {
             row.add(keyBtn).pad(5).width(280);
 
             VisTextButton resetBtn = new VisTextButton(i18n("重置"));
+            resetBtn.setDisabled(!hasCustomKeys(action));
             resetBtn.addListener(new ChangeListener() {
                 @Override
                 public void changed(ChangeEvent event, Actor actor) {
@@ -153,6 +154,21 @@ public class ShortcutKeysTable extends EntryTable {
             sb.append(keyName(k));
         }
         return sb.toString();
+    }
+
+    private static boolean hasCustomKeys(ShortcutAction action) {
+        Collection<Integer> current = App.shortcutManager.getKeys(action);
+        int[] defaults = action.defaultKeys();
+        if (current.size() != defaults.length) return true;
+        List<Integer> curSorted = new ArrayList<>(current);
+        Collections.sort(curSorted);
+        int[] defSorted = defaults.clone();
+        Arrays.sort(defSorted);
+        int i = 0;
+        for (int k : curSorted) {
+            if (k != defSorted[i++]) return true;
+        }
+        return false;
     }
 
     private static boolean isModifier(int keycode) {
