@@ -17,6 +17,10 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
+
+    protected Source<?> source() {
+        return source;
+    }
     private Track track;
     private transient SegActor actor;
     private transient Range<Long> range;

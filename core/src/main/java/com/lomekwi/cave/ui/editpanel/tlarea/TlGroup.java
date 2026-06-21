@@ -96,6 +96,12 @@ public class TlGroup extends Group {
                 if (keycode == SPACE) {
                     playhead.setPlaying(!playhead.isPlaying());
                 }
+                if (App.shortcutManager.isActive(Actions.SPLIT)) {
+                    splitAtCursor();
+                }
+                if (App.shortcutManager.isActive(Actions.DELETE)) {
+                    deleteAtCursor();
+                }
                 return true;
             }
 
@@ -369,6 +375,32 @@ public class TlGroup extends Group {
         timeline.split(segActor.getSegment().getTrack(),time);
     }
 
+    private void splitAtCursor() {
+        Stage s = getStage();
+        if (s == null) return;
+        Vector2 local = stageToLocalCoordinates(
+            s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+        int trackIndex = yToTrackIndex(local.y);
+        if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
+        timeline.split(timeline.getTrack(trackIndex), xToAbsoluteTime(local.x));
+        dirty = true;
+    }
+
+    private void deleteAtCursor() {
+        Stage s = getStage();
+        if (s == null) return;
+        Vector2 local = stageToLocalCoordinates(
+            s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+        int trackIndex = yToTrackIndex(local.y);
+        if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
+        Track track = timeline.getTrack(trackIndex);
+        var entry = track.getEntry(xToAbsoluteTime(local.x));
+        if (entry != null) {
+            timeline.remove(track, entry.getValue().getRange());
+        }
+        dirty = true;
+    }
+
     private int yToTrackIndex(float y) {
         final float top = getHeight() - view.trackYShift;
         final float distance = top - y;
@@ -398,6 +430,8 @@ public class TlGroup extends Group {
         SCROLL_RIGHT,
         SCROLL_UP,
         SCROLL_DOWN,
+        SPLIT,
+        DELETE,
     }
 
     // -------------------------------------------------------------------------

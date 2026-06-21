@@ -19,7 +19,7 @@ public class AudRes extends MedRes implements Previewable {
     private static final long serialVersionUID = 1L;
     private long frameLength;
 
-    private transient Waveformer waveformer = new Waveformer();
+    private transient Waveformer waveformer;
 
     public AudRes(String path) {
         super(path);
@@ -39,25 +39,32 @@ public class AudRes extends MedRes implements Previewable {
         return frameLength;
     }
 
-    public Waveformer waveformer() {
+    private Waveformer getWaveformer() {
+        if (waveformer == null) {
+            waveformer = new Waveformer();
+        }
         return waveformer;
+    }
+
+    public Waveformer waveformer() {
+        return getWaveformer();
     }
 
     @Override
     public Texture getPreview(long time) {
-        waveformer.queueSlot(time);
-        return waveformer.getTexture();
+        getWaveformer().queueSlot(time);
+        return getWaveformer().getTexture();
     }
 
     @Override
     public long getPreviewInterval() {
-        return waveformer.bucketDuration;
+        return getWaveformer().bucketDuration;
     }
 
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        waveformer = new Waveformer();
+        waveformer = null;
     }
 
     public class Waveformer {

@@ -25,7 +25,14 @@ public class VdoRes extends MedRes implements Previewable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private transient Thumbnailer thumbnailer = new Thumbnailer();
+    private transient Thumbnailer thumbnailer;
+
+    private Thumbnailer getThumbnailer() {
+        if (thumbnailer == null) {
+            thumbnailer = new Thumbnailer();
+        }
+        return thumbnailer;
+    }
 
     public VdoRes(String path){
         super(path);
@@ -59,32 +66,34 @@ public class VdoRes extends MedRes implements Previewable {
 
     @Override
     public Texture getPreview(long time) {
-        return thumbnailer.get(time);
+        return getThumbnailer().get(time);
     }
 
     @Override
     public long getPreviewInterval() {
-        return thumbnailer.interval;
+        return getThumbnailer().interval;
     }
 
     public Texture getThumbnail(long srcTime) {
-        return thumbnailer.get(srcTime);
+        return getThumbnailer().get(srcTime);
     }
 
     public long getThumbInterval() {
-        return thumbnailer.interval;
+        return getThumbnailer().interval;
     }
 
     @Override
     public void close() throws Exception {
         super.close();
-        thumbnailer.dispose();
+        if (thumbnailer != null) {
+            thumbnailer.dispose();
+        }
     }
 
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
-        thumbnailer = new Thumbnailer();
+        thumbnailer = null;
     }
 
     private class Thumbnailer {

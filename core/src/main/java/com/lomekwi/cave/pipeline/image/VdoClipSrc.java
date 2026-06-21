@@ -21,6 +21,10 @@ public class VdoClipSrc extends Source<ImgFrame> {
         this.vdoRes = vdoRes;
     }
 
+    public VdoRes getVdoRes() {
+        return vdoRes;
+    }
+
     @Override
     public void sync(long time, Track track) throws Exception {
         vdoRes.sync(track.index, time);

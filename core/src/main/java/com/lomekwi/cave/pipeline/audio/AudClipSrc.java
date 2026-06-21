@@ -8,13 +8,17 @@ import com.lomekwi.cave.timeline.Track;
 import java.io.Serial;
 
 public class AudClipSrc extends Source<AudFrame> {
-    private final AudRes audRes;
+    private AudRes audRes;
     @Serial
     private static final long serialVersionUID = 1L;
 
     public AudClipSrc(AudRes audRes) {
         super();
         this.audRes = audRes;
+    }
+
+    public AudRes getAudRes() {
+        return audRes;
     }
 
     @Override
@@ -45,5 +49,10 @@ public class AudClipSrc extends Source<AudFrame> {
     @Override
     public long getDuration() {
         return audRes.getDuration();
+    }
+    @Override
+    public void onDuplicate(Source<?> original) {
+        AudClipSrc src = (AudClipSrc) original;
+        this.audRes = src.audRes;
     }
 }

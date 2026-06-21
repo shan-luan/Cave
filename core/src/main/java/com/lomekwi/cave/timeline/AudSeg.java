@@ -6,15 +6,13 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor;
 
 public class AudSeg extends Segment {
-    private final AudRes audRes;
 
     public AudSeg(AudRes source) {
         super(new AudClipSrc(source));
-        this.audRes = source;
     }
 
     public AudRes getAudRes() {
-        return audRes;
+        return ((AudClipSrc) source()).getAudRes();
     }
 
     @Override
