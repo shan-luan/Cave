@@ -95,7 +95,7 @@ public class TlGroup extends Group {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if (keycode == SPACE) {
+                if (App.shortcutManager.isActive(Actions.PLAY_PAUSE)) {
                     playhead.setPlaying(!playhead.isPlaying());
                 }
                 if (App.shortcutManager.isActive(Actions.SPLIT)) {
@@ -505,7 +505,8 @@ public class TlGroup extends Group {
         SPLIT("分割", Q),
         DELETE("删除", X),
         UNDO("撤销", CONTROL_LEFT, Z),
-        REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z);
+        REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z),
+        PLAY_PAUSE("播放/暂停", SPACE);
 
         private final String displayName;
         private final int[] defaultKeys;
