@@ -7,6 +7,7 @@ import com.lomekwi.cave.util.Duplicatable;
 
 import org.jspecify.annotations.NullMarked;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
@@ -24,6 +25,14 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     private boolean lengthChanged = true;
     @Serial
     private static final long serialVersionUID = 1L;
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        for (Track track : tracks) {
+            track.setTimeline(this);
+        }
+    }
 
     public Timeline(Project project) {
         this.project = project;

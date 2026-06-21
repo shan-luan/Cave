@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class SegFactory implements Serializable {
-    private Project project;
+    private transient Project project;
     private transient Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map;
     @Serial
     private static final long serialVersionUID = 1L;
@@ -31,6 +31,10 @@ public class SegFactory implements Serializable {
         this.project = project;
         this.map = new HashMap<>();
         initDefaultMappings();
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     private void initDefaultMappings() {

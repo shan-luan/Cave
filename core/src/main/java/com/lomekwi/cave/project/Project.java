@@ -107,6 +107,7 @@ public class Project implements Serializable, AutoCloseable {
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        segFactory.setProject(this);
         App.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(this);

@@ -36,7 +36,7 @@ import static java.util.Map.Entry;
 @NullMarked
 public class Track implements Serializable,Iterable<Segment> {
     public final int index;
-    private final Timeline timeline;
+    private transient Timeline timeline;
     private transient RangeMap<Long, Segment> sources = TreeRangeMap.create();
 
     private long length;
@@ -51,6 +51,10 @@ public class Track implements Serializable,Iterable<Segment> {
         this.timeline = timeline;
         this.index = index;
         this.worker = new TrackWorker();
+    }
+
+    void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
     }
 
     synchronized protected boolean isEmpty() {
@@ -200,6 +204,7 @@ public class Track implements Serializable,Iterable<Segment> {
                 var s =serializationSources.get(i / 2);
                 sources.put(r, s);
                 s.setRange(r);
+                s.setTrack(this);
             }
             serializationRanges = null;
             serializationSources = null;

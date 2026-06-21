@@ -21,10 +21,10 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     protected Source<?> source() {
         return source;
     }
-    private Track track;
+    private transient Track track;
     private transient SegActor actor;
     private transient Range<Long> range;
-    private AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
+    private transient AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     /**
      * 源的0秒在时间轴中的位置
      */
