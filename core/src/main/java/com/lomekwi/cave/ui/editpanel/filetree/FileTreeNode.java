@@ -49,6 +49,7 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
             if (children != null) {
                 Gdx.app.debug("FileTreeNode", i18n("找到 ") + children.length + i18n(" 个子项"));
                 for (File child : children) {
+                    if (child.getName().startsWith(".")) continue;
                     FileTreeNode childNode = new FileTreeNode(child);
                     add(childNode);
                 }

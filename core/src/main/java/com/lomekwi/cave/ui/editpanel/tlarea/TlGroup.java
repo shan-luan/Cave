@@ -39,7 +39,8 @@ import static com.badlogic.gdx.Input.Keys.*;
 
 public class TlGroup extends Group {
 
-    private final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
+    private final TimelineRenderer renderer = new TimelineRenderer();
+    final SegDragHandler dragHandler = new SegDragHandler();
 
     private final Timeline timeline;
     private final Playhead playhead;
@@ -53,8 +54,6 @@ public class TlGroup extends Group {
     private static final float KEY_VERTICAL_SPEED = 1200f;
 
     private final Vector2 pointer = new Vector2();
-
-    private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
 
     public TlGroup(Project project) {
         this.project = project;
@@ -99,10 +98,10 @@ public class TlGroup extends Group {
                     playhead.setPlaying(!playhead.isPlaying());
                 }
                 if (App.shortcutManager.isActive(Actions.SPLIT)) {
-                    splitAtCursor();
+                    dragHandler.splitAtCursor();
                 }
                 if (App.shortcutManager.isActive(Actions.DELETE)) {
-                    deleteAtCursor();
+                    dragHandler.deleteAtCursor();
                 }
                 if (App.shortcutManager.isActive(Actions.UNDO)) {
                     project.undoManager.undo();
@@ -133,10 +132,9 @@ public class TlGroup extends Group {
         App.root.getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
             @Override
             public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                if (!(payload.getObject() instanceof File)) {
+                if (!(payload.getObject() instanceof File file)) {
                     return false;
                 }
-                File file = (File) payload.getObject();
                 String mimeType = MimeType.detectMimeType(file);
                 return mimeType != null && MediaFactory.isSupported(mimeType);
             }
@@ -220,7 +218,7 @@ public class TlGroup extends Group {
                                 getHeight() + view.trackYShift - (i + 1) * view.trackHeight
                             );
                             Stage s = getStage();
-                            segDrag(actor, stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x - actor.getX(), Float.NaN/*此时不可能用到*/);
+                            dragHandler.segDrag(actor, stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x - actor.getX(), Float.NaN);
                             actor.setHeight(view.trackHeight);
                             break;
                         case MIDDLE:
@@ -250,42 +248,10 @@ public class TlGroup extends Group {
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        drawBackground();
-        drawSplitters();
+        renderer.drawBackground();
+        renderer.drawSplitters();
         super.draw(batch, parentAlpha);
-        drawPlayhead();
-    }
-
-    private void drawBackground() {
-        shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Color.DARK_GRAY);
-
-        final float startX = absoluteTimeToX(0);
-        final float endX = absoluteTimeToX(timeline.getLength());
-
-        shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
-    }
-
-    private void drawSplitters() {
-        float offset = ((view.trackYShift % view.trackHeight) + view.trackHeight) % view.trackHeight;
-        float startY = getHeight() + offset;
-
-        for (float y = startY; y > -view.trackHeight; y -= view.trackHeight) {
-            shapeDrawer.line(0, y, getWidth(), y, black);
-        }
-    }
-
-
-    private void drawPlayhead() {
-        final float x = absoluteTimeToX(playhead.getTime());
-
-        shapeDrawer.filledTriangle(
-            x - 10, getHeight(),
-            x + 10, getHeight(),
-            x, getHeight() - 20,
-            Color.RED
-        );
-
-        shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3);
+        renderer.drawPlayhead();
     }
 
     public void dispose() {
@@ -306,151 +272,22 @@ public class TlGroup extends Group {
         App.root.getStage().setKeyboardFocus(this);
     }
 
-    float firstX = Float.NaN, firstY = Float.NaN;
+    // -- delegating to SegDragHandler --
 
-    private long dragOldStart;
-    private long dragOldDuration;
-    private Track dragOldTrack;
-    private boolean dragActive;
-
-    protected void  segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
-        if (!dragActive) {
-            var seg = actor.getSegment();
-            var r = seg.getRange();
-            dragOldStart = r.lowerEndpoint();
-            dragOldDuration = r.upperEndpoint() - dragOldStart;
-            dragOldTrack = seg.getTrack();
-            dragActive = true;
-        }
-
-        Track t = actor.getSegment().getTrack();
-        var e = actor.getSegment().getEntry();
-        var r = e.getKey();
-
-        switch (actor.getDragSide()) {
-            case FRONT: {
-                float upper = actor.getX() + actor.getWidth();
-                float target = actor.getX() + diffToActorX;
-                if (target >= upper) return;
-                target = Math.max(target, absoluteTimeToX(0));
-
-                //nr:new range
-                Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
-
-                if (!t.isFree(e, nr)) {
-                    long minStart = t.getEntry(r.lowerEndpoint()+1,-1,true).getKey().upperEndpoint();
-                    target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
-                    nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
-                }
-
-                actor.setX(target);
-                actor.setWidth(upper - target);
-                timeline.resize(t, e, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
-                break;
-            }
-            case BEHIND: {
-                if (diffToActorX < 1f) return;
-                float newWidth = diffToActorX;
-                float upper = actor.getX() + newWidth;
-                Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
-
-                if (!t.isFree(e, nr)) {
-                    long maxEnd = t.getEntry(r.upperEndpoint()-1,1,true).getKey().lowerEndpoint();
-                    upper = absoluteTimeToX(maxEnd);
-                    newWidth = upper - actor.getX();
-                    nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
-                }
-
-                actor.setWidth(newWidth);
-                timeline.resize(t, e, r.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
-                break;
-            }
-            case MIDDLE: {
-
-                if (Float.isNaN(firstX)) {
-                    firstX = diffToActorX;
-                    firstY = diffToActorY;
-                    return;
-                }
-
-                float oldx = actor.getX();
-
-                float deltaX = diffToActorX - firstX,
-                    deltaY = diffToActorY - firstY,
-                    targetX = Math.max(oldx + deltaX, 0f),
-                    targetY = Math.min(actor.getY() + deltaY, getHeight() - view.trackYShift - view.trackHeight);
-
-                long target = xToAbsoluteTime(targetX);
-                long duration = r.upperEndpoint() - r.lowerEndpoint();
-                var nr = Range.closedOpen(target, target + duration);
-
-                var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
-                actor.setPosition(targetX, targetY);
-                if(newTrack.isFree(e, nr)) {
-                    timeline.move(t, newTrack, e, target, duration);
-                    long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
-                    e.getValue().offsetOrigin(deltaTime);
-                }
-            }
-        }
-    }
-    public void removeSeg(SegActor segActor){
-        removeActor(segActor);
-        Segment s = segActor.getSegment();
-        var r = s.getRange();
-        long start = r.lowerEndpoint();
-        long duration = r.upperEndpoint() - start;
-        Track track = s.getTrack();
-        project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration));
-        dirty = true;
-    }
-    public void split(SegActor segActor,long time){
-        var s = segActor.getSegment();
-        Track track = s.getTrack();
-        var r = s.getRange();
-        long start = r.lowerEndpoint();
-        long duration = r.upperEndpoint() - start;
-        var ns = s.duplicate();
-        project.undoManager.execute(new UndoManager.SplitSegCommand(track, s, start, duration, ns, time));
-        dirty = true;
+    protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+        dragHandler.segDrag(actor, diffToActorX, diffToActorY);
     }
 
-    private void splitAtCursor() {
-        Stage s = getStage();
-        if (s == null) return;
-        Vector2 local = stageToLocalCoordinates(
-            s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
-        int trackIndex = yToTrackIndex(local.y);
-        if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
-        long time = xToAbsoluteTime(local.x);
-        Track track = timeline.getTrack(trackIndex);
-        var entry = track.getEntry(time);
-        if (entry == null) return;
-        var seg = entry.getValue();
-        var r = entry.getKey();
-        long start = r.lowerEndpoint();
-        long duration = r.upperEndpoint() - start;
-        var ns = seg.duplicate();
-        project.undoManager.execute(new UndoManager.SplitSegCommand(track, seg, start, duration, ns, time));
-        dirty = true;
+    protected void segDragEnd(SegActor actor) {
+        dragHandler.segDragEnd(actor);
     }
 
-    private void deleteAtCursor() {
-        Stage s = getStage();
-        if (s == null) return;
-        Vector2 local = stageToLocalCoordinates(
-            s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
-        int trackIndex = yToTrackIndex(local.y);
-        if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
-        Track track = timeline.getTrack(trackIndex);
-        var entry = track.getEntry(xToAbsoluteTime(local.x));
-        if (entry != null) {
-            var r = entry.getValue().getRange();
-            long start = r.lowerEndpoint();
-            long duration = r.upperEndpoint() - start;
-            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, entry.getValue(), start, duration));
-        }
-        dirty = true;
+    public void removeSeg(SegActor segActor) {
+        dragHandler.removeSeg(segActor);
+    }
+
+    public void split(SegActor segActor, long time) {
+        dragHandler.split(segActor, time);
     }
 
     private int yToTrackIndex(float y) {
@@ -463,38 +300,231 @@ public class TlGroup extends Group {
         return getHeight() + view.trackYShift - index * view.trackHeight;
     }
 
+    @SuppressWarnings("unused")
     private float trackIndexToBottomY(int index) {
         return trackIndexToTopY(index) - view.trackHeight;
-    }
-
-    protected void segDragEnd(SegActor actor) {
-        dirty = true;
-        firstX = Float.NaN;
-
-        if (dragActive) {
-            var seg = actor.getSegment();
-            var r = seg.getRange();
-            long newStart = r.lowerEndpoint();
-            long newDuration = r.upperEndpoint() - newStart;
-            Track newTrack = seg.getTrack();
-
-            if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
-                if (actor.getDragSide() == DragSide.MIDDLE) {
-                    project.undoManager.push(new UndoManager.MoveSegCommand(
-                        dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
-                } else {
-                    project.undoManager.push(new UndoManager.ResizeSegCommand(
-                        newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
-                }
-            }
-
-            dragActive = false;
-        }
     }
 
     @Override
     public void sizeChanged() {
         dirty = true;
+    }
+
+    // -------------------------------------------------------------------------
+    // 内部类：片段拖拽处理器
+    // -------------------------------------------------------------------------
+
+    class SegDragHandler {
+        float firstX = Float.NaN, firstY = Float.NaN;
+        private long dragOldStart;
+        private long dragOldDuration;
+        private Track dragOldTrack;
+        private boolean dragActive;
+
+        void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+            if (!dragActive) {
+                var seg = actor.getSegment();
+                var r = seg.getRange();
+                dragOldStart = r.lowerEndpoint();
+                dragOldDuration = r.upperEndpoint() - dragOldStart;
+                dragOldTrack = seg.getTrack();
+                dragActive = true;
+            }
+
+            Track t = actor.getSegment().getTrack();
+            var e = actor.getSegment().getEntry();
+            var r = e.getKey();
+
+            switch (actor.getDragSide()) {
+                case FRONT: {
+                    float upper = actor.getX() + actor.getWidth();
+                    float target = actor.getX() + diffToActorX;
+                    if (target >= upper) return;
+                    target = Math.max(target, absoluteTimeToX(0));
+
+                    Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
+
+                    if (!t.isFree(e, nr)) {
+                        long minStart = t.getEntry(r.lowerEndpoint() + 1, -1, true).getKey().upperEndpoint();
+                        target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
+                        nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
+                    }
+
+                    actor.setX(target);
+                    actor.setWidth(upper - target);
+                    timeline.resize(t, e, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                    break;
+                }
+                case BEHIND: {
+                    if (diffToActorX < 1f) return;
+                    float newWidth = diffToActorX;
+                    float upper = actor.getX() + newWidth;
+                    Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
+
+                    if (!t.isFree(e, nr)) {
+                        long maxEnd = t.getEntry(r.upperEndpoint() - 1, 1, true).getKey().lowerEndpoint();
+                        upper = absoluteTimeToX(maxEnd);
+                        newWidth = upper - actor.getX();
+                        nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
+                    }
+
+                    actor.setWidth(newWidth);
+                    timeline.resize(t, e, r.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                    break;
+                }
+                case MIDDLE: {
+                    if (Float.isNaN(firstX)) {
+                        firstX = diffToActorX;
+                        firstY = diffToActorY;
+                        return;
+                    }
+
+                    float oldx = actor.getX();
+
+                    float deltaX = diffToActorX - firstX,
+                        deltaY = diffToActorY - firstY,
+                        targetX = Math.max(oldx + deltaX, 0f),
+                        targetY = Math.min(actor.getY() + deltaY, getHeight() - view.trackYShift - view.trackHeight);
+
+                    long target = xToAbsoluteTime(targetX);
+                    long duration = r.upperEndpoint() - r.lowerEndpoint();
+                    var nr = Range.closedOpen(target, target + duration);
+
+                    var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
+                    actor.setPosition(targetX, targetY);
+                    if (newTrack.isFree(e, nr)) {
+                        timeline.move(t, newTrack, e, target, duration);
+                        long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
+                        e.getValue().offsetOrigin(deltaTime);
+                    }
+                }
+            }
+        }
+
+        void segDragEnd(SegActor actor) {
+            dirty = true;
+            firstX = Float.NaN;
+
+            if (dragActive) {
+                var seg = actor.getSegment();
+                var r = seg.getRange();
+                long newStart = r.lowerEndpoint();
+                long newDuration = r.upperEndpoint() - newStart;
+                Track newTrack = seg.getTrack();
+
+                if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
+                    if (actor.getDragSide() == DragSide.MIDDLE) {
+                        project.undoManager.push(new UndoManager.MoveSegCommand(
+                            dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                    } else {
+                        project.undoManager.push(new UndoManager.ResizeSegCommand(
+                            newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                    }
+                }
+
+                dragActive = false;
+            }
+        }
+
+        void removeSeg(SegActor segActor) {
+            removeActor(segActor);
+            Segment s = segActor.getSegment();
+            var r = s.getRange();
+            long start = r.lowerEndpoint();
+            long duration = r.upperEndpoint() - start;
+            Track track = s.getTrack();
+            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration));
+            dirty = true;
+        }
+
+        void split(SegActor segActor, long time) {
+            var s = segActor.getSegment();
+            Track track = s.getTrack();
+            var r = s.getRange();
+            long start = r.lowerEndpoint();
+            long duration = r.upperEndpoint() - start;
+            var ns = s.duplicate();
+            project.undoManager.execute(new UndoManager.SplitSegCommand(track, s, start, duration, ns, time));
+            dirty = true;
+        }
+
+        private void splitAtCursor() {
+            Stage s = getStage();
+            if (s == null) return;
+            Vector2 local = stageToLocalCoordinates(
+                s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+            int trackIndex = yToTrackIndex(local.y);
+            if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
+            long time = xToAbsoluteTime(local.x);
+            Track track = timeline.getTrack(trackIndex);
+            var entry = track.getEntry(time);
+            if (entry == null) return;
+            var seg = entry.getValue();
+            var r = entry.getKey();
+            long start = r.lowerEndpoint();
+            long duration = r.upperEndpoint() - start;
+            var ns = seg.duplicate();
+            project.undoManager.execute(new UndoManager.SplitSegCommand(track, seg, start, duration, ns, time));
+            dirty = true;
+        }
+
+        private void deleteAtCursor() {
+            Stage s = getStage();
+            if (s == null) return;
+            Vector2 local = stageToLocalCoordinates(
+                s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+            int trackIndex = yToTrackIndex(local.y);
+            if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
+            Track track = timeline.getTrack(trackIndex);
+            var entry = track.getEntry(xToAbsoluteTime(local.x));
+            if (entry != null) {
+                var r = entry.getValue().getRange();
+                long start = r.lowerEndpoint();
+                long duration = r.upperEndpoint() - start;
+                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, entry.getValue(), start, duration));
+            }
+            dirty = true;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 内部类：时间线渲染器
+    // -------------------------------------------------------------------------
+
+    class TimelineRenderer {
+        private final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
+        private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
+
+        void drawBackground() {
+            shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Color.DARK_GRAY);
+
+            final float startX = absoluteTimeToX(0);
+            final float endX = absoluteTimeToX(timeline.getLength());
+
+            shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
+        }
+
+        void drawSplitters() {
+            float offset = ((view.trackYShift % view.trackHeight) + view.trackHeight) % view.trackHeight;
+            float startY = getHeight() + offset;
+
+            for (float y = startY; y > -view.trackHeight; y -= view.trackHeight) {
+                shapeDrawer.line(0, y, getWidth(), y, black);
+            }
+        }
+
+        void drawPlayhead() {
+            final float x = absoluteTimeToX(playhead.getTime());
+
+            shapeDrawer.filledTriangle(
+                x - 10, getHeight(),
+                x + 10, getHeight(),
+                x, getHeight() - 20,
+                Color.RED
+            );
+
+            shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3);
+        }
     }
 
     public enum Actions implements ShortcutAction {
@@ -537,24 +567,18 @@ public class TlGroup extends Group {
         float trackHeight;
         float trackYShift;
 
-        /** 时间 -> 像素 x 坐标 */
         float timeToX(long time, float width) {
             return (float) (time - startTime) / durationTime * width;
         }
 
-        /** 像素 x 坐标 -> 时间 */
         long xToTime(float x, float width) {
             return startTime + (long) ((x / width) * durationTime);
         }
 
-        /** 可见时间范围 */
         Range<Long> visibleRange() {
             return Range.closedOpen(startTime, startTime + durationTime);
         }
 
-        /**
-         * 以锚点为中心缩放。返回 false 表示缩放无效（缩放因子 <= 0）
-         */
         boolean zoom(float amountY, float anchorXRatio) {
             final long oldDuration = durationTime;
             final float scaleFactor = 1f + amountY * 0.1f;
@@ -569,17 +593,14 @@ public class TlGroup extends Group {
             return true;
         }
 
-        /** 水平滚动（左右移动视图），deltaPixels > 0 向右 */
         void scrollHorizontal(float deltaPixels, float width) {
             startTime = Math.max(startTime + (xToTime(deltaPixels, width) - xToTime(0, width)), 0);
         }
 
-        /** 垂直滚动（上下移动轨道偏移），delta > 0 向下 */
         void scrollVertical(float delta) {
             trackYShift = Math.max(0, trackYShift + delta);
         }
 
-        /** 调整轨道高度，不小于 10 */
         void adjustTrackHeight(float delta) {
             trackHeight = Math.max(trackHeight + delta, 10);
         }
