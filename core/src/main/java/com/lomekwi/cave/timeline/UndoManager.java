@@ -36,7 +36,7 @@ public class UndoManager {
         if (redoStack.isEmpty()) return;
         var command = redoStack.pop();
         command.redo();
-        undoStack.push(command);
+        push(command);
     }
 
     public boolean canUndo() {
@@ -116,16 +116,18 @@ public class UndoManager {
     public record SplitSegCommand(Track track, Segment originalSeg, long originalStart, long originalDuration, Segment newSeg, long splitTime) implements UndoableCommand {
         @Override
         public void undo() {
-            long newSegEnd = originalStart + originalDuration;
-            track.getTimeline().remove(track, Range.closedOpen(splitTime, newSegEnd));
-            originalSeg.setRange(Range.closedOpen(originalStart, originalStart + originalDuration));
+            var fullRange = Range.closedOpen(originalStart, originalStart + originalDuration);
+            track.getTimeline().remove(track, fullRange);
+            track.getTimeline().add(track, originalSeg, originalStart, originalDuration);
         }
 
         @Override
         public void redo() {
             long offset = splitTime - originalStart;
+            var fullRange = Range.closedOpen(originalStart, originalStart + originalDuration);
+            track.getTimeline().remove(track, fullRange);
+            track.getTimeline().add(track, originalSeg, originalStart, offset);
             track.getTimeline().add(track, newSeg, splitTime, originalDuration - offset);
-            originalSeg.setRange(Range.closedOpen(originalStart, splitTime));
         }
     }
 

@@ -47,7 +47,7 @@ public class ImgFrame extends Frame implements Transformable {
     }
 
     public void update() {
-        if(changed) {
+        if(changed && pixels != null) {
             texture.bind();
             Gdx.gl.glTexSubImage2D(
                 GL20.GL_TEXTURE_2D,

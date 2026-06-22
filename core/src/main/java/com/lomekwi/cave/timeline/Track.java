@@ -107,13 +107,14 @@ public class Track implements Serializable,Iterable<Segment> {
     synchronized protected void split(long time){
         var entry = sources.getEntry(time);
         if (entry == null) return;
-        var s=entry.getValue();
+        var s = entry.getValue();
         long start = entry.getKey().lowerEndpoint();
         long duration = entry.getKey().upperEndpoint() - start;
-        long offset=time-start;
-        var ns=s.duplicate();
-        add(ns,time,duration-offset);
-        s.setRange(Range.closedOpen(start,start+offset));
+        long offset = time - start;
+        var ns = s.duplicate();
+        sources.remove(Range.closedOpen(start, start + duration));
+        add(s, start, offset);
+        add(ns, time, duration - offset);
     }
 
     synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
