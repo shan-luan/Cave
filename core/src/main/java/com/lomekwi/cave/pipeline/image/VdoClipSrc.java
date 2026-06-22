@@ -32,11 +32,16 @@ public class VdoClipSrc extends Source<ImgFrame> {
 
     @Override
     public ImgFrame generate(long time, Track track) {
+        if (frame != null && frame.track != track) {
+            initialized = false;
+        }
         CountDownLatch cd = new CountDownLatch(1);
         if(!initialized){
             Gdx.app.postRunnable(()-> {
-                texture = new Texture(vdoRes.getWidth(), vdoRes.getHeight(), Pixmap.Format.RGBA8888);
-            frame = new ImgFrame();
+                if (texture == null) {
+                    texture = new Texture(vdoRes.getWidth(), vdoRes.getHeight(), Pixmap.Format.RGBA8888);
+                }
+            frame = new ImgFrame(track);
             frame.setTexture(texture)
                 .setTransform(new Transform(0, 0, vdoRes.getWidth(), vdoRes.getHeight(), 0));
             initialized = true;
@@ -45,6 +50,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
             try {
                 cd.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return null;
             }
         }

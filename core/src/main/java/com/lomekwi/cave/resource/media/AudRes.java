@@ -140,7 +140,7 @@ public class AudRes extends MedRes implements Previewable {
                 if (!dec.isInitialized()) {
                     dec.start();
                 }
-                AudFrame frame = new AudFrame(44100, 2);
+                AudFrame frame = new AudFrame(44100, 2, null);
                 int[] slots = new int[BATCH_SIZE];
 
                 while (true) {

@@ -29,8 +29,8 @@ public class AudClipSrc extends Source<AudFrame> {
     @Override
     protected AudFrame generate(long time, Track track) {
 
-        if (frame == null) {
-            frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2);
+        if (frame == null || frame.track != track) {
+            frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2, track);
         }
 
         try {

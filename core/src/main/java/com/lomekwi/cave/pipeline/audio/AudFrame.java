@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline.audio;
 
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.timeline.Track;
 
 public class AudFrame extends Frame {
     private float[] samples;
@@ -8,7 +9,8 @@ public class AudFrame extends Frame {
     private final int channels;
     private long time;
 
-    public AudFrame(int sampleRate, int channels) {
+    public AudFrame(int sampleRate, int channels, Track track) {
+        super(track);
         this.sampleRate = sampleRate;
         this.channels = channels;
     }

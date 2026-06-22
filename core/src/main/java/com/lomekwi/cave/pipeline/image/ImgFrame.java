@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Scaling;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.timeline.Track;
 
 import java.nio.ByteBuffer;
 
@@ -15,6 +16,10 @@ public class ImgFrame extends Frame implements Transformable {
     private Texture texture;
     private Image image;
     public volatile boolean changed = true;
+
+    public ImgFrame(Track track) {
+        super(track);
+    }
     @Override
     public Transform getTransform() {
         return transform;
