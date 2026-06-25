@@ -16,6 +16,7 @@ import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
 import com.lomekwi.cave.resource.media.MedRes;
 import com.lomekwi.cave.resource.media.Previewable;
+import com.lomekwi.cave.ui.widget.EllipsisLabel;
 
 import com.lomekwi.cave.app.App;
 
@@ -109,7 +110,7 @@ public class MediaPool extends FlowGroup {
 
             image = new VisImage(new Texture("libgdx.png"));
             add(image).size(100).row();
-            add(new VisLabel(file.getName()));
+            add(new EllipsisLabel(file.getName(), 10));
 
             if (previewable != null) {
                 requested = true;
