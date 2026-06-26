@@ -24,6 +24,9 @@ public abstract class SegActor extends Actor {
     private DragSide dragSide=DragSide.NONE;
     private final Rectangle scissors = new Rectangle();
     private final Rectangle bounds = new Rectangle();
+    private boolean hovered;
+    private static final Color hoverColor = new Color(1, 1, 1, 0.25f);
+    private static final Color selectedColor = new Color(0, 1, 0.3f, 0.4f);
     public SegActor(Segment segment) {
         this.segment = segment;
         addListener(getMenu().getDefaultInputListener());
@@ -31,6 +34,7 @@ public abstract class SegActor extends Actor {
             final float edgeWidth = 30;
             @Override
             public boolean mouseMoved(InputEvent event, float x, float y) {
+                hovered = true;
                 if (x < edgeWidth){
                     setCursor(Cursor.SystemCursor.HorizontalResize);
                 }else if (x > getWidth() - edgeWidth) {
@@ -42,6 +46,7 @@ public abstract class SegActor extends Actor {
             }
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, @Null Actor toActor) {
+                hovered = false;
                 if(dragSide==DragSide.NONE) {
                     setCursor(Cursor.SystemCursor.Arrow);
                 }
@@ -84,6 +89,7 @@ public abstract class SegActor extends Actor {
             ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(),bounds , scissors);
         if (ScissorStack.pushScissors(scissors)) {
             drawContent(batch,parentAlpha);
+            drawSelectionOverlay();
             batch.flush();
             ScissorStack.popScissors();
         }
@@ -94,6 +100,14 @@ public abstract class SegActor extends Actor {
     }
     protected void drawBorder(){
         App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 2);
+    }
+    private void drawSelectionOverlay(){
+        if (getSegment().isSelected()) {
+            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), selectedColor);
+        }
+        if (hovered) {
+            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), hoverColor);
+        }
     }
 
     public Segment getSegment() {

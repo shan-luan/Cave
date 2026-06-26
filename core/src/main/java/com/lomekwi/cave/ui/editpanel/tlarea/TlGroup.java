@@ -11,7 +11,6 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
 import com.google.common.eventbus.Subscribe;
@@ -31,7 +30,9 @@ import com.lomekwi.cave.app.App;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
@@ -49,6 +50,7 @@ public class TlGroup extends Group {
     final ViewState view = new ViewState();
 
     private boolean dirty = true;
+    private final Set<Segment> selectedSegments = new HashSet<>();
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 1200f;
@@ -71,6 +73,16 @@ public class TlGroup extends Group {
 
     private void addDefaultListeners() {
         addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button == Input.Buttons.LEFT) {
+                    Gdx.app.log("TlGroup", "regular touchDown x=" + x + " y=" + y);
+                    clearSelection();
+                    playhead.seek(Math.max(xToAbsoluteTime(x), 0));
+                    return true;
+                }
+                return false;
+            }
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
                 final Input ip = Gdx.input;
@@ -121,11 +133,24 @@ public class TlGroup extends Group {
             }
         });
 
-        addListener(new ClickListener() {
+        addCaptureListener(new InputListener() {
             @Override
-            public void clicked(InputEvent event, float x, float y) {
-                final long t = xToAbsoluteTime(x);
-                playhead.seek(Math.max(t, 0));
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button != Input.Buttons.LEFT) return false;
+                int trackIndex = yToTrackIndex(y);
+                if (trackIndex >= 0 && trackIndex < timeline.getTracks().size()) {
+                    long time = xToAbsoluteTime(x);
+                    var entry = timeline.getTrack(trackIndex).getEntry(time);
+                    if (entry != null) {
+                        boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+                        Gdx.app.log("TlGroup", "capture select segment " + entry.getValue() + " track=" + trackIndex);
+                        selectSegment(entry.getValue(), ctrl);
+                        return false;
+                    }
+                }
+                clearSelection();
+                playhead.seek(Math.max(xToAbsoluteTime(x), 0));
+                return false;
             }
         });
 
@@ -264,6 +289,30 @@ public class TlGroup extends Group {
 
     long xToAbsoluteTime(float x) {
         return view.xToTime(x, getWidth());
+    }
+
+    void selectSegment(Segment segment, boolean addToSelection) {
+        if (!addToSelection) {
+            clearSelection();
+        }
+        if (selectedSegments.contains(segment)) {
+            selectedSegments.remove(segment);
+            segment.setSelected(false);
+        } else {
+            selectedSegments.add(segment);
+            segment.setSelected(true);
+        }
+    }
+
+    public Set<Segment> getSelectedSegments() {
+        return selectedSegments;
+    }
+
+    void clearSelection() {
+        for (Segment seg : selectedSegments) {
+            seg.setSelected(false);
+        }
+        selectedSegments.clear();
     }
 
     @Subscribe
