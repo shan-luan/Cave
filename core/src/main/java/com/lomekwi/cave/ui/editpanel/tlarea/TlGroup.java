@@ -236,8 +236,7 @@ public class TlGroup extends Group {
                     SegActor actor = entry.getValue().getActor();
                     var r = actor.getSegment().getRange();
                     switch (actor.getDragSide()) {
-                        case FRONT:
-                        case BEHIND:
+                        case FRONT,BEHIND:
                             actor.setPosition(
                                 absoluteTimeToX(r.lowerEndpoint()),
                                 getHeight() + view.trackYShift - (i + 1) * view.trackHeight
@@ -344,7 +343,7 @@ public class TlGroup extends Group {
     }
 
     private int yToTrackIndex(float y) {
-        final float top = getHeight() - view.trackYShift;
+        final float top = getHeight() + view.trackYShift;
         final float distance = top - y;
         return (int) Math.floor(distance / view.trackHeight);
     }
@@ -434,10 +433,10 @@ public class TlGroup extends Group {
 
                     float oldx = actor.getX();
 
-                    float deltaX = diffToActorX - firstX,
-                        deltaY = diffToActorY - firstY,
-                        targetX = Math.max(oldx + deltaX, 0f),
-                        targetY = Math.min(actor.getY() + deltaY, getHeight() - view.trackYShift - view.trackHeight);
+                    float deltaX = diffToActorX - firstX;
+                    float deltaY = diffToActorY - firstY;
+                    float targetX = Math.max(oldx + deltaX, 0f);
+                    float targetY = actor.getY() + deltaY;
 
                     long target = xToAbsoluteTime(targetX);
                     long duration = r.upperEndpoint() - r.lowerEndpoint();
