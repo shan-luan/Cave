@@ -89,11 +89,11 @@ public abstract class SegActor extends Actor {
             ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(),bounds , scissors);
         if (ScissorStack.pushScissors(scissors)) {
             drawContent(batch,parentAlpha);
+            drawBorder();
             drawSelectionOverlay();
             batch.flush();
             ScissorStack.popScissors();
         }
-        drawBorder();
     }
     protected void drawContent(Batch batch, float parentAlpha){
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
