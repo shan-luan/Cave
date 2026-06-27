@@ -254,6 +254,9 @@ public class TlGroup extends Group {
                                 absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
                                 view.trackHeight
                             );
+                            Stage stage = getStage();
+                            Vector2 local = stageToLocalCoordinates(stage.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+                            dragHandler.segDrag(actor, local.x - actor.getX(), local.y - actor.getY());
                             break;
                         case NONE:
                             actor.setPosition(
