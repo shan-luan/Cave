@@ -17,6 +17,7 @@ public class EditPanelFrame extends VisTable {
     private EditPanelFrame() {
         ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
+        mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
         previewAndTimelineSplitPane = new VisSplitPane(null, null, true);
         mainSplitPane = new VisSplitPane(mediaPoolAndFileTreeSplitPane, previewAndTimelineSplitPane, false);
         mainSplitPane.setSplitAmount(0.18f);
