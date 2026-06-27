@@ -41,6 +41,8 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
+import org.jspecify.annotations.NonNull;
+
 public class TlGroup extends Group {
 
     private final TimelineRenderer renderer = new TimelineRenderer();
@@ -339,17 +341,13 @@ public class TlGroup extends Group {
             SegmentGroup group = segment.getGroup();
             if (group != null) {
                 for (Segment s : group.getSegments()) {
-                    if (s != segment && !selectedSegments.contains(s)) {
+                    if (s != segment) {
                         selectedSegments.add(s);
                         s.setSelected(true);
                     }
                 }
             }
         }
-    }
-
-    public Set<Segment> getSelectedSegments() {
-        return selectedSegments;
     }
 
     void clearSelection() {
@@ -405,9 +403,7 @@ public class TlGroup extends Group {
                 public void undo() {
                     for (var e : dissolvedMembers.entrySet()) {
                         SegmentGroup g = e.getKey();
-                        if (!segmentGroups.contains(g)) {
-                            segmentGroups.add(g);
-                        }
+                        segmentGroups.add(g);
                         for (Segment s : e.getValue()) {
                             g.add(s);
                         }
@@ -463,9 +459,7 @@ public class TlGroup extends Group {
 
                 @Override
                 public void redo() {
-                    if (!segmentGroups.contains(group)) {
-                        segmentGroups.add(group);
-                    }
+                    segmentGroups.add(group);
                     for (Segment seg : segs) {
                         group.add(seg);
                     }
@@ -543,6 +537,12 @@ class SegDragHandler {
         private Track dragOldTrack;
         private boolean dragActive;
 
+        // Group drag state
+        private List<Segment> groupMembers;
+        private long[] groupOrigStarts;
+        private long[] groupOrigDurations;
+        private Track[] groupOrigTracks;
+
         void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
             if (!dragActive) {
                 var seg = actor.getSegment();
@@ -551,6 +551,7 @@ class SegDragHandler {
                 dragOldDuration = r.upperEndpoint() - dragOldStart;
                 dragOldTrack = seg.getTrack();
                 dragActive = true;
+                initGroupDrag(seg);
             }
 
             Track t = actor.getSegment().getTrack();
@@ -563,6 +564,11 @@ class SegDragHandler {
                     float target = actor.getX() + diffToActorX;
                     if (target >= upper) return;
                     target = Math.max(target, absoluteTimeToX(0));
+
+                    if (groupMembers != null) {
+                        handleGroupFrontResize(actor, xToAbsoluteTime(target));
+                        break;
+                    }
 
                     Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
 
@@ -581,6 +587,12 @@ class SegDragHandler {
                     if (diffToActorX < 1f) return;
                     float newWidth = diffToActorX;
                     float upper = actor.getX() + newWidth;
+
+                    if (groupMembers != null) {
+                        handleGroupBehindResize(actor, xToAbsoluteTime(upper));
+                        break;
+                    }
+
                     Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
 
                     if (!t.isFree(e, nr)) {
@@ -609,9 +621,15 @@ class SegDragHandler {
 
                     long duration = r.upperEndpoint() - r.lowerEndpoint();
                     long target = xToAbsoluteTime(targetX);
-                    var nr = Range.closedOpen(target, target + duration);
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
+
+                    if (groupMembers != null) {
+                        handleGroupMiddleDrag(actor, target, newTrack);
+                        break;
+                    }
+
+                    var nr = Range.closedOpen(target, target + duration);
                     boolean canMove = newTrack.isFree(e, nr);
 
                     if (!canMove) {
@@ -640,7 +658,7 @@ class SegDragHandler {
                         if (snappedTarget >= 0) {
                             target = snappedTarget;
                             targetX = absoluteTimeToX(target);
-                            nr = Range.closedOpen(target, target + duration);
+                            /*nr = Range.closedOpen(target, target + duration);*/
                             canMove = true;
                         }
                     }
@@ -657,33 +675,301 @@ class SegDragHandler {
             }
         }
 
+        private void initGroupDrag(Segment seg) {
+            SegmentGroup group = seg.getGroup();
+            if (group == null) return;
+
+            List<Segment> others = new ArrayList<>();
+            for (Segment s : group.getSegments()) {
+                if (s != seg) others.add(s);
+            }
+            if (others.isEmpty()) return;
+
+            groupMembers = new ArrayList<>();
+            groupMembers.add(seg);
+            groupMembers.addAll(others);
+
+            int n = groupMembers.size();
+            groupOrigStarts = new long[n];
+            groupOrigDurations = new long[n];
+            groupOrigTracks = new Track[n];
+            for (int i = 0; i < n; i++) {
+                var sr = groupMembers.get(i).getRange();
+                groupOrigStarts[i] = sr.lowerEndpoint();
+                groupOrigDurations[i] = sr.upperEndpoint() - sr.lowerEndpoint();
+                groupOrigTracks[i] = groupMembers.get(i).getTrack();
+            }
+        }
+
+        private void handleGroupMiddleDrag(SegActor actor, long target, Track newTrack) {
+
+            long timeDelta = target - dragOldStart;
+            int trackDelta = newTrack.index - dragOldTrack.index;
+
+            int n = groupMembers.size();
+
+            // Save current state for revert
+            long[] prevStarts = new long[n];
+            long[] prevDurations = new long[n];
+            Track[] prevTracks = new Track[n];
+            long[] prevOrigins = new long[n];
+            for (int i = 0; i < n; i++) {
+                var r = groupMembers.get(i).getRange();
+                prevStarts[i] = r.lowerEndpoint();
+                prevDurations[i] = r.upperEndpoint() - r.lowerEndpoint();
+                prevTracks[i] = groupMembers.get(i).getTrack();
+                prevOrigins[i] = groupMembers.get(i).getOrigin();
+            }
+
+            // Temporarily remove all group members from timeline
+            for (int i = 0; i < n; i++) {
+                timeline.remove(prevTracks[i], Range.closedOpen(prevStarts[i], prevStarts[i] + prevDurations[i]));
+            }
+
+            // Pre-check all target positions
+            boolean allValid = true;
+            long[] newStarts = new long[n];
+            Track[] newTracks = new Track[n];
+
+            for (int i = 0; i < n && allValid; i++) {
+                long msTarget = groupOrigStarts[i] + timeDelta;
+                int targetTrackIdx = groupOrigTracks[i].index + trackDelta;
+                if (targetTrackIdx < 0) {
+                    allValid = false;
+                    break;
+                }
+                newStarts[i] = msTarget;
+                newTracks[i] = timeline.getTrack(targetTrackIdx);
+                var msRange = Range.closedOpen(msTarget, msTarget + groupOrigDurations[i]);
+                if (!newTracks[i].isFree(msRange)) {
+                    allValid = false;
+                }
+            }
+
+            if (!allValid) {
+                for (int i = 0; i < n; i++) {
+                    timeline.add(prevTracks[i], groupMembers.get(i), prevStarts[i], prevDurations[i]);
+                    groupMembers.get(i).setOrigin(prevOrigins[i]);
+                }
+                actor.setDragInvalid(true);
+                return;
+            }
+
+            // All valid - add all at new positions
+            for (int i = 0; i < n; i++) {
+                Segment ms = groupMembers.get(i);
+                timeline.add(newTracks[i], ms, newStarts[i], groupOrigDurations[i]);
+                ms.offsetOrigin(newStarts[i] - prevStarts[i]);
+
+                SegActor msActor = ms.getActor();
+                msActor.setPosition(
+                    absoluteTimeToX(newStarts[i]),
+                    getHeight() + view.trackYShift - (newTracks[i].index + 1) * view.trackHeight
+                );
+                msActor.setSize(
+                    absoluteTimeToX(newStarts[i] + groupOrigDurations[i]) - absoluteTimeToX(newStarts[i]),
+                    view.trackHeight
+                );
+            }
+
+            actor.setDragInvalid(false);
+        }
+
+        private void handleGroupFrontResize(SegActor actor, long newStart) {
+            long timeDelta = newStart - dragOldStart;
+            int n = groupMembers.size();
+
+            long[] prevStarts = new long[n];
+            long[] prevDurations = new long[n];
+            Track[] prevTracks = new Track[n];
+            long[] prevOrigins = new long[n];
+            for (int i = 0; i < n; i++) {
+                var r = groupMembers.get(i).getRange();
+                prevStarts[i] = r.lowerEndpoint();
+                prevDurations[i] = r.upperEndpoint() - r.lowerEndpoint();
+                prevTracks[i] = groupMembers.get(i).getTrack();
+                prevOrigins[i] = groupMembers.get(i).getOrigin();
+            }
+
+            for (int i = 0; i < n; i++) {
+                timeline.remove(prevTracks[i], Range.closedOpen(prevStarts[i], prevStarts[i] + prevDurations[i]));
+            }
+
+            boolean allValid = true;
+            long[] newStarts = new long[n];
+            for (int i = 0; i < n && allValid; i++) {
+                long msNewStart = groupOrigStarts[i] + timeDelta;
+                long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
+                if (msNewStart >= msOldEnd || msNewStart < 0) {
+                    allValid = false;
+                    break;
+                }
+                newStarts[i] = msNewStart;
+                var msRange = Range.closedOpen(msNewStart, msOldEnd);
+                if (!groupOrigTracks[i].isFree(msRange)) {
+                    allValid = false;
+                }
+            }
+
+            if (!allValid) {
+                for (int i = 0; i < n; i++) {
+                    timeline.add(prevTracks[i], groupMembers.get(i), prevStarts[i], prevDurations[i]);
+                    groupMembers.get(i).setOrigin(prevOrigins[i]);
+                }
+                actor.setDragInvalid(true);
+                return;
+            }
+
+            for (int i = 0; i < n; i++) {
+                Segment ms = groupMembers.get(i);
+                long msNewStart = newStarts[i];
+                long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
+                timeline.add(groupOrigTracks[i], ms, msNewStart, msOldEnd - msNewStart);
+
+                SegActor msActor = ms.getActor();
+                msActor.setX(absoluteTimeToX(msNewStart));
+                msActor.setWidth(absoluteTimeToX(msOldEnd) - absoluteTimeToX(msNewStart));
+            }
+
+            actor.setDragInvalid(false);
+        }
+
+        private void handleGroupBehindResize(SegActor actor, long newEnd) {
+            long oldEnd = dragOldStart + dragOldDuration;
+            long timeDelta = newEnd - oldEnd;
+            int n = groupMembers.size();
+
+            long[] prevStarts = new long[n];
+            long[] prevDurations = new long[n];
+            Track[] prevTracks = new Track[n];
+            long[] prevOrigins = new long[n];
+            for (int i = 0; i < n; i++) {
+                var r = groupMembers.get(i).getRange();
+                prevStarts[i] = r.lowerEndpoint();
+                prevDurations[i] = r.upperEndpoint() - r.lowerEndpoint();
+                prevTracks[i] = groupMembers.get(i).getTrack();
+                prevOrigins[i] = groupMembers.get(i).getOrigin();
+            }
+
+            for (int i = 0; i < n; i++) {
+                timeline.remove(prevTracks[i], Range.closedOpen(prevStarts[i], prevStarts[i] + prevDurations[i]));
+            }
+
+            boolean allValid = true;
+            long[] newDurations = new long[n];
+            for (int i = 0; i < n && allValid; i++) {
+                long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
+                long msNewEnd = msOldEnd + timeDelta;
+                if (msNewEnd <= groupOrigStarts[i]) {
+                    allValid = false;
+                    break;
+                }
+                newDurations[i] = msNewEnd - groupOrigStarts[i];
+                var msRange = Range.closedOpen(groupOrigStarts[i], msNewEnd);
+                if (!groupOrigTracks[i].isFree(msRange)) {
+                    allValid = false;
+                }
+            }
+
+            if (!allValid) {
+                for (int i = 0; i < n; i++) {
+                    timeline.add(prevTracks[i], groupMembers.get(i), prevStarts[i], prevDurations[i]);
+                    groupMembers.get(i).setOrigin(prevOrigins[i]);
+                }
+                actor.setDragInvalid(true);
+                return;
+            }
+
+            for (int i = 0; i < n; i++) {
+                Segment ms = groupMembers.get(i);
+                timeline.add(groupOrigTracks[i], ms, groupOrigStarts[i], newDurations[i]);
+
+                SegActor msActor = ms.getActor();
+                msActor.setWidth(
+                    absoluteTimeToX(groupOrigStarts[i] + newDurations[i]) - absoluteTimeToX(groupOrigStarts[i]));
+            }
+
+            actor.setDragInvalid(false);
+        }
+
         void segDragEnd(SegActor actor) {
             dirty = true;
             firstX = Float.NaN;
 
             if (dragActive) {
                 var seg = actor.getSegment();
-                var r = seg.getRange();
-                long newStart = r.lowerEndpoint();
-                long newDuration = r.upperEndpoint() - newStart;
-                Track newTrack = seg.getTrack();
 
-                if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
-                    if (actor.getDragSide() == DragSide.MIDDLE) {
-                        project.undoManager.push(new UndoManager.MoveSegCommand(
-                            dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
-                    } else {
-                        project.undoManager.push(new UndoManager.ResizeSegCommand(
-                            newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                if (groupMembers != null) {
+                    var cmds = getUndoableCommands(actor);
+                    if (!cmds.isEmpty()) {
+                        project.undoManager.push(
+                            new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+                    }
+                } else {
+                    var r = seg.getRange();
+                    long newStart = r.lowerEndpoint();
+                    long newDuration = r.upperEndpoint() - newStart;
+                    Track newTrack = seg.getTrack();
+
+                    if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
+                        if (actor.getDragSide() == DragSide.MIDDLE) {
+                            project.undoManager.push(new UndoManager.MoveSegCommand(
+                                dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                        } else {
+                            project.undoManager.push(new UndoManager.ResizeSegCommand(
+                                newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                        }
                     }
                 }
 
                 dragActive = false;
             }
             actor.setDragInvalid(false);
+
+            groupMembers = null;
+            groupOrigStarts = null;
+            groupOrigDurations = null;
+            groupOrigTracks = null;
         }
 
-        void removeSeg(SegActor segActor) {
+    private @NonNull ArrayList<UndoManager.UndoableCommand> getUndoableCommands(SegActor actor) {
+        int n = groupMembers.size();
+        var cmds = new ArrayList<UndoManager.UndoableCommand>();
+        if (actor.getDragSide() == DragSide.MIDDLE) {
+            for (int i = 0; i < n; i++) {
+                Segment ms = groupMembers.get(i);
+                var msr = ms.getRange();
+                long newStart = msr.lowerEndpoint();
+                long newDuration = msr.upperEndpoint() - newStart;
+                Track newTrack = ms.getTrack();
+
+                if (groupOrigStarts[i] != newStart
+                    || groupOrigDurations[i] != newDuration
+                    || groupOrigTracks[i] != newTrack) {
+                    cmds.add(new UndoManager.MoveSegCommand(
+                        groupOrigTracks[i], newTrack, ms,
+                        groupOrigStarts[i], groupOrigDurations[i], newStart, newDuration));
+                }
+            }
+        } else {
+            for (int i = 0; i < n; i++) {
+                Segment ms = groupMembers.get(i);
+                var msr = ms.getRange();
+                long newStart = msr.lowerEndpoint();
+                long newDuration = msr.upperEndpoint() - newStart;
+
+                if (groupOrigStarts[i] != newStart
+                    || groupOrigDurations[i] != newDuration) {
+                    cmds.add(new UndoManager.ResizeSegCommand(
+                        groupOrigTracks[i], ms,
+                        groupOrigStarts[i], groupOrigDurations[i], newStart, newDuration));
+                }
+            }
+        }
+        return cmds;
+    }
+
+    void removeSeg(SegActor segActor) {
             removeActor(segActor);
             Segment s = segActor.getSegment();
             removeFromGroup(s);
