@@ -3,9 +3,12 @@ package com.lomekwi.cave.ui.editpanel.tlarea;
 import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.Units.niceScale;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.kotcrab.vis.ui.VisUI;
 import com.lomekwi.cave.app.App;
@@ -20,6 +23,21 @@ public class TlRuler extends Widget {
     public TlRuler(TlGroup tlGroup) {
         super();
         this.tlGroup = tlGroup;
+        addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button == Input.Buttons.LEFT) {
+                    tlGroup.clearSelection();
+                    tlGroup.seekPlayheadAtX(x);
+                    return true;
+                }
+                return false;
+            }
+            @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                tlGroup.seekPlayheadAtX(x);
+            }
+        });
     }
 
     @Override

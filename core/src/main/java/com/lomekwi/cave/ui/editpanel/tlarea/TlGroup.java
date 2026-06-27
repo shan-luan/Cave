@@ -84,6 +84,10 @@ public class TlGroup extends Group {
                 return false;
             }
             @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                playhead.seek(Math.max(xToAbsoluteTime(x), 0));
+            }
+            @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
                 final Input ip = Gdx.input;
 
@@ -295,6 +299,10 @@ public class TlGroup extends Group {
 
     long xToAbsoluteTime(float x) {
         return view.xToTime(x, getWidth());
+    }
+
+    void seekPlayheadAtX(float x) {
+        playhead.seek(Math.max(xToAbsoluteTime(x), 0));
     }
 
     void selectSegment(Segment segment, boolean addToSelection) {
