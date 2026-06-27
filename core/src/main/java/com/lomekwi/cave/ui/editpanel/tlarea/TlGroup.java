@@ -155,18 +155,6 @@ public class TlGroup extends Group {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button != Input.Buttons.LEFT) return false;
-                int trackIndex = yToTrackIndex(y);
-                if (trackIndex >= 0 && trackIndex < timeline.getTracks().size()) {
-                    long time = xToAbsoluteTime(x);
-                    var entry = timeline.getTrack(trackIndex).getEntry(time);
-                    if (entry != null) {
-                        boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
-                        Gdx.app.log("TlGroup", "capture select segment " + entry.getValue() + " track=" + trackIndex);
-                        selectSegment(entry.getValue(), ctrl);
-                        return false;
-                    }
-                }
-                clearSelection();
                 playhead.seek(Math.max(xToAbsoluteTime(x), 0));
                 return false;
             }
@@ -338,15 +326,6 @@ public class TlGroup extends Group {
         } else {
             selectedSegments.add(segment);
             segment.setSelected(true);
-            SegmentGroup group = segment.getGroup();
-            if (group != null) {
-                for (Segment s : group.getSegments()) {
-                    if (s != segment) {
-                        selectedSegments.add(s);
-                        s.setSelected(true);
-                    }
-                }
-            }
         }
     }
 
@@ -1042,7 +1021,8 @@ class SegDragHandler {
                 long time = xToAbsoluteTime(local.x);
                 var entry = timeline.getTrack(trackIndex).getEntry(time);
                 if (entry != null) {
-                    selectSegment(entry.getValue(), true);
+                    boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+                    selectSegment(entry.getValue(), ctrl);
                     return;
                 }
             }

@@ -94,6 +94,7 @@ public abstract class SegActor extends Actor {
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
                 ((TlGroup) getParent()).segDrag(SegActor.this,x,y);
+                ((TlGroup) getParent()).seekPlayheadAtX(getX() + x);
             }
             @Override
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
