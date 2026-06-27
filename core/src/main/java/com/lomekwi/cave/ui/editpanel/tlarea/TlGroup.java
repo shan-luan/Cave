@@ -247,6 +247,10 @@ public class TlGroup extends Group {
                             actor.setHeight(view.trackHeight);
                             break;
                         case MIDDLE:
+                            actor.setPosition(
+                                absoluteTimeToX(r.lowerEndpoint()),
+                                getHeight() + view.trackYShift - (i + 1) * view.trackHeight
+                            );
                             actor.setSize(
                                 absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
                                 view.trackHeight
@@ -440,11 +444,11 @@ public class TlGroup extends Group {
                     var nr = Range.closedOpen(target, target + duration);
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
-                    actor.setPosition(targetX, targetY);
                     if (newTrack.isFree(e, nr)) {
                         timeline.move(t, newTrack, e, target, duration);
                         long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
                         e.getValue().offsetOrigin(deltaTime);
+                        actor.setPosition(targetX, targetY);
                     }
                 }
             }
