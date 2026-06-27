@@ -22,11 +22,13 @@ public abstract class SegActor extends Actor {
     protected static final Color darkBlue = new Color(0x1ba1e2ff);
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
+    private boolean dragInvalid;
     private final Rectangle scissors = new Rectangle();
     private final Rectangle bounds = new Rectangle();
     private boolean hovered;
     private static final Color hoverColor = new Color(1, 1, 1, 0.25f);
     private static final Color selectedColor = new Color(0, 1, 0.3f, 0.4f);
+    private static final Color dragInvalidColor = new Color(1, 0, 0, 0.4f);
     public SegActor(Segment segment) {
         this.segment = segment;
         addListener(getMenu().getDefaultInputListener());
@@ -108,6 +110,13 @@ public abstract class SegActor extends Actor {
         if (hovered) {
             App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), hoverColor);
         }
+        if (dragInvalid) {
+            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), dragInvalidColor);
+        }
+    }
+
+    public void setDragInvalid(boolean invalid) {
+        this.dragInvalid = invalid;
     }
 
     public Segment getSegment() {

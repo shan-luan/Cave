@@ -377,7 +377,7 @@ public class TlGroup extends Group {
     // 内部类：片段拖拽处理器
     // -------------------------------------------------------------------------
 
-    class SegDragHandler {
+class SegDragHandler {
         float firstX = Float.NaN, firstY = Float.NaN;
         private long dragOldStart;
         private long dragOldDuration;
@@ -439,26 +439,28 @@ public class TlGroup extends Group {
                     if (Float.isNaN(firstX)) {
                         firstX = diffToActorX;
                         firstY = diffToActorY;
+                        actor.setDragInvalid(false);
                         return;
                     }
 
-                    float oldx = actor.getX();
-
                     float deltaX = diffToActorX - firstX;
                     float deltaY = diffToActorY - firstY;
-                    float targetX = Math.max(oldx + deltaX, 0f);
+                    float targetX = Math.max(actor.getX() + deltaX, 0f);
                     float targetY = actor.getY() + deltaY;
 
-                    long target = xToAbsoluteTime(targetX);
                     long duration = r.upperEndpoint() - r.lowerEndpoint();
+                    long target = xToAbsoluteTime(targetX);
                     var nr = Range.closedOpen(target, target + duration);
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
-                    if (newTrack.isFree(e, nr)) {
+                    boolean canMove = newTrack.isFree(e, nr);
+                    actor.setDragInvalid(!canMove);
+                    actor.setPosition(targetX, targetY);
+
+                    if (canMove) {
+                        long segmentStart = r.lowerEndpoint();
                         timeline.move(t, newTrack, e, target, duration);
-                        long deltaTime = xToAbsoluteTime(targetX) - xToAbsoluteTime(oldx);
-                        e.getValue().offsetOrigin(deltaTime);
-                        actor.setPosition(targetX, targetY);
+                        e.getValue().offsetOrigin(target - segmentStart);
                     }
                 }
             }
@@ -487,6 +489,7 @@ public class TlGroup extends Group {
 
                 dragActive = false;
             }
+            actor.setDragInvalid(false);
         }
 
         void removeSeg(SegActor segActor) {
