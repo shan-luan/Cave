@@ -26,11 +26,18 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     private transient Range<Long> range;
     private transient AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     private transient boolean selected;
+    private transient SegmentGroup group;
     public boolean isSelected() {
         return selected;
     }
     public void setSelected(boolean selected) {
         this.selected = selected;
+    }
+    public SegmentGroup getGroup() {
+        return group;
+    }
+    public void setGroup(SegmentGroup group) {
+        this.group = group;
     }
     /**
      * 源的0秒在时间轴中的位置

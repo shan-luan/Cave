@@ -17,6 +17,7 @@ import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
@@ -30,8 +31,10 @@ import com.lomekwi.cave.app.App;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -51,6 +54,7 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
     private final Set<Segment> selectedSegments = new HashSet<>();
+    private final Set<SegmentGroup> segmentGroups = new HashSet<>();
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 1200f;
@@ -127,6 +131,14 @@ public class TlGroup extends Group {
                     project.undoManager.redo();
                     dirty = true;
                 }
+                if (App.shortcutManager.isActive(Actions.SELECT_ADD)) {
+                    dragHandler.selectAtCursor();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(Actions.GROUP)) {
+                    groupSelectedSegments();
+                    return true;
+                }
                 return true;
             }
 
@@ -177,6 +189,7 @@ public class TlGroup extends Group {
                     int baseTrack = yToTrackIndex(y);
                     int trackOffset = 0;
                     var cmds = new ArrayList<UndoManager.UndoableCommand>();
+                    List<Segment> added = new ArrayList<>();
                     for (Segment seg : segments) {
                         seg.setOrigin(startTime);
                         long duration = seg.getDuration();
@@ -189,9 +202,17 @@ public class TlGroup extends Group {
                         timeline.add(timeline.getTrack(targetTrack), seg, startTime, duration);
                         cmds.add(new UndoManager.AddSegCommand(timeline.getTrack(targetTrack), seg, startTime, duration));
                         trackOffset = targetTrack - baseTrack + 1;
+                        added.add(seg);
                     }
                     if (!cmds.isEmpty()) {
                         project.undoManager.push(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+                    }
+                    if (added.size() >= 2) {
+                        SegmentGroup group = new SegmentGroup();
+                        for (Segment seg : added) {
+                            group.add(seg);
+                        }
+                        segmentGroups.add(group);
                     }
                     dirty = true;
                 } catch (IOException e) {
@@ -315,6 +336,15 @@ public class TlGroup extends Group {
         } else {
             selectedSegments.add(segment);
             segment.setSelected(true);
+            SegmentGroup group = segment.getGroup();
+            if (group != null) {
+                for (Segment s : group.getSegments()) {
+                    if (s != segment && !selectedSegments.contains(s)) {
+                        selectedSegments.add(s);
+                        s.setSelected(true);
+                    }
+                }
+            }
         }
     }
 
@@ -327,6 +357,135 @@ public class TlGroup extends Group {
             seg.setSelected(false);
         }
         selectedSegments.clear();
+    }
+
+    private void groupSelectedSegments() {
+        if (selectedSegments.size() < 2) return;
+
+        boolean anyInGroup = false;
+        for (Segment seg : selectedSegments) {
+            if (seg.getGroup() != null) {
+                anyInGroup = true;
+                break;
+            }
+        }
+
+        if (anyInGroup) {
+            Map<Segment, SegmentGroup> savedState = new HashMap<>();
+            Set<SegmentGroup> affectedGroups = new HashSet<>();
+            for (Segment seg : selectedSegments) {
+                SegmentGroup g = seg.getGroup();
+                if (g != null) {
+                    savedState.put(seg, g);
+                    affectedGroups.add(g);
+                }
+            }
+            Map<SegmentGroup, Set<Segment>> dissolvedMembers = new HashMap<>();
+            for (SegmentGroup g : affectedGroups) {
+                dissolvedMembers.put(g, new HashSet<>(g.getSegments()));
+            }
+
+            for (Segment seg : selectedSegments) {
+                SegmentGroup g = seg.getGroup();
+                if (g != null) {
+                    g.remove(seg);
+                }
+            }
+            for (SegmentGroup g : affectedGroups) {
+                if (g.size() < 2) {
+                    for (Segment s : new HashSet<>(g.getSegments())) {
+                        g.remove(s);
+                    }
+                    segmentGroups.remove(g);
+                }
+            }
+
+            project.undoManager.push(new UndoManager.UndoableCommand() {
+                @Override
+                public void undo() {
+                    for (var e : dissolvedMembers.entrySet()) {
+                        SegmentGroup g = e.getKey();
+                        if (!segmentGroups.contains(g)) {
+                            segmentGroups.add(g);
+                        }
+                        for (Segment s : e.getValue()) {
+                            g.add(s);
+                        }
+                    }
+                    for (var e : savedState.entrySet()) {
+                        Segment seg = e.getKey();
+                        SegmentGroup g = e.getValue();
+                        if (g != null && !g.getSegments().contains(seg)) {
+                            g.add(seg);
+                        }
+                    }
+                    dirty = true;
+                }
+
+                @Override
+                public void redo() {
+                    for (Segment seg : savedState.keySet()) {
+                        SegmentGroup g = seg.getGroup();
+                        if (g != null) {
+                            g.remove(seg);
+                        }
+                    }
+                    for (var e : dissolvedMembers.entrySet()) {
+                        SegmentGroup g = e.getKey();
+                        if (g.size() < 2) {
+                            for (Segment s : new HashSet<>(g.getSegments())) {
+                                g.remove(s);
+                            }
+                            segmentGroups.remove(g);
+                        }
+                    }
+                    dirty = true;
+                }
+            });
+        } else {
+            SegmentGroup group = new SegmentGroup();
+            List<Segment> segs = new ArrayList<>(selectedSegments);
+
+            for (Segment seg : segs) {
+                group.add(seg);
+            }
+            segmentGroups.add(group);
+
+            project.undoManager.push(new UndoManager.UndoableCommand() {
+                @Override
+                public void undo() {
+                    for (Segment seg : segs) {
+                        group.remove(seg);
+                    }
+                    segmentGroups.remove(group);
+                    dirty = true;
+                }
+
+                @Override
+                public void redo() {
+                    if (!segmentGroups.contains(group)) {
+                        segmentGroups.add(group);
+                    }
+                    for (Segment seg : segs) {
+                        group.add(seg);
+                    }
+                    dirty = true;
+                }
+            });
+        }
+    }
+
+    private void removeFromGroup(Segment segment) {
+        SegmentGroup g = segment.getGroup();
+        if (g != null) {
+            g.remove(segment);
+            if (g.size() < 2) {
+                for (Segment s : new HashSet<>(g.getSegments())) {
+                    g.remove(s);
+                }
+                segmentGroups.remove(g);
+            }
+        }
     }
 
     @Subscribe
@@ -454,6 +613,38 @@ class SegDragHandler {
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
                     boolean canMove = newTrack.isFree(e, nr);
+
+                    if (!canMove) {
+                        long snappedTarget = -1;
+                        long maxOccEnd = -1;
+                        long minOccStart = Long.MAX_VALUE;
+                        for (var occ : newTrack.getSubRangeMapAsEntrySet(Range.closedOpen(target, target + duration))) {
+                            if (occ.getValue() == e.getValue()) continue;
+                            maxOccEnd = Math.max(maxOccEnd, occ.getKey().upperEndpoint());
+                            minOccStart = Math.min(minOccStart, occ.getKey().lowerEndpoint());
+                        }
+
+                        long rightTarget = maxOccEnd >= 0 ? maxOccEnd : -1;
+                        long leftTarget = minOccStart < Long.MAX_VALUE && minOccStart >= duration
+                            ? minOccStart - duration : -1;
+
+                        if (rightTarget >= 0 && newTrack.isFree(e, Range.closedOpen(rightTarget, rightTarget + duration))) {
+                            snappedTarget = rightTarget;
+                        }
+                        if (leftTarget >= 0 && newTrack.isFree(e, Range.closedOpen(leftTarget, leftTarget + duration))) {
+                            if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
+                                snappedTarget = leftTarget;
+                            }
+                        }
+
+                        if (snappedTarget >= 0) {
+                            target = snappedTarget;
+                            targetX = absoluteTimeToX(target);
+                            nr = Range.closedOpen(target, target + duration);
+                            canMove = true;
+                        }
+                    }
+
                     actor.setDragInvalid(!canMove);
                     actor.setPosition(targetX, targetY);
 
@@ -495,6 +686,7 @@ class SegDragHandler {
         void removeSeg(SegActor segActor) {
             removeActor(segActor);
             Segment s = segActor.getSegment();
+            removeFromGroup(s);
             var r = s.getRange();
             long start = r.lowerEndpoint();
             long duration = r.upperEndpoint() - start;
@@ -544,12 +736,31 @@ class SegDragHandler {
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(xToAbsoluteTime(local.x));
             if (entry != null) {
-                var r = entry.getValue().getRange();
+                var seg = entry.getValue();
+                removeFromGroup(seg);
+                var r = seg.getRange();
                 long start = r.lowerEndpoint();
                 long duration = r.upperEndpoint() - start;
-                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, entry.getValue(), start, duration));
+                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration));
             }
             dirty = true;
+        }
+
+        private void selectAtCursor() {
+            Stage s = getStage();
+            if (s == null) return;
+            Vector2 local = stageToLocalCoordinates(
+                s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+            int trackIndex = yToTrackIndex(local.y);
+            if (trackIndex >= 0 && trackIndex < timeline.getTracks().size()) {
+                long time = xToAbsoluteTime(local.x);
+                var entry = timeline.getTrack(trackIndex).getEntry(time);
+                if (entry != null) {
+                    selectSegment(entry.getValue(), true);
+                    return;
+                }
+            }
+            clearSelection();
         }
     }
 
@@ -602,7 +813,9 @@ class SegDragHandler {
         DELETE("删除", X),
         UNDO("撤销", CONTROL_LEFT, Z),
         REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z),
-        PLAY_PAUSE("播放/暂停", SPACE);
+        PLAY_PAUSE("播放/暂停", SPACE),
+        GROUP("分组", F),
+        SELECT_ADD("附加选择", E);
 
         private final String displayName;
         private final int[] defaultKeys;

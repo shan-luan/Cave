@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 import com.badlogic.gdx.utils.Null;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.SegmentGroup;
 
 import com.lomekwi.cave.app.App;
 
@@ -44,6 +45,14 @@ public abstract class SegActor extends Actor {
                 }else {
                     setCursor(Cursor.SystemCursor.AllResize);
                 }
+                SegmentGroup group = segment.getGroup();
+                if (group != null) {
+                    for (Segment s : group.getSegments()) {
+                        if (s != segment) {
+                            s.getActor().setHovered(true);
+                        }
+                    }
+                }
                 return false;
             }
             @Override
@@ -51,6 +60,14 @@ public abstract class SegActor extends Actor {
                 hovered = false;
                 if(dragSide==DragSide.NONE) {
                     setCursor(Cursor.SystemCursor.Arrow);
+                }
+                SegmentGroup group = segment.getGroup();
+                if (group != null) {
+                    for (Segment s : group.getSegments()) {
+                        if (s != segment) {
+                            s.getActor().setHovered(false);
+                        }
+                    }
                 }
             }
 
@@ -117,6 +134,10 @@ public abstract class SegActor extends Actor {
 
     public void setDragInvalid(boolean invalid) {
         this.dragInvalid = invalid;
+    }
+
+    public void setHovered(boolean hovered) {
+        this.hovered = hovered;
     }
 
     public Segment getSegment() {
