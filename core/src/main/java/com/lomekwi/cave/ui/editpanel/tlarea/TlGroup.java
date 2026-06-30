@@ -18,6 +18,7 @@ import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
+import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
@@ -321,9 +322,11 @@ public class TlGroup extends Group {
         if (selectedSegments.contains(segment)) {
             selectedSegments.remove(segment);
             segment.setSelected(false);
+            project.projEventBus.post(new SegmentSelectedEvent(null, null, selectedSegments.size()));
         } else {
             selectedSegments.add(segment);
             segment.setSelected(true);
+            project.projEventBus.post(new SegmentSelectedEvent(segment, segment.getTrack(), selectedSegments.size()));
         }
     }
 
@@ -332,6 +335,7 @@ public class TlGroup extends Group {
             seg.setSelected(false);
         }
         selectedSegments.clear();
+        project.projEventBus.post(new SegmentSelectedEvent(null, null, 0));
     }
 
     private void groupSelectedSegments() {

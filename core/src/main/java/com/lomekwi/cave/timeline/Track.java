@@ -9,6 +9,7 @@ import com.lomekwi.cave.pipeline.GapFrame;
 import com.badlogic.gdx.Gdx;
 import com.lomekwi.cave.timeline.playback.PlayStateChangedEvent;
 import com.lomekwi.cave.timeline.playback.Playhead;
+import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
 
 import org.jspecify.annotations.NullMarked;
@@ -320,6 +321,10 @@ public class Track implements Serializable,Iterable<Segment> {
         }
         @Subscribe
         public void onPlayStateChanged(PlayStateChangedEvent event){
+            update();
+        }
+        @Subscribe
+        public void onRefreshRequested(RefreshRequestEvent event){
             update();
         }
         @Subscribe

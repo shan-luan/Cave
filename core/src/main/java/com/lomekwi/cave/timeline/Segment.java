@@ -21,6 +21,9 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     protected Source<?> source() {
         return source;
     }
+    public Source<?> getSource() {
+        return source;
+    }
     private transient Track track;
     private transient SegActor actor;
     private transient Range<Long> range;

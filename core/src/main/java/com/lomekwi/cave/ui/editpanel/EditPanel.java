@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class EditPanel {
+    final Project project;
     final PreviewArea previewArea;
     final VisTable tl;
     final Container<TlGroup> tlMain;
@@ -19,6 +20,7 @@ public class EditPanel {
 
     public EditPanel(Project project) {
         super();
+        this.project = project;
         previewArea = new PreviewArea(project);
         tlMain = new Container<>(new TlGroup(project)).fill().clip().minSize(0, 0);
         tl = new VisTable();

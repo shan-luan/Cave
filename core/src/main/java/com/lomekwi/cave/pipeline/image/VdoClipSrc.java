@@ -3,9 +3,12 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.VdoClipSrcActor;
 
 import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
@@ -78,8 +81,20 @@ public class VdoClipSrc extends Source<ImgFrame> {
         return vdoRes.getDuration();
     }
     @Override
+    public Class<? extends Frame> getFrameType() {
+        return ImgFrame.class;
+    }
+    @Override
+    public String getDisplayName() {
+        return "视频源";
+    }
+    @Override
     public void onDuplicate(Source<?> original) {
         VdoClipSrc src = (VdoClipSrc) original;
         this.vdoRes =src.vdoRes;
+    }
+    @Override
+    public Actor getDetailActor() {
+        return new VdoClipSrcActor(this);
     }
 }

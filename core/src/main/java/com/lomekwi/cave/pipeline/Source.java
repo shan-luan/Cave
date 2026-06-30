@@ -1,5 +1,6 @@
 package com.lomekwi.cave.pipeline;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.timeline.Track;
 
 import java.io.Serial;
@@ -53,6 +54,9 @@ public abstract class Source<T extends Frame> implements Serializable {
     public abstract long getLengthPerExportFrame();
     /** 媒体源的总时长（微秒） */
     public abstract long getDuration();
+    public abstract String getDisplayName();
+    public abstract Class<? extends Frame> getFrameType();
     public void onDuplicate(Source<?> original){
     }
+    public abstract Actor getDetailActor();
 }

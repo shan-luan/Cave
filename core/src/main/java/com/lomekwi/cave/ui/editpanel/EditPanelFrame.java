@@ -13,14 +13,14 @@ public class EditPanelFrame extends VisTable {
     private final VisSplitPane mediaPoolAndFileTreeSplitPane;
     private final VisSplitPane previewAndTimelineSplitPane;
     private final VisSplitPane previewAndDetailSplitPane;
-    private final VisTable detailPlaceholder;
+    private final SegDetailWindow detailPanel;
     private EditPanel editPanel;
     private EditPanelFrame() {
         ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
         mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
-        detailPlaceholder = new VisTable();
-        previewAndDetailSplitPane = new VisSplitPane(null, detailPlaceholder, false);
+        detailPanel = new SegDetailWindow();
+        previewAndDetailSplitPane = new VisSplitPane(null, detailPanel, false);
         previewAndDetailSplitPane.setSplitAmount(0.75f);
         previewAndTimelineSplitPane = new VisSplitPane(previewAndDetailSplitPane, null, true);
         previewAndTimelineSplitPane.setSplitAmount(0.615f);
@@ -40,12 +40,13 @@ public class EditPanelFrame extends VisTable {
             mediaPoolAndFileTreeSplitPane.setFirstWidget(new VisScrollPane(editPanel.res.fill()));
             previewAndDetailSplitPane.setFirstWidget(editPanel.previewArea);
             previewAndTimelineSplitPane.setSecondWidget(editPanel.tl);
+            editPanel.project.projEventBus.register(detailPanel);
         }
         return this;
     }
 
-    public VisTable getDetailPanel() {
-        return detailPlaceholder;
+    public SegDetailWindow getDetailPanel() {
+        return detailPanel;
     }
 
     @Override

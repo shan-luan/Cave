@@ -1,9 +1,12 @@
 package com.lomekwi.cave.pipeline.audio;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.app.AppAudioOut;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.AudClipSrcActor;
 
 import java.io.Serial;
 
@@ -51,8 +54,20 @@ public class AudClipSrc extends Source<AudFrame> {
         return audRes.getDuration();
     }
     @Override
+    public Class<? extends Frame> getFrameType() {
+        return AudFrame.class;
+    }
+    @Override
+    public String getDisplayName() {
+        return "音频源";
+    }
+    @Override
     public void onDuplicate(Source<?> original) {
         AudClipSrc src = (AudClipSrc) original;
         this.audRes = src.audRes;
+    }
+    @Override
+    public Actor getDetailActor() {
+        return new AudClipSrcActor(this);
     }
 }
