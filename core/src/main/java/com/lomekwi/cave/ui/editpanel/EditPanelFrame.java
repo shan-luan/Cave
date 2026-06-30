@@ -12,14 +12,19 @@ public class EditPanelFrame extends VisTable {
     private static EditPanelFrame INSTANCE;
     private final VisSplitPane mediaPoolAndFileTreeSplitPane;
     private final VisSplitPane previewAndTimelineSplitPane;
-    private final VisSplitPane mainSplitPane;
+    private final VisSplitPane previewAndDetailSplitPane;
+    private final VisTable detailPlaceholder;
     private EditPanel editPanel;
     private EditPanelFrame() {
         ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
         mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
-        previewAndTimelineSplitPane = new VisSplitPane(null, null, true);
-        mainSplitPane = new VisSplitPane(mediaPoolAndFileTreeSplitPane, previewAndTimelineSplitPane, false);
+        detailPlaceholder = new VisTable();
+        previewAndDetailSplitPane = new VisSplitPane(null, detailPlaceholder, false);
+        previewAndDetailSplitPane.setSplitAmount(0.75f);
+        previewAndTimelineSplitPane = new VisSplitPane(previewAndDetailSplitPane, null, true);
+        previewAndTimelineSplitPane.setSplitAmount(0.615f);
+        VisSplitPane mainSplitPane = new VisSplitPane(mediaPoolAndFileTreeSplitPane, previewAndTimelineSplitPane, false);
         mainSplitPane.setSplitAmount(0.18f);
         add(mainSplitPane).grow();
     }
@@ -33,11 +38,16 @@ public class EditPanelFrame extends VisTable {
         if (!editPanel.equals(this.editPanel)) {
             this.editPanel = editPanel;
             mediaPoolAndFileTreeSplitPane.setFirstWidget(new VisScrollPane(editPanel.res.fill()));
-            previewAndTimelineSplitPane.setFirstWidget(editPanel.previewArea);
+            previewAndDetailSplitPane.setFirstWidget(editPanel.previewArea);
             previewAndTimelineSplitPane.setSecondWidget(editPanel.tl);
         }
         return this;
     }
+
+    public VisTable getDetailPanel() {
+        return detailPlaceholder;
+    }
+
     @Override
     public float getMinHeight() {
         return 0;

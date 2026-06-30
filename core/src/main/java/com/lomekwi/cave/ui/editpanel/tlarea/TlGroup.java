@@ -56,7 +56,6 @@ public class TlGroup extends Group {
 
     private boolean dirty = true;
     private final Set<Segment> selectedSegments = new HashSet<>();
-    private final Set<SegmentGroup> segmentGroups = new HashSet<>();
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 1200f;
@@ -202,7 +201,6 @@ public class TlGroup extends Group {
                         for (Segment seg : added) {
                             group.add(seg);
                         }
-                        segmentGroups.add(group);
                     }
                     dirty = true;
                 } catch (IOException e) {
@@ -373,7 +371,6 @@ public class TlGroup extends Group {
                     for (Segment s : new HashSet<>(g.getSegments())) {
                         g.remove(s);
                     }
-                    segmentGroups.remove(g);
                 }
             }
 
@@ -382,7 +379,6 @@ public class TlGroup extends Group {
                 public void undo() {
                     for (var e : dissolvedMembers.entrySet()) {
                         SegmentGroup g = e.getKey();
-                        segmentGroups.add(g);
                         for (Segment s : e.getValue()) {
                             g.add(s);
                         }
@@ -411,7 +407,6 @@ public class TlGroup extends Group {
                             for (Segment s : new HashSet<>(g.getSegments())) {
                                 g.remove(s);
                             }
-                            segmentGroups.remove(g);
                         }
                     }
                     dirty = true;
@@ -424,7 +419,6 @@ public class TlGroup extends Group {
             for (Segment seg : segs) {
                 group.add(seg);
             }
-            segmentGroups.add(group);
 
             project.undoManager.push(new UndoManager.UndoableCommand() {
                 @Override
@@ -432,13 +426,11 @@ public class TlGroup extends Group {
                     for (Segment seg : segs) {
                         group.remove(seg);
                     }
-                    segmentGroups.remove(group);
                     dirty = true;
                 }
 
                 @Override
                 public void redo() {
-                    segmentGroups.add(group);
                     for (Segment seg : segs) {
                         group.add(seg);
                     }
@@ -456,7 +448,6 @@ public class TlGroup extends Group {
                 for (Segment s : new HashSet<>(g.getSegments())) {
                     g.remove(s);
                 }
-                segmentGroups.remove(g);
             }
         }
     }
