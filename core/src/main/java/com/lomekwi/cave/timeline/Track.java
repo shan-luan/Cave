@@ -232,7 +232,7 @@ public class Track implements Serializable,Iterable<Segment> {
     @NullUnmarked
     public class TrackWorker implements Runnable {
         private final GapFrame gapFrame = new GapFrame(Track.this);
-        private Phaser sinkPhaser;//FIXME:中途修改track index会导致卡死
+        private Phaser sinkPhaser;
         private Future<?> future;
         private volatile Thread workerThread;
         private volatile boolean updateNeeded;
