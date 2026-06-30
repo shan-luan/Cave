@@ -16,12 +16,12 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
-public class SegDetailWindow extends VisTable {
+public class SegDetailView extends VisTable {
     private final VisTable content;
     private final VisScrollPane scrollPane;
     private Segment currentSegment;
 
-    public SegDetailWindow() {
+    public SegDetailView() {
         content = new VisTable();
         scrollPane = new VisScrollPane(content);
         add(scrollPane).grow();

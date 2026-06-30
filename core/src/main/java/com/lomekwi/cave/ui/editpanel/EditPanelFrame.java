@@ -13,13 +13,13 @@ public class EditPanelFrame extends VisTable {
     private final VisSplitPane mediaPoolAndFileTreeSplitPane;
     private final VisSplitPane previewAndTimelineSplitPane;
     private final VisSplitPane previewAndDetailSplitPane;
-    private final SegDetailWindow detailPanel;
+    private final SegDetailView detailPanel;
     private EditPanel editPanel;
     private EditPanelFrame() {
         ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
         mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
-        detailPanel = new SegDetailWindow();
+        detailPanel = new SegDetailView();
         previewAndDetailSplitPane = new VisSplitPane(null, detailPanel, false);
         previewAndDetailSplitPane.setSplitAmount(0.75f);
         previewAndTimelineSplitPane = new VisSplitPane(previewAndDetailSplitPane, null, true);
@@ -45,7 +45,7 @@ public class EditPanelFrame extends VisTable {
         return this;
     }
 
-    public SegDetailWindow getDetailPanel() {
+    public SegDetailView getDetailPanel() {
         return detailPanel;
     }
 
