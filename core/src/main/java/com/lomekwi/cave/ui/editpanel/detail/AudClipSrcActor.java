@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.editpanel;
+package com.lomekwi.cave.ui.editpanel.detail;
 
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 

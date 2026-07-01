@@ -2,7 +2,7 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Filter;
-import com.lomekwi.cave.ui.editpanel.TransFilterActor;
+import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
 
 import java.io.Serial;
 

@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.editpanel;
+package com.lomekwi.cave.ui.editpanel.detail;
 
 import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.VisWindow;

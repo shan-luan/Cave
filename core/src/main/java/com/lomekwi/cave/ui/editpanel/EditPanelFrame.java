@@ -4,6 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.kotcrab.vis.ui.widget.VisSplitPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisScrollPane;
+import com.lomekwi.cave.ui.editpanel.detail.SegDetailView;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 
 import org.jspecify.annotations.NonNull;

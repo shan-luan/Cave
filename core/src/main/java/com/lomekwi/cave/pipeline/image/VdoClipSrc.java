@@ -8,7 +8,7 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.VdoClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.detail.VdoClipSrcActor;
 
 import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
