@@ -41,7 +41,7 @@ public class TransFilter extends Filter<Transformable> {
     }
 
     @Override
-    public Actor getDetailActor() {
+    protected Actor createDetailActor() {
         return new TransFilterActor(this);
     }
 }

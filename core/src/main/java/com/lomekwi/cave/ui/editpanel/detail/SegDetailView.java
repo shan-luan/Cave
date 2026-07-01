@@ -18,6 +18,7 @@ import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
 public class SegDetailView extends VisTable {
     private final VisTable content;
+    private Segment currentSeg;
 
     public SegDetailView() {
         content = new VisTable();
@@ -34,25 +35,34 @@ public class SegDetailView extends VisTable {
         } else if (count > 1) {
             showMulti(count);
         } else {
-            showInfo( e.getSegment());
+            showInfo(e.getSegment());
+        }
+    }
+
+    public void rebuildContent() {
+        if (currentSeg != null) {
+            showInfo(currentSeg);
         }
     }
 
     private void showEmpty() {
-        content.clearChildren();
+        currentSeg = null;
+        content.clear();
         content.setFillParent(true);
         content.add(new VisLabel(i18n("未选择片段"))).expand().center();
     }
 
     private void showMulti(int count) {
-        content.clearChildren();
+        currentSeg = null;
+        content.clear();
         content.setFillParent(true);
         content.add(new VisLabel(i18n("已选中") + count + i18n("个片段"))).expand().center();
     }
 
     private void showInfo(Segment seg) {
         if (seg == null) return;
-        content.clearChildren();
+        currentSeg = seg;
+        content.clear();
         content.setFillParent(false);
         content.top();
         Source<?> source = seg.getSource();
@@ -62,6 +72,7 @@ public class SegDetailView extends VisTable {
             if (actor != null) {
                 if (actor instanceof FilterActor fa) {
                     fa.setSource(source);
+                    fa.setRebuildCallback(this::rebuildContent);
                 }
                 content.add(actor).growX().pad(4).row();
             }
