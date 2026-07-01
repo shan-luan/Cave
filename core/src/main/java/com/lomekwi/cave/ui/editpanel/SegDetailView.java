@@ -18,12 +18,10 @@ import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
 public class SegDetailView extends VisTable {
     private final VisTable content;
-    private final VisScrollPane scrollPane;
-    private Segment currentSegment;
 
     public SegDetailView() {
         content = new VisTable();
-        scrollPane = new VisScrollPane(content);
+        VisScrollPane scrollPane = new VisScrollPane(content);
         add(scrollPane).grow();
         showEmpty();
     }
@@ -32,14 +30,11 @@ public class SegDetailView extends VisTable {
     public void onSegmentSelected(SegmentSelectedEvent e) {
         int count = e.getSelectedCount();
         if (count == 0) {
-            currentSegment = null;
             showEmpty();
         } else if (count > 1) {
-            currentSegment = null;
             showMulti(count);
         } else {
-            currentSegment = e.getSegment();
-            showInfo(currentSegment);
+            showInfo( e.getSegment());
         }
     }
 
