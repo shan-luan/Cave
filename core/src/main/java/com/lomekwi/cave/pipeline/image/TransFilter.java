@@ -2,15 +2,13 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
 
-import java.io.Serial;
-
-public class TransFilter implements Filter<Transformable> {
+public class TransFilter extends Filter<Transformable> {
     private float dx,dy,scaleX,scaleY,dRotation;
-    @Serial
-    private static final long serialVersionUID = 1L;
-    public TransFilter(float dx, float dy, float scaleX, float scaleY, float dRotation) {
+    public TransFilter(Source<?> source, float dx, float dy, float scaleX, float scaleY, float dRotation) {
+        super(source);
         this.dx = dx;
         this.dy = dy;
         this.scaleX = scaleX;

@@ -5,18 +5,18 @@ import com.lomekwi.cave.pipeline.image.TransFilter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 public class FilterRegistry {
     private static final List<Entry> entries = new ArrayList<>();
 
-    private record Entry(String displayName, Class<?> targetType, Supplier<Filter<?>> factory) {}
+    private record Entry(String displayName, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {}
 
     static {
-        register("变换滤镜", Transformable.class, () -> new TransFilter(0, 0, 1, 1, 0));
+        register("变换滤镜", Transformable.class, s -> new TransFilter(s, 0, 0, 1, 1, 0));
     }
 
-    public static void register(String displayName, Class<?> targetType, Supplier<Filter<?>> factory) {
+    public static void register(String displayName, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {
         entries.add(new Entry(displayName, targetType, factory));
     }
 
@@ -46,7 +46,7 @@ public class FilterRegistry {
         int count = 0;
         for (Entry e : entries) {
             if (e.targetType().isAssignableFrom(frameType)) {
-                if (count == index) return e.factory().get();
+                if (count == index) return e.factory().apply(source);
                 count++;
             }
         }

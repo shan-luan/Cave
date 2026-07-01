@@ -57,20 +57,14 @@ public class SegDetailView extends VisTable {
         content.top();
         Source<?> source = seg.getSource();
         content.add(source.getDetailActor()).growX().pad(4).row();
-        int i = 0;
         for (Filter<?> filter : source.getFilters()) {
             var actor = filter.getDetailActor();
             if (actor != null) {
                 if (actor instanceof FilterActor fa) {
-                    int idx = i;
-                    fa.setOnRemoveListener(() -> {
-                        source.getFilters().remove(idx);
-                        showInfo(seg);
-                    });
+                    fa.setSource(source);
                 }
                 content.add(actor).growX().pad(4).row();
             }
-            i++;
         }
         VisTextButton addBtn = new VisTextButton(i18n("+添加滤镜"));
         PopupMenu filterMenu = new PopupMenu();
@@ -80,7 +74,8 @@ public class SegDetailView extends VisTable {
             filterMenu.addItem(new MenuItem(FilterRegistry.getCompatibleDisplayName(source, fi), new ChangeListener() {
                 @Override
                 public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                    source.getFilters().add((Filter) FilterRegistry.createCompatible(source, idx));
+                    Filter<?> newFilter = FilterRegistry.createCompatible(source, idx);
+                    source.getFilters().add((Filter) newFilter);
                     showInfo(seg);
                 }
             }));
