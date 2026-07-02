@@ -1,6 +1,8 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
+import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
@@ -11,32 +13,55 @@ public class UndoManager {
     private static final int MAX_UNDO = 100;
     private final Deque<UndoableCommand> undoStack = new ArrayDeque<>();
     private final Deque<UndoableCommand> redoStack = new ArrayDeque<>();
+    private transient boolean hasDiscarded = false;
+    private transient Project project;
+
+    public UndoManager(Project project) {
+        this.project = project;
+    }
 
     public void execute(UndoableCommand command) {
+        boolean wasDirty = project.isDirty();
         command.redo();
         push(command);
+        if (wasDirty != project.isDirty()) {
+            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
+        }
     }
 
     public void push(UndoableCommand command) {
+        boolean wasDirty = project.isDirty();
         undoStack.push(command);
         redoStack.clear();
         if (undoStack.size() > MAX_UNDO) {
             undoStack.removeLast();
+            hasDiscarded = true;
+        }
+        if (wasDirty != project.isDirty()) {
+            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
         }
     }
 
     public void undo() {
         if (undoStack.isEmpty()) return;
+        boolean wasDirty = project.isDirty();
         var command = undoStack.pop();
         command.undo();
         redoStack.push(command);
+        if (wasDirty != project.isDirty()) {
+            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
+        }
     }
 
     public void redo() {
         if (redoStack.isEmpty()) return;
+        boolean wasDirty = project.isDirty();
         var command = redoStack.pop();
         command.redo();
         push(command);
+        if (wasDirty != project.isDirty()) {
+            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
+        }
     }
 
     public boolean canUndo() {
@@ -45,6 +70,10 @@ public class UndoManager {
 
     public boolean canRedo() {
         return !redoStack.isEmpty();
+    }
+
+    public boolean hasDiscarded() {
+        return hasDiscarded;
     }
 
     public void clear() {

@@ -35,7 +35,7 @@ public class Project implements Serializable, AutoCloseable {
     public final Multimap<File, Resource> resources = ArrayListMultimap.create();
     public final SegFactory segFactory = new SegFactory(this);
     public transient EventBus projEventBus;
-    public transient UndoManager undoManager = new UndoManager();
+    public transient UndoManager undoManager;
     public String name;
     public final UUID uuid = UUID.randomUUID();
 
@@ -45,7 +45,7 @@ public class Project implements Serializable, AutoCloseable {
         App.appEventBus.register(this);
         name = i18n("未命名");
         projEventBus = new EventBus(uuid.toString());
-        undoManager = new UndoManager();
+        undoManager = new UndoManager(this);
         projEventBus.register(new AudioFrameSink());
         projEventBus.register(this);
         timeline = new Timeline(this);
@@ -115,11 +115,15 @@ public class Project implements Serializable, AutoCloseable {
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(this);
         playhead = new Playhead(projEventBus);
-        undoManager = new UndoManager();
+        undoManager = new UndoManager(this);
         isActive = false;
     }
 
     public Path getSavePath() {
         return savePath;
+    }
+
+    public boolean isDirty() {
+        return undoManager.hasDiscarded() || undoManager.canUndo();
     }
 }
