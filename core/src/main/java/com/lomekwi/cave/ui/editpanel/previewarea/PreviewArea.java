@@ -239,6 +239,14 @@ public class PreviewArea extends Group {
         lastHeight = getHeight();
     }
 
+    public void resetView() {
+        userZoom = 1.0f;
+        xOffset = 0;
+        yOffset = 0;
+        recalcScale();
+        updateAllImages();
+    }
+
     public void dispose() {
         project.projEventBus.unregister(this);
     }

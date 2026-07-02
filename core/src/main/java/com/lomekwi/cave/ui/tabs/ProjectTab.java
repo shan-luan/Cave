@@ -23,6 +23,10 @@ public class ProjectTab extends Tab {
         return EditPanelFrame.getINSTANCE().with(editPanel);
     }
 
+    public EditPanel getEditPanel() {
+        return editPanel;
+    }
+
     public Project getProject() {
         return project;
     }

@@ -267,6 +267,15 @@ public class TopBar extends MenuBar {
             })))
         );
 
+        addMenu(new MenuX(i18n("视图"))
+            .withItem(new MenuItemP(i18n("复位"), new ChangeListenerX(() -> {
+                var editPanel = App.root.getFrontendEditPanel();
+                if (editPanel != null) {
+                    editPanel.getPreviewArea().resetView();
+                }
+            })))
+        );
+
         addMenu(new MenuX(i18n("帮助"))
             .withItem(new MenuItem(i18n("关于"), new ChangeListenerX(() -> {
                 VisDialog about = new VisDialog(i18n("关于"));

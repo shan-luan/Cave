@@ -30,6 +30,7 @@ import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.lomekwi.cave.Main;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.ui.editpanel.EditPanel;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
@@ -178,6 +179,14 @@ public class Root implements ApplicationListener {
     public Project getFrontendProject() {
         if (tabbedPane.getActiveTab() instanceof ProjectTab) {
             return ((ProjectTab) tabbedPane.getActiveTab()).getProject();
+        }else{
+            return null;
+        }
+    }
+
+    public EditPanel getFrontendEditPanel() {
+        if (tabbedPane.getActiveTab() instanceof ProjectTab) {
+            return ((ProjectTab) tabbedPane.getActiveTab()).getEditPanel();
         }else{
             return null;
         }

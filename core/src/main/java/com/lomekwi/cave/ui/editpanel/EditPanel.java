@@ -29,6 +29,10 @@ public class EditPanel {
         res = new Container<>(new MediaPool(project.resources, project.projEventBus));
     }
 
+    public PreviewArea getPreviewArea() {
+        return previewArea;
+    }
+
     public void dispose() {
         previewArea.dispose();
         tlMain.getActor().dispose();
