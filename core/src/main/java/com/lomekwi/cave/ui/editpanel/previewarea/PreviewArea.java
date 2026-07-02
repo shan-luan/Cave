@@ -15,6 +15,7 @@ import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -32,10 +33,19 @@ public class PreviewArea extends Group {
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
+    private float userZoom = 1.0f;
+    private float refViewportArea = -1f;
     private static final float MIN_SCALE = 0.07f;
     private static final float MAX_SCALE = 30.0f;
     private float lastWidth = 0;
     private float lastHeight = 0;
+
+    private void recalcScale() {
+        float vr = refViewportArea > 0
+            ? (float) Math.sqrt((double) getWidth() * getHeight() / refViewportArea)
+            : 1f;
+        scale = userZoom * vr;
+    }
 
     public PreviewArea(Project project) {
         this.project = project;
@@ -76,9 +86,9 @@ public class PreviewArea extends Group {
                 float zoomFactor = 1.1f;
                 float oldScale = scale;
 
-                scale *= (float) Math.pow(zoomFactor, -amountY);
-
-                scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+                userZoom *= (float) Math.pow(zoomFactor, -amountY);
+                userZoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, userZoom));
+                recalcScale();
 
                 xOffset = x - (x - xOffset) * (scale / oldScale);
                 yOffset = y - (y - yOffset) * (scale / oldScale);
@@ -172,24 +182,59 @@ public class PreviewArea extends Group {
         }
     }
 
+    private static final Color AXIS_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+    private static final int TICK_PIXEL_TARGET = 80;
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        App.root.getShapeDrawer().filledRectangle(getX(),getY(),getWidth(),getHeight(), Color.BLACK);
+        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.BLACK);
         super.draw(batch, parentAlpha);
+        drawAxes();
+    }
+
+    private void drawAxes() {
+        var drawer = App.root.getShapeDrawer();
+        float ox = getX() + xOffset;
+        float oy = getY() + yOffset;
+        float x0 = getX();
+        float x1 = getX() + getWidth();
+        float y0 = getY();
+        float y1 = getY() + getHeight();
+
+        drawer.line(x0, oy, x1, oy, AXIS_COLOR);
+        drawer.line(ox, y0, ox, y1, AXIS_COLOR);
+
+        float tickHalf = 4f;
+        float interval = Units.niceInterval(TICK_PIXEL_TARGET / scale);
+
+        float startV = (x0 - ox) / scale;
+        float endV = (x1 - ox) / scale;
+        double first = Math.ceil(startV / interval) * interval;
+        for (double v = first; v <= endV; v += interval) {
+            if (Math.abs(v) < interval * 0.01f) continue;
+            float sx = ox + (float) v * scale;
+            drawer.line(sx, oy - tickHalf, sx, oy + tickHalf, AXIS_COLOR);
+        }
+
+        startV = (y0 - oy) / scale;
+        endV = (y1 - oy) / scale;
+        first = Math.ceil(startV / interval) * interval;
+        for (double v = first; v <= endV; v += interval) {
+            if (Math.abs(v) < interval * 0.01f) continue;
+            float sy = oy + (float) v * scale;
+            drawer.line(ox - tickHalf, sy, ox + tickHalf, sy, AXIS_COLOR);
+        }
     }
 
     @Override
     public void sizeChanged() {
         if (lastWidth > 0 && lastHeight > 0) {
-            float widthDelta = getWidth() - lastWidth;
-            float heightDelta = getHeight() - lastHeight;
-
-            xOffset += widthDelta;
-            yOffset += heightDelta;
-
+            if (refViewportArea < 0) {
+                refViewportArea = lastWidth * lastHeight;
+            }
+            recalcScale();
             updateAllImages();
         }
-
         lastWidth = getWidth();
         lastHeight = getHeight();
     }

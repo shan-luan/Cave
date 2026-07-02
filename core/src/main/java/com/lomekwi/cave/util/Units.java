@@ -28,4 +28,17 @@ public final class Units {
         return (long) (5 * mag);
     }
 
+    /**
+     * Float version of niceScale: rounds a raw interval to the nearest "nice" number
+     * (1, 2, 5, 10 × 10^n).
+     */
+    public static float niceInterval(float raw) {
+        float mag = (float) Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-10f))));
+        float r = raw / mag;
+        if (r < 1.5f) return mag;
+        if (r < 3.5f) return 2f * mag;
+        if (r < 7.5f) return 5f * mag;
+        return 10f * mag;
+    }
+
 }
