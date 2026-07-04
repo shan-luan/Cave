@@ -23,7 +23,7 @@ import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
-import com.lomekwi.cave.ui.editpanel.settings.SettingsDialog;
+import com.lomekwi.cave.ui.settings.SettingsDialog;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
 import com.lomekwi.cave.app.App;
 

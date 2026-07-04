@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.editpanel.settings;
+package com.lomekwi.cave.ui.settings;
 
 import com.kotcrab.vis.ui.widget.VisTree;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
