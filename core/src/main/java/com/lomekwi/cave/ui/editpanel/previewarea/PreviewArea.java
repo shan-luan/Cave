@@ -196,6 +196,13 @@ public class PreviewArea extends Group {
     public void act(float delta) {
         super.act(delta);
         canvas.setZIndex(0);
+        int i = 0;
+        for(ImgFrame frame : frames){
+            if(frame!=null && frame.getActor() != null && frame.getActor().getParent() == canvas){
+                frame.getActor().setZIndex(canvas.getChildren().size-1-i);
+                i++;
+            }
+        }
     }
 
     private static final Color AXIS_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.6f);
