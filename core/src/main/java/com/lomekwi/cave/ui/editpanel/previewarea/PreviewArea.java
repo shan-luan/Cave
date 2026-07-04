@@ -66,9 +66,7 @@ public class PreviewArea extends Group {
                     var editPanel = App.root.getFrontendEditPanel();
                     if (editPanel != null) {
                         var tlGroup = editPanel.getTlGroup();
-                        if (tlGroup != null) {
-                            tlGroup.clearSelection();
-                        }
+                        tlGroup.clearSelection();
                     }
                 }
                 return true;
@@ -79,9 +77,7 @@ public class PreviewArea extends Group {
                 var editPanel = App.root.getFrontendEditPanel();
                 if (editPanel != null) {
                     var tlGroup = editPanel.getTlGroup();
-                    if (tlGroup != null) {
-                        tlGroup.clearSelection();
-                    }
+                    tlGroup.clearSelection();
                 }
             }
 
@@ -94,8 +90,10 @@ public class PreviewArea extends Group {
                 zoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, zoom));
                 recalcScale();
 
-                xOffset = x - (x - xOffset) * (scale / oldScale);
-                yOffset = y - (y - yOffset) * (scale / oldScale);
+                screenPos.set(event.getStageX(), event.getStageY());
+                stageToLocalCoordinates(screenPos);
+                xOffset = screenPos.x - (screenPos.x - xOffset) * (scale / oldScale);
+                yOffset = screenPos.y - (screenPos.y - yOffset) * (scale / oldScale);
 
                 updateAllImages();
                 return true;
@@ -106,7 +104,16 @@ public class PreviewArea extends Group {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
                 if (pointer == -1) {
-                    App.root.getStage().setKeyboardFocus(PreviewArea.this);
+                    App.root.getStage().setScrollFocus(PreviewArea.this);
+                }
+            }
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                if (pointer == -1) {
+                    var stage = App.root.getStage();
+                    if (stage.getScrollFocus() == PreviewArea.this) {
+                        stage.setScrollFocus(null);
+                    }
                 }
             }
         });

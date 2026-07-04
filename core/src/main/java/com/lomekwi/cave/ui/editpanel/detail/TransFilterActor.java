@@ -14,16 +14,23 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
 public class TransFilterActor extends FilterActor {
+    private final SimpleFloatSpinnerModel dxModel, dyModel;
+    private final SimpleFloatSpinnerModel sxModel, syModel;
+    private final SimpleFloatSpinnerModel rotModel;
+    private final SimpleFloatSpinnerModel pivotXModel, pivotYModel;
+    private final VisCheckBox flipXBox, flipYBox;
+    private boolean suppressRefresh;
+
     public TransFilterActor(TransFilter filter) {
         super(filter.getName(), filter);
 
-        var dxModel = new SimpleFloatSpinnerModel(filter.dx(), -9999, 9999, 1, 1);
-        var dyModel = new SimpleFloatSpinnerModel(filter.dy(), -9999, 9999, 1, 1);
-        var sxModel = new SimpleFloatSpinnerModel(filter.scaleX(), 0.01f, 100, 0.01f, 2);
-        var syModel = new SimpleFloatSpinnerModel(filter.scaleY(), 0.01f, 100, 0.01f, 2);
-        var rotModel = new SimpleFloatSpinnerModel(filter.dRotation(), -9999, 9999, 1, 1);
-        var pivotXModel = new SimpleFloatSpinnerModel(filter.pivotX(), -1, 1, 0.01f, 2);
-        var pivotYModel = new SimpleFloatSpinnerModel(filter.pivotY(), -1, 1, 0.01f, 2);
+        dxModel = new SimpleFloatSpinnerModel(filter.dx(), -9999, 9999, 1, 1);
+        dyModel = new SimpleFloatSpinnerModel(filter.dy(), -9999, 9999, 1, 1);
+        sxModel = new SimpleFloatSpinnerModel(filter.scaleX(), 0.01f, 100, 0.01f, 2);
+        syModel = new SimpleFloatSpinnerModel(filter.scaleY(), 0.01f, 100, 0.01f, 2);
+        rotModel = new SimpleFloatSpinnerModel(filter.dRotation(), -9999, 9999, 1, 1);
+        pivotXModel = new SimpleFloatSpinnerModel(filter.pivotX(), -1, 1, 0.01f, 2);
+        pivotYModel = new SimpleFloatSpinnerModel(filter.pivotY(), -1, 1, 0.01f, 2);
 
         var dxSpinner = new Spinner("", dxModel);
         var dySpinner = new Spinner("", dyModel);
@@ -32,12 +39,13 @@ public class TransFilterActor extends FilterActor {
         var rotSpinner = new Spinner("", rotModel);
         var pivotXSpinner = new Spinner("", pivotXModel);
         var pivotYSpinner = new Spinner("", pivotYModel);
-        var flipXBox = new VisCheckBox("", filter.flipX());
-        var flipYBox = new VisCheckBox("", filter.flipY());
+        flipXBox = new VisCheckBox("", filter.flipX());
+        flipYBox = new VisCheckBox("", filter.flipY());
 
         ChangeListener updater = new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                if (suppressRefresh) return;
                 if (actor instanceof Spinner s) {
                     SimpleFloatSpinnerModel m = (SimpleFloatSpinnerModel) s.getModel();
                     float v = m.getValue();
@@ -84,5 +92,20 @@ public class TransFilterActor extends FilterActor {
         add(flipXBox).pad(4).row();
         add(new VisLabel(i18n("垂直翻转"))).pad(4);
         add(flipYBox).pad(4);
+    }
+
+    public void syncFromFilter() {
+        suppressRefresh = true;
+        TransFilter tf = (TransFilter) filter;
+        dxModel.setValue(tf.dx());
+        dyModel.setValue(tf.dy());
+        sxModel.setValue(tf.scaleX());
+        syModel.setValue(tf.scaleY());
+        rotModel.setValue(tf.dRotation());
+        pivotXModel.setValue(tf.pivotX());
+        pivotYModel.setValue(tf.pivotY());
+        flipXBox.setChecked(tf.flipX());
+        flipYBox.setChecked(tf.flipY());
+        suppressRefresh = false;
     }
 }

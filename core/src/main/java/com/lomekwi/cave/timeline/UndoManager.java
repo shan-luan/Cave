@@ -58,7 +58,7 @@ public class UndoManager {
         boolean wasDirty = project.isDirty();
         var command = redoStack.pop();
         command.redo();
-        push(command);
+        undoStack.push(command);
         if (wasDirty != project.isDirty()) {
             project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
         }
