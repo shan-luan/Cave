@@ -89,6 +89,8 @@ public class ImgFrame extends Frame implements Transformable {
             actor.setOrigin(pivotX, pivotY);
             
             actor.setRotation(transform.rotation);
+            actor.setScaleX(transform.flipX ? -1 : 1);
+            actor.setScaleY(transform.flipY ? -1 : 1);
         }
     }
 }

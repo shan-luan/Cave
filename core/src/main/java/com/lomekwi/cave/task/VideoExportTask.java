@@ -170,7 +170,9 @@ public class VideoExportTask implements Task{
             if(frame instanceof ImgFrame f){
                 Transform t=f.getTransform();
                 f.update();
-                batch.draw(f.getTexture(),t.x+xOffset,t.y+yOffset,t.width,t.height);
+                float scaleX = t.flipX ? -1 : 1;
+                float scaleY = t.flipY ? -1 : 1;
+                batch.draw(f.getTexture(), t.x+xOffset, t.y+yOffset, t.width/2, t.height/2, t.width, t.height, scaleX, scaleY, t.rotation, 0, 0, f.getTexture().getWidth(), f.getTexture().getHeight(), false, false);
             }
         }
         batch.end();
