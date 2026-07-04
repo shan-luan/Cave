@@ -27,7 +27,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.nio.FloatBuffer;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 public class VideoExportTask implements Task{
@@ -118,53 +118,43 @@ public class VideoExportTask implements Task{
     }
 
     private void exportAudio() throws Exception {
-        int sampleRate = AUDIO_SAMPLE_RATE;
-        int channels = AUDIO_CHANNELS;
-        long totalFrames = timeline.getLength() * sampleRate / SECOND;
-        int totalSamples = (int)(totalFrames * channels);
-        if (totalSamples == 0) return;
+        Track[] tracks = timeline.getTracks().toArray(new Track[0]);
+        AudSeg[] active = new AudSeg[tracks.length];
+        float[] mixBuf = new float[AUDIO_FRAME_SIZE];
 
-        float[] mixBuf = new float[totalSamples];
+        for (long audioT = 0; audioT < timeline.getLength(); audioT += AUDIO_FRAME_DURATION) {
+            Arrays.fill(mixBuf, 0f);
 
-        // 遍历每条轨道，水平方向累加
-        for (Track track : timeline.getTracks()) {
-            if (track.getLength() == 0) continue;
+            for (int i = 0; i < tracks.length; i++) {
+                if (tracks[i].getLength() == 0) continue;
 
-            for (Map.Entry<Range<Long>, Segment> entry : track.getSubRangeMapAsEntrySet(Range.<Long>all())) {
-                Segment seg = entry.getValue();
-                if (!(seg instanceof AudSeg)) continue;
-
-                Range<Long> range = entry.getKey();
-                long segStart = range.lowerEndpoint();
-                long segEnd = range.upperEndpoint();
-                int bufStart = (int)(segStart * sampleRate / SECOND * channels);
-
-                seg.sync(segStart);
-                long audioT = segStart;
-                int bufOffset = bufStart;
-                while (audioT < segEnd) {
-                    var frame = seg.get(audioT);
-                    if (frame instanceof AudFrame af && af.getSamples() != null) {
-                        float[] samples = af.getSamples();
-                        for (int si = 0; si < samples.length && bufOffset + si < mixBuf.length; si++) {
-                            mixBuf[bufOffset + si] += samples[si];
-                        }
-                        bufOffset += samples.length;
+                AudSeg seg = active[i];
+                if (seg == null || !seg.getRange().contains(audioT)) {
+                    var entry = tracks[i].getEntry(audioT);
+                    seg = null;
+                    if (entry != null && entry.getValue() instanceof AudSeg s) {
+                        s.sync(audioT);
+                        seg = s;
                     }
-                    audioT += AUDIO_FRAME_DURATION;
+                    active[i] = seg;
+                }
+                if (seg == null) continue;
+
+                var frame = seg.get(audioT);
+                if (frame instanceof AudFrame af && af.getSamples() != null) {
+                    float[] samples = af.getSamples();
+                    int len = Math.min(samples.length, mixBuf.length);
+                    for (int si = 0; si < len; si++) {
+                        mixBuf[si] += samples[si];
+                    }
                 }
             }
-        }
 
-        // 钳位
-        for (int i = 0; i < mixBuf.length; i++) {
-            mixBuf[i] = Math.max(-1.0f, Math.min(1.0f, mixBuf[i]));
-        }
+            for (int i = 0; i < mixBuf.length; i++) {
+                mixBuf[i] = Math.max(-1.0f, Math.min(1.0f, mixBuf[i]));
+            }
 
-        // 按 audio frame 大小分块写入
-        for (int off = 0; off < mixBuf.length; off += AUDIO_FRAME_SIZE) {
-            int count = Math.min(AUDIO_FRAME_SIZE, mixBuf.length - off);
-            recorder.recordSamples(FloatBuffer.wrap(mixBuf, off, count));
+            recorder.recordSamples(FloatBuffer.wrap(mixBuf));
         }
     }
 
