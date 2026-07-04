@@ -74,10 +74,12 @@ public class ImgFrame extends Frame implements Transformable {
 
     /**
      * 将transform的偏移应用到Image上(叠加而不是覆盖)
+     * transform.{x,y}为虚拟坐标空间（帧像素），按当前scale缩放到屏幕坐标。
      */
     public void applyTransform() {
-        if (image != null) {
-            image.setPosition(image.getX() + transform.x, image.getY() + transform.y);
+        if (image != null && transform != null) {
+            float s = image.getScaleX();
+            image.setPosition(image.getX() + transform.x * s, image.getY() + transform.y * s);
             image.setSize(transform.width, transform.height);
         }
     }
