@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.GapFrame;
@@ -111,8 +110,8 @@ public class PreviewArea extends Group {
     private void updateAllImages() {
         for (ImgFrame frame : frames) {
             if(frame!=null) {
-                frame.getImage().setPosition(xOffset, yOffset);
-                frame.getImage().setScale(scale);
+                frame.getActor().setPosition(xOffset, yOffset);
+                frame.getActor().setScale(scale);
                 frame.applyTransform();
             }
         }
@@ -126,7 +125,7 @@ public class PreviewArea extends Group {
         Gdx.app.postRunnable(()-> {
             setFrame(frame);
             frame.update();
-            Image i = frame.getImage();
+            ImgFrameActor i = frame.getActor();
             addActor(i);
             i.setPosition(xOffset, yOffset);
             i.setScale(scale);
@@ -141,7 +140,7 @@ public class PreviewArea extends Group {
         }
         var legacy=frames.set(frame.track.index, frame);
         if (legacy != null){
-            removeActor(legacy.getImage());
+            removeActor(legacy.getActor());
         }
     }
 //TODO:减少对象分配开销
@@ -155,13 +154,13 @@ public class PreviewArea extends Group {
             if (frame == null) {
                 return;
             }
-            Image image = frame.getImage();
-            if (image == null) {
+            ImgFrameActor actor = frame.getActor();
+            if (actor == null) {
                 return;
             }
             // 所有条件满足，执行清理
             frames.set(idx,null);
-            removeActor(image);
+            removeActor(actor);
         });
     }
 
@@ -176,7 +175,7 @@ public class PreviewArea extends Group {
         int i = 0;
         for(ImgFrame frame : frames){
             if(frame!=null){
-                frame.getImage().setZIndex(getChildren().size-1-i);
+                frame.getActor().setZIndex(getChildren().size-1-i);
                 i++;
             }
         }

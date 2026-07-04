@@ -33,7 +33,7 @@ public class AudClipSrc extends Source<AudFrame> {
     protected AudFrame generate(long time, Track track) {
 
         if (frame == null || frame.track != track) {
-            frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2, track);
+            frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2, track, this);
         }
 
         try {

@@ -44,7 +44,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
                 if (texture == null) {
                     texture = new Texture(vdoRes.getWidth(), vdoRes.getHeight(), Pixmap.Format.RGBA8888);
                 }
-            frame = new ImgFrame(track);
+            frame = new ImgFrame(track, this);
             frame.setTexture(texture)
                 .setTransform(new Transform(0, 0, vdoRes.getWidth(), vdoRes.getHeight(), 0));
             initialized = true;

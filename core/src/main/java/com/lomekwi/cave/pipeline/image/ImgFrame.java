@@ -3,10 +3,10 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.utils.Scaling;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.previewarea.ImgFrameActor;
 
 import java.nio.ByteBuffer;
 
@@ -14,11 +14,15 @@ public class ImgFrame extends Frame implements Transformable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
-    private Image image;
+    private ImgFrameActor actor;
     public volatile boolean changed = true;
 
     public ImgFrame(Track track) {
         super(track);
+    }
+
+    public ImgFrame(Track track, Source<?> source) {
+        super(track, source);
     }
     @Override
     public Transform getTransform() {
@@ -41,8 +45,7 @@ public class ImgFrame extends Frame implements Transformable {
     }
     public ImgFrame setTexture(Texture texture) {
         this.texture = texture;
-        image = new Image(texture);
-        image.setScaling(Scaling.stretch);
+        actor = new ImgFrameActor(this);
         return this;
     }
 
@@ -68,8 +71,8 @@ public class ImgFrame extends Frame implements Transformable {
         texture.dispose();
     }
 
-    public Image getImage() {
-        return image;
+    public ImgFrameActor getActor() {
+        return actor;
     }
 
     /**
@@ -77,10 +80,10 @@ public class ImgFrame extends Frame implements Transformable {
      * transform.{x,y}为虚拟坐标空间（帧像素），按当前scale缩放到屏幕坐标。
      */
     public void applyTransform() {
-        if (image != null && transform != null) {
-            float s = image.getScaleX();
-            image.setPosition(image.getX() + transform.x * s, image.getY() + transform.y * s);
-            image.setSize(transform.width, transform.height);
+        if (actor != null && transform != null) {
+            float s = actor.getScaleX();
+            actor.setPosition(actor.getX() + transform.x * s, actor.getY() + transform.y * s);
+            actor.setSize(transform.width, transform.height);
         }
     }
 }
