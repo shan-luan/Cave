@@ -1,6 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.previewarea;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -32,7 +33,6 @@ public class PreviewArea extends Group {
     //此列表仅应在主线程读取.
     private final List<@Nullable ImgFrame> frames = new ArrayList<>();
     private float xOffset, yOffset;
-    private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
     private float zoom = 1.0f;
     private float refViewportArea = -1f;
@@ -40,6 +40,8 @@ public class PreviewArea extends Group {
     private static final float MAX_SCALE = 30.0f;
     private float lastWidth = 0;
     private float lastHeight = 0;
+    private static final float MOVE_SPEED = 1000f;
+    private final com.badlogic.gdx.math.Vector2 screenPos = new com.badlogic.gdx.math.Vector2();
 
     private void recalcScale() {
         float vr = refViewportArea > 0
@@ -60,8 +62,6 @@ public class PreviewArea extends Group {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if(x<0||x>getWidth()||y<0||y>getHeight())return false;
-                lastMouseX = x;
-                lastMouseY = y;
                 if (button == 0 && event.getTarget() == PreviewArea.this) {
                     var editPanel = App.root.getFrontendEditPanel();
                     if (editPanel != null) {
@@ -72,24 +72,6 @@ public class PreviewArea extends Group {
                     }
                 }
                 return true;
-            }
-
-            @Override
-            public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                float deltaX = x - lastMouseX;
-                float deltaY = y - lastMouseY;
-
-                xOffset += deltaX;
-                yOffset += deltaY;
-
-                lastMouseX = x;
-                lastMouseY = y;
-
-                updateAllImages();
-            }
-
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
             }
 
             @Override
@@ -124,7 +106,7 @@ public class PreviewArea extends Group {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
                 if (pointer == -1) {
-                    App.root.getStage().setScrollFocus(PreviewArea.this);
+                    App.root.getStage().setKeyboardFocus(PreviewArea.this);
                 }
             }
         });
@@ -206,6 +188,22 @@ public class PreviewArea extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
+        var stage = getStage();
+        if (stage != null) {
+            screenPos.set(Gdx.input.getX(), Gdx.input.getY());
+            stage.screenToStageCoordinates(screenPos);
+            stageToLocalCoordinates(screenPos);
+            float lx = screenPos.x;
+            float ly = screenPos.y;
+            if (lx >= 0 && lx <= getWidth() && ly >= 0 && ly <= getHeight()) {
+                float speed = MOVE_SPEED * delta / scale;
+                if (Gdx.input.isKeyPressed(Input.Keys.W)) yOffset -= speed;
+                if (Gdx.input.isKeyPressed(Input.Keys.S)) yOffset += speed;
+                if (Gdx.input.isKeyPressed(Input.Keys.A)) xOffset += speed;
+                if (Gdx.input.isKeyPressed(Input.Keys.D)) xOffset -= speed;
+                updateAllImages();
+            }
+        }
         canvas.setZIndex(0);
         int i = 0;
         for(ImgFrame frame : frames){
