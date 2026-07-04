@@ -58,6 +58,7 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     }
     protected Segment(Source<?> source) {
         this.source = source;
+        source.setSegment(this);
         actor = setupActor();
     }
     protected void setTrack(Track track) {

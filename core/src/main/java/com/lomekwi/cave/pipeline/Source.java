@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 
 import java.io.Serial;
@@ -17,6 +18,7 @@ public abstract class Source<T extends Frame> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final List<Filter<? super T>> filters = new ArrayList<>();
+    private transient Segment segment;
 
     /**
      * 同步到指定时间
@@ -49,6 +51,14 @@ public abstract class Source<T extends Frame> implements Serializable {
             return this;
     }
     public Source() {
+    }
+
+    public Segment getSegment() {
+        return segment;
+    }
+
+    public void setSegment(Segment segment) {
+        this.segment = segment;
     }
 
     public abstract long getLengthPerExportFrame();

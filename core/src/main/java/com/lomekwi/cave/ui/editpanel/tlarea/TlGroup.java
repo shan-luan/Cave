@@ -315,7 +315,7 @@ public class TlGroup extends Group {
         playhead.seek(Math.max(xToAbsoluteTime(x), 0));
     }
 
-    void selectSegment(Segment segment, boolean addToSelection) {
+    public void selectSegment(Segment segment, boolean addToSelection) {
         if (!addToSelection) {
             clearSelection();
         }
@@ -330,7 +330,7 @@ public class TlGroup extends Group {
         }
     }
 
-    void clearSelection() {
+    public void clearSelection() {
         for (Segment seg : selectedSegments) {
             seg.setSelected(false);
         }

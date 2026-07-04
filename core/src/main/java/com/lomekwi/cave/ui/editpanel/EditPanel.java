@@ -33,6 +33,10 @@ public class EditPanel {
         return previewArea;
     }
 
+    public TlGroup getTlGroup() {
+        return tlMain.getActor();
+    }
+
     public void dispose() {
         previewArea.dispose();
         tlMain.getActor().dispose();

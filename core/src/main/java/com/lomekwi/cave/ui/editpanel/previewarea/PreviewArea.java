@@ -11,8 +11,9 @@ import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.GapFrame;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.timeline.playback.SeekEvent;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
@@ -33,7 +34,7 @@ public class PreviewArea extends Group {
     private float xOffset, yOffset;
     private float lastMouseX, lastMouseY;
     private float scale = 1.0f;
-    private float userZoom = 1.0f;
+    private float zoom = 1.0f;
     private float refViewportArea = -1f;
     private static final float MIN_SCALE = 0.07f;
     private static final float MAX_SCALE = 30.0f;
@@ -44,7 +45,7 @@ public class PreviewArea extends Group {
         float vr = refViewportArea > 0
             ? (float) Math.sqrt((double) getWidth() * getHeight() / refViewportArea)
             : 1f;
-        scale = userZoom * vr;
+        scale = zoom * vr;
     }
 
     public PreviewArea(Project project) {
@@ -83,12 +84,21 @@ public class PreviewArea extends Group {
             }
 
             @Override
+            public void clicked(InputEvent event, float x, float y) {
+                var editPanel = App.root.getFrontendEditPanel();
+                if (editPanel != null) {
+                    var tlGroup = editPanel.getTlGroup();
+                    tlGroup.clearSelection();
+                }
+            }
+
+            @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
                 float zoomFactor = 1.1f;
                 float oldScale = scale;
 
-                userZoom *= (float) Math.pow(zoomFactor, -amountY);
-                userZoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, userZoom));
+                zoom *= (float) Math.pow(zoomFactor, -amountY);
+                zoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, zoom));
                 recalcScale();
 
                 xOffset = x - (x - xOffset) * (scale / oldScale);
@@ -171,6 +181,17 @@ public class PreviewArea extends Group {
         clearFrames(event.track.index);
     }
 
+    @Subscribe
+    public void onSegmentSelected(SegmentSelectedEvent event) {
+        for (ImgFrame frame : frames) {
+            if (frame != null && frame.getActor() != null) {
+                Segment segment = frame.getSource() != null ? frame.getSource().getSegment() : null;
+                boolean selected = segment != null && segment.isSelected();
+                frame.getActor().setSelected(selected);
+            }
+        }
+    }
+
     @Override
     public void act(float delta) {
         super.act(delta);
@@ -235,7 +256,7 @@ public class PreviewArea extends Group {
     }
 
     public void resetView() {
-        userZoom = 1.0f;
+        zoom = 1.0f;
         xOffset = 0;
         yOffset = 0;
         recalcScale();
