@@ -21,12 +21,16 @@ public class TransFilterActor extends FilterActor {
         var sxModel = new SimpleFloatSpinnerModel(filter.scaleX(), 0.01f, 100, 0.01f, 2);
         var syModel = new SimpleFloatSpinnerModel(filter.scaleY(), 0.01f, 100, 0.01f, 2);
         var rotModel = new SimpleFloatSpinnerModel(filter.dRotation(), -9999, 9999, 1, 1);
+        var pivotXModel = new SimpleFloatSpinnerModel(filter.pivotX(), -1, 1, 0.01f, 2);
+        var pivotYModel = new SimpleFloatSpinnerModel(filter.pivotY(), -1, 1, 0.01f, 2);
 
         var dxSpinner = new Spinner("", dxModel);
         var dySpinner = new Spinner("", dyModel);
         var sxSpinner = new Spinner("", sxModel);
         var sySpinner = new Spinner("", syModel);
         var rotSpinner = new Spinner("", rotModel);
+        var pivotXSpinner = new Spinner("", pivotXModel);
+        var pivotYSpinner = new Spinner("", pivotYModel);
 
         ChangeListener updater = new ChangeListener() {
             @Override
@@ -39,6 +43,8 @@ public class TransFilterActor extends FilterActor {
                 else if (s == sxSpinner) filter.scaleX(v);
                 else if (s == sySpinner) filter.scaleY(v);
                 else if (s == rotSpinner) filter.dRotation(v);
+                else if (s == pivotXSpinner) filter.pivotX(v);
+                else if (s == pivotYSpinner) filter.pivotY(v);
                 Project p = App.root.getFrontendProject();
                 if (p != null) p.projEventBus.post(RefreshRequestEvent.INSTANCE);
             }
@@ -48,6 +54,8 @@ public class TransFilterActor extends FilterActor {
         sxSpinner.addListener(updater);
         sySpinner.addListener(updater);
         rotSpinner.addListener(updater);
+        pivotXSpinner.addListener(updater);
+        pivotYSpinner.addListener(updater);
 
         add(new VisLabel(i18n("位移 X"))).pad(4);
         add(dxSpinner).width(90).pad(4).row();
@@ -58,6 +66,10 @@ public class TransFilterActor extends FilterActor {
         add(new VisLabel(i18n("缩放 Y"))).pad(4);
         add(sySpinner).width(90).pad(4).row();
         add(new VisLabel(i18n("旋转"))).pad(4);
-        add(rotSpinner).width(90).pad(4);
+        add(rotSpinner).width(90).pad(4).row();
+        add(new VisLabel(i18n("旋转中心 X"))).pad(4);
+        add(pivotXSpinner).width(90).pad(4).row();
+        add(new VisLabel(i18n("旋转中心 Y"))).pad(4);
+        add(pivotYSpinner).width(90).pad(4);
     }
 }

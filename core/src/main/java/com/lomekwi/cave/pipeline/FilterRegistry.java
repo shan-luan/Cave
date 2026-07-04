@@ -13,7 +13,7 @@ public class FilterRegistry {
     private record Entry(String name, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {}
 
     static {
-        register("变换滤镜", Transformable.class, s -> new TransFilter(s, 0, 0, 1, 1, 0));
+        register("变换滤镜", Transformable.class, s -> new TransFilter(s, 0, 0, 1, 1, 0, 0, 0));
     }
 
     public static void register(String displayName, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {

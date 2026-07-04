@@ -27,6 +27,7 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group {
     private final Project project;
+    private final Group canvas = new Group();
     //此列表仅应在主线程读取.
     private final List<@Nullable ImgFrame> frames = new ArrayList<>();
     private float xOffset, yOffset;
@@ -49,6 +50,7 @@ public class PreviewArea extends Group {
     public PreviewArea(Project project) {
         this.project = project;
         project.projEventBus.register(this);
+        addActor(canvas);
         setupDragListener();
     }
 
@@ -108,10 +110,10 @@ public class PreviewArea extends Group {
     }
 
     private void updateAllImages() {
+        canvas.setPosition(xOffset, yOffset);
+        canvas.setScale(scale);
         for (ImgFrame frame : frames) {
             if(frame!=null) {
-                frame.getActor().setPosition(xOffset, yOffset);
-                frame.getActor().setScale(scale);
                 frame.applyTransform();
             }
         }
@@ -126,9 +128,9 @@ public class PreviewArea extends Group {
             setFrame(frame);
             frame.update();
             ImgFrameActor i = frame.getActor();
-            addActor(i);
-            i.setPosition(xOffset, yOffset);
-            i.setScale(scale);
+            canvas.addActor(i);
+            canvas.setPosition(xOffset, yOffset);
+            canvas.setScale(scale);
             frame.applyTransform();
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
@@ -140,7 +142,7 @@ public class PreviewArea extends Group {
         }
         var legacy=frames.set(frame.track.index, frame);
         if (legacy != null){
-            removeActor(legacy.getActor());
+            canvas.removeActor(legacy.getActor());
         }
     }
 //TODO:减少对象分配开销
@@ -160,7 +162,7 @@ public class PreviewArea extends Group {
             }
             // 所有条件满足，执行清理
             frames.set(idx,null);
-            removeActor(actor);
+            canvas.removeActor(actor);
         });
     }
 
@@ -172,13 +174,7 @@ public class PreviewArea extends Group {
     @Override
     public void act(float delta) {
         super.act(delta);
-        int i = 0;
-        for(ImgFrame frame : frames){
-            if(frame!=null){
-                frame.getActor().setZIndex(getChildren().size-1-i);
-                i++;
-            }
-        }
+        canvas.setZIndex(0);
     }
 
     private static final Color AXIS_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.6f);
@@ -193,8 +189,8 @@ public class PreviewArea extends Group {
 
     private void drawAxes() {
         var drawer = App.root.getShapeDrawer();
-        float ox = getX() + xOffset;
-        float oy = getY() + yOffset;
+        float ox = getX() + canvas.getX();
+        float oy = getY() + canvas.getY();
         float x0 = getX();
         float x1 = getX() + getWidth();
         float y0 = getY();
@@ -204,23 +200,23 @@ public class PreviewArea extends Group {
         drawer.line(ox, y0, ox, y1, AXIS_COLOR);
 
         float tickHalf = 4f;
-        float interval = Units.niceInterval(TICK_PIXEL_TARGET / scale);
+        float interval = Units.niceInterval(TICK_PIXEL_TARGET / canvas.getScaleX());
 
-        float startV = (x0 - ox) / scale;
-        float endV = (x1 - ox) / scale;
+        float startV = (x0 - ox) / canvas.getScaleX();
+        float endV = (x1 - ox) / canvas.getScaleX();
         double first = Math.ceil(startV / interval) * interval;
         for (double v = first; v <= endV; v += interval) {
             if (Math.abs(v) < interval * 0.01f) continue;
-            float sx = ox + (float) v * scale;
+            float sx = ox + (float) v * canvas.getScaleX();
             drawer.line(sx, oy - tickHalf, sx, oy + tickHalf, AXIS_COLOR);
         }
 
-        startV = (y0 - oy) / scale;
-        endV = (y1 - oy) / scale;
+        startV = (y0 - oy) / canvas.getScaleX();
+        endV = (y1 - oy) / canvas.getScaleX();
         first = Math.ceil(startV / interval) * interval;
         for (double v = first; v <= endV; v += interval) {
             if (Math.abs(v) < interval * 0.01f) continue;
-            float sy = oy + (float) v * scale;
+            float sy = oy + (float) v * canvas.getScaleX();
             drawer.line(ox - tickHalf, sy, ox + tickHalf, sy, AXIS_COLOR);
         }
     }

@@ -76,14 +76,19 @@ public class ImgFrame extends Frame implements Transformable {
     }
 
     /**
-     * 将transform的偏移应用到Image上(叠加而不是覆盖)
-     * transform.{x,y}为虚拟坐标空间（帧像素），按当前scale缩放到屏幕坐标。
+     * 将transform应用到Image上
+     * 在内层Group内部使用局部坐标
      */
     public void applyTransform() {
         if (actor != null && transform != null) {
-            float s = actor.getScaleX();
-            actor.setPosition(actor.getX() + transform.x * s, actor.getY() + transform.y * s);
+            actor.setPosition(transform.x, transform.y);
             actor.setSize(transform.width, transform.height);
+            
+            float pivotX = transform.width / 2 + transform.pivotX * transform.width / 2;
+            float pivotY = transform.height / 2 + transform.pivotY * transform.height / 2;
+            actor.setOrigin(pivotX, pivotY);
+            
+            actor.setRotation(transform.rotation);
         }
     }
 }
