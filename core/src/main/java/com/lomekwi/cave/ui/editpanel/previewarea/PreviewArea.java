@@ -62,6 +62,15 @@ public class PreviewArea extends Group {
                 if(x<0||x>getWidth()||y<0||y>getHeight())return false;
                 lastMouseX = x;
                 lastMouseY = y;
+                if (button == 0 && event.getTarget() == PreviewArea.this) {
+                    var editPanel = App.root.getFrontendEditPanel();
+                    if (editPanel != null) {
+                        var tlGroup = editPanel.getTlGroup();
+                        if (tlGroup != null) {
+                            tlGroup.clearSelection();
+                        }
+                    }
+                }
                 return true;
             }
 
@@ -88,7 +97,9 @@ public class PreviewArea extends Group {
                 var editPanel = App.root.getFrontendEditPanel();
                 if (editPanel != null) {
                     var tlGroup = editPanel.getTlGroup();
-                    tlGroup.clearSelection();
+                    if (tlGroup != null) {
+                        tlGroup.clearSelection();
+                    }
                 }
             }
 

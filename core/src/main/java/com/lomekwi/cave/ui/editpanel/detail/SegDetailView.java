@@ -29,13 +29,13 @@ public class SegDetailView extends VisTable {
 
     @Subscribe
     public void onSegmentSelected(SegmentSelectedEvent e) {
-        int count = e.getSelectedCount();
+        int count = e.selectedCount();
         if (count == 0) {
             showEmpty();
         } else if (count > 1) {
             showMulti(count);
         } else {
-            showInfo(e.getSegment());
+            showInfo(e.segment());
         }
     }
 
