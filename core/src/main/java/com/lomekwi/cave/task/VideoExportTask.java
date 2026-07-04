@@ -172,7 +172,9 @@ public class VideoExportTask implements Task{
                 f.update();
                 float scaleX = t.flipX ? -1 : 1;
                 float scaleY = t.flipY ? -1 : 1;
-                batch.draw(f.getTexture(), t.x+xOffset, t.y+yOffset, t.width/2, t.height/2, t.width, t.height, scaleX, scaleY, t.rotation, 0, 0, f.getTexture().getWidth(), f.getTexture().getHeight(), false, false);
+                float pivotX = t.width / 2 + t.pivotX * t.width / 2;
+                float pivotY = t.height / 2 + t.pivotY * t.height / 2;
+                batch.draw(f.getTexture(), t.x+xOffset, t.y+yOffset, pivotX, pivotY, t.width, t.height, scaleX, scaleY, t.rotation, 0, 0, f.getTexture().getWidth(), f.getTexture().getHeight(), false, false);
             }
         }
         batch.end();

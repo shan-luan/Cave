@@ -69,6 +69,10 @@ public class VdoClipSrc extends Source<ImgFrame> {
         t.width= vdoRes.getWidth();
         t.height= vdoRes.getHeight();
         t.rotation=0;
+        t.pivotX=0;
+        t.pivotY=0;
+        t.flipX=false;
+        t.flipY=false;
         frame.changed=true;
         return frame;
     }
