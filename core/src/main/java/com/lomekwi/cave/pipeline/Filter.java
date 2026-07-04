@@ -9,7 +9,7 @@ public abstract class Filter<T> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
-    private transient Actor detailActor;
+    private transient Actor actor;
 
     public Filter(Source<?> source) {
         this.source = source;
@@ -21,18 +21,18 @@ public abstract class Filter<T> implements Serializable {
 
     public abstract void filter(T product);
 
-    public abstract String getDisplayName();
+    public abstract String getName();
 
-    public Actor getDetailActor() {
-        if (detailActor == null) {
-            detailActor = createDetailActor();
+    public Actor getActor() {
+        if (actor == null) {
+            actor = newActor();
         }
-        return detailActor;
+        return actor;
     }
 
-    protected abstract Actor createDetailActor();
+    protected abstract Actor newActor();
 
     public void invalidateDetailActor() {
-        detailActor = null;
+        actor = null;
     }
 }

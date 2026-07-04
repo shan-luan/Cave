@@ -14,7 +14,7 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
 public class TransFilterActor extends FilterActor {
     public TransFilterActor(TransFilter filter) {
-        super(filter.getDisplayName(), filter);
+        super(filter.getName(), filter);
 
         var dxModel = new SimpleFloatSpinnerModel(filter.dx(), -9999, 9999, 1, 1);
         var dyModel = new SimpleFloatSpinnerModel(filter.dy(), -9999, 9999, 1, 1);

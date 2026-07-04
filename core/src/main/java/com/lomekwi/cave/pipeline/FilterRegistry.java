@@ -10,7 +10,7 @@ import java.util.function.Function;
 public class FilterRegistry {
     private static final List<Entry> entries = new ArrayList<>();
 
-    private record Entry(String displayName, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {}
+    private record Entry(String name, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {}
 
     static {
         register("变换滤镜", Transformable.class, s -> new TransFilter(s, 0, 0, 1, 1, 0));
@@ -29,12 +29,12 @@ public class FilterRegistry {
         return count;
     }
 
-    public static String getCompatibleDisplayName(Source<?> source, int index) {
+    public static String getCompatibleName(Source<?> source, int index) {
         Class<?> frameType = source.getFrameType();
         int count = 0;
         for (Entry e : entries) {
             if (e.targetType().isAssignableFrom(frameType)) {
-                if (count == index) return e.displayName();
+                if (count == index) return e.name();
                 count++;
             }
         }

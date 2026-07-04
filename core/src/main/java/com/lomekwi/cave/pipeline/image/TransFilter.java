@@ -28,7 +28,7 @@ public class TransFilter extends Filter<Transformable> {
     public void dRotation(float v) { dRotation = v; }
 
     @Override
-    public String getDisplayName() { return "变换滤镜"; }
+    public String getName() { return "变换滤镜"; }
 
     @Override
     public void filter(Transformable product) {
@@ -41,7 +41,7 @@ public class TransFilter extends Filter<Transformable> {
     }
 
     @Override
-    protected Actor createDetailActor() {
+    protected Actor newActor() {
         return new TransFilterActor(this);
     }
 }

@@ -68,7 +68,7 @@ public class SegDetailView extends VisTable {
         Source<?> source = seg.getSource();
         content.add(source.getDetailActor()).growX().pad(4).row();
         for (Filter<?> filter : source.getFilters()) {
-            var actor = filter.getDetailActor();
+            var actor = filter.getActor();
             if (actor != null) {
                 if (actor instanceof FilterActor fa) {
                     fa.setSource(source);
@@ -82,7 +82,7 @@ public class SegDetailView extends VisTable {
         int compatibleCount = FilterRegistry.getCompatibleCount(source);
         for (int fi = 0; fi < compatibleCount; fi++) {
             final int idx = fi;
-            filterMenu.addItem(new MenuItem(FilterRegistry.getCompatibleDisplayName(source, fi), new ChangeListener() {
+            filterMenu.addItem(new MenuItem(FilterRegistry.getCompatibleName(source, fi), new ChangeListener() {
                 @Override
                 public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
                     Filter<?> newFilter = FilterRegistry.createCompatible(source, idx);
