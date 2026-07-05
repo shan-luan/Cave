@@ -20,6 +20,7 @@ public final class Projects {
         return new Project();
     }
     public static void save(Project project, FileHandle fileHandle) throws IOException {
+        project.savedVersion = project.currentVersion;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(project);
@@ -29,6 +30,7 @@ public final class Projects {
             os.write(data);
         }
         project.savePath = fileHandle.file().toPath();
+        project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
     }
     public static void save(Project project) throws IOException {
         if(project.savePath == null) {

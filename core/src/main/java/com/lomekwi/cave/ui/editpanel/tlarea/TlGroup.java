@@ -195,7 +195,7 @@ public class TlGroup extends Group {
                         added.add(seg);
                     }
                     if (!cmds.isEmpty()) {
-                        project.undoManager.push(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+                        project.undoManager.record(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
                     }
                     if (added.size() >= 2) {
                         SegmentGroup group = new SegmentGroup();
@@ -383,7 +383,7 @@ public class TlGroup extends Group {
                 }
             }
 
-            project.undoManager.push(new UndoManager.UndoableCommand() {
+            project.undoManager.record(new UndoManager.UndoableCommand() {
                 @Override
                 public void undo() {
                     for (var e : dissolvedMembers.entrySet()) {
@@ -429,7 +429,7 @@ public class TlGroup extends Group {
                 group.add(seg);
             }
 
-            project.undoManager.push(new UndoManager.UndoableCommand() {
+            project.undoManager.record(new UndoManager.UndoableCommand() {
                 @Override
                 public void undo() {
                     for (Segment seg : segs) {
@@ -881,7 +881,7 @@ class SegDragHandler {
                 if (groupMembers != null) {
                     var cmds = getUndoableCommands(actor);
                     if (!cmds.isEmpty()) {
-                        project.undoManager.push(
+                        project.undoManager.record(
                             new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
                     }
                 } else {
@@ -892,10 +892,10 @@ class SegDragHandler {
 
                     if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
                         if (actor.getDragSide() == DragSide.MIDDLE) {
-                            project.undoManager.push(new UndoManager.MoveSegCommand(
+                            project.undoManager.record(new UndoManager.MoveSegCommand(
                                 dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
                         } else {
-                            project.undoManager.push(new UndoManager.ResizeSegCommand(
+                            project.undoManager.record(new UndoManager.ResizeSegCommand(
                                 newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
                         }
                     }

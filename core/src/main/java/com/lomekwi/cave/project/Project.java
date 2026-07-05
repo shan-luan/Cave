@@ -38,6 +38,8 @@ public class Project implements Serializable, AutoCloseable {
     public transient UndoManager undoManager;
     public String name;
     public final UUID uuid = UUID.randomUUID();
+    public long savedVersion = 0;
+    public transient long currentVersion = 0;
 
     private transient boolean isActive = false;
 
@@ -110,6 +112,7 @@ public class Project implements Serializable, AutoCloseable {
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        currentVersion = savedVersion;
         segFactory.setProject(this);
         App.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
@@ -123,7 +126,13 @@ public class Project implements Serializable, AutoCloseable {
         return savePath;
     }
 
+    @Serial
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        savedVersion = currentVersion;
+        out.defaultWriteObject();
+    }
+
     public boolean isDirty() {
-        return undoManager.hasDiscarded() || undoManager.canUndo();
+        return currentVersion != savedVersion;
     }
 }

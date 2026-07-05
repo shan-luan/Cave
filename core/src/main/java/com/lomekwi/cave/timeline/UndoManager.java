@@ -13,7 +13,6 @@ public class UndoManager {
     private static final int MAX_UNDO = 100;
     private final Deque<UndoableCommand> undoStack = new ArrayDeque<>();
     private final Deque<UndoableCommand> redoStack = new ArrayDeque<>();
-    private transient boolean hasDiscarded = false;
     private transient Project project;
 
     public UndoManager(Project project) {
@@ -22,6 +21,7 @@ public class UndoManager {
 
     public void execute(UndoableCommand command) {
         boolean wasDirty = project.isDirty();
+        project.currentVersion++;
         command.redo();
         push(command);
         if (wasDirty != project.isDirty()) {
@@ -29,22 +29,27 @@ public class UndoManager {
         }
     }
 
-    public void push(UndoableCommand command) {
+    public void record(UndoableCommand command) {
         boolean wasDirty = project.isDirty();
+        project.currentVersion++;
+        push(command);
+        if (wasDirty != project.isDirty()) {
+            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
+        }
+    }
+
+    private void push(UndoableCommand command) {
         undoStack.push(command);
         redoStack.clear();
         if (undoStack.size() > MAX_UNDO) {
             undoStack.removeLast();
-            hasDiscarded = true;
-        }
-        if (wasDirty != project.isDirty()) {
-            project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE);
         }
     }
 
     public void undo() {
         if (undoStack.isEmpty()) return;
         boolean wasDirty = project.isDirty();
+        project.currentVersion--;
         var command = undoStack.pop();
         command.undo();
         redoStack.push(command);
@@ -56,6 +61,7 @@ public class UndoManager {
     public void redo() {
         if (redoStack.isEmpty()) return;
         boolean wasDirty = project.isDirty();
+        project.currentVersion++;
         var command = redoStack.pop();
         command.redo();
         undoStack.push(command);
@@ -70,10 +76,6 @@ public class UndoManager {
 
     public boolean canRedo() {
         return !redoStack.isEmpty();
-    }
-
-    public boolean hasDiscarded() {
-        return hasDiscarded;
     }
 
     public void clear() {

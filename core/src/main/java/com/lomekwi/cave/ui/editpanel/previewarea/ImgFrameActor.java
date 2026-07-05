@@ -84,7 +84,7 @@ public class ImgFrameActor extends Image {
                         final TransFilter filter = dragFilter;
                         final float oldDx = startFilterDx, oldDy = startFilterDy;
                         final float newDx = filter.dx(), newDy = filter.dy();
-                        p.undoManager.push(new UndoManager.UndoableCommand() {
+                        p.undoManager.record(new UndoManager.UndoableCommand() {
                             @Override
                             public void undo() {
                                 filter.dx(oldDx);
