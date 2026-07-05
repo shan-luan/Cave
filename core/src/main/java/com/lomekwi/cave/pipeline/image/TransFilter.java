@@ -46,15 +46,7 @@ public class TransFilter extends Filter<Transformable> {
     @Override
     public void filter(Transformable product) {
         Transform t = product.getTransform();
-        t.x += dx;
-        t.y += dy;
-        t.width *= scaleX;
-        t.height *= scaleY;
-        t.rotation += dRotation;
-        t.pivotX += pivotX;
-        t.pivotY += pivotY;
-        if (flipX) t.flipX = !t.flipX;
-        if (flipY) t.flipY = !t.flipY;
+        t.applyLocal(dx, dy, scaleX, scaleY, dRotation, pivotX, pivotY, flipX, flipY);
     }
 
     @Override

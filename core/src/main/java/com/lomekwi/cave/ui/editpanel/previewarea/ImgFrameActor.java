@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -14,6 +14,7 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.pipeline.image.TransFilter;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
@@ -31,9 +32,8 @@ public class ImgFrameActor extends Image {
     private boolean dragging;
     private float startStageX, startStageY;
     private float startFilterDx, startFilterDy;
-    private float startFrameX, startFrameY;
     private TransFilter dragFilter;
-    private final Vector2 tmpVec = new Vector2();
+    private float dragCos, dragSin, dragScaleX, dragScaleY;
 
     public ImgFrameActor(ImgFrame imgFrame) {
         super(imgFrame.getTexture());
@@ -50,10 +50,9 @@ public class ImgFrameActor extends Image {
                 dragFilter = findOrCreateTransformFilter(source);
                 startFilterDx = dragFilter.dx();
                 startFilterDy = dragFilter.dy();
-                startFrameX = imgFrame.getTransform().x;
-                startFrameY = imgFrame.getTransform().y;
                 startStageX = event.getStageX();
                 startStageY = event.getStageY();
+                computeDragContext();
                 dragging = false;
                 return true;
             }
@@ -66,11 +65,11 @@ public class ImgFrameActor extends Image {
                 float s = parent.getScaleX();
                 float dx = (event.getStageX() - startStageX) / s;
                 float dy = (event.getStageY() - startStageY) / s;
-                dragFilter.dx(startFilterDx + dx);
-                dragFilter.dy(startFilterDy + dy);
-                imgFrame.getTransform().x = startFrameX + dx;
-                imgFrame.getTransform().y = startFrameY + dy;
-                imgFrame.applyTransform();
+                float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
+                float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
+                dragFilter.dx(startFilterDx + localDx);
+                dragFilter.dy(startFilterDy + localDy);
+                applyFilters();
                 if (dragFilter.getActor() instanceof TransFilterActor ta) {
                     ta.syncFromFilter();
                 }
@@ -120,6 +119,43 @@ public class ImgFrameActor extends Image {
                 dragging = false;
             }
         });
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private void applyFilters() {
+        Transform t = imgFrame.getTransform();
+        t.reset(0, 0, t.width, t.height);
+        Source<?> source = imgFrame.getSource();
+        if (source != null) {
+            for (Filter<?> f : source.getFilters()) {
+                ((Filter<? super ImgFrame>) f).filter(imgFrame);
+            }
+        }
+        imgFrame.applyTransform();
+    }
+
+    private void computeDragContext() {
+        Transform t = new Transform(0, 0, imgFrame.getTransform().width, imgFrame.getTransform().height, 0);
+        Source<?> source = imgFrame.getSource();
+        if (source != null) {
+            for (Filter<?> f : source.getFilters()) {
+                if (f == dragFilter) break;
+                if (f instanceof TransFilter tf) {
+                    t.applyLocal(tf.dx(), tf.dy(), tf.scaleX(), tf.scaleY(),
+                        tf.dRotation(), tf.pivotX(), tf.pivotY(),
+                        tf.flipX(), tf.flipY());
+                }
+            }
+        }
+        float a = t.matrix.val[Matrix4.M00];
+        float c = t.matrix.val[Matrix4.M10];
+        float b = t.matrix.val[Matrix4.M01];
+        float d = t.matrix.val[Matrix4.M11];
+        dragScaleX = (float) Math.sqrt(a * a + c * c);
+        dragScaleY = (float) Math.sqrt(b * b + d * d);
+        float rotRad = (float) Math.atan2(c, a);
+        dragCos = (float) Math.cos(rotRad);
+        dragSin = (float) Math.sin(rotRad);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

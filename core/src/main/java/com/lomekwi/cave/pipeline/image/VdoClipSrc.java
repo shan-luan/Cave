@@ -63,16 +63,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
             e.printStackTrace();
             frame.setPixels(null);
         }
-        Transform t=frame.getTransform();
-        t.x=0;
-        t.y=0;
-        t.width= vdoRes.getWidth();
-        t.height= vdoRes.getHeight();
-        t.rotation=0;
-        t.pivotX=0;
-        t.pivotY=0;
-        t.flipX=false;
-        t.flipY=false;
+        frame.getTransform().reset(0, 0, vdoRes.getWidth(), vdoRes.getHeight());
         frame.changed=true;
         return frame;
     }
