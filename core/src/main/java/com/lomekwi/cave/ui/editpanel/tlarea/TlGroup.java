@@ -215,28 +215,33 @@ public class TlGroup extends Group {
     public void act(float delta) {
         super.act(delta);
 
-        if (getStage() != null && getStage().getKeyboardFocus() == this) {
-            final float timePerPixel = (float) view.durationTime / getWidth();
-            boolean acted = false;
+        if (getStage() != null) {
+            pointer.set(Gdx.input.getX(), Gdx.input.getY());
+            getStage().screenToStageCoordinates(pointer);
+            stageToLocalCoordinates(pointer);
+            if (pointer.x >= 0 && pointer.x <= getWidth() && pointer.y >= 0 && pointer.y <= getHeight()) {
+                final float timePerPixel = (float) view.durationTime / getWidth();
+                boolean acted = false;
 
-            if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {
-                view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
-                acted = true;
-            }
-            if (App.shortcutManager.isActive(Actions.SCROLL_LEFT)) {
-                view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
-                acted = true;
-            }
-            if (App.shortcutManager.isActive(Actions.SCROLL_DOWN)) {
-                view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
-                acted = true;
-            }
-            if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
-                view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
-                acted = true;
-            }
+                if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {
+                    view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_LEFT)) {
+                    view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_DOWN)) {
+                    view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
+                    view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
+                    acted = true;
+                }
 
-            if (acted) dirty = true;
+                if (acted) dirty = true;
+            }
         }
 
         if (dirty) {

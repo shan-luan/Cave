@@ -114,6 +114,9 @@ public class PreviewArea extends Group {
                     if (stage.getScrollFocus() == PreviewArea.this) {
                         stage.setScrollFocus(null);
                     }
+                    if (stage.getKeyboardFocus() == PreviewArea.this) {
+                        stage.setKeyboardFocus(null);
+                    }
                 }
             }
         });
