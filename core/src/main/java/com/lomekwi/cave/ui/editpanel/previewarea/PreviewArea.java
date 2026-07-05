@@ -197,7 +197,6 @@ public class PreviewArea extends Group {
 
     @Override
     public void act(float delta) {
-        super.act(delta);
         var stage = getStage();
         if (stage != null) {
             screenPos.set(Gdx.input.getX(), Gdx.input.getY());
@@ -211,9 +210,10 @@ public class PreviewArea extends Group {
                 if (Gdx.input.isKeyPressed(Input.Keys.S)) yOffset += speed;
                 if (Gdx.input.isKeyPressed(Input.Keys.A)) xOffset += speed;
                 if (Gdx.input.isKeyPressed(Input.Keys.D)) xOffset -= speed;
-                updateAllImages();
             }
         }
+        updateAllImages();
+        super.act(delta);
         canvas.setZIndex(0);
         int i = 0;
         for(ImgFrame frame : frames){

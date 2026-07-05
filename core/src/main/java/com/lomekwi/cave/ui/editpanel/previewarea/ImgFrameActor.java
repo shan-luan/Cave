@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -30,10 +31,11 @@ public class ImgFrameActor extends Image {
     private static final Color SELECTED_COLOR = new Color(1, 1, 1, 0.8f);
 
     private boolean dragging;
-    private float startStageX, startStageY;
+    private float startCanvasX, startCanvasY;
     private float startFilterDx, startFilterDy;
     private TransFilter dragFilter;
     private float dragCos, dragSin, dragScaleX, dragScaleY;
+    private final Vector2 dragStagePos = new Vector2();
 
     public ImgFrameActor(ImgFrame imgFrame) {
         super(imgFrame.getTexture());
@@ -50,8 +52,9 @@ public class ImgFrameActor extends Image {
                 dragFilter = findOrCreateTransformFilter(source);
                 startFilterDx = dragFilter.dx();
                 startFilterDy = dragFilter.dy();
-                startStageX = event.getStageX();
-                startStageY = event.getStageY();
+                Group p = (Group) getParent();
+                startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX();
+                startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY();
                 computeDragContext();
                 dragging = false;
                 return true;
@@ -61,18 +64,7 @@ public class ImgFrameActor extends Image {
             public void touchDragged(InputEvent event, float x, float y, int pointer) {
                 if (dragFilter == null) return;
                 dragging = true;
-                Group parent = (Group) getParent();
-                float s = parent.getScaleX();
-                float dx = (event.getStageX() - startStageX) / s;
-                float dy = (event.getStageY() - startStageY) / s;
-                float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
-                float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
-                dragFilter.dx(startFilterDx + localDx);
-                dragFilter.dy(startFilterDy + localDy);
-                applyFilters();
-                if (dragFilter.getActor() instanceof TransFilterActor ta) {
-                    ta.syncFromFilter();
-                }
+                updateDrag(event.getStageX(), event.getStageY());
             }
 
             @Override
@@ -121,6 +113,31 @@ public class ImgFrameActor extends Image {
         });
     }
 
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (!dragging || dragFilter == null || getParent() == null || getStage() == null) return;
+        dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
+        getStage().screenToStageCoordinates(dragStagePos);
+        updateDrag(dragStagePos.x, dragStagePos.y);
+    }
+
+    private void updateDrag(float stageX, float stageY) {
+        Group parent = (Group) getParent();
+        float canvasX = (stageX - parent.getX()) / parent.getScaleX();
+        float canvasY = (stageY - parent.getY()) / parent.getScaleY();
+        float dx = canvasX - startCanvasX;
+        float dy = canvasY - startCanvasY;
+        float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
+        float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
+        dragFilter.dx(startFilterDx + localDx);
+        dragFilter.dy(startFilterDy + localDy);
+        applyFilters();
+        if (dragFilter.getActor() instanceof TransFilterActor ta) {
+            ta.syncFromFilter();
+        }
+    }
+
     @SuppressWarnings({"unchecked"})
     private void applyFilters() {
         Transform t = imgFrame.getTransform();
@@ -148,12 +165,12 @@ public class ImgFrameActor extends Image {
             }
         }
         float a = t.matrix.val[Matrix4.M00];
-        float c = t.matrix.val[Matrix4.M10];
         float b = t.matrix.val[Matrix4.M01];
+        float c = t.matrix.val[Matrix4.M10];
         float d = t.matrix.val[Matrix4.M11];
         dragScaleX = (float) Math.sqrt(a * a + c * c);
         dragScaleY = (float) Math.sqrt(b * b + d * d);
-        float rotRad = (float) Math.atan2(c, a);
+        float rotRad = (float) Math.atan2(c - b, a + d);
         dragCos = (float) Math.cos(rotRad);
         dragSin = (float) Math.sin(rotRad);
     }
