@@ -44,8 +44,8 @@ public class TransFilter extends Filter<Transformable> {
     public String getName() { return "变换滤镜"; }
 
     @Override
-    public void filter(Transformable product) {
-        Transform t = product.getTransform();
+    public void filter(Transformable frame) {
+        Transform t = frame.getTransform();
         t.applyLocal(dx, dy, scaleX, scaleY, dRotation, pivotX, pivotY, flipX, flipY);
     }
 

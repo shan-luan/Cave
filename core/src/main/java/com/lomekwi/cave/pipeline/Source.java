@@ -32,11 +32,11 @@ public abstract class Source<T extends Frame> implements Serializable {
      * @return 产品
      */
     public final T get(long time, Track track){
-        T product = generate(time, track);
+        T frame = generate(time, track);
         for (Filter<? super T> filter : filters) {
-            filter.filter(product);
+            filter.filter(frame);
         }
-        return product;
+        return frame;
     }
     /**
      * 建议进行预取数据的耗时操作。
