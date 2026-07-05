@@ -77,7 +77,9 @@ public class Transform {
         x = matrix.val[Matrix4.M03];
         y = matrix.val[Matrix4.M13];
         float a = matrix.val[Matrix4.M00];
+        float b = matrix.val[Matrix4.M01];
         float c = matrix.val[Matrix4.M10];
-        rotation = (float) Math.toDegrees(Math.atan2(c, a));
+        float d = matrix.val[Matrix4.M11];
+        rotation = (float) Math.toDegrees(Math.atan2(c - b, a + d));
     }
 }
