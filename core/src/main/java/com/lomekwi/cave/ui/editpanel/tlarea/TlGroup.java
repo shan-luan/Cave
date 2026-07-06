@@ -133,10 +133,6 @@ public class TlGroup extends Group {
                     project.undoManager.redo();
                     dirty = true;
                 }
-                if (App.shortcutManager.isActive(Actions.SELECT_ADD)) {
-                    dragHandler.selectAtCursor();
-                    return true;
-                }
                 if (App.shortcutManager.isActive(Actions.GROUP)) {
                     groupSelectedSegments();
                     return true;
@@ -155,7 +151,12 @@ public class TlGroup extends Group {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button != Input.Buttons.LEFT) return false;
-                playhead.seek(Math.max(xToAbsoluteTime(x), 0));
+                int trackIndex = yToTrackIndex(y);
+                boolean onSegment = trackIndex >= 0 && trackIndex < timeline.getTracks().size()
+                    && timeline.getTrack(trackIndex).getEntry(xToAbsoluteTime(x)) != null;
+                if (!onSegment) {
+                    playhead.seek(Math.max(xToAbsoluteTime(x), 0));
+                }
                 return false;
             }
         });
@@ -237,6 +238,11 @@ public class TlGroup extends Group {
                 }
                 if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
                     view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
+                    acted = true;
+                }
+
+                if (App.shortcutManager.isActive(Actions.SEEK)) {
+                    seekPlayheadAtX(pointer.x);
                     acted = true;
                 }
 
@@ -1011,23 +1017,7 @@ class SegDragHandler {
             dirty = true;
         }
 
-        private void selectAtCursor() {
-            Stage s = getStage();
-            if (s == null) return;
-            Vector2 local = stageToLocalCoordinates(
-                s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
-            int trackIndex = yToTrackIndex(local.y);
-            if (trackIndex >= 0 && trackIndex < timeline.getTracks().size()) {
-                long time = xToAbsoluteTime(local.x);
-                var entry = timeline.getTrack(trackIndex).getEntry(time);
-                if (entry != null) {
-                    boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
-                    selectSegment(entry.getValue(), ctrl);
-                    return;
-                }
-            }
-            clearSelection();
-        }
+
     }
 
     // -------------------------------------------------------------------------
@@ -1081,7 +1071,7 @@ class SegDragHandler {
         REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z),
         PLAY_PAUSE("播放/暂停", SPACE),
         GROUP("分组", F),
-        SELECT_ADD("附加选择", E);
+        SEEK("定位播放头", E);
 
         private final String displayName;
         private final int[] defaultKeys;

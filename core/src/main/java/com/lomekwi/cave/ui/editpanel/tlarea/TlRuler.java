@@ -3,10 +3,12 @@ package com.lomekwi.cave.ui.editpanel.tlarea;
 import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.Units.niceScale;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
@@ -38,6 +40,19 @@ public class TlRuler extends Widget {
                 tlGroup.seekPlayheadAtX(x);
             }
         });
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (App.shortcutManager.isActive(TlGroup.Actions.SEEK)) {
+            Vector2 pointer = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+            getStage().screenToStageCoordinates(pointer);
+            stageToLocalCoordinates(pointer);
+            if (pointer.x >= 0 && pointer.x <= getWidth() && pointer.y >= 0 && pointer.y <= getHeight()) {
+                tlGroup.seekPlayheadAtX(pointer.x);
+            }
+        }
     }
 
     @Override
