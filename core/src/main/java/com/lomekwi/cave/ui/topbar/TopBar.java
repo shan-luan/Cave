@@ -22,6 +22,7 @@ import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
 import com.lomekwi.cave.task.Task;
+import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.settings.SettingsDialog;
 import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
@@ -212,6 +213,30 @@ public class TopBar extends MenuBar {
         fileMenu.addItem(closeItem);
 
         addMenu(fileMenu);
+
+        Menu editMenu = new MenuX(i18n("编辑"));
+
+        MenuItem undoItem = new MenuItemP(i18n("撤销"), new ChangeListenerX(() -> {
+            var project = App.root.getFrontendProject();
+            if (project == null) return;
+            project.undoManager.undo();
+            var ep = App.root.getFrontendEditPanel();
+            if (ep != null) ep.getTlGroup().markTimelineDirty();
+        }));
+        undoItem.setShortcut(TlGroup.Actions.UNDO.defaultKeys());
+        editMenu.addItem(undoItem);
+
+        MenuItem redoItem = new MenuItemP(i18n("重做"), new ChangeListenerX(() -> {
+            var project = App.root.getFrontendProject();
+            if (project == null) return;
+            project.undoManager.redo();
+            var ep = App.root.getFrontendEditPanel();
+            if (ep != null) ep.getTlGroup().markTimelineDirty();
+        }));
+        redoItem.setShortcut(TlGroup.Actions.REDO.defaultKeys());
+        editMenu.addItem(redoItem);
+
+        addMenu(editMenu);
 
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {

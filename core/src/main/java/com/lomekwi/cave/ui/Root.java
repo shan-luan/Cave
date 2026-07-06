@@ -3,6 +3,7 @@ package com.lomekwi.cave.ui;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -73,9 +74,55 @@ public class Root implements ApplicationListener {
 
         InputMultiplexer multiplexer = new InputMultiplexer();
 
+        multiplexer.addProcessor(0, new InputProcessor() {
+            @Override
+            public boolean keyDown(int keycode) {
+                Project project = getFrontendProject();
+                if (project == null || project.undoManager == null) return false;
+
+                if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
+                    project.undoManager.undo();
+                    EditPanel ep = getFrontendEditPanel();
+                    if (ep != null) ep.getTlGroup().markTimelineDirty();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
+                    project.undoManager.redo();
+                    EditPanel ep = getFrontendEditPanel();
+                    if (ep != null) ep.getTlGroup().markTimelineDirty();
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean keyUp(int keycode) { return false; }
+
+            @Override
+            public boolean keyTyped(char character) { return false; }
+
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) { return false; }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }
+
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
+
+            @Override
+            public boolean mouseMoved(int screenX, int screenY) { return false; }
+
+            @Override
+            public boolean scrolled(float amountX, float amountY) { return false; }
+
+            @Override
+            public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
+        });
+
         VisUI.load(injectChineseFont(VisUI.SkinScale.X2));
         stage = new Stage(new ScreenViewport());
-        multiplexer.setProcessors(stage);
+        multiplexer.addProcessor(stage);
         Gdx.input.setInputProcessor(multiplexer);
 
         toastManager=new ToastManager(stage);

@@ -506,6 +506,10 @@ public class TlGroup extends Group {
         return trackIndexToTopY(index) - view.trackHeight;
     }
 
+    public void markTimelineDirty() {
+        dirty = true;
+    }
+
     @Override
     public void sizeChanged() {
         dirty = true;
@@ -1013,7 +1017,7 @@ class SegDragHandler {
         SPLIT("分割", Q),
         DELETE("删除", X),
         UNDO("撤销", CONTROL_LEFT, Z),
-        REDO("重做", CONTROL_LEFT, SHIFT_LEFT, Z),
+        REDO("重做", CONTROL_LEFT, Y),
         PLAY_PAUSE("播放/暂停", SPACE),
         GROUP("分组", F),
         SEEK("定位播放头", E);
