@@ -10,6 +10,7 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
 import java.util.List;
@@ -71,9 +72,14 @@ public abstract class FilterActor extends VisWindow {
     @Override
     public void close() {
         filter.invalidateDetailActor();
+        int index = source.getFilters().indexOf(filter);
+        if (index < 0) return;
         source.getFilters().remove(filter);
         Project p = App.root.getFrontendProject();
-        if (p != null) p.projEventBus.post(RefreshRequestEvent.INSTANCE);
+        if (p != null) {
+            p.undoManager.record(new UndoManager.RemoveFilterCommand(source, filter, index));
+            p.projEventBus.post(RefreshRequestEvent.INSTANCE);
+        }
         remove();
     }
 
@@ -100,6 +106,9 @@ public abstract class FilterActor extends VisWindow {
         filters.add(target, filter);
 
         Project pj = App.root.getFrontendProject();
-        if (pj != null) pj.projEventBus.post(RefreshRequestEvent.INSTANCE);
+        if (pj != null) {
+            pj.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, myIndex, target));
+            pj.projEventBus.post(RefreshRequestEvent.INSTANCE);
+        }
     }
 }

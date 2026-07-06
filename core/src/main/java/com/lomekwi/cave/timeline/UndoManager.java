@@ -1,12 +1,17 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
+import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.image.TransFilter;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
+import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 @NullMarked
 public class UndoManager {
@@ -181,6 +186,97 @@ public class UndoManager {
             for (var cmd : commands) {
                 cmd.redo();
             }
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static List filterList(Source<?> source) {
+        return source.getFilters();
+    }
+
+    private static void postRefresh(Source<?> source) {
+        Segment seg = source.getSegment();
+        if (seg != null) {
+            Track track = seg.getTrack();
+            if (track != null) {
+                Timeline timeline = track.getTimeline();
+                timeline.project.projEventBus.post(new SegmentSelectedEvent(seg, track, 1));
+                timeline.project.projEventBus.post(RefreshRequestEvent.INSTANCE);
+            }
+        }
+    }
+
+    public record AddFilterCommand(Source<?> source, Filter<?> filter) implements UndoableCommand {
+        @Override
+        public void undo() {
+            filterList(source).remove(filter);
+            postRefresh(source);
+        }
+
+        @Override
+        public void redo() {
+            filterList(source).add(filter);
+            postRefresh(source);
+        }
+    }
+
+    public record RemoveFilterCommand(Source<?> source, Filter<?> filter, int index) implements UndoableCommand {
+        @Override
+        public void undo() {
+            filterList(source).add(index, filter);
+            postRefresh(source);
+        }
+
+        @Override
+        public void redo() {
+            filterList(source).remove(filter);
+            postRefresh(source);
+        }
+    }
+
+    public record ReorderFilterCommand(Source<?> source, Filter<?> filter, int oldIndex, int newIndex) implements UndoableCommand {
+        @Override
+        public void undo() {
+            filterList(source).remove(filter);
+            filterList(source).add(oldIndex, filter);
+            postRefresh(source);
+        }
+
+        @Override
+        public void redo() {
+            filterList(source).remove(filter);
+            filterList(source).add(newIndex, filter);
+            postRefresh(source);
+        }
+    }
+
+    public record TransFilterState(float dx, float dy, float scaleX, float scaleY,
+                                    float dRotation, float pivotX, float pivotY,
+                                    boolean flipX, boolean flipY) {}
+
+    public record TransformFilterCommand(TransFilter filter, TransFilterState oldState, TransFilterState newState) implements UndoableCommand {
+        @Override
+        public void undo() {
+            applyState(oldState);
+        }
+
+        @Override
+        public void redo() {
+            applyState(newState);
+        }
+
+        private void applyState(TransFilterState s) {
+            filter.dx(s.dx);
+            filter.dy(s.dy);
+            filter.scaleX(s.scaleX);
+            filter.scaleY(s.scaleY);
+            filter.dRotation(s.dRotation);
+            filter.pivotX(s.pivotX);
+            filter.pivotY(s.pivotY);
+            filter.flipX(s.flipX);
+            filter.flipY(s.flipY);
+            filter.invalidateDetailActor();
+            postRefresh(filter.getSource());
         }
     }
 }

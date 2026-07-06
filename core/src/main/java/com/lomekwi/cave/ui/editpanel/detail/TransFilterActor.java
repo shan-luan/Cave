@@ -11,6 +11,7 @@ import com.kotcrab.vis.ui.widget.spinner.Spinner;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.image.TransFilter;
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
 public class TransFilterActor extends FilterActor {
@@ -20,6 +21,8 @@ public class TransFilterActor extends FilterActor {
     private final SimpleFloatSpinnerModel pivotXModel, pivotYModel;
     private final VisCheckBox flipXBox, flipYBox;
     private boolean suppressRefresh;
+    private long lastEditTime = -1;
+    private UndoManager.TransFilterState undoOldState;
 
     public TransFilterActor(TransFilter filter) {
         super(filter.getName(), filter);
@@ -46,6 +49,15 @@ public class TransFilterActor extends FilterActor {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if (suppressRefresh) return;
+                if (lastEditTime == -1) {
+                    undoOldState = new UndoManager.TransFilterState(
+                        filter.dx(), filter.dy(),
+                        filter.scaleX(), filter.scaleY(),
+                        filter.dRotation(),
+                        filter.pivotX(), filter.pivotY(),
+                        filter.flipX(), filter.flipY());
+                }
+                lastEditTime = System.nanoTime();
                 if (actor instanceof Spinner s) {
                     SimpleFloatSpinnerModel m = (SimpleFloatSpinnerModel) s.getModel();
                     float v = m.getValue();
@@ -107,5 +119,28 @@ public class TransFilterActor extends FilterActor {
         flipXBox.setChecked(tf.flipX());
         flipYBox.setChecked(tf.flipY());
         suppressRefresh = false;
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (lastEditTime != -1 && System.nanoTime() - lastEditTime > 400_000_000L) {
+            Project p = App.root.getFrontendProject();
+            if (p != null && undoOldState != null) {
+                TransFilter tf = (TransFilter) filter;
+                UndoManager.TransFilterState newState = new UndoManager.TransFilterState(
+                    tf.dx(), tf.dy(),
+                    tf.scaleX(), tf.scaleY(),
+                    tf.dRotation(),
+                    tf.pivotX(), tf.pivotY(),
+                    tf.flipX(), tf.flipY());
+                if (!undoOldState.equals(newState)) {
+                    p.undoManager.record(new UndoManager.TransformFilterCommand(
+                        tf, undoOldState, newState));
+                }
+            }
+            lastEditTime = -1;
+            undoOldState = null;
+        }
     }
 }

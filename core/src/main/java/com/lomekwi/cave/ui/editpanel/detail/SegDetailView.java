@@ -4,6 +4,7 @@ import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.app.App;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.PopupMenu;
 import com.kotcrab.vis.ui.widget.VisLabel;
@@ -14,6 +15,7 @@ import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.FilterRegistry;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
 public class SegDetailView extends VisTable {
@@ -87,6 +89,8 @@ public class SegDetailView extends VisTable {
                 public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
                     Filter<?> newFilter = FilterRegistry.createCompatible(source, idx);
                     source.getFilters().add((Filter) newFilter);
+                    var p = App.root.getFrontendProject();
+                    if (p != null) p.undoManager.record(new UndoManager.AddFilterCommand(source, newFilter));
                     showInfo(seg);
                 }
             }));
