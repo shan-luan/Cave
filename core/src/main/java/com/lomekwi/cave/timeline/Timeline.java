@@ -13,8 +13,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import static java.util.Map.Entry;
 
 @NullMarked
@@ -71,6 +73,20 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     public Timeline split(Track track,long time) {
         track.split(time);
         return this;
+    }
+
+    /**
+     * 检查组移动是否有效——所有成员的目标位置均空闲且组内互不阻塞
+     */
+    public boolean canMoveGroup(List<Segment> members, long[] newStarts, long[] newDurations, Track[] newTracks) {
+        int n = members.size();
+        Set<Segment> ignore = new HashSet<>(members);
+        for (int i = 0; i < n; i++) {
+            if (newStarts[i] < 0 || newDurations[i] <= 0) return false;
+            var range = Range.closedOpen(newStarts[i], newStarts[i] + newDurations[i]);
+            if (!newTracks[i].isFree(range, ignore)) return false;
+        }
+        return true;
     }
     /**
      * 获取指定索引的轨道，如果不存在则自动创建

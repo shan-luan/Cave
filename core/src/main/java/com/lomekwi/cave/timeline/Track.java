@@ -87,22 +87,20 @@ public class Track implements Serializable,Iterable<Segment> {
     }
 
     /**
-     * 检查指定范围是否与给定的条目兼容（即该范围是否为空闲或仅被同一片段占用）
+     * 检查指定时间范围是否空闲（忽略指定片段集合中的片段）
      *
-     * @param entry 要检查的片段条目，包含时间范围和对应的Segment对象
-     * @param range 要检查的时间范围
-     * @return 如果范围内没有其他片段占用则返回true；如果范围内只有与entry相同的片段也返回true；否则返回false
+     * @param range  要检查的时间范围
+     * @param ignore 不视为障碍的片段集合（为空时相当于完全空闲检查）
+     * @return 如果范围内没有任何非忽略片段占用则返回 true
      */
-    synchronized public boolean isFree(Entry<Range<Long>, Segment> entry, Range<Long> range) {
+    synchronized public boolean isFree(Range<Long> range, Set<Segment> ignore) {
         var m = sources.subRangeMap(range).asMapOfRanges();
-        if (m.size() > 1) return false;
         if (m.isEmpty()) return true;
-        return m.containsValue(entry.getValue());
-    }
-
-    /** 检查指定时间范围是否完全空闲（没有任何片段占据） */
-    synchronized public boolean isFree(Range<Long> range) {
-        return sources.subRangeMap(range).asMapOfRanges().isEmpty();
+        if (ignore.isEmpty()) return false;
+        for (var entry : m.entrySet()) {
+            if (!ignore.contains(entry.getValue())) return false;
+        }
+        return true;
     }
 
     synchronized protected void split(long time){
