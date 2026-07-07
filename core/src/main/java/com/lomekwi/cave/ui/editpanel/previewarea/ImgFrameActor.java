@@ -276,6 +276,9 @@ public class ImgFrameActor extends Image {
         };
     }
 
+    // FIXME: 手柄锚点和缩放基于本地坐标轴计算，当 dragFilter 有旋转时与视觉轴不匹配。
+    //        视觉"向外"拖拽可能映射到本地"朝向锚点"，导致缩放方向相反。
+    //        需在画布空间测量锚点→手柄的视觉距离来计算缩放，再映射回本地 scaleX/scaleY。
     private void startGizmoDrag(Source<?> source, Handle handle, float stageX, float stageY) {
         gizmoHandle = handle;
         gizmoDragging = true;
