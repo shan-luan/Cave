@@ -13,12 +13,13 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 @NullMarked
 public class UndoManager {
     private static final int MAX_UNDO = 100;
     private final Deque<UndoableCommand> undoStack = new ArrayDeque<>();
     private final Deque<UndoableCommand> redoStack = new ArrayDeque<>();
-    private transient Project project;
+    private final transient Project project;
 
     public UndoManager(Project project) {
         this.project = project;
@@ -189,7 +190,7 @@ public class UndoManager {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+
     private static List filterList(Source<?> source) {
         return source.getFilters();
     }
