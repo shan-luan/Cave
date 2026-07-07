@@ -547,6 +547,9 @@ class SegDragHandler {
                     if (target >= upper) return;
                     target = Math.max(target, absoluteTimeToX(0));
 
+                    long snapped = snapTime(xToAbsoluteTime(target), getSnapIgnoreSet(e.getValue()));
+                    target = absoluteTimeToX(Math.max(snapped, 0));
+
                     if (groupMembers != null) {
                         handleGroupFrontResize(actor, xToAbsoluteTime(target));
                         break;
@@ -569,6 +572,11 @@ class SegDragHandler {
                     if (diffToActorX < 1f) return;
                     float newWidth = diffToActorX;
                     float upper = actor.getX() + newWidth;
+
+                    long snapped = snapTime(xToAbsoluteTime(upper), getSnapIgnoreSet(e.getValue()));
+                    upper = absoluteTimeToX(Math.max(snapped, 0));
+                    newWidth = upper - actor.getX();
+                    if (newWidth < 1f) return;
 
                     if (groupMembers != null) {
                         handleGroupBehindResize(actor, xToAbsoluteTime(upper));
@@ -603,6 +611,28 @@ class SegDragHandler {
 
                     long duration = r.upperEndpoint() - r.lowerEndpoint();
                     long target = xToAbsoluteTime(targetX);
+
+                    {
+                        Set<Segment> ignore = getSnapIgnoreSet(e.getValue());
+                        long segEnd = target + duration;
+                        long snappedStart = snapTime(target, ignore);
+                        long snappedEnd = snapTime(segEnd, ignore) - duration;
+                        if (snappedEnd < 0) snappedEnd = 0;
+                        boolean startMoved = snappedStart != target;
+                        boolean endMoved = snappedEnd != target;
+                        if (startMoved && endMoved) {
+                            if (Math.abs(snappedStart - target) <= Math.abs(snappedEnd - target)) {
+                                target = snappedStart;
+                            } else {
+                                target = snappedEnd;
+                            }
+                        } else if (startMoved) {
+                            target = snappedStart;
+                        } else if (endMoved) {
+                            target = snappedEnd;
+                        }
+                        targetX = absoluteTimeToX(target);
+                    }
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
 
@@ -682,6 +712,51 @@ class SegDragHandler {
                 groupOrigDurations[i] = sr.upperEndpoint() - sr.lowerEndpoint();
                 groupOrigTracks[i] = groupMembers.get(i).getTrack();
             }
+        }
+
+        private Set<Segment> getSnapIgnoreSet(Segment seg) {
+            if (groupMembers != null) return new HashSet<>(groupMembers);
+            return Set.of(seg);
+        }
+
+        private static final float SNAP_THRESHOLD_PX = 10f;
+
+        private long snapTime(long time, Set<Segment> ignore) {
+            long threshold = Math.max(1, (long) (SNAP_THRESHOLD_PX / getWidth() * view.durationTime));
+            long best = time;
+            long bestDist = threshold;
+
+            long searchStart = Math.max(0, time - threshold);
+            long searchEnd = time + threshold;
+            if (searchEnd <= searchStart) return time;
+
+            Range<Long> searchRange = Range.closedOpen(searchStart, searchEnd);
+
+            for (int i = 0; i < timeline.getTracks().size(); i++) {
+                Track track = timeline.getTracks().get(i);
+                for (var entry : track.getSubRangeMapAsEntrySet(searchRange)) {
+                    if (ignore.contains(entry.getValue())) continue;
+                    Range<Long> r = entry.getKey();
+
+                    long dist = Math.abs(r.lowerEndpoint() - time);
+                    if (dist < bestDist) {
+                        best = r.lowerEndpoint();
+                        bestDist = dist;
+                    }
+
+                    dist = Math.abs(r.upperEndpoint() - time);
+                    if (dist < bestDist) {
+                        best = r.upperEndpoint();
+                        bestDist = dist;
+                    }
+                }
+            }
+
+            if (time < threshold && time < bestDist) {
+                best = 0;
+            }
+
+            return best;
         }
 
         private void handleGroupMiddleDrag(SegActor actor, long target, Track newTrack) {
