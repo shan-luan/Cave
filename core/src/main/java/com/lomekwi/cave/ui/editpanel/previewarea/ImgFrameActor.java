@@ -26,6 +26,7 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImgFrameActor extends Image {
@@ -68,6 +69,12 @@ public class ImgFrameActor extends Image {
     private final Vector2 dragStagePos = new Vector2();
     private final Vector2 tmp1 = new Vector2();
     private final Vector2 tmp2 = new Vector2();
+    private final Vector2 tmp3 = new Vector2();
+
+    private static final float SNAP_THRESHOLD_SCREEN = 10f;
+    private float[] myStartBBox;
+    private List<float[]> siblingBBoxes;
+    private final Vector2 snapAdjust = new Vector2();
 
     public ImgFrameActor(ImgFrame imgFrame) {
         super(imgFrame.getTexture());
@@ -94,6 +101,7 @@ public class ImgFrameActor extends Image {
                 startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX();
                 startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY();
                 computeDragContext();
+                captureSnapData();
                 dragging = false;
                 return true;
             }
@@ -154,6 +162,8 @@ public class ImgFrameActor extends Image {
                 dragging = false;
                 gizmoDragging = false;
                 gizmoHandle = null;
+                myStartBBox = null;
+                siblingBBoxes = null;
             }
 
             @Override
@@ -489,6 +499,9 @@ public class ImgFrameActor extends Image {
         float canvasY = (stageY - parent.getY()) / parent.getScaleY();
         float dx = canvasX - startCanvasX;
         float dy = canvasY - startCanvasY;
+        computeSnapAdjustment(dx, dy);
+        dx += snapAdjust.x;
+        dy += snapAdjust.y;
         float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
         float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
         dragFilter.dx(startFilterDx + localDx);
@@ -536,6 +549,86 @@ public class ImgFrameActor extends Image {
         float rotRad = (float) Math.atan2(c - b, a + d);
         dragCos = (float) Math.cos(rotRad);
         dragSin = (float) Math.sin(rotRad);
+    }
+
+    private void captureSnapData() {
+        myStartBBox = computeCanvasBBox();
+        siblingBBoxes = new ArrayList<>();
+        Actor p = getParent();
+        if (p instanceof com.badlogic.gdx.scenes.scene2d.Group g) {
+            for (Actor child : g.getChildren()) {
+                if (child != this && child instanceof ImgFrameActor other) {
+                    siblingBBoxes.add(other.computeCanvasBBox());
+                }
+            }
+        }
+    }
+
+    private float[] computeCanvasBBox() {
+        float w = getWidth(), h = getHeight();
+        localToParent(0, 0, tmp1);
+        localToParent(w, 0, tmp2);
+        float l = Math.min(tmp1.x, tmp2.x);
+        float r = Math.max(tmp1.x, tmp2.x);
+        float b = Math.min(tmp1.y, tmp2.y);
+        float t = Math.max(tmp1.y, tmp2.y);
+        localToParent(0, h, tmp3);
+        l = Math.min(l, tmp3.x);
+        r = Math.max(r, tmp3.x);
+        b = Math.min(b, tmp3.y);
+        t = Math.max(t, tmp3.y);
+        localToParent(w, h, tmp2);
+        l = Math.min(l, tmp2.x);
+        r = Math.max(r, tmp2.x);
+        b = Math.min(b, tmp2.y);
+        t = Math.max(t, tmp2.y);
+        return new float[]{l, r, b, t, (l + r) * 0.5f, (b + t) * 0.5f};
+    }
+
+    private void computeSnapAdjustment(float dx, float dy) {
+        snapAdjust.set(0, 0);
+        if (myStartBBox == null || siblingBBoxes == null) return;
+        Actor p = getParent();
+        float threshold = (p != null) ? SNAP_THRESHOLD_SCREEN / p.getScaleX() : SNAP_THRESHOLD_SCREEN;
+
+        float pl = myStartBBox[0] + dx;
+        float pr = myStartBBox[1] + dx;
+        float pb = myStartBBox[2] + dy;
+        float pt = myStartBBox[3] + dy;
+        float pcx = myStartBBox[4] + dx;
+        float pcy = myStartBBox[5] + dy;
+
+        float bestSnapX = 0, bestSnapY = 0;
+        float bestDistX = threshold, bestDistY = threshold;
+
+        for (float[] s : siblingBBoxes) {
+            float d;
+
+            d = s[0] - pl;
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            d = s[1] - pl;
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            d = s[1] - pr;
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            d = s[0] - pr;
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            d = s[4] - pcx;
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+
+            d = s[2] - pb;
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            d = s[3] - pb;
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            d = s[3] - pt;
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            d = s[2] - pt;
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            d = s[5] - pcy;
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+        }
+
+        if (bestDistX < threshold) snapAdjust.x = bestSnapX;
+        if (bestDistY < threshold) snapAdjust.y = bestSnapY;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
