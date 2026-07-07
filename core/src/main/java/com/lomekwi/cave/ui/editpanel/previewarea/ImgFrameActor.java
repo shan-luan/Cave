@@ -664,52 +664,61 @@ public class ImgFrameActor extends Image {
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
         if (selected) {
+            Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
+            batch.setTransformMatrix(new Matrix4().idt());
             drawSelectionBorder();
             drawGizmoHandles();
+            batch.setTransformMatrix(savedTransform);
         }
     }
 
     private void drawSelectionBorder() {
         float w = getWidth(), h = getHeight();
         ShapeDrawer sd = App.root.getShapeDrawer();
-        float lw = 2f;
 
-        Vector2 bl = tmp1;
-        Vector2 br = tmp2;
-        localToParent(0, 0, bl);
-        localToParent(w, 0, br);
-        sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, lw);
+        Vector2 bl = localToStageCoordinates(tmp1.set(0, 0));
+        Vector2 br = localToStageCoordinates(tmp2.set(w, 0));
+        Vector2 tr = localToStageCoordinates(tmp3.set(w, h));
+        Vector2 tl = localToStageCoordinates(dragStagePos.set(0, h));
 
-        Vector2 tr = tmp1;
-        localToParent(w, h, tr);
-        sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, lw);
-
-        Vector2 tl = tmp2;
-        localToParent(0, h, tl);
-        sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, lw);
-
-        localToParent(0, 0, bl);
-        sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, lw);
+        sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, 2f);
+        sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, 2f);
+        sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, 2f);
+        sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, 2f);
     }
 
     private void drawGizmoHandles() {
         float w = getWidth(), h = getHeight();
         if (w <= 0 || h <= 0) return;
         float hw = w / 2f, hh = h / 2f;
-        float handleHalf = Math.max(3f, Math.min(w, h) * 0.012f);
 
         ShapeDrawer sd = App.root.getShapeDrawer();
-        float lineWidth = 1.5f;
+        float lineWidth = 2f;
+        float handleHalf = 6f;
+        float rotateRadius = 5f;
 
-        drawParentLine(0, 0, w, 0, GIZMO_COLOR, lineWidth);
-        drawParentLine(w, 0, w, h, GIZMO_COLOR, lineWidth);
-        drawParentLine(w, h, 0, h, GIZMO_COLOR, lineWidth);
-        drawParentLine(0, h, 0, 0, GIZMO_COLOR, lineWidth);
+        Vector2 a = localToStageCoordinates(tmp1.set(0, 0));
+        Vector2 b = localToStageCoordinates(tmp2.set(w, 0));
+        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
 
-        drawParentLine(hw, h, hw, h + ROTATE_OFFSET_LOCAL, ROTATE_COLOR, lineWidth);
-        Vector2 rotateHandleCenter = tmp1;
-        localToParent(hw, h + ROTATE_OFFSET_LOCAL, rotateHandleCenter);
-        sd.filledCircle(rotateHandleCenter.x, rotateHandleCenter.y, 5f, ROTATE_COLOR);
+        a = localToStageCoordinates(tmp1.set(w, 0));
+        b = localToStageCoordinates(tmp2.set(w, h));
+        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+
+        a = localToStageCoordinates(tmp1.set(w, h));
+        b = localToStageCoordinates(tmp2.set(0, h));
+        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+
+        a = localToStageCoordinates(tmp1.set(0, h));
+        b = localToStageCoordinates(tmp2.set(0, 0));
+        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+
+        a = localToStageCoordinates(tmp1.set(hw, h));
+        b = localToStageCoordinates(tmp2.set(hw, h + ROTATE_OFFSET_LOCAL));
+        sd.line(a.x, a.y, b.x, b.y, ROTATE_COLOR, lineWidth);
+
+        Vector2 rc = localToStageCoordinates(tmp1.set(hw, h + ROTATE_OFFSET_LOCAL));
+        sd.filledCircle(rc.x, rc.y, rotateRadius, ROTATE_COLOR);
 
         for (Handle handle : Handle.values()) {
             if (handle == Handle.ROTATE) continue;
@@ -735,10 +744,9 @@ public class ImgFrameActor extends Image {
                 case W -> hh;
                 default -> 0;
             };
-            Vector2 handlePos = tmp1;
-            localToParent(hx, hy, handlePos);
-            float sx = handlePos.x;
-            float sy = handlePos.y;
+            Vector2 hp = localToStageCoordinates(tmp1.set(hx, hy));
+            float sx = hp.x;
+            float sy = hp.y;
             Color fill = (gizmoHandle == handle || hoveredHandle == handle)
                 ? GIZMO_COLOR : GIZMO_FILL;
             sd.filledRectangle(sx - handleHalf, sy - handleHalf,
@@ -746,13 +754,5 @@ public class ImgFrameActor extends Image {
             sd.rectangle(sx - handleHalf, sy - handleHalf,
                 handleHalf * 2, handleHalf * 2, GIZMO_COLOR, 1f);
         }
-    }
-
-    private void drawParentLine(float x1, float y1, float x2, float y2, Color color, float width) {
-        Vector2 from = tmp1;
-        Vector2 to = tmp2;
-        localToParent(x1, y1, from);
-        localToParent(x2, y2, to);
-        App.root.getShapeDrawer().line(from.x, from.y, to.x, to.y, color, width);
     }
 }
