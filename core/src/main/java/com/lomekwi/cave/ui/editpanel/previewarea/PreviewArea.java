@@ -109,7 +109,7 @@ public class PreviewArea extends Group {
             }
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                if (pointer == -1) {
+                if (pointer == -1 && !isStillInside(toActor)) {
                     var stage = App.root.getStage();
                     if (stage.getScrollFocus() == PreviewArea.this) {
                         stage.setScrollFocus(null);
@@ -118,6 +118,10 @@ public class PreviewArea extends Group {
                         stage.setKeyboardFocus(null);
                     }
                 }
+            }
+
+            private boolean isStillInside(com.badlogic.gdx.scenes.scene2d.Actor toActor) {
+                return toActor.isDescendantOf(PreviewArea.this);
             }
         });
     }

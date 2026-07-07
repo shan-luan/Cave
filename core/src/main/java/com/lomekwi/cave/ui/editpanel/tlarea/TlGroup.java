@@ -116,27 +116,6 @@ public class TlGroup extends Group {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if (App.shortcutManager.isActive(Actions.PLAY_PAUSE)) {
-                    playhead.setPlaying(!playhead.isPlaying());
-                }
-                if (App.shortcutManager.isActive(Actions.SPLIT)) {
-                    dragHandler.splitAtCursor();
-                }
-                if (App.shortcutManager.isActive(Actions.DELETE)) {
-                    dragHandler.deleteAtCursor();
-                }
-                if (App.shortcutManager.isActive(Actions.UNDO)) {
-                    project.undoManager.undo();
-                    dirty = true;
-                }
-                if (App.shortcutManager.isActive(Actions.REDO)) {
-                    project.undoManager.redo();
-                    dirty = true;
-                }
-                if (App.shortcutManager.isActive(Actions.GROUP)) {
-                    groupSelectedSegments();
-                    return true;
-                }
                 return true;
             }
 
@@ -471,6 +450,20 @@ public class TlGroup extends Group {
     public void onProjectFronted(ProjectFrontedEvent e) {
         App.root.getStage().setScrollFocus(this);
         App.root.getStage().setKeyboardFocus(this);
+    }
+
+    // -- 快捷键动作（由 Root.InputProcessor 调用） --
+
+    public void performSplit() {
+        dragHandler.splitAtCursor();
+    }
+
+    public void performDelete() {
+        dragHandler.deleteAtCursor();
+    }
+
+    public void performGroup() {
+        groupSelectedSegments();
     }
 
     // -- 委托给 SegDragHandler --

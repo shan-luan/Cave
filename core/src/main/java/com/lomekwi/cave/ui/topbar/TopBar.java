@@ -71,122 +71,24 @@ public class TopBar extends MenuBar {
 
         Menu fileMenu = new MenuX(i18n("文件"));
 
-        MenuItem newItem = new MenuItem(i18n("新建"), new ChangeListenerX(() -> {
-            try {
-                App.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
-                App.root.getToastManager().show(i18n("项目已新建"), toastTimeOut);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
+        MenuItem newItem = new MenuItem(i18n("新建"), new ChangeListenerX(this::performNew));
         newItem.setShortcut(TopActions.NEW.defaultKeys());
         actionItems.put(TopActions.NEW, newItem);
         fileMenu.addItem(newItem);
 
-        MenuItem openItem = new MenuItem(i18n("打开"), new ChangeListenerX(() -> {
-            try {
-                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.title = i18n("选择项目...");
-                if (Gdx.app.getType() == Application.ApplicationType.Android) {
-                    conf.mimeFilter = "*/*";
-                }
-                conf.intent = NativeFileChooserIntent.OPEN;
-                fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                    @Override
-                    public void onFileChosen(FileHandle file) {
-                        try {
-                            App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
-                            App.root.getToastManager().show(i18n("项目已打开"), toastTimeOut);
-                        } catch (IOException | ClassNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    @Override
-                    public void onCancellation() {}
-                    @Override
-                    public void onError(Exception exception) {}
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
+        MenuItem openItem = new MenuItem(i18n("打开"), new ChangeListenerX(this::performOpen));
         openItem.setShortcut(TopActions.OPEN.defaultKeys());
         actionItems.put(TopActions.OPEN, openItem);
         fileMenu.addItem(openItem);
 
         fileMenu.addSeparator();
 
-        MenuItem saveItem = new MenuItemP(i18n("保存"), new ChangeListenerX(() -> {
-            try {
-                if (App.root.getFrontendProject() == null) {
-                    return;
-                }
-
-                if (App.root.getFrontendProject().getSavePath() == null) {
-                    NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                    conf.title = i18n("选择保存位置...");
-                    conf.mimeFilter = "*/*";
-                    conf.intent = NativeFileChooserIntent.SAVE;
-                    fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                        @Override
-                        public void onFileChosen(FileHandle file) {
-                            try {
-                                if (App.root.getFrontendProject() != null) {
-                                    Projects.save(App.root.getFrontendProject(), file);
-                                    App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        @Override
-                        public void onCancellation() {}
-                        @Override
-                        public void onError(Exception exception) {}
-                    });
-                } else {
-                    Projects.save(App.root.getFrontendProject());
-                    App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
+        MenuItem saveItem = new MenuItemP(i18n("保存"), new ChangeListenerX(this::performSave));
         saveItem.setShortcut(TopActions.SAVE.defaultKeys());
         actionItems.put(TopActions.SAVE, saveItem);
         fileMenu.addItem(saveItem);
 
-        MenuItem saveAsItem = new MenuItemP(i18n("另存为"), new ChangeListenerX(() -> {
-            try {
-                if (App.root.getFrontendProject() == null) {
-                    return;
-                }
-
-                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
-                conf.title = i18n("选择保存位置...");
-                conf.mimeFilter = "*/*";
-                conf.intent = NativeFileChooserIntent.SAVE;
-                fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
-                    @Override
-                    public void onFileChosen(FileHandle file) {
-                        try {
-                            if (App.root.getFrontendProject() != null) {
-                                Projects.save(App.root.getFrontendProject(), file);
-                                App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    @Override
-                    public void onCancellation() {}
-                    @Override
-                    public void onError(Exception exception) {}
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
+        MenuItem saveAsItem = new MenuItemP(i18n("另存为"), new ChangeListenerX(this::performSaveAs));
         saveAsItem.setShortcut(TopActions.SAVE_AS.defaultKeys());
         actionItems.put(TopActions.SAVE_AS, saveAsItem);
         fileMenu.addItem(saveAsItem);
@@ -201,13 +103,7 @@ public class TopBar extends MenuBar {
 
         fileMenu.addSeparator();
 
-        MenuItem closeItem = new MenuItem(i18n("关闭"), new ChangeListenerX(() -> {
-            try {
-                Gdx.app.exit();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
+        MenuItem closeItem = new MenuItem(i18n("关闭"), new ChangeListenerX(this::performClose));
         closeItem.setShortcut(TopActions.CLOSE.defaultKeys());
         actionItems.put(TopActions.CLOSE, closeItem);
         fileMenu.addItem(closeItem);
@@ -324,6 +220,118 @@ public class TopBar extends MenuBar {
             var keys = App.shortcutManager.getKeys(e.getKey());
             int[] arr = keys.stream().mapToInt(i -> i).toArray();
             e.getValue().setShortcut(arr);
+        }
+    }
+
+    // -- 全局快捷键动作（由 Root.InputProcessor 调用） --
+
+    public void performNew() {
+        try {
+            App.appEventBus.post(new ProjectLoadedEvent(Projects.create()));
+            App.root.getToastManager().show(i18n("项目已新建"), toastTimeOut);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void performOpen() {
+        try {
+            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+            conf.title = i18n("选择项目...");
+            if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                conf.mimeFilter = "*/*";
+            }
+            conf.intent = NativeFileChooserIntent.OPEN;
+            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                @Override
+                public void onFileChosen(FileHandle file) {
+                    try {
+                        App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
+                        App.root.getToastManager().show(i18n("项目已打开"), toastTimeOut);
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onCancellation() {}
+                @Override
+                public void onError(Exception exception) {}
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void performSave() {
+        try {
+            if (App.root.getFrontendProject() == null) return;
+
+            if (App.root.getFrontendProject().getSavePath() == null) {
+                NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+                conf.title = i18n("选择保存位置...");
+                conf.mimeFilter = "*/*";
+                conf.intent = NativeFileChooserIntent.SAVE;
+                fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                    @Override
+                    public void onFileChosen(FileHandle file) {
+                        try {
+                            if (App.root.getFrontendProject() != null) {
+                                Projects.save(App.root.getFrontendProject(), file);
+                                App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    @Override
+                    public void onCancellation() {}
+                    @Override
+                    public void onError(Exception exception) {}
+                });
+            } else {
+                Projects.save(App.root.getFrontendProject());
+                App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void performSaveAs() {
+        try {
+            if (App.root.getFrontendProject() == null) return;
+
+            NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
+            conf.title = i18n("选择保存位置...");
+            conf.mimeFilter = "*/*";
+            conf.intent = NativeFileChooserIntent.SAVE;
+            fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
+                @Override
+                public void onFileChosen(FileHandle file) {
+                    try {
+                        if (App.root.getFrontendProject() != null) {
+                            Projects.save(App.root.getFrontendProject(), file);
+                            App.root.getToastManager().show(i18n("项目已保存"), toastTimeOut);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onCancellation() {}
+                @Override
+                public void onError(Exception exception) {}
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void performClose() {
+        try {
+            Gdx.app.exit();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

@@ -77,21 +77,67 @@ public class Root implements ApplicationListener {
         multiplexer.addProcessor(0, new InputProcessor() {
             @Override
             public boolean keyDown(int keycode) {
+                // TopActions that don't need a project
+                if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
+                    topBar.performNew();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(TopBar.TopActions.OPEN)) {
+                    topBar.performOpen();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(TopBar.TopActions.CLOSE)) {
+                    topBar.performClose();
+                    return true;
+                }
+
                 Project project = getFrontendProject();
                 if (project == null || project.undoManager == null) return false;
+                EditPanel ep = getFrontendEditPanel();
 
+                // Undo / Redo
                 if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
                     project.undoManager.undo();
-                    EditPanel ep = getFrontendEditPanel();
                     if (ep != null) ep.getTlGroup().markTimelineDirty();
                     return true;
                 }
                 if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
                     project.undoManager.redo();
-                    EditPanel ep = getFrontendEditPanel();
                     if (ep != null) ep.getTlGroup().markTimelineDirty();
                     return true;
                 }
+
+                // TopActions that need a project
+                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
+                    topBar.performSave();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
+                    topBar.performSaveAs();
+                    return true;
+                }
+
+                // TlGroup actions
+                TlGroup tlGroup = (ep != null) ? ep.getTlGroup() : null;
+                if (tlGroup != null) {
+                    if (App.shortcutManager.isActive(TlGroup.Actions.PLAY_PAUSE)) {
+                        project.playhead.setPlaying(!project.playhead.isPlaying());
+                        return true;
+                    }
+                    if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {
+                        tlGroup.performSplit();
+                        return true;
+                    }
+                    if (App.shortcutManager.isActive(TlGroup.Actions.DELETE)) {
+                        tlGroup.performDelete();
+                        return true;
+                    }
+                    if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {
+                        tlGroup.performGroup();
+                        return true;
+                    }
+                }
+
                 return false;
             }
 
