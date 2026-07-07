@@ -61,6 +61,8 @@ public class ImgFrameActor extends Image {
     private float gizmoStartRotation;
     private float gizmoStartAngle;
     private float gizmoAnchorLocalX, gizmoAnchorLocalY;
+    private float startGizmoCanvasX, startGizmoCanvasY;
+    private float startGizmoLocalX, startGizmoLocalY;
     private UndoManager.TransFilterState gizmoOldState;
 
     private final Vector2 dragStagePos = new Vector2();
@@ -212,10 +214,11 @@ public class ImgFrameActor extends Image {
         if (w <= 0 || h <= 0) return null;
         float hw = w / 2f, hh = h / 2f;
 
-        tmp1.set(stageX, stageY);
-        stageToLocalCoordinates(tmp1);
-        float lx = tmp1.x;
-        float ly = tmp1.y;
+        Vector2 localCoords = tmp1;
+        localCoords.set(stageX, stageY);
+        stageToLocalCoordinates(localCoords);
+        float lx = localCoords.x;
+        float ly = localCoords.y;
 
         float[][] localPositions = {
             {0, h}, {hw, h}, {w, h}, {w, hh},
@@ -284,11 +287,26 @@ public class ImgFrameActor extends Image {
 
         computeDragContext();
 
+        Actor p = getParent();
+        if (p != null) {
+            startGizmoCanvasX = (stageX - p.getX()) / p.getScaleX();
+            startGizmoCanvasY = (stageY - p.getY()) / p.getScaleY();
+        } else {
+            startGizmoCanvasX = stageX;
+            startGizmoCanvasY = stageY;
+        }
+        Vector2 gizmoLocalPos = tmp1;
+        gizmoLocalPos.set(stageX, stageY);
+        stageToLocalCoordinates(gizmoLocalPos);
+        startGizmoLocalX = gizmoLocalPos.x;
+        startGizmoLocalY = gizmoLocalPos.y;
+
         if (handle == Handle.ROTATE) {
-            tmp1.set(getWidth() / 2f, getHeight() / 2f);
-            localToStageCoordinates(tmp1);
+            Vector2 centerStagePos = tmp1;
+            centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
+            localToStageCoordinates(centerStagePos);
             gizmoStartAngle = (float) Math.toDegrees(Math.atan2(
-                stageY - tmp1.y, stageX - tmp1.x));
+                stageY - centerStagePos.y, stageX - centerStagePos.x));
         }
 
         switch (handle) {
@@ -334,10 +352,13 @@ public class ImgFrameActor extends Image {
             return;
         }
 
-        tmp1.set(stageX, stageY);
-        stageToLocalCoordinates(tmp1);
-        float localX = tmp1.x;
-        float localY = tmp1.y;
+        Actor p = getParent();
+        float canvasX = p != null ? (stageX - p.getX()) / p.getScaleX() : stageX;
+        float canvasY = p != null ? (stageY - p.getY()) / p.getScaleY() : stageY;
+        float canvasDeltaX = canvasX - startGizmoCanvasX;
+        float canvasDeltaY = canvasY - startGizmoCanvasY;
+        float localX = startGizmoLocalX + (canvasDeltaX * dragCos + canvasDeltaY * dragSin) / dragScaleX;
+        float localY = startGizmoLocalY + (-canvasDeltaX * dragSin + canvasDeltaY * dragCos) / dragScaleY;
 
         localX = clampToAnchor(localX, gizmoAnchorLocalX, gizmoHandle, true);
         localY = clampToAnchor(localY, gizmoAnchorLocalY, gizmoHandle, false);
@@ -388,11 +409,9 @@ public class ImgFrameActor extends Image {
 
         float scaleChangeW = newScaleX / gizmoStartScaleX;
         float scaleChangeH = newScaleY / gizmoStartScaleY;
-        float centerShiftX = (gizmoStartW / 2f - gizmoAnchorLocalX) * (scaleChangeW - 1f);
-        float centerShiftY = (gizmoStartH / 2f - gizmoAnchorLocalY) * (scaleChangeH - 1f);
 
-        float compX = -centerShiftX;
-        float compY = -centerShiftY;
+        float compX = gizmoAnchorLocalX * (1f - scaleChangeW);
+        float compY = gizmoAnchorLocalY * (1f - scaleChangeH);
 
         float ddx = (compX * dragCos + compY * dragSin) / dragScaleX;
         float ddy = (-compX * dragSin + compY * dragCos) / dragScaleY;
@@ -407,10 +426,11 @@ public class ImgFrameActor extends Image {
     }
 
     private void updateRotateDrag(float stageX, float stageY) {
-        tmp1.set(getWidth() / 2f, getHeight() / 2f);
-        localToStageCoordinates(tmp1);
+        Vector2 centerStagePos = tmp1;
+        centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
+        localToStageCoordinates(centerStagePos);
         float currentAngle = (float) Math.toDegrees(Math.atan2(
-            stageY - tmp1.y, stageX - tmp1.x));
+            stageY - centerStagePos.y, stageX - centerStagePos.x));
         float delta = currentAngle - gizmoStartAngle;
 
         if (delta > 180) delta -= 360;
@@ -453,16 +473,14 @@ public class ImgFrameActor extends Image {
     @Override
     public void act(float delta) {
         super.act(delta);
-        if (gizmoDragging && dragFilter != null && getParent() != null && getStage() != null) {
-            dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
-            getStage().screenToStageCoordinates(dragStagePos);
-            updateGizmoDrag(dragStagePos.x, dragStagePos.y);
-            return;
-        }
-        if (!dragging || dragFilter == null || getParent() == null || getStage() == null) return;
+        if (dragFilter == null || getParent() == null || getStage() == null) return;
         dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
         getStage().screenToStageCoordinates(dragStagePos);
-        updateDrag(dragStagePos.x, dragStagePos.y);
+        if (gizmoDragging) {
+            updateGizmoDrag(dragStagePos.x, dragStagePos.y);
+        } else if (dragging) {
+            updateDrag(dragStagePos.x, dragStagePos.y);
+        }
     }
 
     private void updateDrag(float stageX, float stageY) {
@@ -560,18 +578,22 @@ public class ImgFrameActor extends Image {
         ShapeDrawer sd = App.root.getShapeDrawer();
         float lw = 2f;
 
-        localToParent(0, 0, tmp1);
-        localToParent(w, 0, tmp2);
-        sd.line(tmp1.x, tmp1.y, tmp2.x, tmp2.y, SELECTED_COLOR, lw);
+        Vector2 bl = tmp1;
+        Vector2 br = tmp2;
+        localToParent(0, 0, bl);
+        localToParent(w, 0, br);
+        sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, lw);
 
-        localToParent(w, h, tmp1);
-        sd.line(tmp2.x, tmp2.y, tmp1.x, tmp1.y, SELECTED_COLOR, lw);
+        Vector2 tr = tmp1;
+        localToParent(w, h, tr);
+        sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, lw);
 
-        localToParent(0, h, tmp2);
-        sd.line(tmp1.x, tmp1.y, tmp2.x, tmp2.y, SELECTED_COLOR, lw);
+        Vector2 tl = tmp2;
+        localToParent(0, h, tl);
+        sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, lw);
 
-        localToParent(0, 0, tmp1);
-        sd.line(tmp2.x, tmp2.y, tmp1.x, tmp1.y, SELECTED_COLOR, lw);
+        localToParent(0, 0, bl);
+        sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, lw);
     }
 
     private void drawGizmoHandles() {
@@ -589,8 +611,9 @@ public class ImgFrameActor extends Image {
         drawParentLine(0, h, 0, 0, GIZMO_COLOR, lineWidth);
 
         drawParentLine(hw, h, hw, h + ROTATE_OFFSET_LOCAL, ROTATE_COLOR, lineWidth);
-        localToParent(hw, h + ROTATE_OFFSET_LOCAL, tmp1);
-        sd.filledCircle(tmp1.x, tmp1.y, 5f, ROTATE_COLOR);
+        Vector2 rotateHandleCenter = tmp1;
+        localToParent(hw, h + ROTATE_OFFSET_LOCAL, rotateHandleCenter);
+        sd.filledCircle(rotateHandleCenter.x, rotateHandleCenter.y, 5f, ROTATE_COLOR);
 
         for (Handle handle : Handle.values()) {
             if (handle == Handle.ROTATE) continue;
@@ -616,9 +639,10 @@ public class ImgFrameActor extends Image {
                 case W -> hh;
                 default -> 0;
             };
-            localToParent(hx, hy, tmp1);
-            float sx = tmp1.x;
-            float sy = tmp1.y;
+            Vector2 handlePos = tmp1;
+            localToParent(hx, hy, handlePos);
+            float sx = handlePos.x;
+            float sy = handlePos.y;
             Color fill = (gizmoHandle == handle || hoveredHandle == handle)
                 ? GIZMO_COLOR : GIZMO_FILL;
             sd.filledRectangle(sx - handleHalf, sy - handleHalf,
@@ -629,8 +653,10 @@ public class ImgFrameActor extends Image {
     }
 
     private void drawParentLine(float x1, float y1, float x2, float y2, Color color, float width) {
-        localToParent(x1, y1, tmp1);
-        localToParent(x2, y2, tmp2);
-        App.root.getShapeDrawer().line(tmp1.x, tmp1.y, tmp2.x, tmp2.y, color, width);
+        Vector2 from = tmp1;
+        Vector2 to = tmp2;
+        localToParent(x1, y1, from);
+        localToParent(x2, y2, to);
+        App.root.getShapeDrawer().line(from.x, from.y, to.x, to.y, color, width);
     }
 }

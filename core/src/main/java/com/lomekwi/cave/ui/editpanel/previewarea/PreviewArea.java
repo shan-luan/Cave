@@ -121,7 +121,7 @@ public class PreviewArea extends Group {
             }
 
             private boolean isStillInside(com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                return toActor.isDescendantOf(PreviewArea.this);
+                return toActor != null && toActor.isDescendantOf(PreviewArea.this);
             }
         });
     }
