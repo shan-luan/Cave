@@ -722,6 +722,9 @@ class SegDragHandler {
         private static final float SNAP_THRESHOLD_PX = 10f;
 
         private long snapTime(long time, Set<Segment> ignore) {
+            if (App.shortcutManager.isActive(Actions.SNAP_IGNORE)) {
+                return time;
+            }
             long threshold = Math.max(1, (long) (SNAP_THRESHOLD_PX / getWidth() * view.durationTime));
             long best = time;
             long bestDist = threshold;
@@ -780,8 +783,71 @@ class SegDragHandler {
             }
 
             if (!timeline.canMoveGroup(groupMembers, newStarts, groupOrigDurations, newTracks)) {
-                actor.setDragInvalid(true);
-                return;
+                long rightMinDelta = Long.MIN_VALUE;
+                long leftMaxDelta = Long.MAX_VALUE;
+                Set<Segment> ignore = new HashSet<>(groupMembers);
+
+                for (int i = 0; i < n; i++) {
+                    Track tr = newTracks[i];
+                    for (var occ : tr.getSubRangeMapAsEntrySet(
+                            Range.closedOpen(newStarts[i], newStarts[i] + groupOrigDurations[i]))) {
+                        if (ignore.contains(occ.getValue())) continue;
+                        rightMinDelta = Math.max(rightMinDelta,
+                            occ.getKey().upperEndpoint() - groupOrigStarts[i]);
+                        leftMaxDelta = Math.min(leftMaxDelta,
+                            occ.getKey().lowerEndpoint() - groupOrigDurations[i] - groupOrigStarts[i]);
+                    }
+                }
+
+                long snappedTarget = -1;
+
+                if (rightMinDelta > timeDelta) {
+                    long rightTarget = dragOldStart + rightMinDelta;
+                    long[] rightStarts = new long[n];
+                    Track[] rightTracks = new Track[n];
+                    boolean ok = true;
+                    for (int i = 0; i < n; i++) {
+                        rightStarts[i] = groupOrigStarts[i] + rightMinDelta;
+                        int idx = groupOrigTracks[i].index + trackDelta;
+                        if (idx < 0 || rightStarts[i] < 0) { ok = false; break; }
+                        rightTracks[i] = timeline.getTrack(idx);
+                    }
+                    if (ok && timeline.canMoveGroup(groupMembers, rightStarts, groupOrigDurations, rightTracks)) {
+                        snappedTarget = rightTarget;
+                    }
+                }
+
+                if (leftMaxDelta < timeDelta && leftMaxDelta >= 0) {
+                    long leftTarget = dragOldStart + leftMaxDelta;
+                    long[] leftStarts = new long[n];
+                    Track[] leftTracks = new Track[n];
+                    boolean ok = true;
+                    for (int i = 0; i < n; i++) {
+                        leftStarts[i] = groupOrigStarts[i] + leftMaxDelta;
+                        int idx = groupOrigTracks[i].index + trackDelta;
+                        if (idx < 0) { ok = false; break; }
+                        leftTracks[i] = timeline.getTrack(idx);
+                    }
+                    if (ok && timeline.canMoveGroup(groupMembers, leftStarts, groupOrigDurations, leftTracks)) {
+                        if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
+                            snappedTarget = leftTarget;
+                        }
+                    }
+                }
+
+                if (snappedTarget >= 0) {
+                    target = snappedTarget;
+                    timeDelta = target - dragOldStart;
+                    for (int i = 0; i < n; i++) {
+                        newStarts[i] = groupOrigStarts[i] + timeDelta;
+                        int idx = groupOrigTracks[i].index + trackDelta;
+                        newTracks[i] = timeline.getTrack(idx);
+                    }
+                    actor.setDragInvalid(false);
+                } else {
+                    actor.setDragInvalid(true);
+                    return;
+                }
             }
 
             long[] prevStarts = new long[n];
@@ -831,8 +897,38 @@ class SegDragHandler {
             }
 
             if (!timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
-                actor.setDragInvalid(true);
-                return;
+                long rightMinDelta = Long.MIN_VALUE;
+                Set<Segment> ignore = new HashSet<>(groupMembers);
+                for (int i = 0; i < n; i++) {
+                    Track tr = groupOrigTracks[i];
+                    for (var occ : tr.getSubRangeMapAsEntrySet(
+                            Range.closedOpen(newStarts[i], newStarts[i] + newDurations[i]))) {
+                        if (ignore.contains(occ.getValue())) continue;
+                        rightMinDelta = Math.max(rightMinDelta,
+                            occ.getKey().upperEndpoint() - groupOrigStarts[i]);
+                    }
+                }
+                if (rightMinDelta > timeDelta) {
+                    long snappedDelta = rightMinDelta;
+                    boolean ok = true;
+                    for (int i = 0; i < n; i++) {
+                        long snappedStart = groupOrigStarts[i] + snappedDelta;
+                        long snappedEnd = groupOrigStarts[i] + groupOrigDurations[i];
+                        if (snappedStart >= snappedEnd || snappedStart < 0) { ok = false; break; }
+                        newStarts[i] = snappedStart;
+                        newDurations[i] = snappedEnd - snappedStart;
+                    }
+                    if (ok && timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
+                        timeDelta = snappedDelta;
+                        actor.setDragInvalid(false);
+                    } else {
+                        actor.setDragInvalid(true);
+                        return;
+                    }
+                } else {
+                    actor.setDragInvalid(true);
+                    return;
+                }
             }
 
             for (int i = 0; i < n; i++) {
@@ -872,8 +968,36 @@ class SegDragHandler {
             }
 
             if (!timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
-                actor.setDragInvalid(true);
-                return;
+                long leftMaxDelta = Long.MAX_VALUE;
+                Set<Segment> ignore = new HashSet<>(groupMembers);
+                for (int i = 0; i < n; i++) {
+                    Track tr = groupOrigTracks[i];
+                    for (var occ : tr.getSubRangeMapAsEntrySet(
+                            Range.closedOpen(groupOrigStarts[i], groupOrigStarts[i] + newDurations[i]))) {
+                        if (ignore.contains(occ.getValue())) continue;
+                        leftMaxDelta = Math.min(leftMaxDelta,
+                            occ.getKey().lowerEndpoint() - groupOrigDurations[i] - groupOrigStarts[i]);
+                    }
+                }
+                if (leftMaxDelta < timeDelta && leftMaxDelta >= 0) {
+                    long snappedDelta = leftMaxDelta;
+                    boolean ok = true;
+                    for (int i = 0; i < n; i++) {
+                        long msNewEnd = groupOrigStarts[i] + groupOrigDurations[i] + snappedDelta;
+                        if (msNewEnd <= groupOrigStarts[i]) { ok = false; break; }
+                        newDurations[i] = msNewEnd - groupOrigStarts[i];
+                    }
+                    if (ok && timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
+                        timeDelta = snappedDelta;
+                        actor.setDragInvalid(false);
+                    } else {
+                        actor.setDragInvalid(true);
+                        return;
+                    }
+                } else {
+                    actor.setDragInvalid(true);
+                    return;
+                }
             }
 
             for (int i = 0; i < n; i++) {
@@ -1088,7 +1212,8 @@ class SegDragHandler {
         REDO("重做", CONTROL_LEFT, Y),
         PLAY_PAUSE("播放/暂停", SPACE),
         GROUP("分组", F),
-        SEEK("定位播放头", E);
+        SEEK("定位播放头", E),
+        SNAP_IGNORE("忽略吸附", CONTROL_LEFT);
 
         private final String displayName;
         private final int[] defaultKeys;
