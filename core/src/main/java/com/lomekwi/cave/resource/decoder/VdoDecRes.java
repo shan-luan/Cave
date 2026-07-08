@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 
 public class VdoDecRes extends DecRes<ImgFrame> {
     private ByteBuffer bufferedPixels;
+    private int unpackRowLength;
 
     public VdoDecRes(VdoRes source) {
         super(source);
@@ -58,6 +59,7 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         grabber.setAudioChannels(0);
         super.start();
         bufferedPixels = null;
+        unpackRowLength = 0;
     }
 
     public void setBufferedPixels(ByteBuffer pixels) {
@@ -118,11 +120,15 @@ public class VdoDecRes extends DecRes<ImgFrame> {
             }
             if (output != null) {
                 bufferedPixels = (ByteBuffer) output.image[0];
+                if (output.imageStride > 0 && output.imageChannels > 0) {
+                    unpackRowLength = output.imageStride / output.imageChannels;
+                }
             }
         }
 
         // 目标时间在下一帧之前，且缓存有效，直接返回缓存
         frame.setPixels(bufferedPixels);
+        frame.setUnpackRowLength(unpackRowLength);
     }
 
     @Override

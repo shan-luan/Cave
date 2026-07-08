@@ -28,6 +28,16 @@ public final class MimeType {
         extensionToMimeType.put("mpg", "video/mpeg");
         extensionToMimeType.put("3gp", "video/3gpp");
         
+        // 图片格式
+        extensionToMimeType.put("png", "image/png");
+        extensionToMimeType.put("jpg", "image/jpeg");
+        extensionToMimeType.put("jpeg", "image/jpeg");
+        extensionToMimeType.put("gif", "image/gif");
+        extensionToMimeType.put("bmp", "image/bmp");
+        extensionToMimeType.put("webp", "image/webp");
+        extensionToMimeType.put("tiff", "image/tiff");
+        extensionToMimeType.put("tif", "image/tiff");
+
         // 音频格式
         extensionToMimeType.put("mp3", "audio/mpeg");
         extensionToMimeType.put("wav", "audio/wav");

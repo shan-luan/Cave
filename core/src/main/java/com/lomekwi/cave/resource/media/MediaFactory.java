@@ -16,6 +16,7 @@ public final class MediaFactory {
     static {
         map.put("video/*", VdoRes::new);
         map.put("audio/*", AudRes::new);
+        map.put("image/*", ImgRes::new);
     }
     public static MedRes create(String mimeType, String path){
         Function<String, MedRes> constructor = findConstructor(mimeType);

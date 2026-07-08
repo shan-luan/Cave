@@ -7,6 +7,7 @@ import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.resource.media.MedRes;
+import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.util.MimeType;
 
@@ -40,6 +41,7 @@ public class SegFactory implements Serializable {
     private void initDefaultMappings() {
         register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
         register(AudRes.class, source -> new AudSeg((AudRes) source));
+        register(ImgRes.class, source -> new ImgSeg((ImgRes) source));
     }
     public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment> constructor){
         map.put(clazz,constructor);

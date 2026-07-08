@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Texture;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
@@ -15,6 +16,7 @@ public class ImgFrame extends Frame implements Transformable {
     private ByteBuffer pixels;
     private Texture texture;
     private ImgFrameActor actor;
+    private int unpackRowLength;
     public volatile boolean changed = true;
 
     public ImgFrame(Track track) {
@@ -49,8 +51,17 @@ public class ImgFrame extends Frame implements Transformable {
         return this;
     }
 
+    public int getUnpackRowLength() {
+        return unpackRowLength;
+    }
+
+    public void setUnpackRowLength(int unpackRowLength) {
+        this.unpackRowLength = unpackRowLength;
+    }
+
     public void update() {
         if(changed && pixels != null) {
+            Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength);
             texture.bind();
             Gdx.gl.glTexSubImage2D(
                 GL20.GL_TEXTURE_2D,
@@ -63,6 +74,7 @@ public class ImgFrame extends Frame implements Transformable {
                 GL20.GL_UNSIGNED_BYTE,
                 pixels
             );
+            Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0);
             changed = false;
         }
     }
