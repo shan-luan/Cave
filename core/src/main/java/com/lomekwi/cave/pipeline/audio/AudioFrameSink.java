@@ -7,11 +7,12 @@ import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 
 import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AudioFrameSink {
     private final AudioFrameMixer afm = new AudioFrameMixer();
-    private Thread mixerThread;
+    private Future<?> currentFuture;
 
     @Subscribe
     public void sink(AudFrame frame) {
@@ -21,24 +22,17 @@ public class AudioFrameSink {
 
     @Subscribe
     public void onProjectFronted(ProjectFrontedEvent event) {
-        if (mixerThread != null && mixerThread.isAlive()) {
-            mixerThread.interrupt();
-            try {
-                mixerThread.join(100);
-            } catch (InterruptedException ignored) {
-            }
+        if (currentFuture != null && !currentFuture.isDone()) {
+            currentFuture.cancel(true);
         }
         afm.clear();
-        mixerThread = new Thread(afm, "audio-mixer");
-        mixerThread.setDaemon(true);
-        mixerThread.setPriority(Thread.MAX_PRIORITY);
-        mixerThread.start();
+        currentFuture = App.workerExecutor.submit(afm);
     }
 
     @Subscribe
     public void onProjectBackgrounded(ProjectBackgroundedEvent event) {
-        if (mixerThread != null && mixerThread.isAlive()) {
-            mixerThread.interrupt();
+        if (currentFuture != null && !currentFuture.isDone()) {
+            currentFuture.cancel(true);
         }
     }
 
