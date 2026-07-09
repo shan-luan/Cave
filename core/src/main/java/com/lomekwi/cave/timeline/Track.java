@@ -306,14 +306,14 @@ public class Track implements Serializable,Iterable<Segment> {
                     }
                 }
             } catch (Exception e) {
-                Gdx.app.error("Track"+index, "在更新轨道时发生错误", e);
-                Gdx.app.postRunnable(() -> {
-                    throw new RuntimeException(e);
-                });
+                if(!(e instanceof InterruptedException)) {
+                    Gdx.app.error("Track" + index, "在更新轨道时发生错误", e);
+                    Gdx.app.postRunnable(() -> {
+                        throw new RuntimeException(e);
+                    });
+                }
             }finally {
                 workerThread = null;
-                sinkPhaser.forceTermination();
-                sinkPhaser = null;
                 Gdx.app.log("Track"+index, "轨道线程结束: " + Track.this);
             }
         }

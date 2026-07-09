@@ -18,6 +18,10 @@ public class TopTabbedPane extends TabbedPane {
         addListener(new TabbedPaneListener() {
             @Override
             public void switchedTab(Tab tab) {
+                if (currentProjectTab != null && currentProjectTab != tab) {
+                    currentProjectTab.getProject().playhead.setPlaying(false);
+                }
+
                 App.root.getMajorArea().clear();
                 App.root.getMajorArea().add(tab.getContentTable()).grow();
 

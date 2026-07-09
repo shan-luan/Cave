@@ -7,12 +7,11 @@ import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 
 import java.util.Arrays;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AudioFrameSink {
     private final AudioFrameMixer afm = new AudioFrameMixer();
-    private static volatile Future<?> currentMixerFuture;
+    private Thread mixerThread;
 
     @Subscribe
     public void sink(AudFrame frame) {
@@ -22,28 +21,39 @@ public class AudioFrameSink {
 
     @Subscribe
     public void onProjectFronted(ProjectFrontedEvent event) {
-        synchronized (AudioFrameSink.class) {
-            if (currentMixerFuture != null && !currentMixerFuture.isDone()) {
-                currentMixerFuture.cancel(true);
+        if (mixerThread != null && mixerThread.isAlive()) {
+            mixerThread.interrupt();
+            try {
+                mixerThread.join(100);
+            } catch (InterruptedException ignored) {
             }
-            currentMixerFuture = App.audioExecutor.submit(afm);
         }
+        afm.clear();
+        mixerThread = new Thread(afm, "audio-mixer");
+        mixerThread.setDaemon(true);
+        mixerThread.setPriority(Thread.MAX_PRIORITY);
+        mixerThread.start();
     }
 
     @Subscribe
     public void onProjectBackgrounded(ProjectBackgroundedEvent event) {
-        if (currentMixerFuture != null && !currentMixerFuture.isDone()) {
-            currentMixerFuture.cancel(true);
+        if (mixerThread != null && mixerThread.isAlive()) {
+            mixerThread.interrupt();
         }
     }
 
     protected class AudioFrameMixer implements Runnable {
-        private final LinkedBlockingQueue<AudFrame> frames=new LinkedBlockingQueue<>();
-        private final float[] output=new float[AudDecRes.FRAME_SIZE];
+        private final LinkedBlockingQueue<AudFrame> frames = new LinkedBlockingQueue<>();
+        private final float[] output = new float[AudDecRes.FRAME_SIZE];
+
+        public void clear() {
+            frames.clear();
+        }
+
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                Arrays.fill(output,0f);
+                Arrays.fill(output, 0f);
                 AudFrame f;
                 try {
                     f = frames.take();
@@ -51,23 +61,27 @@ public class AudioFrameSink {
                     break;
                 }
                 do {
-                    int j=0;
-                    for(var sample : f.getSamples()){
-                        output[j]+=sample;
+                    int j = 0;
+                    for (var sample : f.getSamples()) {
+                        output[j] += sample;
                         j++;
                     }
                     f.track.getWorker().getSinkPhaser().arriveAndDeregister();
+                    if (Thread.currentThread().isInterrupted()) break;
                 } while ((f = frames.poll()) != null);
+                if (Thread.currentThread().isInterrupted()) break;
                 clamp(output);
-                App.audioOut.getAudioDevice().writeSamples(output,0,AudDecRes.FRAME_SIZE);
+                App.audioOut.getAudioDevice().writeSamples(output, 0, AudDecRes.FRAME_SIZE);
             }
         }
-        private void clamp(float[] samples){
-            for(int i=0;i<samples.length;i++){
-                samples[i]=Math.max(-1.0f,Math.min(1.0f,samples[i]));
+
+        private void clamp(float[] samples) {
+            for (int i = 0; i < samples.length; i++) {
+                samples[i] = Math.max(-1.0f, Math.min(1.0f, samples[i]));
             }
         }
-        public void submit(AudFrame f){
+
+        public void submit(AudFrame f) {
             frames.add(f);
         }
     }

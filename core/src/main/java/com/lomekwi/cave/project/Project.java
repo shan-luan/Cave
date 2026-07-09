@@ -116,6 +116,7 @@ public class Project implements Serializable, AutoCloseable {
         segFactory.setProject(this);
         App.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
+        projEventBus.register(new AudioFrameSink());
         projEventBus.register(this);
         playhead = new Playhead(projEventBus);
         undoManager = new UndoManager(this);

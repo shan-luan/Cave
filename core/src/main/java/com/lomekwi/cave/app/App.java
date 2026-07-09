@@ -20,12 +20,6 @@ public final class App {
         thread.setDaemon(true);
         return thread;
     });
-    public static final ExecutorService audioExecutor = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        thread.setPriority(Thread.MAX_PRIORITY);
-        return thread;
-    });
     public static final TaskPool taskPool = new TaskPool();
     public static Root root;
     public static final ShortcutManager shortcutManager = new ShortcutManager();
