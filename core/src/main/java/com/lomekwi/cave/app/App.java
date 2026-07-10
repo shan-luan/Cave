@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class App {
+    private App() {}
     public static NativeFileChooser fileChooser;
     public static AppAudioOut audioOut;
     public static final EventBus appEventBus = new EventBus();

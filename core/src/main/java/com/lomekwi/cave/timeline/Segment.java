@@ -29,7 +29,7 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     private transient Range<Long> range;
     private transient AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     private transient boolean selected;
-    private transient SegmentGroup group;
+    private SegmentGroup group;
     public boolean isSelected() {
         return selected;
     }
@@ -132,7 +132,10 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     }
     @Override
     public Segment duplicate() {
+        var savedGroup = group;
+        group = null;
         var segment =  Duplicatable.super.duplicate();
+        group = savedGroup;
         segment.source.onDuplicate(source);
         return segment;
     }
