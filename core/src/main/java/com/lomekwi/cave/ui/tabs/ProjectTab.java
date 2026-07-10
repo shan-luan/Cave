@@ -2,6 +2,7 @@ package com.lomekwi.cave.ui.tabs;
 
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.google.common.eventbus.Subscribe;
@@ -55,7 +56,9 @@ public class ProjectTab extends Tab {
         if (project.getSavePath() == null) {
             NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
             conf.title = i18n("选择保存位置...");
-            conf.mimeFilter = "*/*";
+            if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                conf.mimeFilter = "*/*";
+            }
             conf.intent = NativeFileChooserIntent.SAVE;
             App.fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                 @Override

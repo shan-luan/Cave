@@ -21,6 +21,7 @@ import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.project.Projects;
+import static com.lomekwi.cave.project.Projects.hasProjectExtension;
 import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
@@ -240,12 +241,18 @@ public class TopBar extends MenuBar {
             conf.title = i18n("选择项目...");
             if (Gdx.app.getType() == Application.ApplicationType.Android) {
                 conf.mimeFilter = "*/*";
+            } else {
+                conf.nameFilter = (dir, name) -> hasProjectExtension(name);
             }
             conf.intent = NativeFileChooserIntent.OPEN;
             fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                 @Override
                 public void onFileChosen(FileHandle file) {
                     try {
+                        if (!hasProjectExtension(file.name())) {
+                            App.root.getToastManager().show(i18n("请选择 .cave 项目文件"), toastTimeOut);
+                            return;
+                        }
                         App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)));
                         App.root.getToastManager().show(i18n("项目已打开"), toastTimeOut);
                     } catch (IOException | ClassNotFoundException e) {
@@ -269,7 +276,9 @@ public class TopBar extends MenuBar {
             if (App.root.getFrontendProject().getSavePath() == null) {
                 NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
                 conf.title = i18n("选择保存位置...");
-                conf.mimeFilter = "*/*";
+                if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                    conf.mimeFilter = "*/*";
+                }
                 conf.intent = NativeFileChooserIntent.SAVE;
                 fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                     @Override
@@ -303,7 +312,9 @@ public class TopBar extends MenuBar {
 
             NativeFileChooserConfiguration conf = new NativeFileChooserConfiguration();
             conf.title = i18n("选择保存位置...");
-            conf.mimeFilter = "*/*";
+            if (Gdx.app.getType() == Application.ApplicationType.Android) {
+                conf.mimeFilter = "*/*";
+            }
             conf.intent = NativeFileChooserIntent.SAVE;
             fileChooser.chooseFile(conf, new NativeFileChooserCallback() {
                 @Override

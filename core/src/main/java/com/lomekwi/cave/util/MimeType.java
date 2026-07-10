@@ -46,6 +46,9 @@ public final class MimeType {
         extensionToMimeType.put("ogg", "audio/ogg");
         extensionToMimeType.put("wma", "audio/x-ms-wma");
         extensionToMimeType.put("m4a", "audio/x-m4a");
+
+        // Cave 项目文件
+        extensionToMimeType.put("cave", "application/x-cave-project");
     }
 
     /**
