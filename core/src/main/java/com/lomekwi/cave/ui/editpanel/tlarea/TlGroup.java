@@ -1098,12 +1098,11 @@ class SegDragHandler {
     void removeSeg(SegActor segActor) {
             removeActor(segActor);
             Segment s = segActor.getSegment();
-            removeFromGroup(s);
             var r = s.getRange();
             long start = r.lowerEndpoint();
             long duration = r.upperEndpoint() - start;
             Track track = s.getTrack();
-            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration));
+            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration, s.getGroup()));
             dirty = true;
         }
 
@@ -1182,11 +1181,10 @@ class SegDragHandler {
             var entry = track.getEntry(xToAbsoluteTime(local.x));
             if (entry != null) {
                 var seg = entry.getValue();
-                removeFromGroup(seg);
                 var r = seg.getRange();
                 long start = r.lowerEndpoint();
                 long duration = r.upperEndpoint() - start;
-                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration));
+                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
             }
             dirty = true;
         }

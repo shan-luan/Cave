@@ -107,16 +107,36 @@ public class UndoManager {
         }
     }
 
-    public record RemoveSegCommand(Track track, Segment segment, long start, long duration) implements UndoableCommand {
+    public static class RemoveSegCommand implements UndoableCommand {
+        private final Track track;
+        private final Segment segment;
+        private final long start;
+        private final long duration;
+        private final SegmentGroup group;
+
+        public RemoveSegCommand(Track track, Segment segment, long start, long duration) {
+            this(track, segment, start, duration, null);
+        }
+
+        public RemoveSegCommand(Track track, Segment segment, long start, long duration, SegmentGroup group) {
+            this.track = track;
+            this.segment = segment;
+            this.start = start;
+            this.duration = duration;
+            this.group = group;
+        }
+
         @Override
         public void undo() {
             track.getTimeline().add(track, segment, start, duration);
+            group.add(segment);
         }
 
         @Override
         public void redo() {
             var r = Range.closedOpen(start, start + duration);
             track.getTimeline().remove(track, r);
+            group.remove(segment);
         }
     }
 
