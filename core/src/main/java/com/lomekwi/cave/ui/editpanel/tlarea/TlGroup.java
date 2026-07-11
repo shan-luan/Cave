@@ -1108,13 +1108,7 @@ class SegDragHandler {
         }
 
         void split(SegActor segActor, long time) {
-            var s = segActor.getSegment();
-            Track track = s.getTrack();
-            var r = s.getRange();
-            long start = r.lowerEndpoint();
-            long duration = r.upperEndpoint() - start;
-            var ns = s.duplicate();
-            project.undoManager.execute(new UndoManager.SplitSegCommand(track, s, start, duration, ns, time));
+            splitSegment(segActor.getSegment(), time);
             dirty = true;
         }
 
@@ -1129,13 +1123,52 @@ class SegDragHandler {
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(time);
             if (entry == null) return;
-            var seg = entry.getValue();
-            var r = entry.getKey();
-            long start = r.lowerEndpoint();
-            long duration = r.upperEndpoint() - start;
-            var ns = seg.duplicate();
-            project.undoManager.execute(new UndoManager.SplitSegCommand(track, seg, start, duration, ns, time));
+            splitSegment(entry.getValue(), time);
             dirty = true;
+        }
+
+        private void splitSegment(Segment seg, long time) {
+            SegmentGroup group = seg.getGroup();
+            var segs = group != null ? List.copyOf(group.getSegments()) : List.of(seg);
+            var commands = new ArrayList<UndoManager.UndoableCommand>();
+            List<Segment> beforeSegs = new ArrayList<>();
+            List<Segment> afterSegs = new ArrayList<>();
+            for (Segment member : segs) {
+                var r = member.getRange();
+                long start = r.lowerEndpoint();
+                long end = r.upperEndpoint();
+                if (time > start && time < end) {
+                    long duration = end - start;
+                    var ns = member.duplicate();
+                    commands.add(new UndoManager.SplitSegCommand(member.getTrack(), member, start, duration, ns, time));
+                    beforeSegs.add(member);
+                    afterSegs.add(ns);
+                } else if (end <= time) {
+                    beforeSegs.add(member);
+                } else {
+                    afterSegs.add(member);
+                }
+            }
+            if (!commands.isEmpty()) {
+                project.undoManager.execute(new UndoManager.CompoundCommand(commands.toArray(new UndoManager.UndoableCommand[0])));
+                if (group != null) {
+                    for (Segment member : segs) {
+                        group.remove(member);
+                    }
+                    if (beforeSegs.size() >= 2) {
+                        SegmentGroup beforeGroup = new SegmentGroup();
+                        for (Segment s : beforeSegs) {
+                            beforeGroup.add(s);
+                        }
+                    }
+                    if (afterSegs.size() >= 2) {
+                        SegmentGroup afterGroup = new SegmentGroup();
+                        for (Segment s : afterSegs) {
+                            afterGroup.add(s);
+                        }
+                    }
+                }
+            }
         }
 
         private void deleteAtCursor() {
