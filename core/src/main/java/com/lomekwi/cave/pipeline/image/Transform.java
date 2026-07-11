@@ -73,6 +73,14 @@ public class Transform {
         return (float) Math.sqrt(b * b + d * d);
     }
 
+    public float getRotationRadians() {
+        float a = matrix.val[Matrix4.M00];
+        float b = matrix.val[Matrix4.M01];
+        float c = matrix.val[Matrix4.M10];
+        float d = matrix.val[Matrix4.M11];
+        return (float) Math.atan2(c - b, a + d);
+    }
+
     private void decompose() {
         x = matrix.val[Matrix4.M03];
         y = matrix.val[Matrix4.M13];

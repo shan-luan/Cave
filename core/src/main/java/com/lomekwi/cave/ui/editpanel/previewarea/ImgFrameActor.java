@@ -541,15 +541,11 @@ public class ImgFrameActor extends Image {
                 }
             }
         }
-        float a = t.matrix.val[Matrix4.M00];
-        float b = t.matrix.val[Matrix4.M01];
-        float c = t.matrix.val[Matrix4.M10];
-        float d = t.matrix.val[Matrix4.M11];
-        dragScaleX = (float) Math.sqrt(a * a + c * c);
-        dragScaleY = (float) Math.sqrt(b * b + d * d);
+        dragScaleX = t.getScaleX();
+        dragScaleY = t.getScaleY();
         if (dragScaleX < 0.0001f) dragScaleX = 1f;
         if (dragScaleY < 0.0001f) dragScaleY = 1f;
-        float rotRad = (float) Math.atan2(c - b, a + d);
+        float rotRad = t.getRotationRadians();
         dragCos = (float) Math.cos(rotRad);
         dragSin = (float) Math.sin(rotRad);
     }
