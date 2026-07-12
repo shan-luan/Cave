@@ -154,7 +154,7 @@ public class TlGroup extends Group {
             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                 try {
                     File file = (File) payload.getObject();
-                    List<Segment> segments = project.segFactory.getAll(file);
+                    List<Segment> segments = project.mediaSegFactory.getAll(file);
                     long startTime = xToAbsoluteTime(x);
                     int baseTrack = yToTrackIndex(y);
                     int trackOffset = 0;

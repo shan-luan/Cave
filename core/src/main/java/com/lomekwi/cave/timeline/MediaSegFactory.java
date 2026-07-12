@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class SegFactory implements Serializable {
+public class MediaSegFactory implements Serializable {
     private transient Project project;
     private transient Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map;
     @Serial
     private static final long serialVersionUID = 1L;
-    public SegFactory(Project project){
+    public MediaSegFactory(Project project){
         this.project = project;
         this.map = new HashMap<>();
         initDefaultMappings();

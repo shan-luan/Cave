@@ -7,7 +7,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink;
 import com.lomekwi.cave.resource.Resource;
-import com.lomekwi.cave.timeline.SegFactory;
+import com.lomekwi.cave.timeline.MediaSegFactory;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.UndoManager;
@@ -33,7 +33,7 @@ public class Project implements Serializable, AutoCloseable {
     public final Timeline timeline;
     public transient Playhead playhead;
     public final Multimap<File, Resource> resources = ArrayListMultimap.create();
-    public final SegFactory segFactory = new SegFactory(this);
+    public final MediaSegFactory mediaSegFactory = new MediaSegFactory(this);
     public transient EventBus projEventBus;
     public transient UndoManager undoManager;
     public String name;
@@ -113,7 +113,7 @@ public class Project implements Serializable, AutoCloseable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         currentVersion = savedVersion;
-        segFactory.setProject(this);
+        mediaSegFactory.setProject(this);
         App.appEventBus.register(this);
         projEventBus = new EventBus(uuid.toString());
         projEventBus.register(new AudioFrameSink());
