@@ -30,19 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ImgFrameActor extends Image {
-    private enum Handle {
-        NW, N, NE, E, SE, S, SW, W, ROTATE
-    }
-
-    private static final int HANDLE_COUNT = Handle.values().length;
-    private static final float HANDLE_HIT_RADIUS = 18f;
-    private static final float ROTATE_OFFSET_LOCAL = 40f;
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
-    private static final Color GIZMO_COLOR = new Color(1f, 1f, 1f, 0.9f);
-    private static final Color GIZMO_FILL = new Color(0.2f, 0.6f, 1f, 0.9f);
-    private static final Color ROTATE_COLOR = new Color(0.4f, 0.9f, 1f, 0.9f);
-    private static final Color SELECTED_COLOR = new Color(1, 1, 1, 0.8f);
+    public static final float ROTATE_OFFSET_LOCAL = 40f;
 
     private final ImgFrame imgFrame;
     private boolean selected;
@@ -53,18 +43,18 @@ public class ImgFrameActor extends Image {
     private float startFilterDx, startFilterDy;
     private float dragCos, dragSin, dragScaleX, dragScaleY;
 
-    private boolean gizmoDragging;
-    private Handle gizmoHandle;
-    private Handle hoveredHandle;
-    private float gizmoStartW, gizmoStartH;
-    private float gizmoStartDx, gizmoStartDy;
-    private float gizmoStartScaleX, gizmoStartScaleY;
-    private float gizmoStartRotation;
-    private float gizmoStartAngle;
-    private float gizmoAnchorLocalX, gizmoAnchorLocalY;
-    private float startGizmoCanvasX, startGizmoCanvasY;
-    private float startGizmoLocalX, startGizmoLocalY;
-    private UndoManager.TransFilterState gizmoOldState;
+    protected boolean gizmoDragging;
+    protected Gizmo.Handle gizmoHandle;
+    protected final Gizmo gizmo = new Gizmo();
+    protected float gizmoStartW, gizmoStartH;
+    protected float gizmoStartDx, gizmoStartDy;
+    protected float gizmoStartScaleX, gizmoStartScaleY;
+    protected float gizmoStartRotation;
+    protected float gizmoStartAngle;
+    protected float gizmoAnchorLocalX, gizmoAnchorLocalY;
+    protected float startGizmoCanvasX, startGizmoCanvasY;
+    protected float startGizmoLocalX, startGizmoLocalY;
+    protected UndoManager.TransFilterState gizmoOldState;
 
     private final Vector2 dragStagePos = new Vector2();
     private final Vector2 tmp1 = new Vector2();
@@ -88,7 +78,7 @@ public class ImgFrameActor extends Image {
                 Source<?> source = imgFrame.getSource();
                 if (source == null) return false;
 
-                Handle handle = hitHandle(event.getStageX(), event.getStageY());
+                var handle = gizmo.hitHandle(event.getStageX(), event.getStageY());
                 if (handle != null && selected) {
                     startGizmoDrag(source, handle, event.getStageX(), event.getStageY());
                     return true;
@@ -168,39 +158,15 @@ public class ImgFrameActor extends Image {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                updateCursor(event.getStageX(), event.getStageY());
+                gizmo.updateCursor(event.getStageX(), event.getStageY());
             }
 
             @Override
             public boolean mouseMoved(InputEvent event, float x, float y) {
-                updateCursor(event.getStageX(), event.getStageY());
+                gizmo.updateCursor(event.getStageX(), event.getStageY());
                 return false;
             }
         });
-    }
-
-    private void updateCursor(float stageX, float stageY) {
-        if (!selected) return;
-        Handle h = hitHandle(stageX, stageY);
-        if (h != hoveredHandle) {
-            hoveredHandle = h;
-            setCursor(h);
-        }
-    }
-
-    private void setCursor(Handle handle) {
-        if (Gdx.app.getType() != Application.ApplicationType.Desktop) return;
-        if (handle == null) {
-            Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
-            return;
-        }
-        switch (handle) {
-            case NW, SE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NWSEResize);
-            case NE, SW -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NESWResize);
-            case N, S -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.VerticalResize);
-            case E, W -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.HorizontalResize);
-            case ROTATE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
-        }
     }
 
     @Override
@@ -215,34 +181,6 @@ public class ImgFrameActor extends Image {
         float extRight = getWidth() + ROTATE_OFFSET_LOCAL;
         if (x >= extLeft && x < extRight && y >= extBottom && y < extTop) {
             return this;
-        }
-        return null;
-    }
-
-    private Handle hitHandle(float stageX, float stageY) {
-        float w = getWidth(), h = getHeight();
-        if (w <= 0 || h <= 0) return null;
-        float hw = w / 2f, hh = h / 2f;
-
-        Vector2 localCoords = tmp1;
-        localCoords.set(stageX, stageY);
-        stageToLocalCoordinates(localCoords);
-        float lx = localCoords.x;
-        float ly = localCoords.y;
-
-        float[][] localPositions = {
-            {0, h}, {hw, h}, {w, h}, {w, hh},
-            {w, 0}, {hw, 0}, {0, 0}, {0, hh},
-            {hw, h + ROTATE_OFFSET_LOCAL}
-        };
-
-        float r2 = HANDLE_HIT_RADIUS * HANDLE_HIT_RADIUS;
-        for (int i = 0; i < HANDLE_COUNT; i++) {
-            float dx = lx - localPositions[i][0];
-            float dy = ly - localPositions[i][1];
-            if (dx * dx + dy * dy <= r2) {
-                return Handle.values()[i];
-            }
         }
         return null;
     }
@@ -262,7 +200,7 @@ public class ImgFrameActor extends Image {
         out.y = getY() + oy + ry;
     }
 
-    private float clampToAnchor(float value, float anchor, Handle handle, boolean isX) {
+    private float clampToAnchor(float value, float anchor, Gizmo.Handle handle, boolean isX) {
         return switch (handle) {
             case NW -> isX ? Math.min(value, anchor) : Math.max(value, anchor);
             case NE -> Math.max(value, anchor);
@@ -279,7 +217,7 @@ public class ImgFrameActor extends Image {
     // FIXME: 手柄锚点和缩放基于本地坐标轴计算，当 dragFilter 有旋转时与视觉轴不匹配。
     //        视觉"向外"拖拽可能映射到本地"朝向锚点"，导致缩放方向相反。
     //        需在画布空间测量锚点→手柄的视觉距离来计算缩放，再映射回本地 scaleX/scaleY。
-    private void startGizmoDrag(Source<?> source, Handle handle, float stageX, float stageY) {
+    protected void startGizmoDrag(Source<?> source, Gizmo.Handle handle, float stageX, float stageY) {
         gizmoHandle = handle;
         gizmoDragging = true;
 
@@ -314,7 +252,7 @@ public class ImgFrameActor extends Image {
         startGizmoLocalX = gizmoLocalPos.x;
         startGizmoLocalY = gizmoLocalPos.y;
 
-        if (handle == Handle.ROTATE) {
+        if (handle == Gizmo.Handle.ROTATE) {
             Vector2 centerStagePos = tmp1;
             centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
             localToStageCoordinates(centerStagePos);
@@ -359,8 +297,8 @@ public class ImgFrameActor extends Image {
         }
     }
 
-    private void updateGizmoDrag(float stageX, float stageY) {
-        if (gizmoHandle == Handle.ROTATE) {
+    protected void updateGizmoDrag(float stageX, float stageY) {
+        if (gizmoHandle == Gizmo.Handle.ROTATE) {
             updateRotateDrag(stageX, stageY);
             return;
         }
@@ -399,16 +337,16 @@ public class ImgFrameActor extends Image {
                 newScaleY = gizmoStartScaleY * scaleH;
             }
             case N, S -> {
-                float topY = (gizmoHandle == Handle.N) ? localY : gizmoAnchorLocalY;
-                float bottomY = (gizmoHandle == Handle.S) ? localY : gizmoAnchorLocalY;
+                float topY = (gizmoHandle == Gizmo.Handle.N) ? localY : gizmoAnchorLocalY;
+                float bottomY = (gizmoHandle == Gizmo.Handle.S) ? localY : gizmoAnchorLocalY;
                 float newH = Math.max(MIN_SIZE, Math.abs(topY - bottomY));
                 float scaleH1 = newH / gizmoStartH;
                 scaleH1 = Math.max(MIN_SCALE, scaleH1);
                 newScaleY = gizmoStartScaleY * scaleH1;
             }
             case E, W -> {
-                float rightX = (gizmoHandle == Handle.E) ? localX : gizmoAnchorLocalX;
-                float leftX = (gizmoHandle == Handle.W) ? localX : gizmoAnchorLocalX;
+                float rightX = (gizmoHandle == Gizmo.Handle.E) ? localX : gizmoAnchorLocalX;
+                float leftX = (gizmoHandle == Gizmo.Handle.W) ? localX : gizmoAnchorLocalX;
                 float newW = Math.max(MIN_SIZE, Math.abs(rightX - leftX));
                 float scaleW1 = newW / gizmoStartW;
                 scaleW1 = Math.max(MIN_SCALE, scaleW1);
@@ -438,7 +376,7 @@ public class ImgFrameActor extends Image {
         }
     }
 
-    private void updateRotateDrag(float stageX, float stageY) {
+    protected void updateRotateDrag(float stageX, float stageY) {
         Vector2 centerStagePos = tmp1;
         centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
         localToStageCoordinates(centerStagePos);
@@ -461,7 +399,7 @@ public class ImgFrameActor extends Image {
         }
     }
 
-    private void finishGizmoDrag() {
+    protected void finishGizmoDrag() {
         Project p = App.root.getFrontendProject();
         if (p != null && dragFilter != null && gizmoOldState != null) {
             TransFilter filter = dragFilter;
@@ -649,7 +587,7 @@ public class ImgFrameActor extends Image {
         if (!selected) {
             gizmoDragging = false;
             gizmoHandle = null;
-            hoveredHandle = null;
+            gizmo.hoveredHandle = null;
             if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                 Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
             }
@@ -662,93 +600,150 @@ public class ImgFrameActor extends Image {
         if (selected) {
             Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
             batch.setTransformMatrix(new Matrix4().idt());
-            drawSelectionBorder();
-            drawGizmoHandles();
+            gizmo.draw(gizmoHandle);
             batch.setTransformMatrix(savedTransform);
         }
     }
 
-    private void drawSelectionBorder() {
-        float w = getWidth(), h = getHeight();
-        ShapeDrawer sd = App.root.getShapeDrawer();
+    protected class Gizmo {
+        private enum Handle {
+            NW, N, NE, E, SE, S, SW, W, ROTATE
+        }
 
-        Vector2 bl = localToStageCoordinates(tmp1.set(0, 0));
-        Vector2 br = localToStageCoordinates(tmp2.set(w, 0));
-        Vector2 tr = localToStageCoordinates(tmp3.set(w, h));
-        Vector2 tl = localToStageCoordinates(dragStagePos.set(0, h));
+        private static final int HANDLE_COUNT = Handle.values().length;
+        private static final float HANDLE_HIT_RADIUS = 18f;
+        private static final Color GIZMO_COLOR = new Color(1f, 1f, 1f, 0.9f);
+        private static final Color GIZMO_FILL = new Color(0.2f, 0.6f, 1f, 0.9f);
+        private static final Color ROTATE_COLOR = new Color(0.4f, 0.9f, 1f, 0.9f);
+        private static final Color SELECTED_COLOR = new Color(1, 1, 1, 0.8f);
 
-        sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, 2f);
-        sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, 2f);
-        sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, 2f);
-        sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, 2f);
-    }
+        private Handle hoveredHandle;
 
-    private void drawGizmoHandles() {
-        float w = getWidth(), h = getHeight();
-        if (w <= 0 || h <= 0) return;
-        float hw = w / 2f, hh = h / 2f;
+        private Handle hitHandle(float stageX, float stageY) {
+            float w = getWidth(), h = getHeight();
+            if (w <= 0 || h <= 0) return null;
+            float hw = w / 2f, hh = h / 2f;
 
-        ShapeDrawer sd = App.root.getShapeDrawer();
-        float lineWidth = 2f;
-        float handleHalf = 6f;
-        float rotateRadius = 5f;
+            Vector2 localCoords = tmp1;
+            localCoords.set(stageX, stageY);
+            stageToLocalCoordinates(localCoords);
+            float lx = localCoords.x;
+            float ly = localCoords.y;
 
-        Vector2 a = localToStageCoordinates(tmp1.set(0, 0));
-        Vector2 b = localToStageCoordinates(tmp2.set(w, 0));
-        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
-
-        a = localToStageCoordinates(tmp1.set(w, 0));
-        b = localToStageCoordinates(tmp2.set(w, h));
-        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
-
-        a = localToStageCoordinates(tmp1.set(w, h));
-        b = localToStageCoordinates(tmp2.set(0, h));
-        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
-
-        a = localToStageCoordinates(tmp1.set(0, h));
-        b = localToStageCoordinates(tmp2.set(0, 0));
-        sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
-
-        a = localToStageCoordinates(tmp1.set(hw, h));
-        b = localToStageCoordinates(tmp2.set(hw, h + ROTATE_OFFSET_LOCAL));
-        sd.line(a.x, a.y, b.x, b.y, ROTATE_COLOR, lineWidth);
-
-        Vector2 rc = localToStageCoordinates(tmp1.set(hw, h + ROTATE_OFFSET_LOCAL));
-        sd.filledCircle(rc.x, rc.y, rotateRadius, ROTATE_COLOR);
-
-        for (Handle handle : Handle.values()) {
-            if (handle == Handle.ROTATE) continue;
-            float hx = switch (handle) {
-                case NW -> 0;
-                case N -> hw;
-                case NE -> w;
-                case E -> w;
-                case SE -> w;
-                case S -> hw;
-                case SW -> 0;
-                case W -> 0;
-                default -> 0;
+            float[][] localPositions = {
+                {0, h}, {hw, h}, {w, h}, {w, hh},
+                {w, 0}, {hw, 0}, {0, 0}, {0, hh},
+                {hw, h + ROTATE_OFFSET_LOCAL}
             };
-            float hy = switch (handle) {
-                case NW -> h;
-                case N -> h;
-                case NE -> h;
-                case E -> hh;
-                case SE -> 0;
-                case S -> 0;
-                case SW -> 0;
-                case W -> hh;
-                default -> 0;
-            };
-            Vector2 hp = localToStageCoordinates(tmp1.set(hx, hy));
-            float sx = hp.x;
-            float sy = hp.y;
-            Color fill = (gizmoHandle == handle || hoveredHandle == handle)
-                ? GIZMO_COLOR : GIZMO_FILL;
-            sd.filledRectangle(sx - handleHalf, sy - handleHalf,
-                handleHalf * 2, handleHalf * 2, fill);
-            sd.rectangle(sx - handleHalf, sy - handleHalf,
-                handleHalf * 2, handleHalf * 2, GIZMO_COLOR, 1f);
+
+            float r2 = HANDLE_HIT_RADIUS * HANDLE_HIT_RADIUS;
+            for (int i = 0; i < HANDLE_COUNT; i++) {
+                float dx = lx - localPositions[i][0];
+                float dy = ly - localPositions[i][1];
+                if (dx * dx + dy * dy <= r2) {
+                    return Handle.values()[i];
+                }
+            }
+            return null;
+        }
+
+        private void updateCursor(float stageX, float stageY) {
+            if (!selected) return;
+            Handle h = hitHandle(stageX, stageY);
+            if (h != hoveredHandle) {
+                hoveredHandle = h;
+                setCursor(h);
+            }
+        }
+
+        private void setCursor(Handle handle) {
+            if (Gdx.app.getType() != Application.ApplicationType.Desktop) return;
+            if (handle == null) {
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+                return;
+            }
+            switch (handle) {
+                case NW, SE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NWSEResize);
+                case NE, SW -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NESWResize);
+                case N, S -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.VerticalResize);
+                case E, W -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.HorizontalResize);
+                case ROTATE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
+            }
+        }
+
+        private void draw(Handle activeHandle) {
+            float w = getWidth(), h = getHeight();
+            if (w <= 0 || h <= 0) return;
+            float hw = w / 2f, hh = h / 2f;
+            ShapeDrawer sd = App.root.getShapeDrawer();
+            float lineWidth = 2f;
+            float handleHalf = 6f;
+            float rotateRadius = 5f;
+
+            // selection border
+            Vector2 bl = localToStageCoordinates(tmp1.set(0, 0));
+            Vector2 br = localToStageCoordinates(tmp2.set(w, 0));
+            Vector2 tr = localToStageCoordinates(tmp3.set(w, h));
+            Vector2 tl = localToStageCoordinates(dragStagePos.set(0, h));
+            sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, 2f);
+            sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, 2f);
+            sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, 2f);
+            sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, 2f);
+
+            // gizmo lines
+            Vector2 a = localToStageCoordinates(tmp1.set(0, 0));
+            Vector2 b = localToStageCoordinates(tmp2.set(w, 0));
+            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            a = localToStageCoordinates(tmp1.set(w, 0));
+            b = localToStageCoordinates(tmp2.set(w, h));
+            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            a = localToStageCoordinates(tmp1.set(w, h));
+            b = localToStageCoordinates(tmp2.set(0, h));
+            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            a = localToStageCoordinates(tmp1.set(0, h));
+            b = localToStageCoordinates(tmp2.set(0, 0));
+            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            a = localToStageCoordinates(tmp1.set(hw, h));
+            b = localToStageCoordinates(tmp2.set(hw, h + ROTATE_OFFSET_LOCAL));
+            sd.line(a.x, a.y, b.x, b.y, ROTATE_COLOR, lineWidth);
+            Vector2 rc = localToStageCoordinates(tmp1.set(hw, h + ROTATE_OFFSET_LOCAL));
+            sd.filledCircle(rc.x, rc.y, rotateRadius, ROTATE_COLOR);
+
+            // handles
+            for (Handle handle : Handle.values()) {
+                if (handle == Handle.ROTATE) continue;
+                float hx = switch (handle) {
+                    case NW -> 0;
+                    case N -> hw;
+                    case NE -> w;
+                    case E -> w;
+                    case SE -> w;
+                    case S -> hw;
+                    case SW -> 0;
+                    case W -> 0;
+                    default -> 0;
+                };
+                float hy = switch (handle) {
+                    case NW -> h;
+                    case N -> h;
+                    case NE -> h;
+                    case E -> hh;
+                    case SE -> 0;
+                    case S -> 0;
+                    case SW -> 0;
+                    case W -> hh;
+                    default -> 0;
+                };
+                Vector2 hp = localToStageCoordinates(tmp1.set(hx, hy));
+                float sx = hp.x;
+                float sy = hp.y;
+                Color fill = (activeHandle == handle || hoveredHandle == handle)
+                    ? GIZMO_COLOR : GIZMO_FILL;
+                sd.filledRectangle(sx - handleHalf, sy - handleHalf,
+                    handleHalf * 2, handleHalf * 2, fill);
+                sd.rectangle(sx - handleHalf, sy - handleHalf,
+                    handleHalf * 2, handleHalf * 2, GIZMO_COLOR, 1f);
+            }
         }
     }
 }
