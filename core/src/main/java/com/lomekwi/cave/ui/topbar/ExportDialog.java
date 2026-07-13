@@ -142,8 +142,7 @@ public class ExportDialog extends VisDialog {
         var task = new VideoExportTask(
             project.timeline.duplicate(),
             new java.io.File(path),
-            width, height, fps,
-            0f, 0f, bitrate
+            width, height, fps, bitrate
         );
         App.taskPool.submit(task);
         App.root.getToastManager().show(i18n("开始导出：") + new java.io.File(path).getName(), 2f);

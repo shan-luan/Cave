@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Track;
@@ -11,13 +12,12 @@ import com.lomekwi.cave.ui.editpanel.previewarea.ImgFrameActor;
 
 import java.nio.ByteBuffer;
 
-public class ImgFrame extends Frame implements Transformable {
+public class ImgFrame extends Frame implements Transformable,Renderable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
     private ImgFrameActor actor;
     private int unpackRowLength;
-    public volatile boolean changed = true;
 
     public ImgFrame(Track track) {
         super(track);
@@ -38,9 +38,8 @@ public class ImgFrame extends Frame implements Transformable {
         return pixels;
     }
 
-    public ImgFrame setPixels(ByteBuffer pixels) {
+    public void setPixels(ByteBuffer pixels) {
         this.pixels = pixels;
-        return this;
     }
     public Texture getTexture() {
         return texture;
@@ -59,8 +58,8 @@ public class ImgFrame extends Frame implements Transformable {
         this.unpackRowLength = unpackRowLength;
     }
 
-    public void update() {
-        if(changed && pixels != null) {
+    public void upload() {
+        if(pixels != null) {
             Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength);
             texture.bind();
             Gdx.gl.glTexSubImage2D(
@@ -75,7 +74,6 @@ public class ImgFrame extends Frame implements Transformable {
                 pixels
             );
             Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0);
-            changed = false;
         }
     }
     @Override
@@ -87,10 +85,7 @@ public class ImgFrame extends Frame implements Transformable {
         return actor;
     }
 
-    /**
-     * 将transform应用到Image上
-     * 在内层Group内部使用局部坐标
-     */
+    @Deprecated
     public void applyTransform() {
         if (actor != null && transform != null) {
             float scaleX = transform.getScaleX();
@@ -105,5 +100,16 @@ public class ImgFrame extends Frame implements Transformable {
             actor.setScaleX(transform.flipX ? -1 : 1);
             actor.setScaleY(transform.flipY ? -1 : 1);
         }
+    }
+
+    @Override
+    public void render(Batch batch) {
+        upload();
+        var t=getTransform();
+        float scaleX = t.flipX ? -1 : 1;
+        float scaleY = t.flipY ? -1 : 1;
+        float w = t.width * t.getScaleX();
+        float h = t.height * t.getScaleY();
+        batch.draw(getTexture(), t.x, t.y, w/2, h/2, w, h, scaleX, scaleY, t.rotation, 0, 0, getTexture().getWidth(), getTexture().getHeight(), false, false);
     }
 }

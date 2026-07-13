@@ -64,7 +64,6 @@ public class VdoClipSrc extends Source<ImgFrame> {
             frame.setPixels(null);
         }
         frame.getTransform().reset(0, 0, vdoRes.getWidth(), vdoRes.getHeight());
-        frame.changed=true;
         return frame;
     }
     @Override

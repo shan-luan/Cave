@@ -606,7 +606,7 @@ public class ImgFrameActor extends Image {
     }
 
     protected class Gizmo {
-        private enum Handle {
+        protected enum Handle {
             NW, N, NE, E, SE, S, SW, W, ROTATE
         }
 

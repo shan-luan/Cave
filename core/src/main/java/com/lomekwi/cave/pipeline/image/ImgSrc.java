@@ -65,7 +65,6 @@ public class ImgSrc extends Source<ImgFrame> {
             frame.setPixels(null);
         }
         frame.getTransform().reset(0, 0, imgRes.getWidth(), imgRes.getHeight());
-        frame.changed = true;
         return frame;
     }
 

@@ -143,7 +143,7 @@ public class PreviewArea extends Group {
         //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
             setFrame(frame);
-            frame.update();
+            frame.upload();
             ImgFrameActor i = frame.getActor();
             canvas.addActor(i);
             canvas.setPosition(xOffset, yOffset);

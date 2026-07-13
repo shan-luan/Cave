@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
-import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
@@ -38,8 +37,6 @@ public class VideoExportTask implements Task{
 
     private final Timeline timeline;
     private final FFmpegFrameRecorder recorder;
-    private final float xOffset;
-    private final float yOffset;
     private final AtomicReferenceArray<Frame> frames;
     private final Segment[] activeSegments;
     private final FrameBuffer fb;
@@ -50,11 +47,9 @@ public class VideoExportTask implements Task{
     private final SynchronousQueue<org.bytedeco.javacv.Frame> queue=new SynchronousQueue<>();
     private final Matrix4 projMatrix;
     private final int bitrate;
-    public VideoExportTask(@NonNull Timeline timeline, File outputFile, int width, int height, double fps, float xOffset, float yOffset,int bitrate) {
+    public VideoExportTask(@NonNull Timeline timeline, File outputFile, int width, int height, double fps,int bitrate) {
         this.timeline = timeline;
         recorder=new FFmpegFrameRecorder(outputFile,width, height);
-        this.xOffset=xOffset;
-        this.yOffset=yOffset;
         int i=0;
         for(var ignored : timeline){
             i++;
@@ -107,10 +102,7 @@ public class VideoExportTask implements Task{
                 recorder.record(queue.take());
                 t+=frameLen;
             }
-
-            // ----- 音频导出 -----
             exportAudio();
-
             recorder.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -168,13 +160,7 @@ public class VideoExportTask implements Task{
         for(int i=frames.length()-1;i>=0;i--){
             Frame frame=frames.get(i);
             if(frame instanceof ImgFrame f){
-                Transform t=f.getTransform();
-                f.update();
-                float scaleX = t.flipX ? -1 : 1;
-                float scaleY = t.flipY ? -1 : 1;
-                float w = t.width * t.getScaleX();
-                float h = t.height * t.getScaleY();
-                batch.draw(f.getTexture(), t.x+xOffset, t.y+yOffset, w/2, h/2, w, h, scaleX, scaleY, t.rotation, 0, 0, f.getTexture().getWidth(), f.getTexture().getHeight(), false, false);
+                f.render(batch);
             }
         }
         batch.end();
