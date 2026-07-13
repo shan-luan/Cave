@@ -85,23 +85,6 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
         return actor;
     }
 
-    @Deprecated
-    public void applyTransform() {
-        if (actor != null && transform != null) {
-            float scaleX = transform.getScaleX();
-            float scaleY = transform.getScaleY();
-            float w = transform.width * scaleX;
-            float h = transform.height * scaleY;
-
-            actor.setPosition(transform.x, transform.y);
-            actor.setSize(w, h);
-            actor.setOrigin(w / 2, h / 2);
-            actor.setRotation(transform.rotation);
-            actor.setScaleX(transform.flipX ? -1 : 1);
-            actor.setScaleY(transform.flipY ? -1 : 1);
-        }
-    }
-
     @Override
     public void render(Batch batch) {
         upload();

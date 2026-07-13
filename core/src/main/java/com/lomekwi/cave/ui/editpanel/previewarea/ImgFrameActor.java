@@ -29,7 +29,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImgFrameActor extends Image {
+public class ImgFrameActor extends Actor {
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
     public static final float ROTATE_OFFSET_LOCAL = 40f;
@@ -67,10 +67,7 @@ public class ImgFrameActor extends Image {
     private final Vector2 snapAdjust = new Vector2();
 
     public ImgFrameActor(ImgFrame imgFrame) {
-        super(imgFrame.getTexture());
         this.imgFrame = imgFrame;
-        setScaling(Scaling.stretch);
-        setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled);
         addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -167,6 +164,43 @@ public class ImgFrameActor extends Image {
                 return false;
             }
         });
+    }
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+        super.draw(batch, parentAlpha);
+        imgFrame.render(batch);
+        if (selected) {
+            Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
+            batch.setTransformMatrix(new Matrix4().idt());
+            gizmo.draw(gizmoHandle);
+            batch.setTransformMatrix(savedTransform);
+        }
+    }
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+
+        var transform = imgFrame.getTransform();
+        float scaleX = transform.getScaleX();
+        float scaleY = transform.getScaleY();
+        float w = transform.width * scaleX;
+        float h = transform.height * scaleY;
+
+        setPosition(transform.x, transform.y);
+        setSize(w, h);
+        setOrigin(w / 2, h / 2);
+        setRotation(transform.rotation);
+        setScaleX(transform.flipX ? -1 : 1);
+        setScaleY(transform.flipY ? -1 : 1);
+
+        if (dragFilter == null || getParent() == null || getStage() == null) return;
+        dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
+        getStage().screenToStageCoordinates(dragStagePos);
+        if (gizmoDragging) {
+            updateGizmoDrag(dragStagePos.x, dragStagePos.y);
+        } else if (dragging) {
+            updateDrag(dragStagePos.x, dragStagePos.y);
+        }
     }
 
     @Override
@@ -421,19 +455,6 @@ public class ImgFrameActor extends Image {
         gizmoOldState = null;
     }
 
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        if (dragFilter == null || getParent() == null || getStage() == null) return;
-        dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
-        getStage().screenToStageCoordinates(dragStagePos);
-        if (gizmoDragging) {
-            updateGizmoDrag(dragStagePos.x, dragStagePos.y);
-        } else if (dragging) {
-            updateDrag(dragStagePos.x, dragStagePos.y);
-        }
-    }
-
     private void updateDrag(float stageX, float stageY) {
         Actor parent = getParent();
         float canvasX = (stageX - parent.getX()) / parent.getScaleX();
@@ -463,7 +484,6 @@ public class ImgFrameActor extends Image {
                 ((Filter<? super ImgFrame>) f).filter(imgFrame);
             }
         }
-        imgFrame.applyTransform();
     }
 
     private void computeDragContext() {
@@ -591,17 +611,6 @@ public class ImgFrameActor extends Image {
             if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
                 Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
             }
-        }
-    }
-
-    @Override
-    public void draw(Batch batch, float parentAlpha) {
-        super.draw(batch, parentAlpha);
-        if (selected) {
-            Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
-            batch.setTransformMatrix(new Matrix4().idt());
-            gizmo.draw(gizmoHandle);
-            batch.setTransformMatrix(savedTransform);
         }
     }
 

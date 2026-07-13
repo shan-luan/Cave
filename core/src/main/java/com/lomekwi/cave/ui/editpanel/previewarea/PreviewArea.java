@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -95,7 +96,7 @@ public class PreviewArea extends Group {
                 xOffset = screenPos.x - (screenPos.x - xOffset) * (scale / oldScale);
                 yOffset = screenPos.y - (screenPos.y - yOffset) * (scale / oldScale);
 
-                updateAllImages();
+                updateCanvas();
                 return true;
             }
         });
@@ -120,20 +121,18 @@ public class PreviewArea extends Group {
                 }
             }
 
-            private boolean isStillInside(com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                return toActor != null && toActor.isDescendantOf(PreviewArea.this);
+            private boolean isStillInside(@Nullable Actor toActor) {
+                if (toActor == null) {
+                    return false;
+                }
+                return toActor.isDescendantOf(PreviewArea.this);
             }
         });
     }
 
-    private void updateAllImages() {
+    private void updateCanvas() {
         canvas.setPosition(xOffset, yOffset);
         canvas.setScale(scale);
-        for (ImgFrame frame : frames) {
-            if(frame!=null) {
-                frame.applyTransform();
-            }
-        }
     }
 
     @Subscribe
@@ -148,7 +147,6 @@ public class PreviewArea extends Group {
             canvas.addActor(i);
             canvas.setPosition(xOffset, yOffset);
             canvas.setScale(scale);
-            frame.applyTransform();
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
     }
@@ -216,7 +214,7 @@ public class PreviewArea extends Group {
                 if (Gdx.input.isKeyPressed(Input.Keys.D)) xOffset -= speed;
             }
         }
-        updateAllImages();
+        updateCanvas();
         super.act(delta);
         canvas.setZIndex(0);
         int i = 0;
@@ -279,7 +277,7 @@ public class PreviewArea extends Group {
                 refViewportArea = lastWidth * lastHeight;
             }
             recalcScale();
-            updateAllImages();
+            updateCanvas();
         }
         lastWidth = getWidth();
         lastHeight = getHeight();
@@ -290,7 +288,7 @@ public class PreviewArea extends Group {
         xOffset = 0;
         yOffset = 0;
         recalcScale();
-        updateAllImages();
+        updateCanvas();
     }
 
     public void dispose() {
