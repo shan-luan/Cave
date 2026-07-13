@@ -47,6 +47,7 @@ public class VideoExportTask implements Task{
     private final SynchronousQueue<org.bytedeco.javacv.Frame> queue=new SynchronousQueue<>();
     private final Matrix4 projMatrix;
     private final int bitrate;
+    private final double fps;
     public VideoExportTask(@NonNull Timeline timeline, File outputFile, int width, int height, double fps,int bitrate) {
         this.timeline = timeline;
         recorder=new FFmpegFrameRecorder(outputFile,width, height);
@@ -59,6 +60,7 @@ public class VideoExportTask implements Task{
         fb=new FrameBuffer(Pixmap.Format.RGBA8888,width,height,true);
         batch=new SpriteBatch();
         frameLen= (long) (SECOND/fps);
+        this.fps=fps;
         cvFrame=new org.bytedeco.javacv.Frame(width,height,org.bytedeco.javacv.Frame.DEPTH_UBYTE,4);
         projMatrix=new Matrix4().setToOrtho(0, fb.getWidth(), fb.getHeight(), 0, 0, 1);
         this.bitrate=bitrate;
@@ -76,6 +78,7 @@ public class VideoExportTask implements Task{
             recorder.setAudioChannels(AUDIO_CHANNELS);
             recorder.setSampleRate(AUDIO_SAMPLE_RATE);
             recorder.setAudioCodec(AV_CODEC_ID_AAC);
+            recorder.setFrameRate(fps);
             recorder.start();
             int i;
             while (t<timeline.getLength()){
@@ -146,6 +149,7 @@ public class VideoExportTask implements Task{
                 mixBuf[i] = Math.max(-1.0f, Math.min(1.0f, mixBuf[i]));
             }
 
+            recorder.setTimestamp(audioT);
             recorder.recordSamples(FloatBuffer.wrap(mixBuf));
         }
     }
