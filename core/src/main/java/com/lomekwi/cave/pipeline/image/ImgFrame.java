@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.previewarea.ImgFrameActor;
+import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 
 import java.nio.ByteBuffer;
 
@@ -16,7 +16,7 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     private Transform transform;
     private ByteBuffer pixels;
     private Texture texture;
-    private ImgFrameActor actor;
+    private TransFrameActor actor;
     private int unpackRowLength;
 
     public ImgFrame(Track track) {
@@ -46,7 +46,7 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     }
     public ImgFrame setTexture(Texture texture) {
         this.texture = texture;
-        actor = new ImgFrameActor(this);
+        actor = new TransFrameActor(this);
         return this;
     }
 
@@ -81,7 +81,7 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
         texture.dispose();
     }
 
-    public ImgFrameActor getActor() {
+    public TransFrameActor getActor() {
         return actor;
     }
 

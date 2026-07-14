@@ -143,7 +143,7 @@ public class PreviewArea extends Group {
         Gdx.app.postRunnable(()-> {
             setFrame(frame);
             frame.upload();
-            ImgFrameActor i = frame.getActor();
+            TransFrameActor i = frame.getActor();
             canvas.addActor(i);
             canvas.setPosition(xOffset, yOffset);
             canvas.setScale(scale);
@@ -171,7 +171,7 @@ public class PreviewArea extends Group {
             if (frame == null) {
                 return;
             }
-            ImgFrameActor actor = frame.getActor();
+            TransFrameActor actor = frame.getActor();
             if (actor == null) {
                 return;
             }

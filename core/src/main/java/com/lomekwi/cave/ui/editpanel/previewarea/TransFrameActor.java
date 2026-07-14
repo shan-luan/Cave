@@ -11,13 +11,13 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.utils.Scaling;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.pipeline.image.Renderable;
 import com.lomekwi.cave.pipeline.image.Transform;
+import com.lomekwi.cave.pipeline.image.Transformable;
 import com.lomekwi.cave.pipeline.image.TransFilter;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
@@ -29,12 +29,15 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImgFrameActor extends Actor {
+public class TransFrameActor extends Actor {
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
     public static final float ROTATE_OFFSET_LOCAL = 40f;
 
-    private final ImgFrame imgFrame;
+    private final Frame frame;
+    private final Renderable renderable;
+    private final Transformable transformable;
+
     private boolean selected;
 
     private TransFilter dragFilter;
@@ -66,13 +69,15 @@ public class ImgFrameActor extends Actor {
     private List<float[]> siblingBBoxes;
     private final Vector2 snapAdjust = new Vector2();
 
-    public ImgFrameActor(ImgFrame imgFrame) {
-        this.imgFrame = imgFrame;
+    public <T extends Frame & Renderable & Transformable> TransFrameActor(T frame) {
+        this.frame = frame;
+        this.renderable = frame;
+        this.transformable = frame;
         addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button != 0 || pointer != 0) return false;
-                Source<?> source = imgFrame.getSource();
+                Source<?> source = frame.getSource();
                 if (source == null) return false;
 
                 var handle = gizmo.hitHandle(event.getStageX(), event.getStageY());
@@ -136,7 +141,7 @@ public class ImgFrameActor extends Actor {
                     }
                 }
                 if (dragFilter != null && !dragging && !gizmoDragging) {
-                    Segment segment = imgFrame.getSource() != null ? imgFrame.getSource().getSegment() : null;
+                    Segment segment = frame.getSource() != null ? frame.getSource().getSegment() : null;
                     if (segment != null && segment.getTrack() != null) {
                         var editPanel = App.root.getFrontendEditPanel();
                         if (editPanel != null) {
@@ -168,7 +173,7 @@ public class ImgFrameActor extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        imgFrame.render(batch);
+        renderable.render(batch);
         if (selected) {
             Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
             batch.setTransformMatrix(new Matrix4().idt());
@@ -180,7 +185,7 @@ public class ImgFrameActor extends Actor {
     public void act(float delta) {
         super.act(delta);
 
-        var transform = imgFrame.getTransform();
+        var transform = transformable.getTransform();
         float scaleX = transform.getScaleX();
         float scaleY = transform.getScaleY();
         float w = transform.width * scaleX;
@@ -476,19 +481,19 @@ public class ImgFrameActor extends Actor {
 
     @SuppressWarnings({"unchecked"})
     private void applyFilters() {
-        Transform t = imgFrame.getTransform();
+        Transform t = transformable.getTransform();
         t.reset(0, 0, t.width, t.height);
-        Source<?> source = imgFrame.getSource();
+        Source<?> source = frame.getSource();
         if (source != null) {
             for (Filter<?> f : source.getFilters()) {
-                ((Filter<? super ImgFrame>) f).filter(imgFrame);
+                ((Filter<? super Transformable>) f).filter(transformable);
             }
         }
     }
 
     private void computeDragContext() {
-        Transform t = new Transform(0, 0, imgFrame.getTransform().width, imgFrame.getTransform().height, 0);
-        Source<?> source = imgFrame.getSource();
+        Transform t = new Transform(0, 0, transformable.getTransform().width, transformable.getTransform().height, 0);
+        Source<?> source = frame.getSource();
         if (source != null) {
             for (Filter<?> f : source.getFilters()) {
                 if (f == dragFilter) break;
@@ -514,7 +519,7 @@ public class ImgFrameActor extends Actor {
         Actor p = getParent();
         if (p instanceof com.badlogic.gdx.scenes.scene2d.Group g) {
             for (Actor child : g.getChildren()) {
-                if (child != this && child instanceof ImgFrameActor other) {
+                if (child != this && child instanceof TransFrameActor other) {
                     siblingBBoxes.add(other.computeCanvasBBox());
                 }
             }
