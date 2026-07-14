@@ -18,7 +18,6 @@ public class TransFilterActor extends FilterActor {
     private final SimpleFloatSpinnerModel dxModel, dyModel;
     private final SimpleFloatSpinnerModel sxModel, syModel;
     private final SimpleFloatSpinnerModel rotModel;
-    private final SimpleFloatSpinnerModel pivotXModel, pivotYModel;
     private final VisCheckBox flipXBox, flipYBox;
     private boolean suppressRefresh;
     private long lastEditTime = -1;
@@ -32,16 +31,12 @@ public class TransFilterActor extends FilterActor {
         sxModel = new SimpleFloatSpinnerModel(filter.scaleX(), 0.01f, 100, 0.01f, 2);
         syModel = new SimpleFloatSpinnerModel(filter.scaleY(), 0.01f, 100, 0.01f, 2);
         rotModel = new SimpleFloatSpinnerModel(filter.dRotation(), -9999, 9999, 1, 1);
-        pivotXModel = new SimpleFloatSpinnerModel(filter.pivotX(), -1, 1, 0.01f, 2);
-        pivotYModel = new SimpleFloatSpinnerModel(filter.pivotY(), -1, 1, 0.01f, 2);
 
         var dxSpinner = new Spinner("", dxModel);
         var dySpinner = new Spinner("", dyModel);
         var sxSpinner = new Spinner("", sxModel);
         var sySpinner = new Spinner("", syModel);
         var rotSpinner = new Spinner("", rotModel);
-        var pivotXSpinner = new Spinner("", pivotXModel);
-        var pivotYSpinner = new Spinner("", pivotYModel);
         flipXBox = new VisCheckBox("", filter.flipX());
         flipYBox = new VisCheckBox("", filter.flipY());
 
@@ -54,7 +49,6 @@ public class TransFilterActor extends FilterActor {
                         filter.dx(), filter.dy(),
                         filter.scaleX(), filter.scaleY(),
                         filter.dRotation(),
-                        filter.pivotX(), filter.pivotY(),
                         filter.flipX(), filter.flipY());
                 }
                 lastEditTime = System.nanoTime();
@@ -66,8 +60,6 @@ public class TransFilterActor extends FilterActor {
                     else if (s == sxSpinner) filter.scaleX(v);
                     else if (s == sySpinner) filter.scaleY(v);
                     else if (s == rotSpinner) filter.dRotation(v);
-                    else if (s == pivotXSpinner) filter.pivotX(v);
-                    else if (s == pivotYSpinner) filter.pivotY(v);
                 } else if (actor instanceof VisCheckBox cb) {
                     if (cb == flipXBox) filter.flipX(cb.isChecked());
                     else if (cb == flipYBox) filter.flipY(cb.isChecked());
@@ -81,8 +73,6 @@ public class TransFilterActor extends FilterActor {
         sxSpinner.addListener(updater);
         sySpinner.addListener(updater);
         rotSpinner.addListener(updater);
-        pivotXSpinner.addListener(updater);
-        pivotYSpinner.addListener(updater);
         flipXBox.addListener(updater);
         flipYBox.addListener(updater);
 
@@ -96,10 +86,6 @@ public class TransFilterActor extends FilterActor {
         add(sySpinner).width(90).pad(4).row();
         add(new VisLabel(i18n("旋转"))).pad(4);
         add(rotSpinner).width(90).pad(4).row();
-        add(new VisLabel(i18n("旋转中心 X"))).pad(4);
-        add(pivotXSpinner).width(90).pad(4).row();
-        add(new VisLabel(i18n("旋转中心 Y"))).pad(4);
-        add(pivotYSpinner).width(90).pad(4).row();
         add(new VisLabel(i18n("水平翻转"))).pad(4);
         add(flipXBox).pad(4).row();
         add(new VisLabel(i18n("垂直翻转"))).pad(4);
@@ -114,8 +100,6 @@ public class TransFilterActor extends FilterActor {
         sxModel.setValue(tf.scaleX());
         syModel.setValue(tf.scaleY());
         rotModel.setValue(tf.dRotation());
-        pivotXModel.setValue(tf.pivotX());
-        pivotYModel.setValue(tf.pivotY());
         flipXBox.setChecked(tf.flipX());
         flipYBox.setChecked(tf.flipY());
         suppressRefresh = false;
@@ -132,7 +116,6 @@ public class TransFilterActor extends FilterActor {
                     tf.dx(), tf.dy(),
                     tf.scaleX(), tf.scaleY(),
                     tf.dRotation(),
-                    tf.pivotX(), tf.pivotY(),
                     tf.flipX(), tf.flipY());
                 if (!undoOldState.equals(newState)) {
                     p.undoManager.record(new UndoManager.TransformFilterCommand(

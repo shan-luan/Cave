@@ -272,7 +272,7 @@ public class UndoManager {
     }
 
     public record TransFilterState(float dx, float dy, float scaleX, float scaleY,
-                                    float dRotation, float pivotX, float pivotY,
+                                    float dRotation,
                                     boolean flipX, boolean flipY) {}
 
     public record TransformFilterCommand(TransFilter filter, TransFilterState oldState, TransFilterState newState) implements UndoableCommand {
@@ -292,8 +292,6 @@ public class UndoManager {
             filter.scaleX(s.scaleX);
             filter.scaleY(s.scaleY);
             filter.dRotation(s.dRotation);
-            filter.pivotX(s.pivotX);
-            filter.pivotY(s.pivotY);
             filter.flipX(s.flipX);
             filter.flipY(s.flipY);
             filter.invalidateDetailActor();

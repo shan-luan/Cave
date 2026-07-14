@@ -6,17 +6,15 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
 
 public class TransFilter extends Filter<Transformable> {
-    private float dx,dy,scaleX,scaleY,dRotation,pivotX,pivotY;
+    private float dx,dy,scaleX,scaleY,dRotation;
     private boolean flipX,flipY;
-    public TransFilter(Source<?> source, float dx, float dy, float scaleX, float scaleY, float dRotation, float pivotX, float pivotY, boolean flipX, boolean flipY) {
+    public TransFilter(Source<?> source, float dx, float dy, float scaleX, float scaleY, float dRotation, boolean flipX, boolean flipY) {
         super(source);
         this.dx = dx;
         this.dy = dy;
         this.scaleX = scaleX;
         this.scaleY = scaleY;
         this.dRotation = dRotation;
-        this.pivotX = pivotX;
-        this.pivotY = pivotY;
         this.flipX = flipX;
         this.flipY = flipY;
     }
@@ -26,8 +24,6 @@ public class TransFilter extends Filter<Transformable> {
     public float scaleX() { return scaleX; }
     public float scaleY() { return scaleY; }
     public float dRotation() { return dRotation; }
-    public float pivotX() { return pivotX; }
-    public float pivotY() { return pivotY; }
     public boolean flipX() { return flipX; }
     public boolean flipY() { return flipY; }
     public void dx(float v) { dx = v; }
@@ -35,8 +31,6 @@ public class TransFilter extends Filter<Transformable> {
     public void scaleX(float v) { scaleX = v; }
     public void scaleY(float v) { scaleY = v; }
     public void dRotation(float v) { dRotation = v; }
-    public void pivotX(float v) { pivotX = v; }
-    public void pivotY(float v) { pivotY = v; }
     public void flipX(boolean v) { flipX = v; }
     public void flipY(boolean v) { flipY = v; }
 
@@ -46,7 +40,7 @@ public class TransFilter extends Filter<Transformable> {
     @Override
     public void filter(Transformable frame) {
         Transform t = frame.getTransform();
-        t.applyLocal(dx, dy, scaleX, scaleY, dRotation, pivotX, pivotY, flipX, flipY);
+        t.applyLocal(dx, dy, scaleX, scaleY, dRotation, flipX, flipY);
     }
 
     @Override

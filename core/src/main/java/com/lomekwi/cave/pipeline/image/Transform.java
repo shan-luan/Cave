@@ -8,7 +8,7 @@ public class Transform {
     public boolean flipX, flipY;
     public Matrix4 matrix;
 
-    public Transform(float x, float y, float width, float height, float rotation, float pivotX, float pivotY) {
+    public Transform(float x, float y, float width, float height, float rotation) {
         this.width = width;
         this.height = height;
         this.matrix = new Matrix4();
@@ -19,33 +19,21 @@ public class Transform {
         decompose();
     }
 
-    public Transform(float x, float y, float width, float height, float rotation) {
-        this(x, y, width, height, rotation, 0, 0);
-    }
-
     public Transform() {
-        this(0, 0, 1, 1, 0, 0, 0);
+        this(0, 0, 1, 1, 0);
     }
 
     public void applyLocal(float dx, float dy, float scaleX, float scaleY, float dRotation,
-                           float pivotX, float pivotY, boolean flipX, boolean flipY) {
+                           boolean flipX, boolean flipY) {
         if (flipX) this.flipX = !this.flipX;
         if (flipY) this.flipY = !this.flipY;
 
-        float currScaleX = getScaleX();
-        float currScaleY = getScaleY();
-        float currW = width * currScaleX;
-        float currH = height * currScaleY;
-        float pox = pivotX * currW / 2;
-        float poy = pivotY * currH / 2;
-
         Matrix4 local = new Matrix4();
-        local.translate(dx + pox, dy + poy, 0);
+        local.translate(dx, dy, 0);
         if (dRotation != 0) {
             local.rotate(0, 0, 1, dRotation);
         }
         local.scale(scaleX, scaleY, 1);
-        local.translate(-pox, -poy, 0);
 
         matrix.mul(local);
         decompose();

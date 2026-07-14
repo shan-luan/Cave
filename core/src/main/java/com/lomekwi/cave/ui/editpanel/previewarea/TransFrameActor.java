@@ -269,7 +269,6 @@ public class TransFrameActor extends Actor {
             gizmoStartDx, gizmoStartDy,
             gizmoStartScaleX, gizmoStartScaleY,
             gizmoStartRotation,
-            dragFilter.pivotX(), dragFilter.pivotY(),
             dragFilter.flipX(), dragFilter.flipY());
 
         computeDragContext();
@@ -443,7 +442,6 @@ public class TransFrameActor extends Actor {
                 filter.dx(), filter.dy(),
                 filter.scaleX(), filter.scaleY(),
                 filter.dRotation(),
-                filter.pivotX(), filter.pivotY(),
                 filter.flipX(), filter.flipY());
             if (!gizmoOldState.equals(newState)) {
                 p.undoManager.record(new UndoManager.TransformFilterCommand(
@@ -495,7 +493,7 @@ public class TransFrameActor extends Actor {
                 if (f == dragFilter) break;
                 if (f instanceof TransFilter tf) {
                     t.applyLocal(tf.dx(), tf.dy(), tf.scaleX(), tf.scaleY(),
-                        tf.dRotation(), tf.pivotX(), tf.pivotY(),
+                        tf.dRotation(),
                         tf.flipX(), tf.flipY());
                 }
             }
@@ -598,7 +596,7 @@ public class TransFrameActor extends Actor {
                 return (TransFilter) f;
             }
         }
-        TransFilter tf = new TransFilter(source, 0, 0, 1, 1, 0, 0, 0, false, false);
+        TransFilter tf = new TransFilter(source, 0, 0, 1, 1, 0, false, false);
         ((Source) source).attach(tf);
         return tf;
     }
