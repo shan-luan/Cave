@@ -27,12 +27,12 @@ public abstract class SegActor extends Actor {
     private final Rectangle scissors = new Rectangle();
     private final Rectangle bounds = new Rectangle();
     private boolean hovered;
+    private boolean menuInitialized;
     private static final Color hoverColor = new Color(1, 1, 1, 0.25f);
     private static final Color selectedColor = new Color(0, 1, 0.3f, 0.4f);
     private static final Color dragInvalidColor = new Color(1, 0, 0, 0.4f);
     public SegActor(Segment segment) {
         this.segment = segment;
-        addListener(getMenu().getDefaultInputListener());
         addListener(new InputListener(){
             final float edgeWidth = 30;
             @Override
@@ -90,7 +90,7 @@ public abstract class SegActor extends Actor {
                     tlGroup.selectSegment(segment, ctrl);
                     return true;
                 } else {
-                    getMenu().setContext((TlGroup) getParent(), SegActor.this,((TlGroup)getParent()).xToAbsoluteTime(getX()+x));
+                    getMenu().setContext(SegActor.this,((TlGroup)getParent()).xToAbsoluteTime(getX()+x));
                     return false;
                 }
             }
@@ -154,7 +154,18 @@ public abstract class SegActor extends Actor {
         Gdx.graphics.setSystemCursor(cursor);
     }
     public SegMenu getMenu() {
-        return SegMenu.getInstance();
+        if (getParent() instanceof TlGroup g) return g.segMenu;
+        return null;
+    }
+
+    void initMenu() {
+        if (!menuInitialized) {
+            SegMenu menu = getMenu();
+            if (menu != null) {
+                addListener(menu.getDefaultInputListener());
+                menuInitialized = true;
+            }
+        }
     }
     @Override
     protected void positionChanged(){

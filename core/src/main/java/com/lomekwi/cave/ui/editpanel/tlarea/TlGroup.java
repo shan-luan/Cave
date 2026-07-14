@@ -48,6 +48,8 @@ public class TlGroup extends Group {
 
     private final TimelineRenderer renderer = new TimelineRenderer();
     final SegDragHandler dragHandler = new SegDragHandler();
+    public final SegMenu segMenu = new SegMenu(this);
+    public final TlGroupMenu tlGroupMenu = new TlGroupMenu(this);
 
     private final Timeline timeline;
     private final Playhead playhead;
@@ -82,12 +84,21 @@ public class TlGroup extends Group {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button == Input.Buttons.LEFT) {
-                    Gdx.app.log("TlGroup", "regular touchDown x=" + x + " y=" + y);
                     clearSelection();
                     playhead.seek(Math.max(xToAbsoluteTime(x), 0));
                     return true;
                 }
+                if (button == Input.Buttons.RIGHT && event.getTarget() == event.getListenerActor()) {
+                    tlGroupMenu.setContext(Math.max(xToAbsoluteTime(x), 0));
+                    return true;
+                }
                 return false;
+            }
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (button == Input.Buttons.RIGHT) {
+                    tlGroupMenu.showMenu(event.getStage(), event.getStageX(), event.getStageY());
+                }
             }
             @Override
             public void touchDragged(InputEvent event, float x, float y, int pointer) {
@@ -274,6 +285,7 @@ public class TlGroup extends Group {
                             break;
                     }
                     addActor(entry.getValue().getActor());
+                    actor.initMenu();
                 }
             }
 
@@ -497,6 +509,14 @@ public class TlGroup extends Group {
     @SuppressWarnings("unused")
     private float trackIndexToBottomY(int index) {
         return trackIndexToTopY(index) - view.trackHeight;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public Timeline getTimeline() {
+        return timeline;
     }
 
     public void markTimelineDirty() {
