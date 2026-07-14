@@ -185,8 +185,8 @@ public class TransFrameActor extends Actor {
         var transform = transformable.getTransform();
         float scaleX = transform.getScaleX();
         float scaleY = transform.getScaleY();
-        float w = transform.width * scaleX;
-        float h = transform.height * scaleY;
+        float w = transformable.getBaseWidth() * scaleX;
+        float h = transformable.getBaseHeight() * scaleY;
 
         setPosition(transform.x, transform.y);
         setSize(w, h);
@@ -478,8 +478,7 @@ public class TransFrameActor extends Actor {
 
     @SuppressWarnings({"unchecked"})
     private void applyFilters() {
-        Transform t = transformable.getTransform();
-        t.reset(0, 0, t.width, t.height);
+        transformable.reset();
         Source<?> source = frame.getSource();
         if (source != null) {
             for (Filter<?> f : source.getFilters()) {
@@ -489,7 +488,7 @@ public class TransFrameActor extends Actor {
     }
 
     private void computeDragContext() {
-        Transform t = new Transform(0, 0, transformable.getTransform().width, transformable.getTransform().height, 0);
+        Transform t = new Transform(0, 0, transformable.getBaseWidth(), transformable.getBaseHeight(), 0);
         Source<?> source = frame.getSource();
         if (source != null) {
             for (Filter<?> f : source.getFilters()) {

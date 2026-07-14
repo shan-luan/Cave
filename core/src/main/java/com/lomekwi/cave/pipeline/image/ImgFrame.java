@@ -34,6 +34,14 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     public void setTransform(Transform transform) {
         this.transform = transform;
     }
+    @Override
+    public float getBaseWidth() {
+        return texture.getWidth();
+    }
+    @Override
+    public float getBaseHeight() {
+        return texture.getHeight();
+    }
     public ByteBuffer getPixels() {
         return pixels;
     }
