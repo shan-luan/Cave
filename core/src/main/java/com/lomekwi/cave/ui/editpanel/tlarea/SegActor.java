@@ -23,14 +23,11 @@ public abstract class SegActor extends Actor {
     protected static final Color darkBlue = new Color(0x1ba1e2ff);
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
-    private boolean dragInvalid;
     private final Rectangle scissors = new Rectangle();
     private final Rectangle bounds = new Rectangle();
     private boolean hovered;
     private boolean menuInitialized;
     private static final Color hoverColor = new Color(1, 1, 1, 0.25f);
-    private static final Color selectedColor = new Color(0, 1, 0.3f, 0.4f);
-    private static final Color dragInvalidColor = new Color(1, 0, 0, 0.4f);
     public SegActor(Segment segment) {
         this.segment = segment;
         addListener(new InputListener(){
@@ -73,7 +70,7 @@ public abstract class SegActor extends Actor {
 
             @Override
             public boolean touchDown (InputEvent event, float x, float y, int pointer, int button) {
-                if (getParent()==null || !(getParent() instanceof TlGroup)) {
+                if (getParent()==null || !(getParent() instanceof TlGroup tlGroup)) {
                     return false;
                 }
                 if (button == Input.Buttons.LEFT) {
@@ -85,7 +82,6 @@ public abstract class SegActor extends Actor {
                         dragSide = DragSide.MIDDLE;
                     }
                     event.stop();
-                    TlGroup tlGroup = (TlGroup) getParent();
                     boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
                     tlGroup.selectSegment(segment, ctrl);
                     return true;
@@ -121,22 +117,13 @@ public abstract class SegActor extends Actor {
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
     }
     protected void drawBorder(){
-        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), blue, 2);
+        var s=getSegment().isSelected();
+        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), s ? Color.WHITE : blue, s ? 6 : 2);
     }
     private void drawSelectionOverlay(){
-        if (getSegment().isSelected()) {
-            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), selectedColor);
-        }
         if (hovered) {
             App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), hoverColor);
         }
-        if (dragInvalid) {
-            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), dragInvalidColor);
-        }
-    }
-
-    public void setDragInvalid(boolean invalid) {
-        this.dragInvalid = invalid;
     }
 
     public void setHovered(boolean hovered) {

@@ -620,7 +620,6 @@ class SegDragHandler {
                     if (Float.isNaN(firstX)) {
                         firstX = diffToActorX;
                         firstY = diffToActorY;
-                        actor.setDragInvalid(false);
                         return;
                     }
 
@@ -696,7 +695,6 @@ class SegDragHandler {
                         }
                     }
 
-                    actor.setDragInvalid(!canMove);
                     actor.setPosition(targetX, targetY);
 
                     if (canMove) {
@@ -795,7 +793,6 @@ class SegDragHandler {
                 long msTarget = groupOrigStarts[i] + timeDelta;
                 int targetTrackIdx = groupOrigTracks[i].index + trackDelta;
                 if (targetTrackIdx < 0 || msTarget < 0) {
-                    actor.setDragInvalid(true);
                     return;
                 }
                 newStarts[i] = msTarget;
@@ -863,9 +860,7 @@ class SegDragHandler {
                         int idx = groupOrigTracks[i].index + trackDelta;
                         newTracks[i] = timeline.getTrack(idx);
                     }
-                    actor.setDragInvalid(false);
                 } else {
-                    actor.setDragInvalid(true);
                     return;
                 }
             }
@@ -896,7 +891,6 @@ class SegDragHandler {
                 );
             }
 
-            actor.setDragInvalid(false);
         }
 
         private void handleGroupFrontResize(SegActor actor, long newStart) {
@@ -909,7 +903,6 @@ class SegDragHandler {
                 long msNewStart = groupOrigStarts[i] + timeDelta;
                 long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
                 if (msNewStart >= msOldEnd || msNewStart < 0) {
-                    actor.setDragInvalid(true);
                     return;
                 }
                 newStarts[i] = msNewStart;
@@ -940,13 +933,10 @@ class SegDragHandler {
                     }
                     if (ok && timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
                         timeDelta = snappedDelta;
-                        actor.setDragInvalid(false);
                     } else {
-                        actor.setDragInvalid(true);
                         return;
                     }
                 } else {
-                    actor.setDragInvalid(true);
                     return;
                 }
             }
@@ -968,7 +958,6 @@ class SegDragHandler {
                 msActor.setWidth(absoluteTimeToX(msOldEnd) - absoluteTimeToX(msNewStart));
             }
 
-            actor.setDragInvalid(false);
         }
 
         private void handleGroupBehindResize(SegActor actor, long newEnd) {
@@ -981,7 +970,6 @@ class SegDragHandler {
                 long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
                 long msNewEnd = msOldEnd + timeDelta;
                 if (msNewEnd <= groupOrigStarts[i]) {
-                    actor.setDragInvalid(true);
                     return;
                 }
                 newDurations[i] = msNewEnd - groupOrigStarts[i];
@@ -1009,13 +997,10 @@ class SegDragHandler {
                     }
                     if (ok && timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
                         timeDelta = snappedDelta;
-                        actor.setDragInvalid(false);
                     } else {
-                        actor.setDragInvalid(true);
                         return;
                     }
                 } else {
-                    actor.setDragInvalid(true);
                     return;
                 }
             }
@@ -1035,7 +1020,6 @@ class SegDragHandler {
                     absoluteTimeToX(groupOrigStarts[i] + newDurations[i]) - absoluteTimeToX(groupOrigStarts[i]));
             }
 
-            actor.setDragInvalid(false);
         }
 
         void segDragEnd(SegActor actor) {
@@ -1070,7 +1054,6 @@ class SegDragHandler {
 
                 dragActive = false;
             }
-            actor.setDragInvalid(false);
 
             groupMembers = null;
             groupOrigStarts = null;
