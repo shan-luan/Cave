@@ -10,9 +10,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
+import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.GapFrame;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.pipeline.text.TextFrame;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.timeline.Track;
@@ -32,7 +34,7 @@ public class PreviewArea extends Group {
     private final Project project;
     private final Group canvas = new Group();
     //此列表仅应在主线程读取.
-    private final List<@Nullable ImgFrame> frames = new ArrayList<>();
+    private final List<@Nullable Frame> frames = new ArrayList<>();
     private float xOffset, yOffset;
     private float scale = 1.0f;
     private float zoom = 1.0f;
@@ -139,7 +141,6 @@ public class PreviewArea extends Group {
     public void sink(ImgFrame frame) {
         Track track = frame.track;
         track.getWorker().getSinkPhaser().register();
-        //因为postRunnable内部是线程安全队列，保证了上传纹理happens-before更新pixels.
         Gdx.app.postRunnable(()-> {
             setFrame(frame);
             frame.upload();
@@ -150,28 +151,52 @@ public class PreviewArea extends Group {
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
     }
-    private void setFrame(ImgFrame frame){
+
+    @Subscribe
+    public void sink(TextFrame frame) {
+        Track track = frame.track;
+        track.getWorker().getSinkPhaser().register();
+        Gdx.app.postRunnable(() -> {
+            setFrame(frame);
+            TransFrameActor i = frame.getActor();
+            canvas.addActor(i);
+            canvas.setPosition(xOffset, yOffset);
+            canvas.setScale(scale);
+            track.getWorker().getSinkPhaser().arriveAndDeregister();
+        });
+    }
+
+    private void setFrame(Frame frame) {
         int idx = frame.track.index;
         while (idx >= frames.size()) {
             frames.add(null);
         }
-        var legacy=frames.set(frame.track.index, frame);
-        if (legacy != null){
-            canvas.removeActor(legacy.getActor());
+        var legacy = frames.set(frame.track.index, frame);
+        if (legacy != null) {
+            var actor = getFrameActor(legacy);
+            if (actor != null) canvas.removeActor(actor);
         }
     }
-//TODO:减少对象分配开销
+
+    @Nullable
+    private static TransFrameActor getFrameActor(Frame frame) {
+        if (frame instanceof ImgFrame imgFrame) return imgFrame.getActor();
+        if (frame instanceof TextFrame textFrame) return textFrame.getActor();
+        return null;
+    }
+
+    //TODO:减少对象分配开销
     public void clearFrames(int idx) {
         Gdx.app.postRunnable(() -> {
             // 边界检查
             if (idx < 0 || idx >= frames.size()) {
                 return;
             }
-            ImgFrame frame = frames.get(idx);
+            Frame frame = frames.get(idx);
             if (frame == null) {
                 return;
             }
-            TransFrameActor actor = frame.getActor();
+            TransFrameActor actor = getFrameActor(frame);
             if (actor == null) {
                 return;
             }
@@ -188,11 +213,13 @@ public class PreviewArea extends Group {
 
     @Subscribe
     public void onSegmentSelected(SegmentSelectedEvent event) {
-        for (ImgFrame frame : frames) {
-            if (frame != null && frame.getActor() != null) {
+        for (Frame frame : frames) {
+            if (frame == null) continue;
+            var actor = getFrameActor(frame);
+            if (actor != null) {
                 Segment segment = frame.getSource() != null ? frame.getSource().getSegment() : null;
                 boolean selected = segment != null && segment.isSelected();
-                frame.getActor().setSelected(selected);
+                actor.setSelected(selected);
             }
         }
     }
@@ -218,9 +245,11 @@ public class PreviewArea extends Group {
         super.act(delta);
         canvas.setZIndex(0);
         int i = 0;
-        for(ImgFrame frame : frames){
-            if(frame!=null && frame.getActor() != null && frame.getActor().getParent() == canvas){
-                frame.getActor().setZIndex(canvas.getChildren().size-1-i);
+        for(Frame frame : frames){
+            if(frame == null) continue;
+            var actor = getFrameActor(frame);
+            if(actor != null && actor.getParent() == canvas){
+                actor.setZIndex(canvas.getChildren().size-1-i);
                 i++;
             }
         }

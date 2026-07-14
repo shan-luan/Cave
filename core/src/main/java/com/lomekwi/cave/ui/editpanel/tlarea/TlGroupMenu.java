@@ -11,6 +11,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
+import com.lomekwi.cave.timeline.TextSeg;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.util.MimeType;
@@ -33,7 +34,7 @@ public class TlGroupMenu extends PopupMenu {
         this.tlGroup = tlGroup;
         PopupMenu addMenu = new PopupMenu();
         addMenu.addItem(new MenuItem("媒体片段", new ChangeListenerX(this::onAddMedia)));
-        addMenu.addItem(new MenuItem("文本片段"));
+        addMenu.addItem(new MenuItem("文本片段", new ChangeListenerX(this::onAddText)));
         MenuItem addItem = new MenuItem("新增...");
         addItem.setSubMenu(addMenu);
         addItem(addItem);
@@ -69,6 +70,26 @@ public class TlGroupMenu extends PopupMenu {
                 Gdx.app.error("TlGroupMenu", "选择文件失败", exception);
             }
         });
+    }
+
+    private void onAddText() {
+        TextSeg seg = new TextSeg();
+        seg.setOrigin(time);
+        long duration = seg.getDuration();
+        if (duration <= 0) return;
+
+        int targetTrack = 0;
+        var range = Range.closedOpen(time, time + duration);
+        while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of())) {
+            targetTrack++;
+        }
+
+        tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration);
+        Project project = tlGroup.getProject();
+        project.undoManager.record(new UndoManager.AddSegCommand(
+            tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration));
+
+        tlGroup.markTimelineDirty();
     }
 
     private void addMediaFile(File file) {
