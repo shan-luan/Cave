@@ -94,6 +94,17 @@ public class Root implements ApplicationListener {
                 Project project = getFrontendProject();
                 if (project == null || project.undoManager == null) return false;
                 EditPanel ep = getFrontendEditPanel();
+                // TopActions that need a project
+                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
+                    topBar.performSave();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
+                    topBar.performSaveAs();
+                    return true;
+                }
+
+                if (App.isTextInputFocused()) return false;
 
                 // Undo / Redo
                 if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
@@ -104,16 +115,6 @@ public class Root implements ApplicationListener {
                 if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
                     project.undoManager.redo();
                     if (ep != null) ep.getTlGroup().markTimelineDirty();
-                    return true;
-                }
-
-                // TopActions that need a project
-                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
-                    topBar.performSave();
-                    return true;
-                }
-                if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
-                    topBar.performSaveAs();
                     return true;
                 }
 
