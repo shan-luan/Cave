@@ -111,6 +111,7 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        source.setSegment(this);
         actor = setupActor();
     }
     @Override
