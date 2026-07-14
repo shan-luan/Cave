@@ -15,7 +15,6 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.Renderable;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.pipeline.image.Transformable;
 import com.lomekwi.cave.pipeline.image.TransFilter;
@@ -35,7 +34,6 @@ public class TransFrameActor extends Actor {
     public static final float ROTATE_OFFSET_LOCAL = 40f;
 
     private final Frame frame;
-    private final Renderable renderable;
     private final Transformable transformable;
 
     private boolean selected;
@@ -69,9 +67,8 @@ public class TransFrameActor extends Actor {
     private List<float[]> siblingBBoxes;
     private final Vector2 snapAdjust = new Vector2();
 
-    public <T extends Frame & Renderable & Transformable> TransFrameActor(T frame) {
+    public <T extends Frame & Transformable> TransFrameActor(T frame) {
         this.frame = frame;
-        this.renderable = frame;
         this.transformable = frame;
         addListener(new InputListener() {
             @Override
@@ -173,7 +170,7 @@ public class TransFrameActor extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        renderable.render(batch);
+        transformable.render(batch);
         if (selected) {
             Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
             batch.setTransformMatrix(new Matrix4().idt());
