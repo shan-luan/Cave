@@ -86,7 +86,7 @@ public class TextFrame extends Frame implements Transformable {
         tmpMatrix.rotate(0, 0, 1, t.rotation);
         tmpMatrix.scale(sx, sy, 1);
         batch.setTransformMatrix(tmpMatrix);
-        font.draw(batch, text, -w / 2, -font.getDescent());
+        font.draw(batch, layout, -w / 2, -font.getDescent());
         batch.setTransformMatrix(saved);
     }
 }
