@@ -18,6 +18,7 @@ public class TextFrame extends Frame implements Transformable {
     private Transform transform;
     private TransFrameActor actor;
     private final Matrix4 tmpMatrix = new Matrix4();
+    private boolean glyphsMissing;
 
     public TextFrame(Track track) {
         super(track);
@@ -29,14 +30,27 @@ public class TextFrame extends Frame implements Transformable {
 
     public void setText(CharSequence text) {
         this.text = text.toString();
-        if (font != null) {
-            layout.setText(font, this.text);
-        }
+        checkGlyphs();
     }
 
     public void setFont(BitmapFont font) {
         this.font = font;
-        if (font != null && text != null) {
+        checkGlyphs();
+    }
+
+    private void checkGlyphs() {
+        if (font == null || text == null) {
+            glyphsMissing = true;
+            return;
+        }
+        glyphsMissing = false;
+        for (int i = 0; i < text.length(); i++) {
+            if (font.getData().getGlyph(text.charAt(i)) == null) {
+                glyphsMissing = true;
+                break;
+            }
+        }
+        if (!glyphsMissing) {
             layout.setText(font, text);
         }
     }
@@ -61,17 +75,17 @@ public class TextFrame extends Frame implements Transformable {
 
     @Override
     public float getBaseWidth() {
-        return layout.width;
+        return glyphsMissing ? 0 : layout.width;
     }
 
     @Override
     public float getBaseHeight() {
-        return layout.height;
+        return glyphsMissing ? 0 : layout.height;
     }
 
     @Override
     public void render(Batch batch) {
-        if (font == null || text == null) return;
+        if (font == null || text == null || glyphsMissing) return;
         var t = getTransform();
         float scaleX = t.flipX ? -1 : 1;
         float scaleY = t.flipY ? -1 : 1;
