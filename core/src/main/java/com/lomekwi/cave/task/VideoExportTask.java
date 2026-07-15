@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
+import com.lomekwi.cave.pipeline.image.Renderable;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 import com.lomekwi.cave.timeline.AudSeg;
@@ -163,8 +164,8 @@ public class VideoExportTask implements Task{
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         for(int i=frames.length()-1;i>=0;i--){
             Frame frame=frames.get(i);
-            if(frame instanceof ImgFrame f){
-                f.render(batch);
+            if(frame instanceof Renderable r){
+                r.render(batch);
             }
         }
         batch.end();
