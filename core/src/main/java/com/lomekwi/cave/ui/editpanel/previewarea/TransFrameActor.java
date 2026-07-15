@@ -57,15 +57,15 @@ public class TransFrameActor extends Actor {
     protected float startGizmoLocalX, startGizmoLocalY;
     protected UndoManager.TransFilterState gizmoOldState;
 
-    private final Vector2 dragStagePos = new Vector2();
-    private final Vector2 tmp1 = new Vector2();
-    private final Vector2 tmp2 = new Vector2();
-    private final Vector2 tmp3 = new Vector2();
+    private static final Vector2 dragStagePos = new Vector2();
+    private static final Vector2 tmp1 = new Vector2();
+    private static final Vector2 tmp2 = new Vector2();
+    private static final Vector2 tmp3 = new Vector2();
 
     private static final float SNAP_THRESHOLD_SCREEN = 10f;
     private float[] myStartBBox;
     private List<float[]> siblingBBoxes;
-    private final Vector2 snapAdjust = new Vector2();
+    private static final Vector2 snapAdjust = new Vector2();
 
     public <T extends Frame & Transformable> TransFrameActor(T frame) {
         this.frame = frame;

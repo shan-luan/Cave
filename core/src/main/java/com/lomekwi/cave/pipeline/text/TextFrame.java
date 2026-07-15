@@ -36,7 +36,7 @@ public class TextFrame extends Frame implements Transformable {
 
     public void setFont(BitmapFont font) {
         this.font = font;
-        if (text != null) {
+        if (font != null && text != null) {
             layout.setText(font, text);
         }
     }
