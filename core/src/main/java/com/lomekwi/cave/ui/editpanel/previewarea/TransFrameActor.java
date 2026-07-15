@@ -31,7 +31,7 @@ import java.util.List;
 public class TransFrameActor extends Actor {
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
-    public static final float ROTATE_OFFSET_LOCAL = 40f;
+    public static final float ROTATE_OFFSET_LOCAL = 70f;
     private static final Matrix4 tmpMatrix = new Matrix4();
     private static final Matrix4 IDENTITY = new Matrix4().idt();
 
@@ -213,10 +213,16 @@ public class TransFrameActor extends Actor {
         if (!selected) {
             return (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) ? this : null;
         }
-        float extTop = getHeight() + ROTATE_OFFSET_LOCAL;
-        float extBottom = -ROTATE_OFFSET_LOCAL;
-        float extLeft = -ROTATE_OFFSET_LOCAL;
-        float extRight = getWidth() + ROTATE_OFFSET_LOCAL;
+        float handleOff = ROTATE_OFFSET_LOCAL;
+        Actor p = getParent();
+        if (p != null) {
+            float ps = Math.min(Math.abs(p.getScaleX()), Math.abs(p.getScaleY()));
+            if (ps > 0.0001f) handleOff /= ps;
+        }
+        float extTop = getHeight() + handleOff;
+        float extBottom = -handleOff;
+        float extLeft = -handleOff;
+        float extRight = getWidth() + handleOff;
         if (x >= extLeft && x < extRight && y >= extBottom && y < extTop) {
             return this;
         }
@@ -642,18 +648,32 @@ public class TransFrameActor extends Actor {
 
             float[][] localPositions = {
                 {0, h}, {hw, h}, {w, h}, {w, hh},
-                {w, 0}, {hw, 0}, {0, 0}, {0, hh},
-                {hw, h + ROTATE_OFFSET_LOCAL}
+                {w, 0}, {hw, 0}, {0, 0}, {0, hh}
             };
 
             float r2 = HANDLE_HIT_RADIUS * HANDLE_HIT_RADIUS;
-            for (int i = 0; i < HANDLE_COUNT; i++) {
+            for (int i = 0; i < 8; i++) {
                 float dx = lx - localPositions[i][0];
                 float dy = ly - localPositions[i][1];
                 if (dx * dx + dy * dy <= r2) {
                     return Handle.values()[i];
                 }
             }
+
+            Vector2 anchor = localToStageCoordinates(tmp2.set(hw, h));
+            Vector2 refUp = localToStageCoordinates(tmp3.set(hw, h + 1f));
+            float dirX = refUp.x - anchor.x;
+            float dirY = refUp.y - anchor.y;
+            float dirLen = (float) Math.sqrt(dirX * dirX + dirY * dirY);
+            if (dirLen < 0.0001f) { dirX = 0; dirY = 1; dirLen = 1; }
+            float hx = anchor.x + dirX / dirLen * ROTATE_OFFSET_LOCAL;
+            float hy = anchor.y + dirY / dirLen * ROTATE_OFFSET_LOCAL;
+            float dx = stageX - hx;
+            float dy = stageY - hy;
+            if (dx * dx + dy * dy <= r2) {
+                return Handle.ROTATE;
+            }
+
             return null;
         }
 
@@ -714,10 +734,15 @@ public class TransFrameActor extends Actor {
             b = localToStageCoordinates(tmp2.set(0, 0));
             sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
             a = localToStageCoordinates(tmp1.set(hw, h));
-            b = localToStageCoordinates(tmp2.set(hw, h + ROTATE_OFFSET_LOCAL));
-            sd.line(a.x, a.y, b.x, b.y, ROTATE_COLOR, lineWidth);
-            Vector2 rc = localToStageCoordinates(tmp1.set(hw, h + ROTATE_OFFSET_LOCAL));
-            sd.filledCircle(rc.x, rc.y, rotateRadius, ROTATE_COLOR);
+            Vector2 refUp = localToStageCoordinates(tmp2.set(hw, h + 1f));
+            float dirX = refUp.x - a.x;
+            float dirY = refUp.y - a.y;
+            float dirLen = (float) Math.sqrt(dirX * dirX + dirY * dirY);
+            if (dirLen < 0.0001f) { dirX = 0; dirY = 1; dirLen = 1; }
+            float stickX = a.x + dirX / dirLen * ROTATE_OFFSET_LOCAL;
+            float stickY = a.y + dirY / dirLen * ROTATE_OFFSET_LOCAL;
+            sd.line(a.x, a.y, stickX, stickY, ROTATE_COLOR, lineWidth);
+            sd.filledCircle(stickX, stickY, rotateRadius, ROTATE_COLOR);
 
             // handles
             for (Handle handle : Handle.values()) {
