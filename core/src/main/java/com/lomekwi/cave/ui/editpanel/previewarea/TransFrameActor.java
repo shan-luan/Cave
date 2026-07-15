@@ -32,6 +32,8 @@ public class TransFrameActor extends Actor {
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
     public static final float ROTATE_OFFSET_LOCAL = 40f;
+    private static final Matrix4 tmpMatrix = new Matrix4();
+    private static final Matrix4 IDENTITY = new Matrix4().idt();
 
     private final Frame frame;
     private final Transformable transformable;
@@ -172,10 +174,10 @@ public class TransFrameActor extends Actor {
         super.draw(batch, parentAlpha);
         transformable.render(batch);
         if (selected) {
-            Matrix4 savedTransform = new Matrix4(batch.getTransformMatrix());
-            batch.setTransformMatrix(new Matrix4().idt());
+            tmpMatrix.set(batch.getTransformMatrix());
+            batch.setTransformMatrix(IDENTITY);
             gizmo.draw(gizmoHandle);
-            batch.setTransformMatrix(savedTransform);
+            batch.setTransformMatrix(tmpMatrix);
         }
     }
     @Override
