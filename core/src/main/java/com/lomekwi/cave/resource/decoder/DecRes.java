@@ -19,7 +19,8 @@ public abstract class DecRes<F extends Frame> implements Resource {
     protected DecRes(MedRes source) {
         this.grabber = new FFmpegFrameGrabber(source.getPath());
     }
-    public void start() throws FrameGrabber.Exception {
+    public synchronized void start() throws FrameGrabber.Exception {
+        if (initialized) return;
         grabber.start();
         initialized = true;
         Gdx.app.debug("DecRes", this +"初始化");
