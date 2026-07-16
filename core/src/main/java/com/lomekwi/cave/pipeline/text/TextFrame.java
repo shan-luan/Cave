@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline.text;
 
+import static com.badlogic.gdx.graphics.Color.WHITE;
+
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
@@ -91,6 +93,7 @@ public class TextFrame extends Frame implements Transformable {
         tmpMatrix.rotate(0, 0, 1, t.rotation);
         tmpMatrix.scale(sx, sy, 1);
         batch.setTransformMatrix(tmpMatrix);
+        font.setColor(WHITE);
         try {
             font.draw(batch, layout, -w / 2, -font.getDescent());
         } catch (NullPointerException e) {
@@ -116,6 +119,7 @@ public class TextFrame extends Frame implements Transformable {
                 return;
             }
         }
+        font.setColor(WHITE);
         layout.setText(f, t);
         glyphsMissing = false;
         cachedWidth = layout.width;
