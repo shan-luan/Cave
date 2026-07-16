@@ -180,8 +180,11 @@ public class Root implements ApplicationListener {
                 Actor target = event.getTarget();
                 while (target != null) {
                     if (target instanceof Focusable) {
-                        stage.setKeyboardFocus(target);
-                        stage.setScrollFocus(target);
+                        Actor focusTarget = target;
+                        Gdx.app.postRunnable(() -> {
+                            stage.setKeyboardFocus(focusTarget);
+                            stage.setScrollFocus(focusTarget);
+                        });
                         return false;
                     }
                     target = target.getParent();
