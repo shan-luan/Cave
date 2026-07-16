@@ -653,7 +653,7 @@ class SegDragHandler {
 
                     float deltaX = diffToActorX - firstX;
                     float deltaY = diffToActorY - firstY;
-                    float targetX = Math.max(actor.getX() + deltaX, 0f);
+                    float targetX = actor.getX() + deltaX;
                     float targetY = actor.getY() + deltaY;
 
                     long duration = r.upperEndpoint() - r.lowerEndpoint();
@@ -678,6 +678,7 @@ class SegDragHandler {
                         } else if (endMoved) {
                             target = snappedEnd;
                         }
+                        if (target < 0) target = 0;
                         targetX = absoluteTimeToX(target);
                     }
 
