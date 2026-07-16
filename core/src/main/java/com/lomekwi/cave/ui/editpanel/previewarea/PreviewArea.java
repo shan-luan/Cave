@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.pipeline.Frame;
@@ -19,6 +18,7 @@ import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.ui.Focusable;
 import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -30,7 +30,7 @@ import java.util.List;
  * 负责渲染和显示预览内容
  */
 @NullMarked
-public class PreviewArea extends Group {
+public class PreviewArea extends Group implements Focusable {
     private final Project project;
     private final Group canvas = new Group();
     //此列表仅应在主线程读取.
@@ -103,33 +103,6 @@ public class PreviewArea extends Group {
             }
         });
 
-        addListener(new InputListener() {
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                if (pointer == -1) {
-                    App.root.getStage().setScrollFocus(PreviewArea.this);
-                }
-            }
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                if (pointer == -1 && !isStillInside(toActor)) {
-                    var stage = App.root.getStage();
-                    if (stage.getScrollFocus() == PreviewArea.this) {
-                        stage.setScrollFocus(null);
-                    }
-                    if (stage.getKeyboardFocus() == PreviewArea.this) {
-                        stage.setKeyboardFocus(null);
-                    }
-                }
-            }
-
-            private boolean isStillInside(@Nullable Actor toActor) {
-                if (toActor == null) {
-                    return false;
-                }
-                return toActor.isDescendantOf(PreviewArea.this);
-            }
-        });
     }
 
     private void updateCanvas() {
@@ -228,12 +201,7 @@ public class PreviewArea extends Group {
     public void act(float delta) {
         var stage = getStage();
         if (stage != null) {
-            screenPos.set(Gdx.input.getX(), Gdx.input.getY());
-            stage.screenToStageCoordinates(screenPos);
-            stageToLocalCoordinates(screenPos);
-            float lx = screenPos.x;
-            float ly = screenPos.y;
-            if (lx >= 0 && lx <= getWidth() && ly >= 0 && ly <= getHeight()) {
+            if (stage.getKeyboardFocus() == PreviewArea.this) {
                 float speed = MOVE_SPEED * delta / scale;
                 if (Gdx.input.isKeyPressed(Input.Keys.W)) yOffset -= speed;
                 if (Gdx.input.isKeyPressed(Input.Keys.S)) yOffset += speed;

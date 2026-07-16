@@ -13,17 +13,13 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
-import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
-import com.badlogic.gdx.scenes.scene2d.utils.FocusListener.FocusEvent;
 import com.google.common.collect.Range;
-import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.UndoManager;
@@ -31,6 +27,7 @@ import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.util.MimeType;
 
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.ui.Focusable;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,9 +43,8 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 import static com.badlogic.gdx.Input.Keys.*;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
-public class TlGroup extends Group {
+public class TlGroup extends Group implements Focusable {
 
     private final TimelineRenderer renderer = new TimelineRenderer();
     final SegDragHandler dragHandler = new SegDragHandler();
@@ -133,37 +129,7 @@ public class TlGroup extends Group {
             public boolean keyDown(InputEvent event, int keycode) {
                 return true;
             }
-
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor fromActor) {
-                if (pointer == -1) {
-                    App.root.getStage().setScrollFocus(TlGroup.this);
-                }
-            }
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, com.badlogic.gdx.scenes.scene2d.Actor toActor) {
-                if (pointer == -1 && !isStillInside(toActor)) {
-                    var stage = App.root.getStage();
-                    if (stage.getScrollFocus() == TlGroup.this) {
-                        stage.setScrollFocus(null);
-                    }
-                    if (stage.getKeyboardFocus() == TlGroup.this) {
-                        stage.setKeyboardFocus(null);
-                    }
-                }
-            }
-            private boolean isStillInside(@Nullable Actor toActor) {
-                if (toActor == null) return false;
-                return toActor.isDescendantOf(TlGroup.this);
-            }
         });
-        addListener(new FocusListener() {
-            @Override
-            public void keyboardFocusChanged(FocusEvent event, Actor actor, boolean focused) {
-                if (focused) event.cancel();
-            }
-        });
-
         addCaptureListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -237,36 +203,36 @@ public class TlGroup extends Group {
             pointer.set(Gdx.input.getX(), Gdx.input.getY());
             getStage().screenToStageCoordinates(pointer);
             stageToLocalCoordinates(pointer);
-            if (pointer.x >= 0 && pointer.x <= getWidth() && pointer.y >= 0 && pointer.y <= getHeight()) {
+
+            boolean acted = false;
+
+            if (!App.isTextInputFocused() && getStage().getKeyboardFocus() == this) {
                 final float timePerPixel = (float) view.durationTime / getWidth();
-                boolean acted = false;
 
-                if (!App.isTextInputFocused()) {
-                    if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {
-                        view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
-                        acted = true;
-                    }
-                    if (App.shortcutManager.isActive(Actions.SCROLL_LEFT)) {
-                        view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
-                        acted = true;
-                    }
-                    if (App.shortcutManager.isActive(Actions.SCROLL_DOWN)) {
-                        view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
-                        acted = true;
-                    }
-                    if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
-                        view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
-                        acted = true;
-                    }
-
-                    if (App.shortcutManager.isActive(Actions.SEEK)) {
-                        seekPlayheadAtX(pointer.x);
-                        acted = true;
-                    }
+                if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {
+                    view.startTime += (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel);
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_LEFT)) {
+                    view.startTime = Math.max(0, view.startTime - (long) (KEY_HORIZONTAL_SPEED * delta * timePerPixel));
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_DOWN)) {
+                    view.trackYShift = Math.max(0, view.trackYShift + KEY_VERTICAL_SPEED * delta);
+                    acted = true;
+                }
+                if (App.shortcutManager.isActive(Actions.SCROLL_UP)) {
+                    view.trackYShift = Math.max(0, view.trackYShift - KEY_VERTICAL_SPEED * delta);
+                    acted = true;
                 }
 
-                if (acted) dirty = true;
+                if (App.shortcutManager.isActive(Actions.SEEK)) {
+                    seekPlayheadAtX(pointer.x);
+                    acted = true;
+                }
             }
+
+            if (acted) dirty = true;
         }
 
         if (dirty) {
@@ -485,11 +451,6 @@ public class TlGroup extends Group {
                 }
             }
         }
-    }
-
-    @Subscribe
-    public void onProjectFronted(ProjectFrontedEvent e) {
-        App.root.getStage().setScrollFocus(this);
     }
 
     // -- 快捷键动作（由 Root.InputProcessor 调用） --
