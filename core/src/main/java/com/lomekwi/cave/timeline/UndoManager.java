@@ -129,14 +129,14 @@ public class UndoManager {
         @Override
         public void undo() {
             track.getTimeline().add(track, segment, start, duration);
-            group.add(segment);
+            if (group != null) group.add(segment);
         }
 
         @Override
         public void redo() {
             var r = Range.closedOpen(start, start + duration);
             track.getTimeline().remove(track, r);
-            group.remove(segment);
+            if (group != null) group.remove(segment);
         }
     }
 
