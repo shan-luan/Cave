@@ -22,6 +22,7 @@ public abstract class MedRes implements Resource, Serializable {
     private final String path;
     protected long duration;
     protected @Nullable String codecName;
+    protected int codec;
     protected transient IntMap<DecRes<?>> decRes = new IntMap<>();
 
     /**
@@ -49,6 +50,10 @@ public abstract class MedRes implements Resource, Serializable {
     @Nullable
     public String getCodecName() {
         return codecName;
+    }
+
+    public int getCodec() {
+        return codec;
     }
     public DecRes<?> getDecoder(int trackIndex){
         DecRes<?> decoder = decRes.get(trackIndex);

@@ -3,7 +3,11 @@ package com.lomekwi.cave.resource.decoder;
 import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
+import static org.bytedeco.ffmpeg.global.avcodec.*;
+
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.SharedLibraryLoader;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
@@ -45,9 +49,16 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         return grabber.getLengthInVideoFrames();
     }
 
-    public String getVideoCodecName() {
+    @Override
+    public String getCodecName() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getVideoCodecName();
+    }
+
+    @Override
+    public int getCodec() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getVideoCodec();
     }
 
     @Override
@@ -60,6 +71,19 @@ public class VdoDecRes extends DecRes<ImgFrame> {
     protected void configure() {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         grabber.setAudioChannels(0);
+    }
+
+    @Override
+    protected String tryGetDecoder() {
+        return switch (source.getCodec()) {
+            case AV_CODEC_ID_H264 -> "h264_cuvid";
+            case AV_CODEC_ID_H265 -> "hevc_cuvid";
+            case AV_CODEC_ID_AV1  -> "av1_cuvid";
+            case AV_CODEC_ID_VP8  -> "vp8_cuvid";
+            case AV_CODEC_ID_VP9  -> "vp9_cuvid";
+            case AV_CODEC_ID_MJPEG -> "mjpeg_cuvid";
+            default -> null;
+        };
     }
 
     public void setBufferedPixels(ByteBuffer pixels) {

@@ -145,9 +145,16 @@ public class AudDecRes extends DecRes<AudFrame> {
         grabber.setSampleFormat(AV_SAMPLE_FMT_FLT);
     }
 
-    public String getAudioCodecName() {
+    @Override
+    public String getCodecName() {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getAudioCodecName();
+    }
+
+    @Override
+    public int getCodec() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getAudioCodec();
     }
 
     @Override

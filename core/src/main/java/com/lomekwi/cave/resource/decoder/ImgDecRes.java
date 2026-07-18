@@ -80,6 +80,16 @@ public class ImgDecRes extends DecRes<ImgFrame> {
     public void seek(long time) {
     }
 
+    @Override
+    public String getCodecName() {
+        return grabber.getVideoCodecName();
+    }
+
+    @Override
+    public int getCodec() {
+        return grabber.getVideoCodec();
+    }
+
     public ByteBuffer getCachedPixels() {
         return cachedPixels;
     }

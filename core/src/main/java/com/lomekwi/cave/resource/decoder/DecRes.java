@@ -13,18 +13,26 @@ import org.bytedeco.javacv.FrameGrabber;
  * @param <F> 产生的帧类型
  */
 public abstract class DecRes<F extends Frame> implements Resource {
+    protected final MedRes source;
     protected final FFmpegFrameGrabber grabber;
     protected volatile boolean initialized;
 
     protected DecRes(MedRes source) {
         this.grabber = new FFmpegFrameGrabber(source.getPath());
+        this.source = source;
     }
     public synchronized void start() throws FrameGrabber.Exception {
         if (initialized) return;
+        if(source.getCodecName()!=null){
+            grabber.setVideoCodecName(tryGetDecoder());
+        }
         configure();
         grabber.start();
         initialized = true;
         Gdx.app.debug("DecRes", this +"初始化");
+    }
+    protected String tryGetDecoder(){
+        return null;
     }
     protected abstract void configure();
     public void stop() throws FrameGrabber.Exception {
@@ -70,6 +78,10 @@ public abstract class DecRes<F extends Frame> implements Resource {
         if (!initialized) throw new IllegalStateException("Not initialized");
         return grabber.getTimestamp();
     }
+    public abstract String getCodecName();
+
+    public abstract int getCodec();
+
     public abstract long getLengthPerFrame();
     public long getLastFrameTime() {
         return getTimestamp()-getTimestamp()%getLengthPerFrame();
