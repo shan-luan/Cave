@@ -206,7 +206,7 @@ public class TlGroup extends Group implements Focusable {
 
             boolean acted = false;
 
-            if (!App.isTextInputFocused() && getStage().getKeyboardFocus() == this) {
+            if (!App.root.isTextInputFocused() && getStage().getKeyboardFocus() == this) {
                 final float timePerPixel = (float) view.durationTime / getWidth();
 
                 if (App.shortcutManager.isActive(Actions.SCROLL_RIGHT)) {

@@ -108,7 +108,7 @@ public class Root implements ApplicationListener {
                     return true;
                 }
 
-                if (App.isTextInputFocused()) return false;
+                if (isTextInputFocused()) return false;
 
                 // Undo / Redo
                 if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
@@ -256,6 +256,12 @@ public class Root implements ApplicationListener {
     }
     public Stage getStage() {
         return stage;
+    }
+
+    public boolean isTextInputFocused() {
+        if (stage == null) return false;
+        var focus = stage.getKeyboardFocus();
+        return focus instanceof TextField || focus instanceof VisTextField;
     }
 
     public VisTable getMainLayout() {
