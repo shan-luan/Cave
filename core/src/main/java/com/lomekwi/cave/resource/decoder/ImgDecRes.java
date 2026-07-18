@@ -12,8 +12,6 @@ import static org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA;
 
 public class ImgDecRes extends DecRes<ImgFrame> {
     private ByteBuffer cachedPixels;
-    private int width;
-    private int height;
     private int unpackRowLength;
 
     public ImgDecRes(ImgRes source) {
@@ -27,22 +25,19 @@ public class ImgDecRes extends DecRes<ImgFrame> {
     }
 
     @Override
-    public void start() throws FrameGrabber.Exception {
+    protected void configure() {
         grabber.setPixelFormat(AV_PIX_FMT_RGBA);
         grabber.setAudioChannels(0);
-        super.start();
-        width = grabber.getImageWidth();
-        height = grabber.getImageHeight();
     }
 
     public int getWidth() {
         if (!initialized) throw new IllegalStateException("Not initialized");
-        return width;
+        return grabber.getImageWidth();
     }
 
     public int getHeight() {
         if (!initialized) throw new IllegalStateException("Not initialized");
-        return height;
+        return grabber.getImageHeight();
     }
 
     @Override

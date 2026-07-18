@@ -27,7 +27,9 @@ public class AudRes extends MedRes implements Previewable {
 
     @Override
     protected void generateMetadata(DecRes<?> metadataDecRes) {
-        frameLength= metadataDecRes.getLengthPerFrame();
+        AudDecRes adr = (AudDecRes) metadataDecRes;
+        frameLength = adr.getLengthPerFrame();
+        codecName = adr.getAudioCodecName();
     }
 
     @Override

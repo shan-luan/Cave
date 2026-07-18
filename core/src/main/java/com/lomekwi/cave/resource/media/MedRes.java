@@ -6,6 +6,8 @@ import com.lomekwi.cave.resource.decoder.DecRes;
 
 import com.badlogic.gdx.utils.IntMap;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
@@ -18,7 +20,8 @@ public abstract class MedRes implements Resource, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final String path;
-    protected long duration; // 媒体总时长（微秒）
+    protected long duration;
+    protected @Nullable String codecName;
     protected transient IntMap<DecRes<?>> decRes = new IntMap<>();
 
     /**
@@ -41,6 +44,11 @@ public abstract class MedRes implements Resource, Serializable {
 
     public String getPath() {
         return path;
+    }
+
+    @Nullable
+    public String getCodecName() {
+        return codecName;
     }
     public DecRes<?> getDecoder(int trackIndex){
         DecRes<?> decoder = decRes.get(trackIndex);

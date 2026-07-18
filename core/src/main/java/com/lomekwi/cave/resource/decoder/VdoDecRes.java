@@ -9,7 +9,6 @@ import com.lomekwi.cave.resource.media.VdoRes;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
 
 import java.nio.ByteBuffer;
 
@@ -46,6 +45,10 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         return grabber.getLengthInVideoFrames();
     }
 
+    public String getVideoCodecName() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getVideoCodecName();
+    }
 
     @Override
     public long getLengthPerFrame() {
@@ -54,12 +57,9 @@ public class VdoDecRes extends DecRes<ImgFrame> {
     }
 
     @Override
-    public void start() throws FrameGrabber.Exception {
+    protected void configure() {
         grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA);
         grabber.setAudioChannels(0);
-        super.start();
-        bufferedPixels = null;
-        unpackRowLength = 0;
     }
 
     public void setBufferedPixels(ByteBuffer pixels) {

@@ -53,6 +53,7 @@ public class VdoRes extends MedRes implements Previewable {
         width = vdr.getWidth();
         height = vdr.getHeight();
         frameLength = vdr.getLengthPerFrame();
+        codecName = vdr.getVideoCodecName();
     }
 
     public long getFrameLength() {

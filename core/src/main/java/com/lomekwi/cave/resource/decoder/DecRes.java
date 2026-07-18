@@ -21,10 +21,12 @@ public abstract class DecRes<F extends Frame> implements Resource {
     }
     public synchronized void start() throws FrameGrabber.Exception {
         if (initialized) return;
+        configure();
         grabber.start();
         initialized = true;
         Gdx.app.debug("DecRes", this +"初始化");
     }
+    protected abstract void configure();
     public void stop() throws FrameGrabber.Exception {
         if (!initialized) throw new IllegalStateException("Not initialized");
         grabber.stop();

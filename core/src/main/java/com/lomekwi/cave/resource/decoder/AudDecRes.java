@@ -139,12 +139,15 @@ public class AudDecRes extends DecRes<AudFrame> {
     }
 
     @Override
-    public synchronized void start() throws FrameGrabber.Exception {
-        if (initialized) return;
+    protected void configure() {
         grabber.setSampleRate(44100);
         grabber.setAudioChannels(2);
         grabber.setSampleFormat(AV_SAMPLE_FMT_FLT);
-        super.start();
+    }
+
+    public String getAudioCodecName() {
+        if (!initialized) throw new IllegalStateException("Not initialized");
+        return grabber.getAudioCodecName();
     }
 
     @Override
