@@ -18,6 +18,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
+import com.lomekwi.cave.task.ExportPresetsChangedEvent;
 import com.lomekwi.cave.task.VideoExportTask;
 import com.lomekwi.cave.ui.widget.FileChooserField;
 import com.lomekwi.cave.app.App;
@@ -228,5 +229,11 @@ public class ExportDialog extends VisDialog {
         App.taskPool.submit(task);
         App.root.getToastManager().show(i18n("开始导出：") + new java.io.File(path).getName(), 2f);
         fadeOut();
+    }
+
+    @Override
+    public boolean remove() {
+        App.appEventBus.post(ExportPresetsChangedEvent.INSTANCE);
+        return super.remove();
     }
 }

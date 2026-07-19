@@ -18,6 +18,9 @@ import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.task.ExportOptions;
+import com.lomekwi.cave.task.ExportOptionsSet;
+import com.lomekwi.cave.task.ExportPresetsChangedEvent;
 import com.lomekwi.cave.ui.Focusable;
 import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
@@ -42,6 +45,7 @@ public class PreviewArea extends Group implements Focusable {
     private static final float MIN_SCALE = 0.07f;
     private static final float MAX_SCALE = 30.0f;
     private float lastWidth = 0;
+    private @Nullable ExportOptionsSet exportOpts;
     private float lastHeight = 0;
     private static final float MOVE_SPEED = 1000f;
     private final com.badlogic.gdx.math.Vector2 screenPos = new com.badlogic.gdx.math.Vector2();
@@ -56,6 +60,7 @@ public class PreviewArea extends Group implements Focusable {
     public PreviewArea(Project project) {
         this.project = project;
         project.projEventBus.register(this);
+        App.appEventBus.register(this);
         addActor(canvas);
         setupDragListener();
     }
@@ -226,11 +231,31 @@ public class PreviewArea extends Group implements Focusable {
     private static final Color AXIS_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.6f);
     private static final int TICK_PIXEL_TARGET = 80;
 
+    private static final Color PRESET_OUTLINE = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.BLACK);
         super.draw(batch, parentAlpha);
         drawAxes();
+        drawPresetOutlines();
+    }
+
+    @Subscribe
+    public void onExportPresetsChanged(ExportPresetsChangedEvent e) {
+        exportOpts = null;
+    }
+
+    private void drawPresetOutlines() {
+        if (exportOpts == null) exportOpts = ExportOptionsSet.load();
+        var drawer = App.root.getShapeDrawer();
+        float ox = getX() + canvas.getX();
+        float oy = getY() + canvas.getY();
+        float s = canvas.getScaleX();
+        for (ExportOptions opts : exportOpts.presets) {
+            if (opts.width <= 0 || opts.height <= 0) continue;
+            drawer.rectangle(ox, oy, opts.width * s, opts.height * s, PRESET_OUTLINE, 1);
+        }
     }
 
     private void drawAxes() {
@@ -290,5 +315,6 @@ public class PreviewArea extends Group implements Focusable {
 
     public void dispose() {
         project.projEventBus.unregister(this);
+        App.appEventBus.unregister(this);
     }
 }

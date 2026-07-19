@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.task.ExportOptions;
+import com.lomekwi.cave.task.ExportOptionsSet;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
@@ -525,6 +527,13 @@ public class TransFrameActor extends Actor {
                     siblingBBoxes.add(other.computeCanvasBBox());
                 }
             }
+        }
+        ExportOptionsSet set = ExportOptionsSet.load();
+        for (ExportOptions opts : set.presets) {
+            if (opts.width <= 0 || opts.height <= 0) continue;
+            float l = 0, r = opts.width;
+            float b = 0, t = opts.height;
+            siblingBBoxes.add(new float[]{l, r, b, t, (l + r) * 0.5f, (b + t) * 0.5f});
         }
     }
 
