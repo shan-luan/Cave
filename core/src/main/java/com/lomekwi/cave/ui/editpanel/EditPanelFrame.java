@@ -1,9 +1,16 @@
 package com.lomekwi.cave.ui.editpanel;
 
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.kotcrab.vis.ui.widget.VisSplitPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisScrollPane;
+import com.kotcrab.vis.ui.widget.VisTextButton;
+import com.kotcrab.vis.ui.widget.file.FileChooser;
+import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
+import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.editpanel.detail.SegDetailView;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 
@@ -17,7 +24,25 @@ public class EditPanelFrame extends VisTable {
     private final SegDetailView detailPanel;
     private EditPanel editPanel;
     private EditPanelFrame() {
-        ScrollPane fileTreeScrollPane = new VisScrollPane(FileTree.getINSTANCE());
+        VisTable treePanel = new VisTable();
+        treePanel.add(FileTree.getINSTANCE()).grow().row();
+        VisTextButton addDirBtn = new VisTextButton("+");
+        addDirBtn.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                FileChooser chooser = new FileChooser("选择要添加到文件树的目录", FileChooser.Mode.OPEN);
+                chooser.setSelectionMode(FileChooser.SelectionMode.DIRECTORIES);
+                chooser.setListener(new SingleFileChooserListener() {
+                    @Override
+                    protected void selected(FileHandle file) {
+                        FileTree.getINSTANCE().addRootDirectory(file.file());
+                    }
+                });
+                App.root.getStage().addActor(chooser);
+            }
+        });
+        treePanel.add(addDirBtn).fillX();
+        ScrollPane fileTreeScrollPane = new VisScrollPane(treePanel);
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
         mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
         detailPanel = new SegDetailView();

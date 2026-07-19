@@ -27,4 +27,10 @@ public class FileTree extends VisTree<FileTreeNode, File> {
         }
         return INSTANCE;
     }
+
+    public void addRootDirectory(File directory) {
+        FileTreeNode rootNode = new FileTreeNode(directory);
+        add(rootNode);
+        rootNode.setExpanded(true);
+    }
 }
