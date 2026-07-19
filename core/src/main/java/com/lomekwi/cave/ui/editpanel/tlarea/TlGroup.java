@@ -239,7 +239,7 @@ public class TlGroup extends Group implements Focusable {
             clearChildren(false);
 
             var visibleRange = view.visibleRange();
-            for (int i = 0; i < timeline.getTracks().size(); i++) {
+            for (int i = timeline.getTracks().size() - 1; i >= 0; i--) {
                 final Track track = timeline.getTracks().get(i);
 
                 for (var entry : track.getSubRangeMapAsEntrySet(visibleRange)) {
