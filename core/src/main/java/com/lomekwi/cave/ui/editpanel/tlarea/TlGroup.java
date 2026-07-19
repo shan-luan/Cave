@@ -1191,7 +1191,7 @@ class SegDragHandler {
 
     class TimelineRenderer {
         private final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
-        private final Color black = new Color(Color.BLACK).add(0, 0, 0, -0.5f);
+        private static final Color black = new Color(0, 0, 0, 0.5f);
 
         void drawBackground() {
             shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Color.DARK_GRAY);

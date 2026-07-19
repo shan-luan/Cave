@@ -42,8 +42,6 @@ import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
 import com.lomekwi.cave.app.App;
 
-import static com.badlogic.gdx.Input.Keys.*;
-
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class Root implements ApplicationListener {

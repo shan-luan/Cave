@@ -16,11 +16,9 @@ import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.ui.Colors;
 
 public abstract class SegActor extends Actor {
-    protected static final Color blue = new Color(0x1ba1e2ff);
-    protected static final Color lightBlue = new Color(0x5ebdecff);
-    protected static final Color darkBlue = new Color(0x1ba1e2ff);
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
     private final Rectangle scissors = new Rectangle();
@@ -114,11 +112,11 @@ public abstract class SegActor extends Actor {
         }
     }
     protected void drawContent(Batch batch, float parentAlpha){
-        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+        App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT);
     }
     protected void drawBorder(){
         var s=getSegment().isSelected();
-        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), s ? Color.WHITE : blue, s ? 6 : 2);
+        App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), s ? Color.WHITE : Colors.ACCENT, s ? 6 : 2);
     }
     private void drawSelectionOverlay(){
         if (hovered) {

@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.AudSeg;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.ui.Colors;
 
 public class AudSegActor extends SegActor {
 
@@ -69,7 +70,7 @@ public class AudSegActor extends SegActor {
         shader.setUniformf("u_endBucket", endBucket);
         shader.setUniformf("u_totalBuckets", totalBuckets);
         shader.setUniformf("u_color",
-            darkBlue.r, darkBlue.g, darkBlue.b, darkBlue.a * parentAlpha);
+            Colors.ACCENT.r, Colors.ACCENT.g, Colors.ACCENT.b, Colors.ACCENT.a * parentAlpha);
 
         batch.draw(waveTex, getX(), getY(), getWidth(), getHeight());
         batch.setShader(null);

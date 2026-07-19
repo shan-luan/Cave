@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.resource.media.VdoRes;
+import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.VdoSeg;
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -25,7 +26,7 @@ public class VdoSegActor extends SegActor {
         long segLocalEnd = range.upperEndpoint() - seg.getOrigin();
         long segDuration = segLocalEnd - segLocalStart;
 
-        sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), lightBlue);
+        sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT);
 
         if (segDuration > 0) {
             VdoRes res = ((VdoSeg) getSegment()).getVdoRes();
