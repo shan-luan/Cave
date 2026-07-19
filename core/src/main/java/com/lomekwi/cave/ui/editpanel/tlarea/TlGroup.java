@@ -646,7 +646,11 @@ class SegDragHandler {
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
 
                     if (groupMembers != null) {
-                        handleGroupMiddleDrag(actor, target, newTrack);
+                        handleGroupMiddleDrag(actor, target, newTrack, targetY);
+                        for (Segment ms : groupMembers) {
+                            SegActor ma = ms.getActor();
+                            if (ma != null && ma.getParent() == TlGroup.this) ma.toFront();
+                        }
                         break;
                     }
 
@@ -692,6 +696,8 @@ class SegDragHandler {
                         timeline.move(t, newTrack, e, target, duration);
                         e.getValue().offsetOrigin(target - segmentStart);
                     }
+
+                    actor.toFront();
                 }
             }
         }
@@ -770,7 +776,7 @@ class SegDragHandler {
             return best;
         }
 
-        private void handleGroupMiddleDrag(SegActor actor, long target, Track newTrack) {
+        private void handleGroupMiddleDrag(SegActor actor, long target, Track newTrack, float targetY) {
 
             long timeDelta = target - dragOldStart;
             int trackDelta = newTrack.index - dragOldTrack.index;
@@ -789,7 +795,9 @@ class SegDragHandler {
                 newTracks[i] = timeline.getTrack(targetTrackIdx);
             }
 
-            if (!timeline.canMoveGroup(groupMembers, newStarts, groupOrigDurations, newTracks)) {
+            boolean canMove = timeline.canMoveGroup(groupMembers, newStarts, groupOrigDurations, newTracks);
+
+            if (!canMove) {
                 long rightMinDelta = Long.MIN_VALUE;
                 long leftMaxDelta = Long.MAX_VALUE;
                 Set<Segment> ignore = new HashSet<>(groupMembers);
@@ -808,36 +816,44 @@ class SegDragHandler {
 
                 long snappedTarget = -1;
 
+                float mousePx = absoluteTimeToX(target);
+
                 if (rightMinDelta > timeDelta) {
                     long rightTarget = dragOldStart + rightMinDelta;
-                    long[] rightStarts = new long[n];
-                    Track[] rightTracks = new Track[n];
-                    boolean ok = true;
-                    for (int i = 0; i < n; i++) {
-                        rightStarts[i] = groupOrigStarts[i] + rightMinDelta;
-                        int idx = groupOrigTracks[i].index + trackDelta;
-                        if (idx < 0 || rightStarts[i] < 0) { ok = false; break; }
-                        rightTracks[i] = timeline.getTrack(idx);
-                    }
-                    if (ok && timeline.canMoveGroup(groupMembers, rightStarts, groupOrigDurations, rightTracks)) {
-                        snappedTarget = rightTarget;
+                    float snapPx = absoluteTimeToX(rightTarget);
+                    if (snapPx - mousePx <= 200f) {
+                        long[] rightStarts = new long[n];
+                        Track[] rightTracks = new Track[n];
+                        boolean ok = true;
+                        for (int i = 0; i < n; i++) {
+                            rightStarts[i] = groupOrigStarts[i] + rightMinDelta;
+                            int idx = groupOrigTracks[i].index + trackDelta;
+                            if (idx < 0 || rightStarts[i] < 0) { ok = false; break; }
+                            rightTracks[i] = timeline.getTrack(idx);
+                        }
+                        if (ok && timeline.canMoveGroup(groupMembers, rightStarts, groupOrigDurations, rightTracks)) {
+                            snappedTarget = rightTarget;
+                        }
                     }
                 }
 
                 if (leftMaxDelta < timeDelta && leftMaxDelta >= 0) {
                     long leftTarget = dragOldStart + leftMaxDelta;
-                    long[] leftStarts = new long[n];
-                    Track[] leftTracks = new Track[n];
-                    boolean ok = true;
-                    for (int i = 0; i < n; i++) {
-                        leftStarts[i] = groupOrigStarts[i] + leftMaxDelta;
-                        int idx = groupOrigTracks[i].index + trackDelta;
-                        if (idx < 0) { ok = false; break; }
-                        leftTracks[i] = timeline.getTrack(idx);
-                    }
-                    if (ok && timeline.canMoveGroup(groupMembers, leftStarts, groupOrigDurations, leftTracks)) {
-                        if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
-                            snappedTarget = leftTarget;
+                    float snapPx = absoluteTimeToX(leftTarget);
+                    if (mousePx - snapPx <= 200f) {
+                        long[] leftStarts = new long[n];
+                        Track[] leftTracks = new Track[n];
+                        boolean ok = true;
+                        for (int i = 0; i < n; i++) {
+                            leftStarts[i] = groupOrigStarts[i] + leftMaxDelta;
+                            int idx = groupOrigTracks[i].index + trackDelta;
+                            if (idx < 0) { ok = false; break; }
+                            leftTracks[i] = timeline.getTrack(idx);
+                        }
+                        if (ok && timeline.canMoveGroup(groupMembers, leftStarts, groupOrigDurations, leftTracks)) {
+                            if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
+                                snappedTarget = leftTarget;
+                            }
                         }
                     }
                 }
@@ -850,30 +866,37 @@ class SegDragHandler {
                         int idx = groupOrigTracks[i].index + trackDelta;
                         newTracks[i] = timeline.getTrack(idx);
                     }
-                } else {
-                    return;
+                    canMove = true;
                 }
             }
 
-            long[] prevStarts = new long[n];
-            Track[] prevTracks = new Track[n];
-            for (int i = 0; i < n; i++) {
-                Segment ms = groupMembers.get(i);
-                var r = ms.getRange();
-                prevStarts[i] = r.lowerEndpoint();
-                prevTracks[i] = ms.getTrack();
-                timeline.remove(prevTracks[i], Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()));
+            if (canMove) {
+                long[] prevStarts = new long[n];
+                Track[] prevTracks = new Track[n];
+                for (int i = 0; i < n; i++) {
+                    Segment ms = groupMembers.get(i);
+                    var r = ms.getRange();
+                    prevStarts[i] = r.lowerEndpoint();
+                    prevTracks[i] = ms.getTrack();
+                    timeline.remove(prevTracks[i], Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()));
+                }
+
+                for (int i = 0; i < n; i++) {
+                    Segment ms = groupMembers.get(i);
+                    timeline.add(newTracks[i], ms, newStarts[i], groupOrigDurations[i]);
+                    ms.offsetOrigin(newStarts[i] - prevStarts[i]);
+                }
             }
 
             for (int i = 0; i < n; i++) {
                 Segment ms = groupMembers.get(i);
-                timeline.add(newTracks[i], ms, newStarts[i], groupOrigDurations[i]);
-                ms.offsetOrigin(newStarts[i] - prevStarts[i]);
-
                 SegActor msActor = ms.getActor();
+                float y = i == 0
+                    ? targetY
+                    : targetY - (groupOrigTracks[i].index - groupOrigTracks[0].index) * view.trackHeight;
                 msActor.setPosition(
                     absoluteTimeToX(newStarts[i]),
-                    getHeight() + view.trackYShift - (newTracks[i].index + 1) * view.trackHeight
+                    y
                 );
                 msActor.setSize(
                     absoluteTimeToX(newStarts[i] + groupOrigDurations[i]) - absoluteTimeToX(newStarts[i]),
