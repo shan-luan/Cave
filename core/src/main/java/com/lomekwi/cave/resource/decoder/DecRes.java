@@ -41,7 +41,7 @@ public abstract class DecRes<F extends Frame> implements Resource {
     }
     @Override
     public void close() throws Exception {
-        if (!initialized) throw new IllegalStateException("Not initialized");
+        if (!initialized) return;
         grabber.stop();
         grabber.close();
     }

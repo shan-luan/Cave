@@ -70,6 +70,14 @@ public class AudRes extends MedRes implements Previewable {
         waveformer = null;
     }
 
+    @Override
+    public void close() throws Exception {
+        super.close();
+        if (waveformer != null) {
+            waveformer.dispose();
+        }
+    }
+
     public class Waveformer {
         static final int DECIMATED_RATE = 400;
         public final long bucketDuration = 1_000_000L / DECIMATED_RATE;
@@ -206,6 +214,13 @@ public class AudRes extends MedRes implements Previewable {
                 dirty = true;
             });
             batchCount = 0;
+        }
+
+        void dispose() {
+            if (cachedDec != null) {
+                try { cachedDec.close(); } catch (Exception ignored) {}
+                cachedDec = null;
+            }
         }
     }
 }

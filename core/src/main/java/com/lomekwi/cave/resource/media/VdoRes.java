@@ -226,6 +226,10 @@ public class VdoRes extends MedRes implements Previewable {
             for (Texture t : cache.values()) {
                 t.dispose();
             }
+            if (cachedDec != null) {
+                try { cachedDec.close(); } catch (Exception ignored) {}
+                cachedDec = null;
+            }
         }
     }
 }
