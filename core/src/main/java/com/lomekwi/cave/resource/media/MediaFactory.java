@@ -73,6 +73,7 @@ public final class MediaFactory {
         return map.get(typeWildcard);
     }
     public static boolean isSupported(String mimeType){
+        if (mimeType == null) return false;
         return findConstructor(mimeType) != null;
     }
     public static void register(String mimeType, Function<String, MedRes> constructor){

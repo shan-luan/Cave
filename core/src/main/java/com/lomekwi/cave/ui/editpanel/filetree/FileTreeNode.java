@@ -1,6 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.filetree;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Tree;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
@@ -8,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.kotcrab.vis.ui.widget.VisLabel;
 
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.resource.media.MediaFactory;
+import com.lomekwi.cave.util.MimeType;
 
 import java.io.File;
 
@@ -25,6 +28,13 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
         if (file != null && file.isDirectory()) {
             Gdx.app.debug("FileTreeNode", i18n("创建目录节点: ") + file.getName());
             add(PLACEHOLDER_NODE);
+        }
+
+        if (file != null && file.isFile()) {
+            String mimeType = MimeType.detectMimeType(file);
+            if (!MediaFactory.isSupported(mimeType)) {
+                getActor().setColor(Color.GRAY);
+            }
         }
     }
 
