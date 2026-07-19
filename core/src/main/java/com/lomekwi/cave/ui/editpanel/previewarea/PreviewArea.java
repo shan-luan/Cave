@@ -236,9 +236,9 @@ public class PreviewArea extends Group implements Focusable {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.BLACK);
-        super.draw(batch, parentAlpha);
         drawAxes();
         drawPresetOutlines();
+        super.draw(batch, parentAlpha);
     }
 
     @Subscribe
