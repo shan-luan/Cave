@@ -73,19 +73,6 @@ public class VdoDecRes extends DecRes<ImgFrame> {
         grabber.setAudioChannels(0);
     }
 
-    @Override
-    protected String tryGetDecoder() {
-        return switch (source.getCodec()) {
-            case AV_CODEC_ID_H264 -> "h264_cuvid";
-            case AV_CODEC_ID_H265 -> "hevc_cuvid";
-            case AV_CODEC_ID_AV1  -> "av1_cuvid";
-            case AV_CODEC_ID_VP8  -> "vp8_cuvid";
-            case AV_CODEC_ID_VP9  -> "vp9_cuvid";
-            case AV_CODEC_ID_MJPEG -> "mjpeg_cuvid";
-            default -> null;
-        };
-    }
-
     public void setBufferedPixels(ByteBuffer pixels) {
         bufferedPixels = pixels;
     }
