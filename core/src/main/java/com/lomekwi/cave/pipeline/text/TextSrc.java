@@ -5,10 +5,10 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.kotcrab.vis.ui.VisUI;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
+import com.lomekwi.cave.resource.media.FontRes;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.TextSrcActor;
 
@@ -17,6 +17,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class TextSrc extends Source<TextFrame> {
     private String text;
+    private transient FontRes fontRes;
+    private int fontSize = 48;
     private transient BitmapFont font;
     private volatile transient boolean initialized;
 
@@ -30,6 +32,7 @@ public class TextSrc extends Source<TextFrame> {
     public TextSrc(String text) {
         super();
         this.text = text;
+        fontRes = new FontRes("font/noto.otf");
     }
 
     public String getText() {
@@ -38,6 +41,43 @@ public class TextSrc extends Source<TextFrame> {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public FontRes getFontRes() {
+        return fontRes;
+    }
+
+    public void setFontRes(FontRes fontRes) {
+        if (this.fontRes != null && this.fontRes != fontRes) {
+            this.fontRes.close();
+        }
+        this.fontRes = fontRes;
+    }
+
+    public int getFontSize() {
+        return fontSize;
+    }
+
+    public void setFontSize(int fontSize) {
+        this.fontSize = fontSize;
+        invalidateFont();
+    }
+
+    public String getFontPath() {
+        return fontRes != null ? fontRes.getPath() : "";
+    }
+
+    public void setFontPath(String path) {
+        if (fontRes != null) {
+            fontRes.close();
+        }
+        fontRes = new FontRes(path);
+        invalidateFont();
+    }
+
+    private void invalidateFont() {
+        font = null;
+        initialized = false;
     }
 
     @Override
@@ -52,7 +92,7 @@ public class TextSrc extends Source<TextFrame> {
         if (!initialized) {
             Gdx.app.postRunnable(() -> {
                 if (font == null) {
-                    font = VisUI.getSkin().getFont("default-font");
+                    font = fontRes.getFont(fontSize);
                 }
                 frame = new TextFrame(track, this);
                 frame.setFont(font);
@@ -102,5 +142,7 @@ public class TextSrc extends Source<TextFrame> {
     public void onDuplicate(Source<?> original) {
         TextSrc src = (TextSrc) original;
         this.text = src.text;
+        this.fontRes = new FontRes(src.fontRes.getPath());
+        this.fontSize = src.fontSize;
     }
 }
