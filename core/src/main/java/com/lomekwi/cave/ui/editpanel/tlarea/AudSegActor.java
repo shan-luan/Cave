@@ -28,8 +28,8 @@ public class AudSegActor extends SegActor {
     }
 
     @Override
-    protected void drawContent(Batch batch, float parentAlpha) {
-        super.drawContent(batch, parentAlpha);
+    protected void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX) {
+        super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX);
 
         AudRes res = ((AudSeg) getSegment()).getAudRes();
         AudRes.Waveformer wf = res.waveformer();
@@ -44,7 +44,14 @@ public class AudSegActor extends SegActor {
         if (segDuration <= 0) return;
 
         long step = wf.bucketDuration;
-        for (long t = segLocalStart; t < segLocalEnd; t += step) {
+        float pxPerUs = getWidth() / (float) segDuration;
+        long gridOrigin = (segLocalStart / step) * step;
+        long absVisibleStart = segLocalStart + (long)(visibleStartX / pxPerUs);
+        long absVisibleEnd   = segLocalStart + (long)(visibleEndX   / pxPerUs);
+        long firstT = ((absVisibleStart - gridOrigin) / step) * step + gridOrigin;
+        firstT = Math.max(gridOrigin, firstT);
+        long lastT = Math.min(segLocalEnd, absVisibleEnd);
+        for (long t = firstT; t < lastT; t += step) {
             res.getPreview(t);
         }
 

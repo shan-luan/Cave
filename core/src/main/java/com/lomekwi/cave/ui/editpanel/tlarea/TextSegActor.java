@@ -12,14 +12,14 @@ public class TextSegActor extends SegActor {
     }
 
     @Override
-    public void drawContent(Batch batch, float parentAlpha) {
-        super.drawContent(batch, parentAlpha);
+    public void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX) {
+        super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX);
         TextSeg seg = (TextSeg) getSegment();
         String text = seg.getTextSrc().getText();
         if (text != null && !text.isEmpty()) {
             var font = VisUI.getSkin().getFont("default-font");
             float textY = getY() + getHeight() / 2f + font.getCapHeight() / 2f;
-            font.draw(batch, text, getX() + 4, textY);
+            font.draw(batch, text, getX() + visibleStartX + 4, textY);
         }
     }
 }

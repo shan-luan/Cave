@@ -102,16 +102,23 @@ public abstract class SegActor extends Actor {
     }
     @Override
     public void draw(Batch batch, float parentAlpha) {
-            ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(),bounds , scissors);
+        ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(),bounds , scissors);
         if (ScissorStack.pushScissors(scissors)) {
-            drawContent(batch,parentAlpha);
+            float visibleStartX = 0;
+            float visibleEndX = getWidth();
+            if (getParent() != null) {
+                float parentW = getParent().getWidth();
+                visibleStartX = Math.max(0, -getX());
+                visibleEndX   = Math.min(getWidth(), parentW - getX());
+            }
+            drawContent(batch, parentAlpha, visibleStartX, visibleEndX);
             drawBorder();
             drawSelectionOverlay();
             batch.flush();
             ScissorStack.popScissors();
         }
     }
-    protected void drawContent(Batch batch, float parentAlpha){
+    protected void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX){
         App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT);
     }
     protected void drawBorder(){

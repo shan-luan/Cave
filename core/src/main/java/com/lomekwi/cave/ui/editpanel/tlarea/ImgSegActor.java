@@ -18,7 +18,7 @@ public class ImgSegActor extends SegActor {
     }
 
     @Override
-    public void drawContent(Batch batch, float parentAlpha) {
+    public void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX) {
         ShapeDrawer sd = App.root.getShapeDrawer();
         Segment seg = getSegment();
         var range = seg.getRange();
@@ -39,11 +39,16 @@ public class ImgSegActor extends SegActor {
             if (rawStep <= 0) rawStep = 1;
             long timeStep = niceScale(rawStep);
 
-            long firstT = Math.max(0, segLocalStart - timeStep);
+            long gridOrigin = (segLocalStart / timeStep) * timeStep;
+            long absVisibleStart = segLocalStart + (long)(visibleStartX / pxPerUs);
+            long absVisibleEnd   = segLocalStart + (long)(visibleEndX   / pxPerUs);
+            long firstT = ((absVisibleStart - gridOrigin) / timeStep) * timeStep + gridOrigin;
+            firstT = Math.max(gridOrigin, firstT);
+            long lastT = Math.min(segLocalEnd, absVisibleEnd);
 
             float lastRightEdge = Float.NEGATIVE_INFINITY;
 
-            for (long t = firstT; t < segLocalEnd; t += timeStep) {
+            for (long t = firstT; t < lastT; t += timeStep) {
                 Texture tex = res.getPreview(t);
                 if (tex == null) continue;
 
