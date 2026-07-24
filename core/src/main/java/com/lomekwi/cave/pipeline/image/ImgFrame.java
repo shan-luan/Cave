@@ -86,7 +86,11 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     }
     @Override
     public void close() {
-        texture.dispose();
+        if (actor != null && actor.getParent() != null) {
+            Gdx.app.postRunnable(this::close);
+        } else {
+            texture.dispose();
+        }
     }
 
     public TransFrameActor getActor() {
