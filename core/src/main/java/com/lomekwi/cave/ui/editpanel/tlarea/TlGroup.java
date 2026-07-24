@@ -152,7 +152,7 @@ public class TlGroup extends Group implements Focusable {
                     return false;
                 }
                 String mimeType = MimeType.detectMimeType(file);
-                return mimeType != null && MediaFactory.isSupported(mimeType);
+                return MediaFactory.isSupported(mimeType);
             }
 
             @Override
@@ -624,7 +624,7 @@ class SegDragHandler {
         private long[] groupOrigDurations;
         private Track[] groupOrigTracks;
 
-        void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+        void initDrag(SegActor actor) {
             if (!dragActive) {
                 var seg = actor.getSegment();
                 var r = seg.getRange();
@@ -633,6 +633,12 @@ class SegDragHandler {
                 dragOldTrack = seg.getTrack();
                 dragActive = true;
                 initGroupDrag(seg);
+            }
+        }
+
+        void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+            if (!dragActive) {
+                initDrag(actor);
             }
 
             Track t = actor.getSegment().getTrack();
