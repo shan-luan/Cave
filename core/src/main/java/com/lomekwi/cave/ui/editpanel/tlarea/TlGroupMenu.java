@@ -29,6 +29,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent;
 public class TlGroupMenu extends PopupMenu {
     private final TlGroup tlGroup;
     private long time;
+    private final MenuItem pasteItem;
 
     TlGroupMenu(TlGroup tlGroup) {
         this.tlGroup = tlGroup;
@@ -38,10 +39,14 @@ public class TlGroupMenu extends PopupMenu {
         MenuItem addItem = new MenuItem("新增...");
         addItem.setSubMenu(addMenu);
         addItem(addItem);
+
+        pasteItem = new MenuItem("粘贴", new ChangeListenerX(() -> tlGroup.performPaste()));
+        addItem(pasteItem);
     }
 
     public void setContext(long time) {
         this.time = time;
+        pasteItem.setDisabled(!(App.copyManager.getClipboard() instanceof Segment || App.copyManager.getClipboard() instanceof SegmentGroup));
     }
 
     private void onAddMedia() {

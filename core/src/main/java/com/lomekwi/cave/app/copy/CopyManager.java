@@ -16,6 +16,13 @@ public class CopyManager {
         }
     }
 
+    @Subscribe
+    public void onCopyEvent(CopyEvent e) {
+        if (e.target() instanceof Copyable c) {
+            clipboard = c.copy();
+        }
+    }
+
     public void copy() {
         if (latestCopyable != null) {
             clipboard = latestCopyable.copy();
