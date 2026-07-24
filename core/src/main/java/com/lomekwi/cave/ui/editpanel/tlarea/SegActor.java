@@ -82,6 +82,7 @@ public abstract class SegActor extends Actor {
                     event.stop();
                     boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
                     tlGroup.selectSegment(segment, ctrl);
+                    tlGroup.initDrag(SegActor.this, x, y);
                     return true;
                 } else {
                     getMenu().setContext(SegActor.this,((TlGroup)getParent()).xToAbsoluteTime(getX()+x));

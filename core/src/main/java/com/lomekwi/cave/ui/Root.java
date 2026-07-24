@@ -127,31 +127,6 @@ public class Root implements ApplicationListener {
                     return true;
                 }
 
-                // TlGroup actions
-                TlGroup tlGroup = (ep != null) ? ep.getTlGroup() : null;
-                if (tlGroup != null) {
-                    if (App.shortcutManager.isActive(TlGroup.Actions.PLAY_PAUSE)) {
-                        project.playhead.setPlaying(!project.playhead.isPlaying());
-                        return true;
-                    }
-                    if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {
-                        tlGroup.performSplit();
-                        return true;
-                    }
-                    if (App.shortcutManager.isActive(TlGroup.Actions.DELETE)) {
-                        tlGroup.performDelete();
-                        return true;
-                    }
-                    if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {
-                        tlGroup.performGroup();
-                        return true;
-                    }
-                    if (App.shortcutManager.isActive(TlGroup.Actions.PASTE)) {
-                        tlGroup.performPaste();
-                        return true;
-                    }
-                }
-
                 return false;
             }
 

@@ -13,8 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
-import com.lomekwi.cave.app.copy.CopyManager;
-import com.lomekwi.cave.app.copy.Copyable;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
@@ -128,6 +126,26 @@ public class TlGroup extends Group implements Focusable {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
+                if (App.shortcutManager.isActive(Actions.PLAY_PAUSE)) {
+                    playhead.setPlaying(!playhead.isPlaying());
+                    return true;
+                }
+                if (App.shortcutManager.isActive(Actions.SPLIT)) {
+                    dragHandler.splitAtCursor();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(Actions.DELETE)) {
+                    dragHandler.deleteAtCursor();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(Actions.GROUP)) {
+                    groupSelectedSegments();
+                    return true;
+                }
+                if (App.shortcutManager.isActive(Actions.PASTE)) {
+                    performPaste();
+                    return true;
+                }
                 return true;
             }
         });
@@ -460,21 +478,7 @@ public class TlGroup extends Group implements Focusable {
         }
     }
 
-    // -- 快捷键动作（由 Root.InputProcessor 调用） --
-
-    public void performSplit() {
-        dragHandler.splitAtCursor();
-    }
-
-    public void performDelete() {
-        dragHandler.deleteAtCursor();
-    }
-
-    public void performGroup() {
-        groupSelectedSegments();
-    }
-
-    public void performPaste() {
+    void performPaste() {
         var clip = App.copyManager.getClipboard();
         if (clip == null) return;
 
@@ -559,6 +563,10 @@ public class TlGroup extends Group implements Focusable {
 
     // -- 委托给 SegDragHandler --
 
+    protected void initDrag(SegActor actor, float x, float y) {
+        dragHandler.initDrag(actor, x, y);
+    }
+
     protected void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
         dragHandler.segDrag(actor, diffToActorX, diffToActorY);
     }
@@ -616,7 +624,6 @@ class SegDragHandler {
         private long dragOldStart;
         private long dragOldDuration;
         private Track dragOldTrack;
-        private boolean dragActive;
 
         // 组拖拽状态
         private List<Segment> groupMembers;
@@ -624,22 +631,18 @@ class SegDragHandler {
         private long[] groupOrigDurations;
         private Track[] groupOrigTracks;
 
-        void initDrag(SegActor actor) {
-            if (!dragActive) {
-                var seg = actor.getSegment();
-                var r = seg.getRange();
-                dragOldStart = r.lowerEndpoint();
-                dragOldDuration = r.upperEndpoint() - dragOldStart;
-                dragOldTrack = seg.getTrack();
-                dragActive = true;
-                initGroupDrag(seg);
-            }
+        void initDrag(SegActor actor, float diffToActorX, float diffToActorY) {
+            var seg = actor.getSegment();
+            var r = seg.getRange();
+            dragOldStart = r.lowerEndpoint();
+            dragOldDuration = r.upperEndpoint() - dragOldStart;
+            dragOldTrack = seg.getTrack();
+            firstX = diffToActorX;
+            firstY = diffToActorY;
+            initGroupDrag(seg);
         }
 
         void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
-            if (!dragActive) {
-                initDrag(actor);
-            }
 
             Track t = actor.getSegment().getTrack();
             var e = actor.getSegment().getEntry();
@@ -702,12 +705,6 @@ class SegDragHandler {
                     break;
                 }
                 case MIDDLE: {
-                    if (Float.isNaN(firstX)) {
-                        firstX = diffToActorX;
-                        firstY = diffToActorY;
-                        return;
-                    }
-
                     float deltaX = diffToActorX - firstX;
                     float deltaY = diffToActorY - firstY;
                     float targetX = actor.getX() + deltaX;
@@ -1133,35 +1130,30 @@ class SegDragHandler {
 
         void segDragEnd(SegActor actor) {
             dirty = true;
-            firstX = Float.NaN;
 
-            if (dragActive) {
-                var seg = actor.getSegment();
+            var seg = actor.getSegment();
 
-                if (groupMembers != null) {
-                    var cmds = getUndoableCommands(actor);
-                    if (!cmds.isEmpty()) {
-                        project.undoManager.record(
-                            new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
-                    }
-                } else {
-                    var r = seg.getRange();
-                    long newStart = r.lowerEndpoint();
-                    long newDuration = r.upperEndpoint() - newStart;
-                    Track newTrack = seg.getTrack();
+            if (groupMembers != null) {
+                var cmds = getUndoableCommands(actor);
+                if (!cmds.isEmpty()) {
+                    project.undoManager.record(
+                        new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+                }
+            } else {
+                var r = seg.getRange();
+                long newStart = r.lowerEndpoint();
+                long newDuration = r.upperEndpoint() - newStart;
+                Track newTrack = seg.getTrack();
 
-                    if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
-                        if (actor.getDragSide() == DragSide.MIDDLE) {
-                            project.undoManager.record(new UndoManager.MoveSegCommand(
-                                dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
-                        } else {
-                            project.undoManager.record(new UndoManager.ResizeSegCommand(
-                                newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
-                        }
+                if (dragOldStart != newStart || dragOldDuration != newDuration || dragOldTrack != newTrack) {
+                    if (actor.getDragSide() == DragSide.MIDDLE) {
+                        project.undoManager.record(new UndoManager.MoveSegCommand(
+                            dragOldTrack, newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
+                    } else {
+                        project.undoManager.record(new UndoManager.ResizeSegCommand(
+                            newTrack, seg, dragOldStart, dragOldDuration, newStart, newDuration));
                     }
                 }
-
-                dragActive = false;
             }
 
             groupMembers = null;
@@ -1229,11 +1221,9 @@ class SegDragHandler {
             Vector2 local = stageToLocalCoordinates(
                 s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
             int trackIndex = yToTrackIndex(local.y);
-            if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
             long time = xToAbsoluteTime(local.x);
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(time);
-            if (entry == null) return;
             splitSegment(entry.getValue(), time);
             dirty = true;
         }
@@ -1288,16 +1278,13 @@ class SegDragHandler {
             Vector2 local = stageToLocalCoordinates(
                 s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
             int trackIndex = yToTrackIndex(local.y);
-            if (trackIndex < 0 || trackIndex >= timeline.getTracks().size()) return;
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(xToAbsoluteTime(local.x));
-            if (entry != null) {
-                var seg = entry.getValue();
-                var r = seg.getRange();
-                long start = r.lowerEndpoint();
-                long duration = r.upperEndpoint() - start;
-                project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
-            }
+            var seg = entry.getValue();
+            var r = seg.getRange();
+            long start = r.lowerEndpoint();
+            long duration = r.upperEndpoint() - start;
+            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
             dirty = true;
         }
 
