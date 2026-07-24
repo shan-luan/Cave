@@ -478,6 +478,7 @@ public class TlGroup extends Group implements Focusable {
         }
     }
 
+    //FIXME:跨项目粘贴的资源问题
     void performPaste() {
         var clip = App.copyManager.getClipboard();
         if (clip == null) return;
