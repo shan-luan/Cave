@@ -1,6 +1,8 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
+import com.lomekwi.cave.app.copy.Copyable;
+import com.lomekwi.cave.app.selection.Selectable;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
@@ -13,7 +15,7 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
 
-public abstract class Segment implements Serializable,Iterable<Frame>, Duplicatable<Segment> {
+public abstract class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
@@ -132,11 +134,20 @@ public abstract class Segment implements Serializable,Iterable<Frame>, Duplicata
         }
     }
     @Override
+    public Copyable copy() {
+        if (group != null) {
+            return group.copy();
+        }
+        return duplicate();
+    }
+
+    @Override
     public Segment duplicate() {
         var savedGroup = group;
         group = null;
         var segment =  Duplicatable.super.duplicate();
         group = savedGroup;
+        segment.range = range;
         segment.source.onDuplicate(source);
         return segment;
     }

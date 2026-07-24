@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.lomekwi.cave.app.selection.Selectable;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.task.ExportOptions;
@@ -30,7 +31,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TransFrameActor extends Actor {
+public class TransFrameActor extends Actor implements Selectable {
     private static final float MIN_SCALE = 0.01f;
     private static final float MIN_SIZE = 4f;
     public static final float ROTATE_OFFSET_LOCAL = 70f;
@@ -616,6 +617,10 @@ public class TransFrameActor extends Actor {
         TransFilter tf = new TransFilter(source, 0, 0, 1, 1, 0, false, false);
         ((Source) source).attach(tf);
         return tf;
+    }
+
+    public boolean isSelected() {
+        return selected;
     }
 
     public void setSelected(boolean selected) {

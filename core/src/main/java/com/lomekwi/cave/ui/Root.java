@@ -41,6 +41,7 @@ import com.lomekwi.cave.ui.tabs.ProjectTab;
 import com.lomekwi.cave.ui.tabs.TopTabbedPane;
 import com.lomekwi.cave.ui.topbar.TopBar;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.app.copy.CopyManager;
 
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
@@ -108,6 +109,12 @@ public class Root implements ApplicationListener {
 
                 if (isTextInputFocused()) return false;
 
+                // Copy (global, no project needed)
+                if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
+                    App.copyManager.copy();
+                    return true;
+                }
+
                 // Undo / Redo
                 if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
                     project.undoManager.undo();
@@ -137,6 +144,10 @@ public class Root implements ApplicationListener {
                     }
                     if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {
                         tlGroup.performGroup();
+                        return true;
+                    }
+                    if (App.shortcutManager.isActive(TlGroup.Actions.PASTE)) {
+                        tlGroup.performPaste();
                         return true;
                     }
                 }
@@ -219,6 +230,8 @@ public class Root implements ApplicationListener {
         stage.addActor(mainLayout);
 
         registerDefaultShortcuts();
+
+        App.appEventBus.register(App.copyManager);
 
         toastManager.toFront();
 

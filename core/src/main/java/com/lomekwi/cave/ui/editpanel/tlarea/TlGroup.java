@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
+import com.lomekwi.cave.app.copy.CopyManager;
+import com.lomekwi.cave.app.copy.Copyable;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
@@ -318,11 +320,15 @@ public class TlGroup extends Group implements Focusable {
         if (selectedSegments.contains(segment)) {
             selectedSegments.remove(segment);
             segment.setSelected(false);
-            project.projEventBus.post(new SegmentSelectedEvent(null, null, selectedSegments.size()));
+            var e = new SegmentSelectedEvent(null, null, selectedSegments.size());
+            project.projEventBus.post(e);
+            App.appEventBus.post(e);
         } else {
             selectedSegments.add(segment);
             segment.setSelected(true);
-            project.projEventBus.post(new SegmentSelectedEvent(segment, segment.getTrack(), selectedSegments.size()));
+            var e = new SegmentSelectedEvent(segment, segment.getTrack(), selectedSegments.size());
+            project.projEventBus.post(e);
+            App.appEventBus.post(e);
         }
     }
 
@@ -331,7 +337,9 @@ public class TlGroup extends Group implements Focusable {
             seg.setSelected(false);
         }
         selectedSegments.clear();
-        project.projEventBus.post(new SegmentSelectedEvent(null, null, 0));
+        var e = new SegmentSelectedEvent(null, null, 0);
+        project.projEventBus.post(e);
+        App.appEventBus.post(e);
     }
 
     private void groupSelectedSegments() {
@@ -464,6 +472,89 @@ public class TlGroup extends Group implements Focusable {
 
     public void performGroup() {
         groupSelectedSegments();
+    }
+
+    public void performPaste() {
+        var clip = App.copyManager.getClipboard();
+        if (clip == null) return;
+
+        Stage s = getStage();
+        if (s == null) return;
+        Vector2 local = stageToLocalCoordinates(
+            s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
+
+        long baseTime = Math.max(xToAbsoluteTime(local.x), 0);
+        int baseTrack = Math.max(yToTrackIndex(local.y), 0);
+
+        if (clip instanceof SegmentGroup templateGroup) {
+            pasteGroup(templateGroup, baseTime, baseTrack);
+        } else if (clip instanceof Segment template) {
+            pasteSegment(template, baseTime, baseTrack);
+        }
+
+        App.copyManager.refreshClipboard();
+    }
+
+    private void pasteSegment(Segment template, long time, int baseTrack) {
+        long duration = template.getRange().upperEndpoint() - template.getRange().lowerEndpoint();
+        if (duration <= 0) return;
+
+        Track track = timeline.getTrack(baseTrack);
+        var range = com.google.common.collect.Range.closedOpen(time, time + duration);
+        int trackIndex = baseTrack;
+        while (!track.isFree(range, Set.of())) {
+            trackIndex++;
+            track = timeline.getTrack(trackIndex);
+            range = com.google.common.collect.Range.closedOpen(time, time + duration);
+        }
+
+        template.setOrigin(time + template.getOrigin() - template.getRange().lowerEndpoint());
+
+        timeline.add(track, template, time, duration);
+        project.undoManager.record(new UndoManager.AddSegCommand(track, template, time, duration));
+        markTimelineDirty();
+    }
+
+    private void pasteGroup(SegmentGroup template, long baseTime, int baseTrack) {
+        var cmds = new ArrayList<UndoManager.UndoableCommand>();
+        var pasted = new ArrayList<Segment>();
+        int trackOffset = 0;
+
+        for (Segment seg : template.getSegments()) {
+            long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
+            if (duration <= 0) continue;
+
+            int ti = baseTrack + trackOffset;
+            Track track = timeline.getTrack(ti);
+            var range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            while (!track.isFree(range, Set.of())) {
+                ti++;
+                track = timeline.getTrack(ti);
+                range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            }
+            trackOffset = ti - baseTrack + 1;
+
+            long originOffset = seg.getOrigin() - seg.getRange().lowerEndpoint();
+            seg.setOrigin(baseTime + originOffset);
+
+            timeline.add(track, seg, baseTime, duration);
+            cmds.add(new UndoManager.AddSegCommand(track, seg, baseTime, duration));
+            pasted.add(seg);
+        }
+
+        if (!cmds.isEmpty()) {
+            project.undoManager.record(new UndoManager.CompoundCommand(
+                cmds.toArray(new UndoManager.UndoableCommand[0])));
+        }
+
+        if (pasted.size() >= 2) {
+            SegmentGroup newGroup = new SegmentGroup();
+            for (Segment seg : pasted) {
+                newGroup.add(seg);
+            }
+        }
+
+        markTimelineDirty();
     }
 
     // -- 委托给 SegDragHandler --
@@ -1259,7 +1350,9 @@ class SegDragHandler {
         PLAY_PAUSE("播放/暂停", SPACE),
         GROUP("分组", F),
         SEEK("定位播放头", E),
-        SNAP_IGNORE("忽略吸附", CONTROL_LEFT);
+        SNAP_IGNORE("忽略吸附", CONTROL_LEFT),
+        COPY("复制", CONTROL_LEFT, C),
+        PASTE("粘贴", CONTROL_LEFT, V);
 
         private final String displayName;
         private final int[] defaultKeys;
