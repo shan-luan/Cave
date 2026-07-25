@@ -66,6 +66,10 @@ public class TlGroup extends Group implements Focusable {
 
     private final Vector2 pointer = new Vector2();
 
+    private boolean marqueeActive;
+    private float marqueeStartX, marqueeStartY;
+    private float marqueeEndX, marqueeEndY;
+
     public TlGroup(Project project) {
         this.project = project;
         this.timeline = project.timeline;
@@ -84,7 +88,7 @@ public class TlGroup extends Group implements Focusable {
         addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (button == Input.Buttons.LEFT) {
+                if (button == Input.Buttons.LEFT && !marqueeActive) {
                     clearSelection();
                     playhead.seek(Math.max(xToAbsoluteTime(x), 0));
                     return true;
@@ -103,6 +107,7 @@ public class TlGroup extends Group implements Focusable {
             }
             @Override
             public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                if (marqueeActive) return;
                 playhead.seek(Math.max(xToAbsoluteTime(x), 0));
             }
             @Override
@@ -155,6 +160,21 @@ public class TlGroup extends Group implements Focusable {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button != Input.Buttons.LEFT) return false;
+
+                if (App.shortcutManager.isActive(Actions.MARQUEE_SELECT)) {
+                    int trackIndex = yToTrackIndex(y);
+                    boolean onSegment = trackIndex >= 0 && trackIndex < timeline.getTracks().size()
+                        && timeline.getTrack(trackIndex).getEntry(xToAbsoluteTime(x)) != null;
+                    if (!onSegment) {
+                        marqueeActive = true;
+                        marqueeStartX = x;
+                        marqueeStartY = y;
+                        marqueeEndX = x;
+                        marqueeEndY = y;
+                        return true;
+                    }
+                }
+
                 int trackIndex = yToTrackIndex(y);
                 boolean onSegment = trackIndex >= 0 && trackIndex < timeline.getTracks().size()
                     && timeline.getTrack(trackIndex).getEntry(xToAbsoluteTime(x)) != null;
@@ -162,6 +182,83 @@ public class TlGroup extends Group implements Focusable {
                     playhead.seek(Math.max(xToAbsoluteTime(x), 0));
                 }
                 return false;
+            }
+
+            @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                if (!marqueeActive) return;
+                marqueeEndX = x;
+                marqueeEndY = y;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                if (!marqueeActive) return;
+                marqueeActive = false;
+
+                float minX = Math.min(marqueeStartX, marqueeEndX);
+                float maxX = Math.max(marqueeStartX, marqueeEndX);
+                float minY = Math.min(marqueeStartY, marqueeEndY);
+                float maxY = Math.max(marqueeStartY, marqueeEndY);
+
+                if (maxX - minX < 2 || maxY - minY < 2) return;
+
+                int firstTrack = Math.max(0, yToTrackIndex(maxY));
+                int lastTrack = Math.min(timeline.getTracks().size() - 1, yToTrackIndex(minY));
+
+                Set<Segment> toSelect = new HashSet<>();
+                for (int i = firstTrack; i <= lastTrack; i++) {
+                    Track track = timeline.getTrack(i);
+                    float trackTop = trackIndexToTopY(i);
+                    float trackBottom = trackTop - view.trackHeight;
+
+                    if (trackTop <= minY || trackBottom >= maxY) continue;
+
+                    long segStartTime = xToAbsoluteTime(minX);
+                    long segEndTime = xToAbsoluteTime(maxX);
+                    if (segStartTime > segEndTime) {
+                        long t = segStartTime;
+                        segStartTime = segEndTime;
+                        segEndTime = t;
+                    }
+
+                    Range<Long> timeRange = Range.closedOpen(segStartTime, segEndTime);
+                    for (var entry : track.getSubRangeMapAsEntrySet(timeRange)) {
+                        Segment seg = entry.getValue();
+                        float segLeft = absoluteTimeToX(seg.getRange().lowerEndpoint());
+                        float segRight = absoluteTimeToX(seg.getRange().upperEndpoint());
+
+                        if (segRight > minX && segLeft < maxX) {
+                            if (seg.getGroup() != null) {
+                                toSelect.addAll(seg.getGroup().getSegments());
+                            } else {
+                                toSelect.add(seg);
+                            }
+                        }
+                    }
+                }
+
+                if (!toSelect.isEmpty()) {
+                    clearSelection();
+                    for (Segment seg : toSelect) {
+                        selectedSegments.add(seg);
+                        seg.setSelected(true);
+                    }
+                    int count = selectedSegments.size();
+                    if (count >= 2) {
+                        var e = new SegmentSelectedEvent(null, null, count);
+                        project.projEventBus.post(e);
+                        App.appEventBus.post(e);
+                        var ge = new SegmentSetSelectedEvent(selectedSegments, count);
+                        project.projEventBus.post(ge);
+                        App.appEventBus.post(ge);
+                    } else if (count == 1) {
+                        Segment seg = toSelect.iterator().next();
+                        var e = new SegmentSelectedEvent(seg, seg.getTrack(), 1);
+                        project.projEventBus.post(e);
+                        App.appEventBus.post(e);
+                    }
+                }
             }
         });
 
@@ -315,6 +412,14 @@ public class TlGroup extends Group implements Focusable {
         renderer.drawSplitters();
         super.draw(batch, parentAlpha);
         renderer.drawPlayhead();
+        if (marqueeActive) {
+            float x = Math.min(marqueeStartX, marqueeEndX);
+            float y = Math.min(marqueeStartY, marqueeEndY);
+            float w = Math.abs(marqueeEndX - marqueeStartX);
+            float h = Math.abs(marqueeEndY - marqueeStartY);
+            renderer.shapeDrawer.filledRectangle(x, y, w, h, new Color(1, 1, 1, 0.3f));
+            renderer.shapeDrawer.rectangle(x, y, w, h, Color.WHITE);
+        }
     }
 
     public void dispose() {
@@ -1413,7 +1518,7 @@ class SegDragHandler {
     // -------------------------------------------------------------------------
 
     class TimelineRenderer {
-        private final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
+        final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
         private static final Color black = new Color(0, 0, 0, 0.5f);
 
         void drawBackground() {
@@ -1459,6 +1564,7 @@ class SegDragHandler {
         REDO("重做", CONTROL_LEFT, Y),
         PLAY_PAUSE("播放/暂停", SPACE),
         GROUP("分组", F),
+        MARQUEE_SELECT("框选", CONTROL_LEFT),
         SEEK("定位播放头", E),
         SNAP_IGNORE("忽略吸附", CONTROL_LEFT),
         COPY("复制", CONTROL_LEFT, C),
