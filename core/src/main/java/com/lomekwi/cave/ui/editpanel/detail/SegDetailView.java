@@ -15,12 +15,15 @@ import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.FilterRegistry;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Segment;
+import com.lomekwi.cave.timeline.SegmentSet;
+import com.lomekwi.cave.timeline.SegmentSetSelectedEvent;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
 public class SegDetailView extends VisTable {
     private final VisTable content;
     private Segment currentSeg;
+    private SegmentSet currentSegSet;
 
     public SegDetailView() {
         content = new VisTable();
@@ -34,39 +37,61 @@ public class SegDetailView extends VisTable {
         int count = e.selectedCount();
         if (count == 0) {
             showEmpty();
-        } else if (count > 1) {
-            showMulti(count);
-        } else {
+        } else if (count == 1 && e.segment() != null) {
             showInfo(e.segment());
         }
     }
 
+    @Subscribe
+    public void onSegmentSetSelected(SegmentSetSelectedEvent e) {
+        if (e.selectedCount() > 1) {
+            showMultiInfo(e.set());
+        }
+    }
+
     public void rebuildContent() {
-        if (currentSeg != null) {
+        if (currentSegSet != null) {
+            showMultiInfo(currentSegSet);
+        } else if (currentSeg != null) {
             showInfo(currentSeg);
         }
     }
 
     private void showEmpty() {
         currentSeg = null;
+        currentSegSet = null;
         content.clear();
         content.setFillParent(true);
         content.add(new VisLabel(i18n("未选择片段"))).expand().center();
     }
 
-    private void showMulti(int count) {
+    private void showMultiInfo(SegmentSet set) {
         currentSeg = null;
+        currentSegSet = set;
         content.clear();
-        content.setFillParent(true);
-        content.add(new VisLabel(i18n("已选中") + count + i18n("个片段"))).expand().center();
+        content.setFillParent(false);
+        content.top();
+        boolean first = true;
+        for (Segment seg : set.getSegments()) {
+            if (!first) {
+                content.row();
+            }
+            first = false;
+            appendSegmentInfo(seg);
+        }
     }
 
     private void showInfo(Segment seg) {
         if (seg == null) return;
         currentSeg = seg;
+        currentSegSet = null;
         content.clear();
         content.setFillParent(false);
         content.top();
+        appendSegmentInfo(seg);
+    }
+
+    private void appendSegmentInfo(Segment seg) {
         Source<?> source = seg.getSource();
         content.add(source.getDetailActor()).growX().pad(4).row();
         for (Filter<?> filter : source.getFilters()) {
@@ -91,7 +116,7 @@ public class SegDetailView extends VisTable {
                     source.getFilters().add((Filter) newFilter);
                     var p = App.root.getFrontendProject();
                     if (p != null) p.undoManager.record(new UndoManager.AddFilterCommand(source, newFilter));
-                    showInfo(seg);
+                    rebuildContent();
                 }
             }));
         }
