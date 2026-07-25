@@ -80,10 +80,9 @@ public abstract class SegActor extends Actor {
                         dragSide = DragSide.MIDDLE;
                     }
                     event.stop();
-                    boolean ctrl = Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
                     boolean alreadySelected = tlGroup.selectedSegments().contains(segment);
-                    if (ctrl || !alreadySelected) {
-                        tlGroup.selectSegment(segment, ctrl);
+                    if (!alreadySelected) {
+                        tlGroup.selectSegment(segment, false);
                     }
                     tlGroup.initDrag(SegActor.this, x, y);
                     return true;
