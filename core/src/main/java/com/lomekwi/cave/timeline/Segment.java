@@ -135,9 +135,6 @@ public abstract class Segment implements Serializable, Iterable<Frame>, Duplicat
     }
     @Override
     public Copyable copy() {
-        if (group != null) {
-            return group.copy();
-        }
         return duplicate();
     }
 

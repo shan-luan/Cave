@@ -11,6 +11,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
+import com.lomekwi.cave.timeline.SegmentSet;
 import com.lomekwi.cave.timeline.TextSeg;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
@@ -46,7 +47,7 @@ public class TlGroupMenu extends PopupMenu {
 
     public void setContext(long time) {
         this.time = time;
-        pasteItem.setDisabled(!(App.copyManager.getClipboard() instanceof Segment || App.copyManager.getClipboard() instanceof SegmentGroup));
+        pasteItem.setDisabled(!(App.copyManager.getClipboard() instanceof Segment || App.copyManager.getClipboard() instanceof SegmentGroup || App.copyManager.getClipboard() instanceof SegmentSet));
     }
 
     private void onAddMedia() {

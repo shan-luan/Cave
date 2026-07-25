@@ -18,6 +18,8 @@ import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
+import com.lomekwi.cave.timeline.SegmentSet;
+import com.lomekwi.cave.timeline.SegmentSetSelectedEvent;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
@@ -57,7 +59,7 @@ public class TlGroup extends Group implements Focusable {
     final ViewState view = new ViewState();
 
     private boolean dirty = true;
-    private final Set<Segment> selectedSegments = new HashSet<>();
+    private final SegmentSet selectedSegments = new SegmentSet();
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 1200f;
@@ -332,39 +334,111 @@ public class TlGroup extends Group implements Focusable {
     }
 
     public void selectSegment(Segment segment, boolean addToSelection) {
+        SegmentGroup group = segment.getGroup();
+        if (group != null) {
+            if (addToSelection) {
+                boolean anySelected = false;
+                for (Segment s : group.getSegments()) {
+                    if (selectedSegments.contains(s)) { anySelected = true; break; }
+                }
+                if (anySelected) {
+                    for (Segment s : group.getSegments()) {
+                        selectedSegments.remove(s);
+                        s.setSelected(false);
+                    }
+                } else {
+                    for (Segment s : group.getSegments()) {
+                        selectedSegments.add(s);
+                        s.setSelected(true);
+                    }
+                }
+            } else {
+                clearSelection();
+                for (Segment s : group.getSegments()) {
+                    selectedSegments.add(s);
+                    s.setSelected(true);
+                }
+            }
+            int count = selectedSegments.size();
+            if (count == 0) {
+                var e = new SegmentSelectedEvent(null, null, 0);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+            } else if (count == 1) {
+                Segment remaining = selectedSegments.getSegments().iterator().next();
+                var e = new SegmentSelectedEvent(remaining, remaining.getTrack(), 1);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+            } else {
+                var e = new SegmentSelectedEvent(null, null, count);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+                var ge = new SegmentSetSelectedEvent(selectedSegments, count);
+                project.projEventBus.post(ge);
+                App.appEventBus.post(ge);
+            }
+            return;
+        }
         if (!addToSelection) {
             clearSelection();
         }
         if (selectedSegments.contains(segment)) {
             selectedSegments.remove(segment);
             segment.setSelected(false);
-            var e = new SegmentSelectedEvent(null, null, selectedSegments.size());
-            project.projEventBus.post(e);
-            App.appEventBus.post(e);
+            int count = selectedSegments.size();
+            if (count == 0) {
+                var e = new SegmentSelectedEvent(null, null, 0);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+            } else if (count == 1) {
+                Segment remaining = selectedSegments.getSegments().iterator().next();
+                var e = new SegmentSelectedEvent(remaining, remaining.getTrack(), 1);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+            } else {
+                var e = new SegmentSelectedEvent(null, null, count);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+                var ge = new SegmentSetSelectedEvent(selectedSegments, count);
+                project.projEventBus.post(ge);
+                App.appEventBus.post(ge);
+            }
         } else {
             selectedSegments.add(segment);
             segment.setSelected(true);
-            var e = new SegmentSelectedEvent(segment, segment.getTrack(), selectedSegments.size());
-            project.projEventBus.post(e);
-            App.appEventBus.post(e);
+            int count = selectedSegments.size();
+            if (count >= 2) {
+                var e = new SegmentSelectedEvent(null, null, count);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+                var ge = new SegmentSetSelectedEvent(selectedSegments, count);
+                project.projEventBus.post(ge);
+                App.appEventBus.post(ge);
+            } else {
+                var e = new SegmentSelectedEvent(segment, segment.getTrack(), 1);
+                project.projEventBus.post(e);
+                App.appEventBus.post(e);
+            }
         }
     }
 
     public void clearSelection() {
-        for (Segment seg : selectedSegments) {
-            seg.setSelected(false);
-        }
+        selectedSegments.setSelected(false);
         selectedSegments.clear();
         var e = new SegmentSelectedEvent(null, null, 0);
         project.projEventBus.post(e);
         App.appEventBus.post(e);
     }
 
+    public SegmentSet selectedSegments() {
+        return selectedSegments;
+    }
+
     private void groupSelectedSegments() {
         if (selectedSegments.size() < 2) return;
 
         boolean anyInGroup = false;
-        for (Segment seg : selectedSegments) {
+        for (Segment seg : selectedSegments.getSegments()) {
             if (seg.getGroup() != null) {
                 anyInGroup = true;
                 break;
@@ -374,7 +448,7 @@ public class TlGroup extends Group implements Focusable {
         if (anyInGroup) {
             Map<Segment, SegmentGroup> savedState = new HashMap<>();
             Set<SegmentGroup> affectedGroups = new HashSet<>();
-            for (Segment seg : selectedSegments) {
+            for (Segment seg : selectedSegments.getSegments()) {
                 SegmentGroup g = seg.getGroup();
                 if (g != null) {
                     savedState.put(seg, g);
@@ -386,7 +460,7 @@ public class TlGroup extends Group implements Focusable {
                 dissolvedMembers.put(g, new HashSet<>(g.getSegments()));
             }
 
-            for (Segment seg : selectedSegments) {
+            for (Segment seg : selectedSegments.getSegments()) {
                 SegmentGroup g = seg.getGroup();
                 if (g != null) {
                     g.remove(seg);
@@ -440,7 +514,7 @@ public class TlGroup extends Group implements Focusable {
             });
         } else {
             SegmentGroup group = new SegmentGroup();
-            List<Segment> segs = new ArrayList<>(selectedSegments);
+            List<Segment> segs = new ArrayList<>(selectedSegments.getSegments());
 
             for (Segment seg : segs) {
                 group.add(seg);
@@ -493,6 +567,8 @@ public class TlGroup extends Group implements Focusable {
 
         if (clip instanceof SegmentGroup templateGroup) {
             pasteGroup(templateGroup, baseTime, baseTrack);
+        } else if (clip instanceof SegmentSet templateSet) {
+            pasteSet(templateSet, baseTime, baseTrack);
         } else if (clip instanceof Segment template) {
             pasteSegment(template, baseTime, baseTrack);
         }
@@ -523,12 +599,17 @@ public class TlGroup extends Group implements Focusable {
     private void pasteGroup(SegmentGroup template, long baseTime, int baseTrack) {
         var cmds = new ArrayList<UndoManager.UndoableCommand>();
         var pasted = new ArrayList<Segment>();
-        int trackOffset = 0;
 
-        for (Segment seg : template.getSegments()) {
+        List<Segment> sorted = new ArrayList<>(template.getSegments());
+        sorted.sort(java.util.Comparator.comparingInt(s -> s.getTrack().index));
+
+        int minTrack = sorted.get(0).getTrack().index;
+
+        for (Segment seg : sorted) {
             long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
             if (duration <= 0) continue;
 
+            int trackOffset = seg.getTrack().index - minTrack;
             int ti = baseTrack + trackOffset;
             Track track = timeline.getTrack(ti);
             var range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
@@ -537,7 +618,6 @@ public class TlGroup extends Group implements Focusable {
                 track = timeline.getTrack(ti);
                 range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
             }
-            trackOffset = ti - baseTrack + 1;
 
             long originOffset = seg.getOrigin() - seg.getRange().lowerEndpoint();
             seg.setOrigin(baseTime + originOffset);
@@ -557,6 +637,43 @@ public class TlGroup extends Group implements Focusable {
             for (Segment seg : pasted) {
                 newGroup.add(seg);
             }
+        }
+
+        markTimelineDirty();
+    }
+
+    private void pasteSet(SegmentSet template, long baseTime, int baseTrack) {
+        var cmds = new ArrayList<UndoManager.UndoableCommand>();
+
+        List<Segment> sorted = new ArrayList<>(template.getSegments());
+        sorted.sort(java.util.Comparator.comparingInt(s -> s.getTrack().index));
+
+        int minTrack = sorted.get(0).getTrack().index;
+
+        for (Segment seg : sorted) {
+            long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
+            if (duration <= 0) continue;
+
+            int trackOffset = seg.getTrack().index - minTrack;
+            int ti = baseTrack + trackOffset;
+            Track track = timeline.getTrack(ti);
+            var range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            while (!track.isFree(range, Set.of())) {
+                ti++;
+                track = timeline.getTrack(ti);
+                range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            }
+
+            long originOffset = seg.getOrigin() - seg.getRange().lowerEndpoint();
+            seg.setOrigin(baseTime + originOffset);
+
+            timeline.add(track, seg, baseTime, duration);
+            cmds.add(new UndoManager.AddSegCommand(track, seg, baseTime, duration));
+        }
+
+        if (!cmds.isEmpty()) {
+            project.undoManager.record(new UndoManager.CompoundCommand(
+                cmds.toArray(new UndoManager.UndoableCommand[0])));
         }
 
         markTimelineDirty();
@@ -797,18 +914,17 @@ class SegDragHandler {
         }
 
         private void initGroupDrag(Segment seg) {
-            SegmentGroup group = seg.getGroup();
-            if (group == null) return;
+            if (selectedSegments.size() <= 1) return;
 
-            List<Segment> others = new ArrayList<>();
-            for (Segment s : group.getSegments()) {
-                if (s != seg) others.add(s);
-            }
-            if (others.isEmpty()) return;
+            Set<Segment> selSegs = selectedSegments.getSegments();
+            if (!selSegs.contains(seg)) return;
+            if (selSegs.size() == 1) return;
 
-            groupMembers = new ArrayList<>();
+            groupMembers = new ArrayList<>(selSegs.size());
             groupMembers.add(seg);
-            groupMembers.addAll(others);
+            for (Segment s : selSegs) {
+                if (s != seg) groupMembers.add(s);
+            }
 
             int n = groupMembers.size();
             groupOrigStarts = new long[n];
