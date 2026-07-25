@@ -35,7 +35,7 @@ public class TransFilter extends Filter<Transformable> {
     public void flipY(boolean v) { flipY = v; }
 
     @Override
-    public String getName() { return "变换滤镜"; }
+    public String getName() { return "变换"; }
 
     @Override
     public void filter(Transformable frame) {
