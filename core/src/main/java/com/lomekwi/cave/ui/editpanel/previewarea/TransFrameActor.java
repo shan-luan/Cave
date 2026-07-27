@@ -640,7 +640,6 @@ public class TransFrameActor extends Actor implements Selectable {
             NW, N, NE, E, SE, S, SW, W, ROTATE
         }
 
-        private static final int HANDLE_COUNT = Handle.values().length;
         private static final float HANDLE_HIT_RADIUS = 18f;
         private static final Color GIZMO_COLOR = new Color(1f, 1f, 1f, 0.9f);
         private static final Color GIZMO_FILL = new Color(0.2f, 0.6f, 1f, 0.9f);

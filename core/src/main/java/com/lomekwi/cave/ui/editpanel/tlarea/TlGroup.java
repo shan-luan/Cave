@@ -3,18 +3,13 @@ package com.lomekwi.cave.ui.editpanel.tlarea;
 import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
-import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
@@ -25,13 +20,10 @@ import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.Playhead;
-import com.lomekwi.cave.util.MimeType;
 
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.Focusable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,23 +44,23 @@ public class TlGroup extends Group implements Focusable {
     public final SegMenu segMenu = new SegMenu(this);
     public final TlGroupMenu tlGroupMenu = new TlGroupMenu(this);
 
-    private final Timeline timeline;
-    private final Playhead playhead;
-    private final Project project;
+    final Timeline timeline;
+    final Playhead playhead;
+    final Project project;
 
     final ViewState view = new ViewState();
 
-    private boolean dirty = true;
-    private final SegmentSet selectedSegments = new SegmentSet();
+    boolean dirty = true;
+    final SegmentSet selectedSegments = new SegmentSet();
 
     private static final float KEY_HORIZONTAL_SPEED = 1200f;
     private static final float KEY_VERTICAL_SPEED = 1200f;
 
     private final Vector2 pointer = new Vector2();
 
-    private boolean marqueeActive;
-    private float marqueeStartX, marqueeStartY;
-    private float marqueeEndX, marqueeEndY;
+    boolean marqueeActive;
+    float marqueeStartX, marqueeStartY;
+    float marqueeEndX, marqueeEndY;
 
     public TlGroup(Project project) {
         this.project = project;
@@ -85,232 +77,9 @@ public class TlGroup extends Group implements Focusable {
     }
 
     private void addDefaultListeners() {
-        addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (button == Input.Buttons.LEFT && !marqueeActive) {
-                    clearSelection();
-                    playhead.seek(Math.max(xToAbsoluteTime(x), 0));
-                    return true;
-                }
-                if (button == Input.Buttons.RIGHT && event.getTarget() == event.getListenerActor()) {
-                    tlGroupMenu.setContext(Math.max(xToAbsoluteTime(x), 0));
-                    return true;
-                }
-                return false;
-            }
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                if (button == Input.Buttons.RIGHT) {
-                    tlGroupMenu.showMenu(event.getStage(), event.getStageX(), event.getStageY());
-                }
-            }
-            @Override
-            public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                if (marqueeActive) return;
-                playhead.seek(Math.max(xToAbsoluteTime(x), 0));
-            }
-            @Override
-            public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
-                final Input ip = Gdx.input;
-
-                if (ip.isKeyPressed(CONTROL_LEFT) && ip.isKeyPressed(SHIFT_LEFT)) {
-                    view.adjustTrackHeight(amountY * 10);
-
-                } else if (ip.isKeyPressed(CONTROL_LEFT)) {
-                    view.scrollVertical(amountY * 10);
-
-                } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-                    view.scrollHorizontal(amountY * 30, getWidth());
-
-                } else {
-                    if (!view.zoom(amountY, x / getWidth())) return true;
-                }
-
-                dirty = true;
-                return true;
-            }
-
-            @Override
-            public boolean keyDown(InputEvent event, int keycode) {
-                if (App.shortcutManager.isActive(Actions.PLAY_PAUSE)) {
-                    playhead.setPlaying(!playhead.isPlaying());
-                    return true;
-                }
-                if (App.shortcutManager.isActive(Actions.SPLIT)) {
-                    dragHandler.splitAtCursor();
-                    return true;
-                }
-                if (App.shortcutManager.isActive(Actions.DELETE)) {
-                    dragHandler.deleteAtCursor();
-                    return true;
-                }
-                if (App.shortcutManager.isActive(Actions.GROUP)) {
-                    groupSelectedSegments();
-                    return true;
-                }
-                if (App.shortcutManager.isActive(Actions.PASTE)) {
-                    performPaste();
-                    return true;
-                }
-                return true;
-            }
-        });
-        addCaptureListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if (button != Input.Buttons.LEFT) return false;
-
-                if (App.shortcutManager.isActive(Actions.MARQUEE_SELECT)) {
-                    int trackIndex = yToTrackIndex(y);
-                    boolean onSegment = trackIndex >= 0 && trackIndex < timeline.getTracks().size()
-                        && timeline.getTrack(trackIndex).getEntry(xToAbsoluteTime(x)) != null;
-                    if (!onSegment) {
-                        marqueeActive = true;
-                        marqueeStartX = x;
-                        marqueeStartY = y;
-                        marqueeEndX = x;
-                        marqueeEndY = y;
-                        return true;
-                    }
-                }
-
-                int trackIndex = yToTrackIndex(y);
-                boolean onSegment = trackIndex >= 0 && trackIndex < timeline.getTracks().size()
-                    && timeline.getTrack(trackIndex).getEntry(xToAbsoluteTime(x)) != null;
-                if (!onSegment) {
-                    playhead.seek(Math.max(xToAbsoluteTime(x), 0));
-                }
-                return false;
-            }
-
-            @Override
-            public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                if (!marqueeActive) return;
-                marqueeEndX = x;
-                marqueeEndY = y;
-            }
-
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                if (!marqueeActive) return;
-                marqueeActive = false;
-
-                float minX = Math.min(marqueeStartX, marqueeEndX);
-                float maxX = Math.max(marqueeStartX, marqueeEndX);
-                float minY = Math.min(marqueeStartY, marqueeEndY);
-                float maxY = Math.max(marqueeStartY, marqueeEndY);
-
-                if (maxX - minX < 2 || maxY - minY < 2) return;
-
-                int firstTrack = Math.max(0, yToTrackIndex(maxY));
-                int lastTrack = Math.min(timeline.getTracks().size() - 1, yToTrackIndex(minY));
-
-                Set<Segment> toSelect = new HashSet<>();
-                for (int i = firstTrack; i <= lastTrack; i++) {
-                    Track track = timeline.getTrack(i);
-                    float trackTop = trackIndexToTopY(i);
-                    float trackBottom = trackTop - view.trackHeight;
-
-                    if (trackTop <= minY || trackBottom >= maxY) continue;
-
-                    long segStartTime = xToAbsoluteTime(minX);
-                    long segEndTime = xToAbsoluteTime(maxX);
-                    if (segStartTime > segEndTime) {
-                        long t = segStartTime;
-                        segStartTime = segEndTime;
-                        segEndTime = t;
-                    }
-
-                    Range<Long> timeRange = Range.closedOpen(segStartTime, segEndTime);
-                    for (var entry : track.getSubRangeMapAsEntrySet(timeRange)) {
-                        Segment seg = entry.getValue();
-                        float segLeft = absoluteTimeToX(seg.getRange().lowerEndpoint());
-                        float segRight = absoluteTimeToX(seg.getRange().upperEndpoint());
-
-                        if (segRight > minX && segLeft < maxX) {
-                            if (seg.getGroup() != null) {
-                                toSelect.addAll(seg.getGroup().getSegments());
-                            } else {
-                                toSelect.add(seg);
-                            }
-                        }
-                    }
-                }
-
-                if (!toSelect.isEmpty()) {
-                    clearSelection();
-                    for (Segment seg : toSelect) {
-                        selectedSegments.add(seg);
-                        seg.setSelected(true);
-                    }
-                    int count = selectedSegments.size();
-                    if (count >= 2) {
-                        var e = new SegmentSelectedEvent(null, null, count);
-                        project.projEventBus.post(e);
-                        App.appEventBus.post(e);
-                        var ge = new SegmentSetSelectedEvent(selectedSegments, count);
-                        project.projEventBus.post(ge);
-                        App.appEventBus.post(ge);
-                    } else if (count == 1) {
-                        Segment seg = toSelect.iterator().next();
-                        var e = new SegmentSelectedEvent(seg, seg.getTrack(), 1);
-                        project.projEventBus.post(e);
-                        App.appEventBus.post(e);
-                    }
-                }
-            }
-        });
-
-        App.root.getDragAndDrop().addTarget(new DragAndDrop.Target(this) {
-            @Override
-            public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                if (!(payload.getObject() instanceof File file)) {
-                    return false;
-                }
-                String mimeType = MimeType.detectMimeType(file);
-                return MediaFactory.isSupported(mimeType);
-            }
-
-            @Override
-            public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                try {
-                    File file = (File) payload.getObject();
-                    List<Segment> segments = project.mediaSegFactory.getAll(file);
-                    long startTime = xToAbsoluteTime(x);
-                    int baseTrack = yToTrackIndex(y);
-                    int trackOffset = 0;
-                    var cmds = new ArrayList<UndoManager.UndoableCommand>();
-                    List<Segment> added = new ArrayList<>();
-                    for (Segment seg : segments) {
-                        seg.setOrigin(startTime);
-                        long duration = seg.getDuration();
-                        if (duration <= 0) continue;
-                        int targetTrack = baseTrack + trackOffset;
-                        var range = Range.closedOpen(startTime, startTime + duration);
-                        while (!timeline.getTrack(targetTrack).isFree(range, Set.of())) {
-                            targetTrack++;
-                        }
-                        timeline.add(timeline.getTrack(targetTrack), seg, startTime, duration);
-                        cmds.add(new UndoManager.AddSegCommand(timeline.getTrack(targetTrack), seg, startTime, duration));
-                        trackOffset = targetTrack - baseTrack + 1;
-                        added.add(seg);
-                    }
-                    if (!cmds.isEmpty()) {
-                        project.undoManager.record(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
-                    }
-                    if (added.size() >= 2) {
-                        SegmentGroup group = new SegmentGroup();
-                        for (Segment seg : added) {
-                            group.add(seg);
-                        }
-                    }
-                    dirty = true;
-                } catch (IOException e) {
-                    Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage());
-                }
-            }
-        });
+        addListener(new TlGroupInputListener(this));
+        addCaptureListener(new TlGroupCaptureListener(this));
+        App.root.getDragAndDrop().addTarget(new TlGroupDropTarget(this));
     }
 
     @Override
@@ -539,7 +308,7 @@ public class TlGroup extends Group implements Focusable {
         return selectedSegments;
     }
 
-    private void groupSelectedSegments() {
+    void groupSelectedSegments() {
         if (selectedSegments.size() < 2) return;
 
         boolean anyInGroup = false;
@@ -806,13 +575,13 @@ public class TlGroup extends Group implements Focusable {
         dragHandler.split(segActor, time);
     }
 
-    private int yToTrackIndex(float y) {
+    int yToTrackIndex(float y) {
         final float top = getHeight() + view.trackYShift;
         final float distance = top - y;
         return (int) Math.floor(distance / view.trackHeight);
     }
 
-    private float trackIndexToTopY(int index) {
+    float trackIndexToTopY(int index) {
         return getHeight() + view.trackYShift - index * view.trackHeight;
     }
 
@@ -1437,7 +1206,7 @@ class SegDragHandler {
             dirty = true;
         }
 
-        private void splitAtCursor() {
+        void splitAtCursor() {
             Stage s = getStage();
             if (s == null) return;
             Vector2 local = stageToLocalCoordinates(
@@ -1507,6 +1276,30 @@ class SegDragHandler {
             long start = r.lowerEndpoint();
             long duration = r.upperEndpoint() - start;
             project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
+            dirty = true;
+        }
+
+        void deleteSelected() {
+            if (selectedSegments.size() == 0) {
+                deleteAtCursor();
+                return;
+            }
+
+            var cmds = new ArrayList<UndoManager.UndoableCommand>();
+            var segs = List.copyOf(selectedSegments.getSegments());
+
+            clearSelection();
+
+            for (Segment seg : segs) {
+                var r = seg.getRange();
+                long start = r.lowerEndpoint();
+                long duration = r.upperEndpoint() - start;
+                Track track = seg.getTrack();
+                cmds.add(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
+            }
+
+            project.undoManager.execute(new UndoManager.CompoundCommand(
+                cmds.toArray(new UndoManager.UndoableCommand[0])));
             dirty = true;
         }
 
