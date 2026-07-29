@@ -19,7 +19,7 @@ public abstract class Filter<T> implements Serializable {
         return source;
     }
 
-    public abstract void filter(T frame);
+    public abstract void filter(T frame, long time);
 
     public abstract String getName();
 

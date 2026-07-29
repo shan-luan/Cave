@@ -38,7 +38,7 @@ public class TransFilter extends Filter<Transformable> {
     public String getName() { return "变换"; }
 
     @Override
-    public void filter(Transformable frame) {
+    public void filter(Transformable frame, long time) {
         Transform t = frame.getTransform();
         t.applyLocal(dx, dy, scaleX, scaleY, dRotation, flipX, flipY);
     }

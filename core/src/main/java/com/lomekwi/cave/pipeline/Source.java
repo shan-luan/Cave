@@ -34,7 +34,7 @@ public abstract class Source<T extends Frame> implements Serializable {
     public final T get(long time, Track track){
         T frame = generate(time, track);
         for (Filter<? super T> filter : filters) {
-            filter.filter(frame);
+            filter.filter(frame, time);
         }
         return frame;
     }

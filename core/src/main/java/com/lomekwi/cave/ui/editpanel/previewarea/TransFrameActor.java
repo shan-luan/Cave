@@ -490,8 +490,11 @@ public class TransFrameActor extends Actor implements Selectable {
         transformable.reset();
         Source<?> source = frame.getSource();
         if (source != null) {
+            long localTime = frame.timestamp;
+            Segment seg = source.getSegment();
+            if (seg != null) localTime -= seg.getOrigin();
             for (Filter<?> f : source.getFilters()) {
-                ((Filter<? super Transformable>) f).filter(transformable);
+                ((Filter<? super Transformable>) f).filter(transformable, localTime);
             }
         }
     }
