@@ -100,11 +100,13 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     @Override
     public void render(Batch batch) {
         upload();
-        var t=getTransform();
-        float scaleX = t.flipX ? -1 : 1;
-        float scaleY = t.flipY ? -1 : 1;
-        float w = t.width * t.getScaleX();
-        float h = t.height * t.getScaleY();
-        batch.draw(getTexture(), t.x, t.y, w/2, h/2, w, h, scaleX, scaleY, t.rotation, 0, 0, getTexture().getWidth(), getTexture().getHeight(), false, false);
+        var t = getTransform();
+        float baseW = getBaseWidth();
+        float baseH = getBaseHeight();
+        float scaleX = t.isFlipX() ? -1 : 1;
+        float scaleY = t.isFlipY() ? -1 : 1;
+        float w = baseW * t.getScaleX();
+        float h = baseH * t.getScaleY();
+        batch.draw(getTexture(), t.getX(), t.getY(), w/2, h/2, w, h, scaleX, scaleY, t.getRotation(), 0, 0, (int) baseW, (int) baseH, false, false);
     }
 }

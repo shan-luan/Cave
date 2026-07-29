@@ -47,7 +47,7 @@ public class ImgSrc extends Source<ImgFrame> {
                 }
                 frame = new ImgFrame(track, this);
                 frame.setTexture(texture)
-                    .setTransform(new Transform(0, 0, imgRes.getWidth(), imgRes.getHeight(), 0));
+                    .setTransform(new Transform(0, 0, 0));
                 initialized = true;
                 cd.countDown();
             });
@@ -64,7 +64,7 @@ public class ImgSrc extends Source<ImgFrame> {
             e.printStackTrace();
             frame.setPixels(null);
         }
-        frame.getTransform().reset(0, 0, imgRes.getWidth(), imgRes.getHeight());
+        frame.getTransform().reset(0, 0);
         return frame;
     }
 

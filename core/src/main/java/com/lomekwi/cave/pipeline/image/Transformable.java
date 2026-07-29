@@ -7,6 +7,6 @@ public interface Transformable extends Renderable {
     float getBaseHeight();
     default void reset() {
         Transform t = getTransform();
-        t.reset(0, 0, getBaseWidth(), getBaseHeight());
+        t.reset(0, 0);
     }
 }

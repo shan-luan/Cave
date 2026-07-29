@@ -193,12 +193,12 @@ public class TransFrameActor extends Actor implements Selectable {
         float w = transformable.getBaseWidth() * scaleX;
         float h = transformable.getBaseHeight() * scaleY;
 
-        setPosition(transform.x, transform.y);
+        setPosition(transform.getX(), transform.getY());
         setSize(w, h);
         setOrigin(w / 2, h / 2);
-        setRotation(transform.rotation);
-        setScaleX(transform.flipX ? -1 : 1);
-        setScaleY(transform.flipY ? -1 : 1);
+        setRotation(transform.getRotation());
+        setScaleX(transform.isFlipX() ? -1 : 1);
+        setScaleY(transform.isFlipY() ? -1 : 1);
 
         if (dragFilter == null || getParent() == null || getStage() == null) return;
         dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
@@ -500,7 +500,7 @@ public class TransFrameActor extends Actor implements Selectable {
     }
 
     private void computeDragContext() {
-        Transform t = new Transform(0, 0, transformable.getBaseWidth(), transformable.getBaseHeight(), 0);
+        Transform t = new Transform(0, 0, 0);
         Source<?> source = frame.getSource();
         if (source != null) {
             for (Filter<?> f : source.getFilters()) {

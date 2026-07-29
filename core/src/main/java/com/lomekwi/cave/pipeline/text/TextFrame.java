@@ -80,8 +80,8 @@ public class TextFrame extends Frame implements Transformable {
         }
         if (font == null || text == null || glyphsMissing) return;
         var t = getTransform();
-        float scaleX = t.flipX ? -1 : 1;
-        float scaleY = t.flipY ? -1 : 1;
+        float scaleX = t.isFlipX() ? -1 : 1;
+        float scaleY = t.isFlipY() ? -1 : 1;
         float w = cachedWidth;
         float h = cachedHeight;
 
@@ -89,8 +89,8 @@ public class TextFrame extends Frame implements Transformable {
         float sx = scaleX * t.getScaleX();
         float sy = scaleY * t.getScaleY();
         tmpMatrix.set(saved);
-        tmpMatrix.translate(t.x + w * sx / 2, t.y + h * sy / 2, 0);
-        tmpMatrix.rotate(0, 0, 1, t.rotation);
+        tmpMatrix.translate(t.getX() + w * sx / 2, t.getY() + h * sy / 2, 0);
+        tmpMatrix.rotate(0, 0, 1, t.getRotation());
         tmpMatrix.scale(sx, sy, 1);
         batch.setTransformMatrix(tmpMatrix);
         font.setColor(WHITE);

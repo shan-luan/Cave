@@ -96,7 +96,7 @@ public class TextSrc extends Source<TextFrame> {
                 }
                 frame = new TextFrame(track, this);
                 frame.setFont(font);
-                frame.setTransform(new Transform(0, 0, 1, 1, 0));
+                frame.setTransform(new Transform(0, 0, 0));
                 frame.initActor();
                 initialized = true;
                 cd.countDown();
@@ -109,7 +109,7 @@ public class TextSrc extends Source<TextFrame> {
             }
         }
         frame.setText(text);
-        frame.getTransform().reset(0, 0, frame.getBaseWidth(), frame.getBaseHeight());
+        frame.getTransform().reset(0, 0);
         return frame;
     }
 
