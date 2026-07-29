@@ -287,11 +287,11 @@ public class UndoManager {
         }
 
         private void applyState(TransFilterState s) {
-            filter.dx(s.dx);
-            filter.dy(s.dy);
-            filter.scaleX(s.scaleX);
-            filter.scaleY(s.scaleY);
-            filter.dRotation(s.dRotation);
+            filter.dx.set(s.dx);
+            filter.dy.set(s.dy);
+            filter.scaleX.set(s.scaleX);
+            filter.scaleY.set(s.scaleY);
+            filter.dRotation.set(s.dRotation);
             filter.flipX(s.flipX);
             filter.flipY(s.flipY);
             filter.invalidateDetailActor();

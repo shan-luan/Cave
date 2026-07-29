@@ -26,11 +26,11 @@ public class TransFilterActor extends FilterActor {
     public TransFilterActor(TransFilter filter) {
         super(filter.getName(), filter);
 
-        dxModel = new SimpleFloatSpinnerModel(filter.dx(), -9999, 9999, 1, 1);
-        dyModel = new SimpleFloatSpinnerModel(filter.dy(), -9999, 9999, 1, 1);
-        sxModel = new SimpleFloatSpinnerModel(filter.scaleX(), 0.01f, 100, 0.01f, 2);
-        syModel = new SimpleFloatSpinnerModel(filter.scaleY(), 0.01f, 100, 0.01f, 2);
-        rotModel = new SimpleFloatSpinnerModel(filter.dRotation(), -9999, 9999, 1, 1);
+        dxModel = new SimpleFloatSpinnerModel(filter.dx.getFloat(), -9999, 9999, 1, 1);
+        dyModel = new SimpleFloatSpinnerModel(filter.dy.getFloat(), -9999, 9999, 1, 1);
+        sxModel = new SimpleFloatSpinnerModel(filter.scaleX.getFloat(), 0.01f, 100, 0.01f, 2);
+        syModel = new SimpleFloatSpinnerModel(filter.scaleY.getFloat(), 0.01f, 100, 0.01f, 2);
+        rotModel = new SimpleFloatSpinnerModel(filter.dRotation.getFloat(), -9999, 9999, 1, 1);
 
         var dxSpinner = new Spinner("", dxModel);
         var dySpinner = new Spinner("", dyModel);
@@ -46,20 +46,20 @@ public class TransFilterActor extends FilterActor {
                 if (suppressRefresh) return;
                 if (lastEditTime == -1) {
                     undoOldState = new UndoManager.TransFilterState(
-                        filter.dx(), filter.dy(),
-                        filter.scaleX(), filter.scaleY(),
-                        filter.dRotation(),
+                        filter.dx.getFloat(), filter.dy.getFloat(),
+                        filter.scaleX.getFloat(), filter.scaleY.getFloat(),
+                        filter.dRotation.getFloat(),
                         filter.flipX(), filter.flipY());
                 }
                 lastEditTime = System.nanoTime();
                 if (actor instanceof Spinner s) {
                     SimpleFloatSpinnerModel m = (SimpleFloatSpinnerModel) s.getModel();
                     float v = m.getValue();
-                    if (s == dxSpinner) filter.dx(v);
-                    else if (s == dySpinner) filter.dy(v);
-                    else if (s == sxSpinner) filter.scaleX(v);
-                    else if (s == sySpinner) filter.scaleY(v);
-                    else if (s == rotSpinner) filter.dRotation(v);
+                    if (s == dxSpinner) filter.dx.set(v);
+                    else if (s == dySpinner) filter.dy.set(v);
+                    else if (s == sxSpinner) filter.scaleX.set(v);
+                    else if (s == sySpinner) filter.scaleY.set(v);
+                    else if (s == rotSpinner) filter.dRotation.set(v);
                 } else if (actor instanceof VisCheckBox cb) {
                     if (cb == flipXBox) filter.flipX(cb.isChecked());
                     else if (cb == flipYBox) filter.flipY(cb.isChecked());
@@ -95,11 +95,11 @@ public class TransFilterActor extends FilterActor {
     public void syncFromFilter() {
         suppressRefresh = true;
         TransFilter tf = (TransFilter) filter;
-        dxModel.setValue(tf.dx());
-        dyModel.setValue(tf.dy());
-        sxModel.setValue(tf.scaleX());
-        syModel.setValue(tf.scaleY());
-        rotModel.setValue(tf.dRotation());
+        dxModel.setValue(tf.dx.getFloat());
+        dyModel.setValue(tf.dy.getFloat());
+        sxModel.setValue(tf.scaleX.getFloat());
+        syModel.setValue(tf.scaleY.getFloat());
+        rotModel.setValue(tf.dRotation.getFloat());
         flipXBox.setChecked(tf.flipX());
         flipYBox.setChecked(tf.flipY());
         suppressRefresh = false;
@@ -113,9 +113,9 @@ public class TransFilterActor extends FilterActor {
             if (p != null && undoOldState != null) {
                 TransFilter tf = (TransFilter) filter;
                 UndoManager.TransFilterState newState = new UndoManager.TransFilterState(
-                    tf.dx(), tf.dy(),
-                    tf.scaleX(), tf.scaleY(),
-                    tf.dRotation(),
+                    tf.dx.getFloat(), tf.dy.getFloat(),
+                    tf.scaleX.getFloat(), tf.scaleY.getFloat(),
+                    tf.dRotation.getFloat(),
                     tf.flipX(), tf.flipY());
                 if (!undoOldState.equals(newState)) {
                     p.undoManager.record(new UndoManager.TransformFilterCommand(

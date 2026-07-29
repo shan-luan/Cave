@@ -35,4 +35,24 @@ public abstract class Filter<T> implements Serializable {
     public void invalidateDetailActor() {
         actor = null;
     }
+    public interface Val{
+        void set(double v);
+        double get();
+        default float getFloat(){
+            return (float) get();
+        };
+    }
+    public static class FixVal implements Val{
+        private double v;
+
+        @Override
+        public void set(double v) {
+            this.v=v;
+        }
+
+        @Override
+        public double get() {
+            return v;
+        }
+    }
 }

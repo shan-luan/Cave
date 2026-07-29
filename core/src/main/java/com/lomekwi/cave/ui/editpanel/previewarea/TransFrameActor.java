@@ -89,8 +89,8 @@ public class TransFrameActor extends Actor implements Selectable {
                 }
 
                 dragFilter = findOrCreateTransformFilter(source);
-                startFilterDx = dragFilter.dx();
-                startFilterDy = dragFilter.dy();
+                startFilterDx = dragFilter.dx.getFloat();
+                startFilterDy = dragFilter.dy.getFloat();
                 Actor p = getParent();
                 startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX();
                 startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY();
@@ -122,19 +122,19 @@ public class TransFrameActor extends Actor implements Selectable {
                     if (p != null) {
                         final TransFilter filter = dragFilter;
                         final float oldDx = startFilterDx, oldDy = startFilterDy;
-                        final float newDx = filter.dx(), newDy = filter.dy();
+                        final float newDx = filter.dx.getFloat(), newDy = filter.dy.getFloat();
                         p.undoManager.record(new UndoManager.UndoableCommand() {
                             @Override
                             public void undo() {
-                                filter.dx(oldDx);
-                                filter.dy(oldDy);
+                                filter.dx.set(oldDx);
+                                filter.dy.set(oldDy);
                                 if (filter.getActor() instanceof TransFilterActor ta) ta.syncFromFilter();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
                             @Override
                             public void redo() {
-                                filter.dx(newDx);
-                                filter.dy(newDy);
+                                filter.dx.set(newDx);
+                                filter.dy.set(newDy);
                                 if (filter.getActor() instanceof TransFilterActor ta) ta.syncFromFilter();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
@@ -271,11 +271,11 @@ public class TransFrameActor extends Actor implements Selectable {
         dragFilter = findOrCreateTransformFilter(source);
         gizmoStartW = getWidth();
         gizmoStartH = getHeight();
-        gizmoStartDx = dragFilter.dx();
-        gizmoStartDy = dragFilter.dy();
-        gizmoStartScaleX = dragFilter.scaleX();
-        gizmoStartScaleY = dragFilter.scaleY();
-        gizmoStartRotation = dragFilter.dRotation();
+        gizmoStartDx = dragFilter.dx.getFloat();
+        gizmoStartDy = dragFilter.dy.getFloat();
+        gizmoStartScaleX = dragFilter.scaleX.getFloat();
+        gizmoStartScaleY = dragFilter.scaleY.getFloat();
+        gizmoStartRotation = dragFilter.dRotation.getFloat();
         gizmoOldState = new UndoManager.TransFilterState(
             gizmoStartDx, gizmoStartDy,
             gizmoStartScaleX, gizmoStartScaleY,
@@ -401,8 +401,8 @@ public class TransFrameActor extends Actor implements Selectable {
             case ROTATE -> {}
         }
 
-        dragFilter.scaleX(newScaleX);
-        dragFilter.scaleY(newScaleY);
+        dragFilter.scaleX.set(newScaleX);
+        dragFilter.scaleY.set(newScaleY);
 
         float scaleChangeW = newScaleX / gizmoStartScaleX;
         float scaleChangeH = newScaleY / gizmoStartScaleY;
@@ -413,8 +413,8 @@ public class TransFrameActor extends Actor implements Selectable {
         float ddx = (compX * dragCos + compY * dragSin) / dragScaleX;
         float ddy = (-compX * dragSin + compY * dragCos) / dragScaleY;
 
-        dragFilter.dx(gizmoStartDx + ddx);
-        dragFilter.dy(gizmoStartDy + ddy);
+        dragFilter.dx.set(gizmoStartDx + ddx);
+        dragFilter.dy.set(gizmoStartDy + ddy);
 
         applyFilters();
         if (dragFilter.getActor() instanceof TransFilterActor ta) {
@@ -438,7 +438,7 @@ public class TransFrameActor extends Actor implements Selectable {
             delta = Math.round(delta / 15f) * 15f;
         }
 
-        dragFilter.dRotation(gizmoStartRotation + delta);
+        dragFilter.dRotation.set(gizmoStartRotation + delta);
         applyFilters();
         if (dragFilter.getActor() instanceof TransFilterActor ta) {
             ta.syncFromFilter();
@@ -450,9 +450,9 @@ public class TransFrameActor extends Actor implements Selectable {
         if (p != null && dragFilter != null && gizmoOldState != null) {
             TransFilter filter = dragFilter;
             UndoManager.TransFilterState newState = new UndoManager.TransFilterState(
-                filter.dx(), filter.dy(),
-                filter.scaleX(), filter.scaleY(),
-                filter.dRotation(),
+                filter.dx.getFloat(), filter.dy.getFloat(),
+                filter.scaleX.getFloat(), filter.scaleY.getFloat(),
+                filter.dRotation.getFloat(),
                 filter.flipX(), filter.flipY());
             if (!gizmoOldState.equals(newState)) {
                 p.undoManager.record(new UndoManager.TransformFilterCommand(
@@ -477,8 +477,8 @@ public class TransFrameActor extends Actor implements Selectable {
         dy += snapAdjust.y;
         float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
         float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
-        dragFilter.dx(startFilterDx + localDx);
-        dragFilter.dy(startFilterDy + localDy);
+        dragFilter.dx.set(startFilterDx + localDx);
+        dragFilter.dy.set(startFilterDy + localDy);
         applyFilters();
         if (dragFilter.getActor() instanceof TransFilterActor ta) {
             ta.syncFromFilter();
@@ -506,8 +506,8 @@ public class TransFrameActor extends Actor implements Selectable {
             for (Filter<?> f : source.getFilters()) {
                 if (f == dragFilter) break;
                 if (f instanceof TransFilter tf) {
-                    t.applyLocal(tf.dx(), tf.dy(), tf.scaleX(), tf.scaleY(),
-                        tf.dRotation(),
+                    t.applyLocal(tf.dx.getFloat(), tf.dy.getFloat(), tf.scaleX.getFloat(), tf.scaleY.getFloat(),
+                        tf.dRotation.getFloat(),
                         tf.flipX(), tf.flipY());
                 }
             }
