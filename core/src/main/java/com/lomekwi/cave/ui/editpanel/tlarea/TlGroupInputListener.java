@@ -32,6 +32,13 @@ public class TlGroupInputListener extends InputListener {
     }
 
     @Override
+    public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+        if (button == Input.Buttons.RIGHT && event.getTarget() == event.getListenerActor()) {
+            tlGroup.tlGroupMenu.showMenu(tlGroup.getStage(), event.getStageX(), event.getStageY());
+        }
+    }
+
+    @Override
     public void touchDragged(InputEvent event, float x, float y, int pointer) {
         if (tlGroup.marqueeActive) return;
         tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0));
