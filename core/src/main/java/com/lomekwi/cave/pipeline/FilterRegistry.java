@@ -1,5 +1,6 @@
 package com.lomekwi.cave.pipeline;
 
+import com.lomekwi.cave.pipeline.image.AlignFilter;
 import com.lomekwi.cave.pipeline.image.Transformable;
 import com.lomekwi.cave.pipeline.image.TransFilter;
 
@@ -14,6 +15,7 @@ public class FilterRegistry {
 
     static {
         register("变换", Transformable.class, s -> new TransFilter(s, 0, 0, 1, 1, 0, false, false));
+        register("对齐", Transformable.class, s -> new AlignFilter(s));
     }
 
     public static void register(String displayName, Class<?> targetType, Function<Source<?>, Filter<?>> factory) {

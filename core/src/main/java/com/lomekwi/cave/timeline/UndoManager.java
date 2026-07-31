@@ -3,10 +3,12 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.image.AlignFilter;
 import com.lomekwi.cave.pipeline.image.TransFilter;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
+import com.lomekwi.cave.ui.editpanel.detail.AlignFilterActor;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
@@ -295,6 +297,23 @@ public class UndoManager {
             filter.flipX(s.flipX);
             filter.flipY(s.flipY);
             filter.invalidateDetailActor();
+            postRefresh(filter.getSource());
+        }
+    }
+
+    public record AlignFilterCommand(AlignFilter filter, AlignFilter.HAlign oldH, AlignFilter.VAlign oldV,
+                                     AlignFilter.HAlign newH, AlignFilter.VAlign newV) implements UndoableCommand {
+        @Override
+        public void undo() {
+            filter.setAlign(oldH, oldV);
+            if (filter.getActor() instanceof AlignFilterActor aa) aa.syncFromFilter();
+            postRefresh(filter.getSource());
+        }
+
+        @Override
+        public void redo() {
+            filter.setAlign(newH, newV);
+            if (filter.getActor() instanceof AlignFilterActor aa) aa.syncFromFilter();
             postRefresh(filter.getSource());
         }
     }
