@@ -35,7 +35,7 @@ public abstract class Filter<T> implements Serializable {
     public void invalidateDetailActor() {
         actor = null;
     }
-    public interface Val{
+    public interface Val extends Serializable{
         void set(double v);
         double get();
         default float getFloat(){
