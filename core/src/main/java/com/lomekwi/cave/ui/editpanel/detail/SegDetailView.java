@@ -155,7 +155,7 @@ public class SegDetailView extends VisTable {
 
     private void appendSegmentInfo(Segment seg) {
         Source<?> source = seg.getSource();
-        content.add(source.getDetailActor()).growX().pad(4).row();
+        content.add(source.getSourceActor()).growX().pad(4).row();
         for (Filter<?> filter : source.getFilters()) {
             var actor = filter.getActor();
             if (actor != null) {

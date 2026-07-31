@@ -39,8 +39,8 @@ public class TransFrameActor extends Actor implements Selectable {
     private static final Matrix4 tmpMatrix = new Matrix4();
     private static final Matrix4 IDENTITY = new Matrix4().idt();
 
-    private final Frame frame;
-    private final Transformable transformable;
+    private Frame frame;
+    private Transformable transformable;
 
     private boolean selected;
 
@@ -83,8 +83,7 @@ public class TransFrameActor extends Actor implements Selectable {
     public <T extends Frame & Transformable> TransFrameActor(T frame) {
         this.frame = frame;
         this.transformable = frame;
-        addListener(new InputListener() {
-            @Override
+        addListener(new InputListener() {            @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button != 0 || pointer != 0) return false;
                 Source<?> source = frame.getSource();
@@ -188,6 +187,11 @@ public class TransFrameActor extends Actor implements Selectable {
             }
         });
     }
+    public <T extends Frame & Transformable> void rebind(T frame) {
+        this.frame = frame;
+        this.transformable = frame;
+    }
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);

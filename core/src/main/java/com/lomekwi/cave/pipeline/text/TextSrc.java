@@ -11,7 +11,9 @@ import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
 import com.lomekwi.cave.ui.editpanel.detail.TextSrcActor;
+import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor;
 
@@ -23,6 +25,7 @@ public class TextSrc extends Source<TextFrame> {
     private transient FontRes fontRes;
     private int fontSize = 48;
     private transient BitmapFont font;
+    private transient TransFrameActor actor;
     private volatile transient boolean initialized;
 
     @Serial
@@ -100,7 +103,12 @@ public class TextSrc extends Source<TextFrame> {
                 frame = new TextFrame(track, this);
                 frame.setFont(font);
                 frame.setTransform(new Transform(0, 0, 0));
-                frame.initActor();
+                if (actor == null) {
+                    actor = new TransFrameActor(frame);
+                } else {
+                    actor.rebind(frame);
+                }
+                frame.setActor(actor);
                 initialized = true;
                 cd.countDown();
             });
@@ -137,7 +145,7 @@ public class TextSrc extends Source<TextFrame> {
     }
 
     @Override
-    public Actor getDetailActor() {
+    public SourceActor getSourceActor() {
         return new TextSrcActor(this);
     }
 

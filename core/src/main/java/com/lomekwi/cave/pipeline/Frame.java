@@ -5,6 +5,7 @@ import com.lomekwi.cave.timeline.Track;
 public abstract class Frame implements AutoCloseable{
     public final Track track;
     public volatile long timestamp;
+    private volatile boolean closed;
     private final Source<?> source;
 
     public Frame(Track track) {
@@ -26,5 +27,11 @@ public abstract class Frame implements AutoCloseable{
         return this;
     }
     @Override
-    public void close() {}
+    public void close() {
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
 }

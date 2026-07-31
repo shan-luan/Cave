@@ -10,6 +10,8 @@ import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.ImgSrcActor;
+import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
+import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.ImgSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
@@ -19,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 public class ImgSrc extends Source<ImgFrame> {
     private ImgRes imgRes;
     private transient Texture texture;
+    private transient TransFrameActor actor;
     private volatile transient boolean initialized;
     @Serial
     private static final long serialVersionUID = 1L;
@@ -51,6 +54,12 @@ public class ImgSrc extends Source<ImgFrame> {
                 frame = new ImgFrame(track, this);
                 frame.setTexture(texture)
                     .setTransform(new Transform(0, 0, 0));
+                if (actor == null) {
+                    actor = new TransFrameActor(frame);
+                } else {
+                    actor.rebind(frame);
+                }
+                frame.setActor(actor);
                 initialized = true;
                 cd.countDown();
             });
@@ -98,7 +107,7 @@ public class ImgSrc extends Source<ImgFrame> {
     }
 
     @Override
-    public Actor getDetailActor() {
+    public SourceActor getSourceActor() {
         return new ImgSrcActor(this);
     }
 

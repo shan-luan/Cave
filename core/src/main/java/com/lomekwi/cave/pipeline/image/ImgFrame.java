@@ -56,7 +56,11 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     }
     public ImgFrame setTexture(Texture texture) {
         this.texture = texture;
-        actor = new TransFrameActor(this);
+        return this;
+    }
+
+    public ImgFrame setActor(TransFrameActor actor) {
+        this.actor = actor;
         return this;
     }
 
@@ -90,6 +94,7 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     }
     @Override
     public void close() {
+        super.close();
         if (actor != null && actor.getParent() == null) {
             Gdx.app.postRunnable(this::close);
         } else {

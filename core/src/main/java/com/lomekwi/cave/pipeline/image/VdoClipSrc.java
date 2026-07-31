@@ -9,7 +9,9 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
 import com.lomekwi.cave.ui.editpanel.detail.VdoClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor;
 
@@ -19,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 public class VdoClipSrc extends Source<ImgFrame> {
     private VdoRes vdoRes;
     private transient Texture texture;
+    private transient TransFrameActor actor;
     private volatile transient boolean initialized;
     @Serial
     private static final long serialVersionUID = 1L;
@@ -50,6 +53,12 @@ public class VdoClipSrc extends Source<ImgFrame> {
             frame = new ImgFrame(track, this);
             frame.setTexture(texture)
                 .setTransform(new Transform(0, 0, 0));
+            if (actor == null) {
+                actor = new TransFrameActor(frame);
+            } else {
+                actor.rebind(frame);
+            }
+            frame.setActor(actor);
             initialized = true;
             cd.countDown();
             });
@@ -91,7 +100,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
         this.vdoRes =src.vdoRes;
     }
     @Override
-    public Actor getDetailActor() {
+    public SourceActor getSourceActor() {
         return new VdoClipSrcActor(this);
     }
 

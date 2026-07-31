@@ -46,6 +46,7 @@ public class AudFrame extends Frame {
 
     @Override
     public void close() {
+        super.close();
         samples = null;
     }
 }

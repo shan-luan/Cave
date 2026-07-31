@@ -1,8 +1,8 @@
 package com.lomekwi.cave.pipeline;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
@@ -69,6 +69,6 @@ public abstract class Source<T extends Frame> implements Serializable {
     public abstract Class<? extends Frame> getFrameType();
     public void onDuplicate(Source<?> original){
     }
-    public abstract Actor getDetailActor();
+    public abstract SourceActor getSourceActor();
     public abstract SegActor createSegActor(Segment segment);
 }

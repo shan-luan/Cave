@@ -44,8 +44,8 @@ public class TextFrame extends Frame implements Transformable {
         version++;
     }
 
-    public void initActor() {
-        actor = new TransFrameActor(this);
+    public void setActor(TransFrameActor actor) {
+        this.actor = actor;
     }
 
     public TransFrameActor getActor() {

@@ -8,6 +8,7 @@ import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.AudClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
@@ -70,7 +71,7 @@ public class AudClipSrc extends Source<AudFrame> {
         this.audRes = src.audRes;
     }
     @Override
-    public Actor getDetailActor() {
+    public SourceActor getSourceActor() {
         return new AudClipSrcActor(this);
     }
 

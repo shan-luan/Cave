@@ -218,7 +218,7 @@ public class PreviewArea extends Group implements Focusable {
         canvas.setZIndex(0);
         int i = 0;
         for(Frame frame : frames){
-            if(frame == null) continue;
+            if(frame == null || frame.isClosed()) continue;
             var actor = getFrameActor(frame);
             if(actor != null && actor.getParent() == canvas){
                 actor.setZIndex(i);
