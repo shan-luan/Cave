@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 public class ImgFrame extends Frame implements Transformable,Renderable {
     private Transform transform;
     private ByteBuffer pixels;
+    private volatile boolean pixelsDirty;
     private Texture texture;
     private TransFrameActor actor;
     private int unpackRowLength;
@@ -48,6 +49,7 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
 
     public void setPixels(ByteBuffer pixels) {
         this.pixels = pixels;
+        pixelsDirty = true;
     }
     public Texture getTexture() {
         return texture;
@@ -67,7 +69,9 @@ public class ImgFrame extends Frame implements Transformable,Renderable {
     }
 
     public void upload() {
-        if(pixels != null) {
+        if (!pixelsDirty) return;
+        pixelsDirty = false;
+        if (pixels != null) {
             Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength);
             texture.bind();
             Gdx.gl.glTexSubImage2D(
