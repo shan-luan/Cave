@@ -7,12 +7,12 @@ import com.google.common.collect.Range;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.PopupMenu;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.pipeline.text.TextSrc;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSet;
-import com.lomekwi.cave.timeline.TextSeg;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.util.MimeType;
@@ -79,7 +79,7 @@ public class TlGroupMenu extends PopupMenu {
     }
 
     private void onAddText() {
-        TextSeg seg = new TextSeg();
+        Segment seg = new Segment(new TextSrc());
         seg.setOrigin(time);
         long duration = seg.getDuration();
         if (duration <= 0) return;

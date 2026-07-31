@@ -3,6 +3,7 @@ package com.lomekwi.cave.pipeline;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
+import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -69,4 +70,5 @@ public abstract class Source<T extends Frame> implements Serializable {
     public void onDuplicate(Source<?> original){
     }
     public abstract Actor getDetailActor();
+    public abstract SegActor createSegActor(Segment segment);
 }

@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.lomekwi.cave.pipeline.audio.AudClipSrc;
 import com.lomekwi.cave.resource.media.AudRes;
-import com.lomekwi.cave.timeline.AudSeg;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.ui.Colors;
 
@@ -31,7 +31,7 @@ public class AudSegActor extends SegActor {
     protected void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX) {
         super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX);
 
-        AudRes res = ((AudSeg) getSegment()).getAudRes();
+        AudRes res = ((AudClipSrc) getSegment().getSource()).getAudRes();
         AudRes.Waveformer wf = res.waveformer();
         Texture waveTex = wf.waveTex;
         if (waveTex == null) return;

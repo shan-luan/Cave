@@ -15,7 +15,7 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
 
-public abstract class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable {
+public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
@@ -58,10 +58,10 @@ public abstract class Segment implements Serializable, Iterable<Frame>, Duplicat
     public void offsetOrigin(long offset) {
         this.origin += offset;
     }
-    protected Segment(Source<?> source) {
+    public Segment(Source<?> source) {
         this.source = source;
         source.setSegment(this);
-        actor = setupActor();
+        actor = source.createSegActor(this);
     }
     protected void setTrack(Track track) {
         this.track = track;
@@ -108,13 +108,12 @@ public abstract class Segment implements Serializable, Iterable<Frame>, Duplicat
         this.range = range;
         entry = new AbstractMap.SimpleImmutableEntry<>(range,this);
     }
-    protected abstract SegActor setupActor();
 
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         source.setSegment(this);
-        actor = setupActor();
+        actor = source.createSegActor(this);
     }
     @Override
     public Iterator<Frame> iterator() {

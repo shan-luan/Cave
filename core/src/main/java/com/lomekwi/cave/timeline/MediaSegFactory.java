@@ -2,6 +2,10 @@ package com.lomekwi.cave.timeline;
 
 
 import com.lomekwi.cave.project.Project;
+import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.audio.AudClipSrc;
+import com.lomekwi.cave.pipeline.image.ImgSrc;
+import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
@@ -25,7 +29,7 @@ import java.util.function.Function;
 
 public class MediaSegFactory implements Serializable {
     private transient Project project;
-    private transient Map<Class<? extends Resource>, Function<? extends Resource,Segment>> map;
+    private transient Map<Class<? extends Resource>, Function<? extends Resource, Source<?>>> map;
     @Serial
     private static final long serialVersionUID = 1L;
     public MediaSegFactory(Project project){
@@ -39,11 +43,11 @@ public class MediaSegFactory implements Serializable {
     }
 
     private void initDefaultMappings() {
-        register(VdoRes.class, source -> new VdoSeg((VdoRes) source));
-        register(AudRes.class, source -> new AudSeg((AudRes) source));
-        register(ImgRes.class, source -> new ImgSeg((ImgRes) source));
+        register(VdoRes.class, source -> new VdoClipSrc((VdoRes) source));
+        register(AudRes.class, source -> new AudClipSrc((AudRes) source));
+        register(ImgRes.class, source -> new ImgSrc((ImgRes) source));
     }
-    public void register(Class<? extends Resource> clazz, Function<? extends Resource,Segment> constructor){
+    public void register(Class<? extends Resource> clazz, Function<? extends Resource, Source<?>> constructor){
         map.put(clazz,constructor);
     }
     public void unregister(Class<? extends Resource> clazz){
@@ -72,7 +76,7 @@ public class MediaSegFactory implements Serializable {
 
         List<Segment> segments = new ArrayList<>();
         for (Resource resource : existing) {
-            segments.add(applyUnchecked(map.get(resource.getClass()), resource));
+            segments.add(new Segment(applyUnchecked(map.get(resource.getClass()), resource)));
         }
         return segments;
     }
@@ -84,8 +88,8 @@ public class MediaSegFactory implements Serializable {
         return getAll(file).get(0);
     }
     @SuppressWarnings("unchecked")
-    private <R extends Resource> Segment applyUnchecked(Function<? extends Resource, Segment> fn, R resource) {
-        return ((Function<R, Segment>) fn).apply(resource);
+    private <R extends Resource> Source<?> applyUnchecked(Function<? extends Resource, Source<?>> fn, R resource) {
+        return ((Function<R, Source<?>>) fn).apply(resource);
     }
 
     @Serial

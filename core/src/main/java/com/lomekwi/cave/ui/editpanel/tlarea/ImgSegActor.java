@@ -5,9 +5,9 @@ import static com.lomekwi.cave.util.Units.niceScale;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.pipeline.image.ImgSrc;
 import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.ui.Colors;
-import com.lomekwi.cave.timeline.ImgSeg;
 import com.lomekwi.cave.timeline.Segment;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
@@ -29,7 +29,7 @@ public class ImgSegActor extends SegActor {
         sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT);
 
         if (segDuration > 0) {
-            ImgRes res = ((ImgSeg) getSegment()).getImgRes();
+            ImgRes res = ((ImgSrc) seg.getSource()).getImgRes();
 
             float pxPerUs = getWidth() / (float) segDuration;
             float aspect = (float) res.getWidth() / res.getHeight();

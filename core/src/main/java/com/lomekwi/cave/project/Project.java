@@ -28,7 +28,7 @@ import java.util.concurrent.Future;
 
 public class Project implements Serializable, AutoCloseable {
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
     protected transient Path savePath;
     public final Timeline timeline;
     public transient Playhead playhead;

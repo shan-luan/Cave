@@ -5,10 +5,10 @@ import static com.lomekwi.cave.util.Units.niceScale;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.timeline.Segment;
-import com.lomekwi.cave.timeline.VdoSeg;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 public class VdoSegActor extends SegActor {
@@ -29,7 +29,7 @@ public class VdoSegActor extends SegActor {
         sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT);
 
         if (segDuration > 0) {
-            VdoRes res = ((VdoSeg) getSegment()).getVdoRes();
+            VdoRes res = ((VdoClipSrc) seg.getSource()).getVdoRes();
 
             float pxPerUs = getWidth() / (float) segDuration;
             float aspect = (float) res.getWidth() / res.getHeight();

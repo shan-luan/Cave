@@ -5,8 +5,11 @@ import com.lomekwi.cave.app.AppAudioOut;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.AudRes;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.AudClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
 
@@ -69,5 +72,10 @@ public class AudClipSrc extends Source<AudFrame> {
     @Override
     public Actor getDetailActor() {
         return new AudClipSrcActor(this);
+    }
+
+    @Override
+    public SegActor createSegActor(Segment segment) {
+        return new AudSegActor(segment);
     }
 }

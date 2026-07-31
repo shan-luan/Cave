@@ -11,12 +11,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Matrix4;
 import com.lomekwi.cave.pipeline.Frame;
+import com.lomekwi.cave.pipeline.audio.AudClipSrc;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.pipeline.image.Renderable;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
-import com.lomekwi.cave.timeline.AudSeg;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Timeline;
 import com.lomekwi.cave.timeline.Track;
@@ -115,7 +115,7 @@ public class VideoExportTask implements Task{
 
     private void exportAudio() throws Exception {
         Track[] tracks = timeline.getTracks().toArray(new Track[0]);
-        AudSeg[] active = new AudSeg[tracks.length];
+        Segment[] active = new Segment[tracks.length];
         float[] mixBuf = new float[AUDIO_FRAME_SIZE];
 
         for (long audioT = 0; audioT < timeline.getLength(); audioT += AUDIO_FRAME_DURATION) {
@@ -124,13 +124,13 @@ public class VideoExportTask implements Task{
             for (int i = 0; i < tracks.length; i++) {
                 if (tracks[i].getLength() == 0) continue;
 
-                AudSeg seg = active[i];
+                Segment seg = active[i];
                 if (seg == null || !seg.getRange().contains(audioT)) {
                     var entry = tracks[i].getEntry(audioT);
                     seg = null;
-                    if (entry != null && entry.getValue() instanceof AudSeg s) {
-                        s.sync(audioT);
-                        seg = s;
+                    if (entry != null && entry.getValue().getSource() instanceof AudClipSrc) {
+                        seg = entry.getValue();
+                        seg.sync(audioT);
                     }
                     active[i] = seg;
                 }

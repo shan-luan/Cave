@@ -7,8 +7,11 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.VdoClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor;
 
 import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
@@ -90,5 +93,10 @@ public class VdoClipSrc extends Source<ImgFrame> {
     @Override
     public Actor getDetailActor() {
         return new VdoClipSrcActor(this);
+    }
+
+    @Override
+    public SegActor createSegActor(Segment segment) {
+        return new VdoSegActor(segment);
     }
 }

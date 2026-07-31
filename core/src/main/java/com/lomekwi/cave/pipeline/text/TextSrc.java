@@ -9,8 +9,11 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
+import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.detail.TextSrcActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
+import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor;
 
 import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
@@ -136,6 +139,11 @@ public class TextSrc extends Source<TextFrame> {
     @Override
     public Actor getDetailActor() {
         return new TextSrcActor(this);
+    }
+
+    @Override
+    public SegActor createSegActor(Segment segment) {
+        return new TextSegActor(segment);
     }
 
     @Override
