@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -66,6 +67,13 @@ public class TransFrameActor extends Actor implements Selectable {
     private static final Vector2 tmp1 = new Vector2();
     private static final Vector2 tmp2 = new Vector2();
     private static final Vector2 tmp3 = new Vector2();
+    private static final Vector2 hitCorner1 = new Vector2();
+    private static final Vector2 hitCorner2 = new Vector2();
+    private static final Vector2 hitCorner3 = new Vector2();
+    private static final Vector2 hitCorner4 = new Vector2();
+    private static final Rectangle actorBounds = new Rectangle();
+    private static final Rectangle previewBounds = new Rectangle();
+    private static final Rectangle intersectBounds = new Rectangle();
 
     private static final float SNAP_THRESHOLD_SCREEN = 10f;
     private float[] myStartBBox;
@@ -166,6 +174,14 @@ public class TransFrameActor extends Actor implements Selectable {
             }
 
             @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (gizmo.hoveredHandle != null) {
+                    gizmo.hoveredHandle = null;
+                    gizmo.setCursor(null);
+                }
+            }
+
+            @Override
             public boolean mouseMoved(InputEvent event, float x, float y) {
                 gizmo.updateCursor(event.getStageX(), event.getStageY());
                 return false;
@@ -213,23 +229,68 @@ public class TransFrameActor extends Actor implements Selectable {
     @Override
     public Actor hit(float x, float y, boolean touchable) {
         if (!touchable || !isTouchable()) return null;
-        if (!selected) {
-            return (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) ? this : null;
+        return insidePreviewHitRegion(x, y) ? this : null;
+    }
+
+    /**
+     * 判断事件点(x, y)是否落在「本Actor在stage坐标下的AABB 与 预览区域AABB」的交集内。
+     * 仅处理交集内的事件，避免 TransFrameActor 抢夺预览区域之外的事件。
+     */
+    private boolean insidePreviewHitRegion(float x, float y) {
+        float w = getWidth(), h = getHeight();
+
+        float handleOff = 0;
+        if (selected) {
+            handleOff = ROTATE_OFFSET_LOCAL;
+            Actor p = getParent();
+            if (p != null) {
+                float ps = Math.min(Math.abs(p.getScaleX()), Math.abs(p.getScaleY()));
+                if (ps > 0.0001f) handleOff /= ps;
+            }
         }
-        float handleOff = ROTATE_OFFSET_LOCAL;
-        Actor p = getParent();
-        if (p != null) {
-            float ps = Math.min(Math.abs(p.getScaleX()), Math.abs(p.getScaleY()));
-            if (ps > 0.0001f) handleOff /= ps;
-        }
-        float extTop = getHeight() + handleOff;
-        float extBottom = -handleOff;
+
         float extLeft = -handleOff;
-        float extRight = getWidth() + handleOff;
-        if (x >= extLeft && x < extRight && y >= extBottom && y < extTop) {
-            return this;
-        }
-        return null;
+        float extRight = w + handleOff;
+        float extBottom = -handleOff;
+        float extTop = h + handleOff;
+        if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false;
+
+        Actor parent = getParent();
+        Actor grand = parent != null ? parent.getParent() : null;
+        if (!(grand instanceof PreviewArea preview)) return true;
+
+        hitCorner1.set(extLeft, extBottom);
+        hitCorner2.set(extRight, extBottom);
+        hitCorner3.set(extLeft, extTop);
+        hitCorner4.set(extRight, extTop);
+        localToStageCoordinates(hitCorner1);
+        localToStageCoordinates(hitCorner2);
+        localToStageCoordinates(hitCorner3);
+        localToStageCoordinates(hitCorner4);
+        actorBounds.set(Math.min(Math.min(hitCorner1.x, hitCorner2.x), Math.min(hitCorner3.x, hitCorner4.x)),
+            Math.min(Math.min(hitCorner1.y, hitCorner2.y), Math.min(hitCorner3.y, hitCorner4.y)),
+            Math.max(Math.max(hitCorner1.x, hitCorner2.x), Math.max(hitCorner3.x, hitCorner4.x)) - Math.min(Math.min(hitCorner1.x, hitCorner2.x), Math.min(hitCorner3.x, hitCorner4.x)),
+            Math.max(Math.max(hitCorner1.y, hitCorner2.y), Math.max(hitCorner3.y, hitCorner4.y)) - Math.min(Math.min(hitCorner1.y, hitCorner2.y), Math.min(hitCorner3.y, hitCorner4.y)));
+
+        hitCorner1.set(0, 0);
+        hitCorner2.set(preview.getWidth(), preview.getHeight());
+        preview.localToStageCoordinates(hitCorner1);
+        preview.localToStageCoordinates(hitCorner2);
+        previewBounds.set(Math.min(hitCorner1.x, hitCorner2.x),
+            Math.min(hitCorner1.y, hitCorner2.y),
+            Math.abs(hitCorner2.x - hitCorner1.x),
+            Math.abs(hitCorner2.y - hitCorner1.y));
+
+        intersectBounds.set(actorBounds);
+        intersectBounds.x = Math.max(actorBounds.x, previewBounds.x);
+        intersectBounds.y = Math.max(actorBounds.y, previewBounds.y);
+        intersectBounds.width = Math.min(actorBounds.x + actorBounds.width, previewBounds.x + previewBounds.width) - intersectBounds.x;
+        intersectBounds.height = Math.min(actorBounds.y + actorBounds.height, previewBounds.y + previewBounds.height) - intersectBounds.y;
+        if (intersectBounds.width <= 0 || intersectBounds.height <= 0) return false;
+
+        hitCorner1.set(x, y);
+        localToStageCoordinates(hitCorner1);
+        return intersectBounds.contains(hitCorner1.x, hitCorner1.y);
     }
 
     private void localToParent(float lx, float ly, Vector2 out) {
