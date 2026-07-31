@@ -15,7 +15,7 @@ import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
 
-public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable {
+public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable, Comparable<Segment> {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
@@ -99,6 +99,24 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
 
     public Range<Long> getRange() {
         return range;
+    }
+
+    /**
+     * 按轨道索引、再按片段起始时间排序（轨道越小越靠前，起始时间越小越靠前）
+     */
+    @Override
+    public int compareTo(Segment o) {
+        int c = Integer.compare(trackIndex(), o.trackIndex());
+        if (c != 0) return c;
+        return Long.compare(rangeStart(), o.rangeStart());
+    }
+
+    private int trackIndex() {
+        return track == null ? Integer.MAX_VALUE : track.index;
+    }
+
+    private long rangeStart() {
+        return range == null ? Long.MAX_VALUE : range.lowerEndpoint();
     }
     public AbstractMap.Entry<Range<Long>, Segment> getEntry() {
         return entry;

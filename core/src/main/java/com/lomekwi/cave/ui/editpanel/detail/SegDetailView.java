@@ -20,6 +20,9 @@ import com.lomekwi.cave.timeline.SegmentSetSelectedEvent;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SegDetailView extends VisTable {
     private final VisTable content;
     private Segment currentSeg;
@@ -71,8 +74,10 @@ public class SegDetailView extends VisTable {
         content.clear();
         content.setFillParent(false);
         content.top();
+        List<Segment> segs = new ArrayList<>(set.getSegments());
+        segs.sort(null);
         boolean first = true;
-        for (Segment seg : set.getSegments()) {
+        for (Segment seg : segs) {
             if (!first) {
                 content.row();
             }
