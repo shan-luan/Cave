@@ -23,6 +23,7 @@ public class TextFrame extends Frame implements Transformable {
     private volatile boolean glyphsMissing;
     private volatile float cachedWidth;
     private volatile float cachedHeight;
+    private volatile float cachedCenterY;
     private volatile int version;
     private int layoutVersion;
 
@@ -95,7 +96,7 @@ public class TextFrame extends Frame implements Transformable {
         batch.setTransformMatrix(tmpMatrix);
         font.setColor(WHITE);
         try {
-            font.draw(batch, layout, -w / 2, -font.getDescent());
+            font.draw(batch, layout, -w / 2, -cachedCenterY);
         } catch (NullPointerException e) {
             glyphsMissing = true;
         }
@@ -109,6 +110,7 @@ public class TextFrame extends Frame implements Transformable {
             glyphsMissing = true;
             cachedWidth = 0;
             cachedHeight = 0;
+            cachedCenterY = 0;
             return;
         }
         for (int i = 0; i < t.length(); i++) {
@@ -118,6 +120,7 @@ public class TextFrame extends Frame implements Transformable {
                 glyphsMissing = true;
                 cachedWidth = 0;
                 cachedHeight = 0;
+                cachedCenterY = 0;
                 return;
             }
         }
@@ -125,6 +128,23 @@ public class TextFrame extends Frame implements Transformable {
         layout.setText(f, t);
         glyphsMissing = false;
         cachedWidth = layout.width;
-        cachedHeight = layout.height;
+
+        float minBottom = Float.MAX_VALUE;
+        float maxTop = -Float.MAX_VALUE;
+        for (var run : layout.runs) {
+            for (var glyph : run.glyphs) {
+                float bottom = run.y + glyph.yoffset;
+                float top = bottom + glyph.height;
+                if (bottom < minBottom) minBottom = bottom;
+                if (top > maxTop) maxTop = top;
+            }
+        }
+        if (minBottom > maxTop) {
+            cachedHeight = layout.height;
+            cachedCenterY = font.getAscent();
+        } else {
+            cachedHeight = maxTop - minBottom;
+            cachedCenterY = font.getAscent() + (maxTop + minBottom) / 2f;
+        }
     }
 }
