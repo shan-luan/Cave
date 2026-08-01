@@ -7,8 +7,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kotcrab.vis.ui.widget.VisTextArea;
 import com.kotcrab.vis.ui.widget.VisTextButton;
-import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.VisValidatableTextField;
 import com.kotcrab.vis.ui.widget.spinner.IntSpinnerModel;
 import com.kotcrab.vis.ui.widget.spinner.Spinner;
@@ -26,9 +26,10 @@ public class TextSrcActor extends SourceActor {
         super(src.getDisplayName());
         VisLabel label = new VisLabel(i18n("文本: "));
         add(label).pad(4).left();
-        VisTextField textField = new VisTextField(src.getText());
-        add(textField).growX().pad(4).row();
-        textField.setTextFieldListener((field, c) -> {
+        VisTextArea textArea = new VisTextArea(src.getText());
+        textArea.setPrefRows(3);
+        add(textArea).growX().pad(4).row();
+        textArea.setTextFieldListener((field, c) -> {
             src.setText(field.getText());
             postRefresh(src);
         });

@@ -112,7 +112,9 @@ public class TextFrame extends Frame implements Transformable {
             return;
         }
         for (int i = 0; i < t.length(); i++) {
-            if (f.getData().getGlyph(t.charAt(i)) == null) {
+            char c = t.charAt(i);
+            if (c == ' ' || c == '\n' || c == '\r' || c == '\t') continue;
+            if (f.getData().getGlyph(c) == null) {
                 glyphsMissing = true;
                 cachedWidth = 0;
                 cachedHeight = 0;

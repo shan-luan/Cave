@@ -15,6 +15,9 @@ public class TextSegActor extends SegActor {
     public void drawContent(Batch batch, float parentAlpha, float visibleStartX, float visibleEndX) {
         super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX);
         String text = ((TextSrc) getSegment().getSource()).getText();
+        if (text != null && text.indexOf('\n') >= 0) {
+            text = text.substring(0, text.indexOf('\n'));
+        }
         if (text != null && !text.isEmpty()) {
             var font = VisUI.getSkin().getFont("default-font");
             float textY = getY() + getHeight() / 2f + font.getCapHeight() / 2f;
