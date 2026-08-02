@@ -135,7 +135,7 @@ public class TextSrc extends Source<TextFrame> {
     }
 
     @Override
-    public Class<? extends Frame> getFrameType() {
+    public Class<TextFrame> getFrameType() {
         return TextFrame.class;
     }
 

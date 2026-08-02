@@ -9,7 +9,6 @@ import com.kotcrab.vis.ui.widget.PopupMenu;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.text.TextSrc;
 import com.lomekwi.cave.project.Project;
-import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSet;
@@ -59,7 +58,7 @@ public class TlGroupMenu extends PopupMenu {
         } else {
             conf.nameFilter = (dir, name) -> {
                 String mime = MimeType.detectMimeType(new File(dir, name));
-                return mime != null && MediaFactory.isSupported(mime);
+                return mime != null && App.mediaFactory.isSupported(mime);
             };
         }
         App.fileChooser.chooseFile(conf, new NativeFileChooserCallback() {

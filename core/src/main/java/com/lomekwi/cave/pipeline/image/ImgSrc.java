@@ -91,7 +91,7 @@ public class ImgSrc extends Source<ImgFrame> {
     }
 
     @Override
-    public Class<? extends Frame> getFrameType() {
+    public Class<ImgFrame> getFrameType() {
         return ImgFrame.class;
     }
 

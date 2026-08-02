@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 
 import com.google.common.collect.Range;
 
-import com.lomekwi.cave.resource.media.MediaFactory;
+import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.util.MimeType;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
@@ -33,7 +33,7 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
             return false;
         }
         String mimeType = MimeType.detectMimeType(file);
-        return MediaFactory.isSupported(mimeType);
+        return App.mediaFactory.isSupported(mimeType);
     }
 
     @Override

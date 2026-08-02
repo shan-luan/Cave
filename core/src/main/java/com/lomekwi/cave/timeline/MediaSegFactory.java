@@ -7,9 +7,9 @@ import com.lomekwi.cave.pipeline.audio.AudClipSrc;
 import com.lomekwi.cave.pipeline.image.ImgSrc;
 import com.lomekwi.cave.pipeline.image.VdoClipSrc;
 import com.lomekwi.cave.resource.Resource;
+import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
-import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.resource.media.MedRes;
 import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.resource.media.VdoRes;
@@ -67,7 +67,7 @@ public class MediaSegFactory implements Serializable {
                 throw new IOException("无法检测文件MIME类型: " + file.getName());
             }
 
-            for (MedRes medRes : MediaFactory.createAll(mimeType, file.getPath())) {
+            for (MedRes medRes : App.mediaFactory.createAll(mimeType, file.getPath())) {
                 project.resources.put(file, medRes);
                 project.projEventBus.post(new MediaCreatedEvent(file, medRes));
             }

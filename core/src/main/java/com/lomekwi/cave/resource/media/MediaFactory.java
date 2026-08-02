@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public final class MediaFactory {
-    private MediaFactory(){
-    }
-    private static final Map<String, Function<String, MedRes>> map = new HashMap<>();
-    static {
+public class MediaFactory {
+    private final Map<String, Function<String, MedRes>> map = new HashMap<>();
+
+    public MediaFactory() {
         map.put("video/*", VdoRes::new);
         map.put("audio/*", AudRes::new);
         map.put("image/*", ImgRes::new);
     }
-    public static MedRes create(String mimeType, String path){
+
+    public MedRes create(String mimeType, String path){
         Function<String, MedRes> constructor = findConstructor(mimeType);
         if (constructor == null) {
             throw new IllegalArgumentException("Unsupported mime type: " + mimeType);
@@ -30,7 +30,7 @@ public final class MediaFactory {
      * 为一个文件创建所有可用的媒体资源。
      * 视频文件如果包含音频流，会额外创建 AudRes。
      */
-    public static List<MedRes> createAll(String mimeType, String path) {
+    public List<MedRes> createAll(String mimeType, String path) {
         List<MedRes> results = new ArrayList<>();
 
         String typeWildcard = MimeType.getTypeWildcard(mimeType);
@@ -63,7 +63,7 @@ public final class MediaFactory {
         }
     }
 
-    private static Function<String, MedRes> findConstructor(String mimeType) {
+    private Function<String, MedRes> findConstructor(String mimeType) {
         Function<String, MedRes> constructor = map.get(mimeType);
         if (constructor != null) {
             return constructor;
@@ -72,14 +72,14 @@ public final class MediaFactory {
         String typeWildcard = MimeType.getTypeWildcard(mimeType);
         return map.get(typeWildcard);
     }
-    public static boolean isSupported(String mimeType){
+    public boolean isSupported(String mimeType){
         if (mimeType == null) return false;
         return findConstructor(mimeType) != null;
     }
-    public static void register(String mimeType, Function<String, MedRes> constructor){
+    public void register(String mimeType, Function<String, MedRes> constructor){
         map.put(mimeType, constructor);
     }
-    public static void unregister(String mimeType){
+    public void unregister(String mimeType){
         map.remove(mimeType);
     }
 }

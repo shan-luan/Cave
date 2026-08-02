@@ -58,7 +58,7 @@ public class AudClipSrc extends Source<AudFrame> {
         return audRes.getDuration();
     }
     @Override
-    public Class<? extends Frame> getFrameType() {
+    public Class<AudFrame> getFrameType() {
         return AudFrame.class;
     }
     @Override

@@ -66,7 +66,7 @@ public abstract class Source<T extends Frame> implements Serializable {
     /** 媒体源的总时长（微秒） */
     public abstract long getDuration();
     public abstract String getDisplayName();
-    public abstract Class<? extends Frame> getFrameType();
+    public abstract Class<T> getFrameType();
     public void onDuplicate(Source<?> original){
     }
     public abstract SourceActor getSourceActor();

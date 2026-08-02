@@ -8,6 +8,10 @@ import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
 public class TransFilter extends Filter<Transformable> {
     public Filter.Val dx, dy, scaleX, scaleY, dRotation;
     private boolean flipX, flipY;
+public TransFilter(Source<?> source) {
+        this(source, 0, 0, 1, 1, 0, false, false);
+    }
+
     public TransFilter(Source<?> source, float dx, float dy, float scaleX, float scaleY, float dRotation, boolean flipX, boolean flipY) {
         super(source);
         this.dx = new Filter.FixVal(); this.dx.set(dx);

@@ -9,7 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.kotcrab.vis.ui.widget.VisLabel;
 
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.resource.media.MediaFactory;
 import com.lomekwi.cave.util.MimeType;
 
 import java.io.File;
@@ -32,7 +31,7 @@ public class FileTreeNode extends Tree.Node<FileTreeNode, File, VisLabel> {
 
         if (file != null && file.isFile()) {
             String mimeType = MimeType.detectMimeType(file);
-            if (!MediaFactory.isSupported(mimeType)) {
+            if (!App.mediaFactory.isSupported(mimeType)) {
                 getActor().setColor(Color.GRAY);
             }
         }

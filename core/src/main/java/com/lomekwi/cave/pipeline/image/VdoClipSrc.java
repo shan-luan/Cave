@@ -87,7 +87,7 @@ public class VdoClipSrc extends Source<ImgFrame> {
         return vdoRes.getDuration();
     }
     @Override
-    public Class<? extends Frame> getFrameType() {
+    public Class<ImgFrame> getFrameType() {
         return ImgFrame.class;
     }
     @Override

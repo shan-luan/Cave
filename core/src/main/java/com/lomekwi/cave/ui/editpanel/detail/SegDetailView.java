@@ -18,7 +18,6 @@ import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.lomekwi.cave.pipeline.Filter;
-import com.lomekwi.cave.pipeline.FilterRegistry;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSet;
@@ -137,13 +136,13 @@ public class SegDetailView extends VisTable {
         }
         VisTextButton addBtn = new VisTextButton(i18n("+添加滤镜"));
         PopupMenu filterMenu = new PopupMenu();
-        int compatibleCount = FilterRegistry.getCompatibleCount(source);
+        int compatibleCount = App.filterRegistry.getCompatibleCount(source);
         for (int fi = 0; fi < compatibleCount; fi++) {
             final int idx = fi;
-            filterMenu.addItem(new MenuItem(FilterRegistry.getCompatibleName(source, fi), new ChangeListener() {
+            Filter<?> newFilter = App.filterRegistry.createCompatible(source, idx);
+            filterMenu.addItem(new MenuItem(newFilter.getName(), new ChangeListener() {
                 @Override
                 public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                    Filter<?> newFilter = FilterRegistry.createCompatible(source, idx);
                     source.getFilters().add((Filter) newFilter);
                     var p = App.root.getFrontendProject();
                     if (p != null) p.undoManager.record(new UndoManager.AddFilterCommand(source, newFilter));
