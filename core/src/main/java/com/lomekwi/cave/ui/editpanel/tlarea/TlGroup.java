@@ -123,6 +123,7 @@ public class TlGroup extends Group implements Focusable {
         }
 
         if (dirty) {
+            dragHandler.beginCommit();
             clearChildren(false);
 
             var visibleRange = view.visibleRange();
@@ -171,6 +172,7 @@ public class TlGroup extends Group implements Focusable {
                 }
             }
 
+            dragHandler.endCommit();
             dirty = false;
         }
     }
@@ -617,6 +619,30 @@ class SegDragHandler {
         private long dragOldDuration;
         private Track dragOldTrack;
 
+        // 重建循环中，对被迭代的轨道进行结构变更（remove/add/resize/move）会触发
+        // TreeRangeMap 的迭代器产生 ConcurrentModificationException。因此拖拽期间的
+        // 模型变更先推迟到本帧迭代完成后再应用，避免同一线程上的变更破坏迭代。
+        private boolean committing;
+        private final @NonNull ArrayList<Runnable> deferredMutations = new ArrayList<>();
+
+        private void applyMutation(Runnable r) {
+            if (committing) {
+                deferredMutations.add(r);
+            } else {
+                r.run();
+            }
+        }
+
+        void beginCommit() {
+            committing = true;
+        }
+
+        void endCommit() {
+            committing = false;
+            for (Runnable r : deferredMutations) r.run();
+            deferredMutations.clear();
+        }
+
         // 组拖拽状态
         private List<Segment> groupMembers;
         private long[] groupOrigStarts;
@@ -665,7 +691,11 @@ class SegDragHandler {
 
                     actor.setX(target);
                     actor.setWidth(upper - target);
-                    timeline.resize(t, e, nr.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                    final Range<Long> refR = nr;
+                    final Track refT = t;
+                    final var refE = e;
+                    applyMutation(() ->
+                        timeline.resize(refT, refE, refR.lowerEndpoint(), refR.upperEndpoint() - refR.lowerEndpoint()));
                     break;
                 }
                 case BEHIND: {
@@ -693,7 +723,11 @@ class SegDragHandler {
                     }
 
                     actor.setWidth(newWidth);
-                    timeline.resize(t, e, r.lowerEndpoint(), nr.upperEndpoint() - nr.lowerEndpoint());
+                    final Range<Long> refR = nr;
+                    final Track refT = t;
+                    final var refE = e;
+                    applyMutation(() ->
+                        timeline.resize(refT, refE, refR.lowerEndpoint(), refR.upperEndpoint() - refR.lowerEndpoint()));
                     break;
                 }
                 case MIDDLE: {
@@ -778,8 +812,13 @@ class SegDragHandler {
 
                     if (canMove) {
                         long segmentStart = r.lowerEndpoint();
-                        timeline.move(t, newTrack, e, target, duration);
-                        e.getValue().offsetOrigin(target - segmentStart);
+                        final Track refT = t;
+                        final var refE = e;
+                        final long tgt = target;
+                        applyMutation(() -> {
+                            timeline.move(refT, newTrack, refE, tgt, duration);
+                            refE.getValue().offsetOrigin(tgt - segmentStart);
+                        });
                     }
 
                     actor.toFront();
@@ -955,21 +994,25 @@ class SegDragHandler {
             }
 
             if (canMove) {
-                long[] prevStarts = new long[n];
-                Track[] prevTracks = new Track[n];
-                for (int i = 0; i < n; i++) {
-                    Segment ms = groupMembers.get(i);
-                    var r = ms.getRange();
-                    prevStarts[i] = r.lowerEndpoint();
-                    prevTracks[i] = ms.getTrack();
-                    timeline.remove(prevTracks[i], Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()));
-                }
-
-                for (int i = 0; i < n; i++) {
-                    Segment ms = groupMembers.get(i);
-                    timeline.add(newTracks[i], ms, newStarts[i], groupOrigDurations[i]);
-                    ms.offsetOrigin(newStarts[i] - prevStarts[i]);
-                }
+                final long[] prevStarts = new long[n];
+                final Track[] prevTracks = new Track[n];
+                final long[] nStarts = newStarts;
+                final Track[] nTracks = newTracks;
+                final long[] nDurations = groupOrigDurations;
+                applyMutation(() -> {
+                    for (int i = 0; i < groupMembers.size(); i++) {
+                        Segment ms2 = groupMembers.get(i);
+                        var r = ms2.getRange();
+                        prevStarts[i] = r.lowerEndpoint();
+                        prevTracks[i] = ms2.getTrack();
+                        timeline.remove(prevTracks[i], Range.closedOpen(prevStarts[i], r.upperEndpoint()));
+                    }
+                    for (int i = 0; i < groupMembers.size(); i++) {
+                        Segment ms2 = groupMembers.get(i);
+                        timeline.add(nTracks[i], ms2, nStarts[i], nDurations[i]);
+                        ms2.offsetOrigin(nStarts[i] - prevStarts[i]);
+                    }
+                });
             }
 
             for (int i = 0; i < n; i++) {
@@ -1038,18 +1081,28 @@ class SegDragHandler {
                 }
             }
 
-            for (int i = 0; i < n; i++) {
-                Segment ms = groupMembers.get(i);
-                var r = ms.getRange();
-                timeline.remove(ms.getTrack(), Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()));
-            }
+            final long[] fNewStarts = newStarts;
+            final long[] fOldEnds = new long[n];
+            for (int i = 0; i < n; i++) fOldEnds[i] = groupOrigStarts[i] + groupOrigDurations[i];
+            final Track[] fTracks = groupOrigTracks;
+            applyMutation(() -> {
+                for (int i = 0; i < groupMembers.size(); i++) {
+                    Segment ms2 = groupMembers.get(i);
+                    var rr = ms2.getRange();
+                    timeline.remove(ms2.getTrack(),
+                        Range.closedOpen(rr.lowerEndpoint(), rr.upperEndpoint()));
+                }
+                for (int i = 0; i < groupMembers.size(); i++) {
+                    Segment ms2 = groupMembers.get(i);
+                    long msNewStart = fNewStarts[i];
+                    timeline.add(fTracks[i], ms2, msNewStart, fOldEnds[i] - msNewStart);
+                }
+            });
 
             for (int i = 0; i < n; i++) {
                 Segment ms = groupMembers.get(i);
                 long msNewStart = newStarts[i];
                 long msOldEnd = groupOrigStarts[i] + groupOrigDurations[i];
-                timeline.add(groupOrigTracks[i], ms, msNewStart, msOldEnd - msNewStart);
-
                 SegActor msActor = ms.getActor();
                 msActor.setX(absoluteTimeToX(msNewStart));
                 msActor.setWidth(absoluteTimeToX(msOldEnd) - absoluteTimeToX(msNewStart));
@@ -1102,17 +1155,24 @@ class SegDragHandler {
                 }
             }
 
-            for (int i = 0; i < n; i++) {
-                Segment ms = groupMembers.get(i);
-                var r = ms.getRange();
-                timeline.remove(ms.getTrack(), Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()));
-            }
+            final long[] fNewDurations = newDurations;
+            final long[] fOrigStarts = groupOrigStarts;
+            final Track[] fTracks2 = groupOrigTracks;
+            applyMutation(() -> {
+                for (int i = 0; i < groupMembers.size(); i++) {
+                    Segment ms2 = groupMembers.get(i);
+                    var r2 = ms2.getRange();
+                    timeline.remove(ms2.getTrack(),
+                        Range.closedOpen(r2.lowerEndpoint(), r2.upperEndpoint()));
+                }
+                for (int i = 0; i < groupMembers.size(); i++) {
+                    Segment ms2 = groupMembers.get(i);
+                    timeline.add(fTracks2[i], ms2, fOrigStarts[i], fNewDurations[i]);
+                }
+            });
 
             for (int i = 0; i < n; i++) {
-                Segment ms = groupMembers.get(i);
-                timeline.add(groupOrigTracks[i], ms, groupOrigStarts[i], newDurations[i]);
-
-                SegActor msActor = ms.getActor();
+                SegActor msActor = groupMembers.get(i).getActor();
                 msActor.setWidth(
                     absoluteTimeToX(groupOrigStarts[i] + newDurations[i]) - absoluteTimeToX(groupOrigStarts[i]));
             }
