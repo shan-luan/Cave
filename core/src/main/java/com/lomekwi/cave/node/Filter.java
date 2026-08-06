@@ -4,39 +4,39 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Filter<T> extends Node{
-    private int filterInIdx =-1;
-    private int filterOutIdx =-1;
+    private FilterIn filterIn;
+    private FilterOut filterOut;
     @Override
-    protected int addInPort(InPort<?> p) {
-        int idx = super.addInPort(p);
-        if (p instanceof Filter<?>.FilterIn) {
-            if (filterInIdx != -1) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected <P extends InPort<?>> P addInPort(P p) {
+        P port = super.addInPort(p);
+        if (p instanceof Filter.FilterIn in) {
+            if (filterIn != null) {
                 throw new IllegalStateException("只能有一个过滤输入端口.");
             }
-            filterInIdx = idx;
+            filterIn = in;
         }
-        return idx;
+        return port;
     }
 
     @Override
-    protected int addOutPort(OutPort<?> p) {
-        int idx = super.addOutPort(p);
-        if (p instanceof Filter<?>.FilterOut) {
-            if (filterOutIdx != -1) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected <P extends OutPort<?>> P addOutPort(P p) {
+        P port = super.addOutPort(p);
+        if (p instanceof Filter.FilterOut out) {
+            if (filterOut != null) {
                 throw new IllegalStateException("只能有一个过滤输出端口.");
             }
-            filterOutIdx = idx;
+            filterOut = out;
         }
-        return idx;
+        return port;
     }
     public abstract Class<T> getType();
-    @SuppressWarnings("unchecked")
     public FilterIn getFilterIn(){
-        return (FilterIn) getInPort(filterInIdx);
+        return filterIn;
     }
-    @SuppressWarnings("unchecked")
     public FilterOut getFilterOut(){
-        return (FilterOut) getOutPort(filterOutIdx);
+        return filterOut;
     }
 
     public abstract class FilterIn extends InPort<T>{

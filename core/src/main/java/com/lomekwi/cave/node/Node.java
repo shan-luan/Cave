@@ -19,13 +19,13 @@ public abstract class Node {
             out.unlinkAll();
         }
     }
-    protected int addInPort(InPort<?> p){
+    protected <P extends InPort<?>> P addInPort(P p){
         inPorts.add(p);
-        return inPorts.size()-1;
+        return p;
     }
-    protected int addOutPort(OutPort<?> p){
+    protected <P extends OutPort<?>> P addOutPort(P p){
         outPorts.add(p);
-        return outPorts.size()-1;
+        return p;
     }
     protected InPort<?> getInPort(int idx){
         return inPorts.get(idx);
