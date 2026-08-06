@@ -256,6 +256,9 @@ public class Root implements ApplicationListener {
     public VisTable getMajorArea() {
         return majorArea;
     }
+    public TopTabbedPane getTabbedPane() {
+        return tabbedPane;
+    }
     private Skin injectChineseFont(VisUI.SkinScale scale) {
         Skin skin = new Skin(scale.getSkinFile());
 
