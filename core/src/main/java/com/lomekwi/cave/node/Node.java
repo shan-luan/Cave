@@ -27,15 +27,19 @@ public abstract class Node {
         outPorts.add(p);
         return p;
     }
-    protected InPort<?> getInPort(int idx){
-        return inPorts.get(idx);
+    public abstract String getName();
+
+    public List<InPort<?>> getInPorts(){
+        return inPorts;
     }
-    protected OutPort<?> getOutPort(int idx){
-        return outPorts.get(idx);
+    public List<OutPort<?>> getOutPorts(){
+        return outPorts;
     }
 
 
-    public abstract class InPort<T> {
+    public abstract static class InPort<T> {
+
+        private T defaultData;
 
         private OutPort<? extends T> prev;
 
@@ -51,10 +55,12 @@ public abstract class Node {
             return prev == null ? getDefaultData() : prev.getData();
         }
 
-        protected abstract T getDefaultData();
+        protected T getDefaultData(){
+            return defaultData;
+        };
 
         protected void setDefaultData(T data) {
-            //可选继承
+            defaultData=data;
         }
 
         /**
@@ -101,10 +107,11 @@ public abstract class Node {
         public boolean isLinked(){
             return prev!=null;
         }
+        public abstract String getName();
     }
 
 
-    public abstract class OutPort<T> {
+    public abstract static class OutPort<T> {
 
         protected final Set<InPort<? super T>> next = new HashSet<>();
 
@@ -150,5 +157,6 @@ public abstract class Node {
         public Set<InPort<? super T>> getNext(){
             return next;
         }
+        public abstract String getName();
     }
 }
