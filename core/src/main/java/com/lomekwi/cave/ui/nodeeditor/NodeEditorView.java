@@ -9,20 +9,15 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.Focusable;
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
+import com.lomekwi.cave.ui.widget.PanZoomCanvas;
 
 public class NodeEditorView extends VisTable implements Focusable {
-    private final Group canvas = new Group();
-    private float xOffset, yOffset;
-    private float scale = 1f;
-    private static final float MIN_SCALE = 0.1f;
-    private static final float MAX_SCALE = 4f;
-    private static final float MOVE_SPEED = 1000f;
-    private final com.badlogic.gdx.math.Vector2 screenPos = new com.badlogic.gdx.math.Vector2();
+    private final PanZoomCanvas panZoom = new PanZoomCanvas(0.1f, 4f, 1000f);
+    private final Group canvas = panZoom.getCanvas();
 
     public NodeEditorView() {
         setFillParent(true);
-        add(canvas).grow();
+        add(panZoom).grow();
         setupListener();
         addTestLabels();
     }
@@ -39,46 +34,15 @@ public class NodeEditorView extends VisTable implements Focusable {
         addListener(new ClickListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                getStage().setKeyboardFocus(NodeEditorView.this);
                 return false;
             }
 
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
-                float zoomFactor = 1.1f;
-                float oldScale = scale;
-
-                scale *= (float) Math.pow(zoomFactor, -amountY);
-                scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
-
-                screenPos.set(event.getStageX(), event.getStageY());
-                stageToLocalCoordinates(screenPos);
-                xOffset = screenPos.x - (screenPos.x - xOffset) * (scale / oldScale);
-                yOffset = screenPos.y - (screenPos.y - yOffset) * (scale / oldScale);
-
-                updateCanvas();
+                panZoom.zoomAt(event.getStageX(), event.getStageY(), amountY);
                 return true;
             }
         });
-    }
-
-    private void updateCanvas() {
-        canvas.setPosition(xOffset, yOffset);
-        canvas.setScale(scale);
-    }
-
-    @Override
-    public void act(float delta) {
-        var stage = getStage();
-        if (stage != null && stage.getKeyboardFocus() == this) {
-            float speed = MOVE_SPEED * delta / scale;
-            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed;
-            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed;
-            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed;
-            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) xOffset -= speed;
-        }
-        updateCanvas();
-        super.act(delta);
     }
 
     private static final Color BG = new Color(0.15f, 0.15f, 0.15f, 1f);

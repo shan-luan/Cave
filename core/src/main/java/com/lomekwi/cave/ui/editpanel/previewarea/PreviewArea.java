@@ -20,7 +20,7 @@ import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
 import com.lomekwi.cave.task.ExportPresetsChangedEvent;
 import com.lomekwi.cave.ui.Focusable;
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
+import com.lomekwi.cave.ui.widget.PanZoomCanvas;
 import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -34,33 +34,27 @@ import java.util.List;
 @NullMarked
 public class PreviewArea extends Group implements Focusable {
     private final Project project;
-    private final Group canvas = new Group();
+    private final PanZoomCanvas panZoom = new PanZoomCanvas(0.07f, 30f, 1000f);
+    private final Group canvas = panZoom.getCanvas();
     //此列表仅应在主线程读取.
     private final List<@Nullable Frame> frames = new ArrayList<>();
-    private float xOffset, yOffset;
-    private float scale = 1.0f;
-    private float zoom = 1.0f;
     private float refViewportArea = -1f;
-    private static final float MIN_SCALE = 0.07f;
-    private static final float MAX_SCALE = 30.0f;
     private float lastWidth = 0;
     private @Nullable ExportOptionsSet exportOpts;
     private float lastHeight = 0;
-    private static final float MOVE_SPEED = 1000f;
-    private final com.badlogic.gdx.math.Vector2 screenPos = new com.badlogic.gdx.math.Vector2();
 
     private void recalcScale() {
         float vr = refViewportArea > 0
             ? (float) Math.sqrt((double) getWidth() * getHeight() / refViewportArea)
             : 1f;
-        scale = zoom * vr;
+        panZoom.setBaseScale(vr);
     }
 
     public PreviewArea(Project project) {
         this.project = project;
         project.projEventBus.register(this);
         App.appEventBus.register(this);
-        addActor(canvas);
+        addActor(panZoom);
         setupDragListener();
     }
 
@@ -90,28 +84,11 @@ public class PreviewArea extends Group implements Focusable {
 
             @Override
             public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
-                float zoomFactor = 1.1f;
-                float oldScale = scale;
-
-                zoom *= (float) Math.pow(zoomFactor, -amountY);
-                zoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, zoom));
-                recalcScale();
-
-                screenPos.set(event.getStageX(), event.getStageY());
-                stageToLocalCoordinates(screenPos);
-                xOffset = screenPos.x - (screenPos.x - xOffset) * (scale / oldScale);
-                yOffset = screenPos.y - (screenPos.y - yOffset) * (scale / oldScale);
-
-                updateCanvas();
+                panZoom.zoomAt(event.getStageX(), event.getStageY(), amountY);
                 return true;
             }
         });
 
-    }
-
-    private void updateCanvas() {
-        canvas.setPosition(xOffset, yOffset);
-        canvas.setScale(scale);
     }
 
     @Subscribe
@@ -123,8 +100,6 @@ public class PreviewArea extends Group implements Focusable {
             frame.upload();
             TransFrameActor i = frame.getActor();
             canvas.addActor(i);
-            canvas.setPosition(xOffset, yOffset);
-            canvas.setScale(scale);
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
     }
@@ -137,8 +112,6 @@ public class PreviewArea extends Group implements Focusable {
             setFrame(frame);
             TransFrameActor i = frame.getActor();
             canvas.addActor(i);
-            canvas.setPosition(xOffset, yOffset);
-            canvas.setScale(scale);
             track.getWorker().getSinkPhaser().arriveAndDeregister();
         });
     }
@@ -203,17 +176,6 @@ public class PreviewArea extends Group implements Focusable {
 
     @Override
     public void act(float delta) {
-        var stage = getStage();
-        if (stage != null) {
-            if (stage.getKeyboardFocus() == PreviewArea.this) {
-                float speed = MOVE_SPEED * delta / scale;
-                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed;
-                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed;
-                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed;
-                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) xOffset -= speed;
-            }
-        }
-        updateCanvas();
         super.act(delta);
         canvas.setZIndex(0);
         int i = 0;
@@ -298,18 +260,13 @@ public class PreviewArea extends Group implements Focusable {
                 refViewportArea = lastWidth * lastHeight;
             }
             recalcScale();
-            updateCanvas();
         }
         lastWidth = getWidth();
         lastHeight = getHeight();
     }
 
     public void resetView() {
-        zoom = 1.0f;
-        xOffset = 0;
-        yOffset = 0;
-        recalcScale();
-        updateCanvas();
+        panZoom.resetView();
     }
 
     public void dispose() {
