@@ -1,7 +1,5 @@
 package com.lomekwi.cave.ui.nodeeditor;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -11,6 +9,7 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.Focusable;
+import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 
 public class NodeEditorView extends VisTable implements Focusable {
     private final Group canvas = new Group();
@@ -73,10 +72,10 @@ public class NodeEditorView extends VisTable implements Focusable {
         var stage = getStage();
         if (stage != null && stage.getKeyboardFocus() == this) {
             float speed = MOVE_SPEED * delta / scale;
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) yOffset -= speed;
-            if (Gdx.input.isKeyPressed(Input.Keys.S)) yOffset += speed;
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) xOffset += speed;
-            if (Gdx.input.isKeyPressed(Input.Keys.D)) xOffset -= speed;
+            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed;
+            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed;
+            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed;
+            if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) xOffset -= speed;
         }
         updateCanvas();
         super.act(delta);

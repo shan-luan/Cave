@@ -1,7 +1,6 @@
 package com.lomekwi.cave.ui.editpanel.previewarea;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -21,6 +20,7 @@ import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
 import com.lomekwi.cave.task.ExportPresetsChangedEvent;
 import com.lomekwi.cave.ui.Focusable;
+import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.util.Units;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -207,10 +207,10 @@ public class PreviewArea extends Group implements Focusable {
         if (stage != null) {
             if (stage.getKeyboardFocus() == PreviewArea.this) {
                 float speed = MOVE_SPEED * delta / scale;
-                if (Gdx.input.isKeyPressed(Input.Keys.W)) yOffset -= speed;
-                if (Gdx.input.isKeyPressed(Input.Keys.S)) yOffset += speed;
-                if (Gdx.input.isKeyPressed(Input.Keys.A)) xOffset += speed;
-                if (Gdx.input.isKeyPressed(Input.Keys.D)) xOffset -= speed;
+                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed;
+                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed;
+                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed;
+                if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) xOffset -= speed;
             }
         }
         updateCanvas();
