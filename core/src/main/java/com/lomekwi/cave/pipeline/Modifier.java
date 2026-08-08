@@ -5,13 +5,13 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import java.io.Serial;
 import java.io.Serializable;
 
-public abstract class Filter<T> implements Serializable {
+public abstract class Modifier<T> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
     private transient Actor actor;
 
-    public Filter(Source<?> source) {
+    public Modifier(Source<?> source) {
         this.source = source;
     }
 
@@ -19,7 +19,7 @@ public abstract class Filter<T> implements Serializable {
         return source;
     }
 
-    public abstract void filter(T frame, long time);
+    public abstract void modify(T frame, long time);
 
     public abstract String getName();
 

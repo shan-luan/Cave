@@ -17,7 +17,7 @@ import com.kotcrab.vis.ui.widget.VisScrollPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisTextField;
-import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSet;
@@ -124,28 +124,28 @@ public class SegDetailView extends VisTable {
     private void appendSegmentInfo(Segment seg) {
         Source<?> source = seg.getSource();
         content.add(source.getSourceActor()).growX().pad(4).row();
-        for (Filter<?> filter : source.getFilters()) {
-            var actor = filter.getActor();
+        for (Modifier<?> modifier : source.getModifiers()) {
+            var actor = modifier.getActor();
             if (actor != null) {
-                if (actor instanceof FilterActor fa) {
-                    fa.setSource(source);
-                    fa.setRebuildCallback(this::rebuildContent);
+                if (actor instanceof ModifierActor ma) {
+                    ma.setSource(source);
+                    ma.setRebuildCallback(this::rebuildContent);
                 }
                 content.add(actor).growX().pad(4).row();
             }
         }
-        VisTextButton addBtn = new VisTextButton(i18n("+添加滤镜"));
-        PopupMenu filterMenu = new PopupMenu();
-        int compatibleCount = App.filterRegistry.getCompatibleCount(source);
+        VisTextButton addBtn = new VisTextButton(i18n("+添加修改器"));
+        PopupMenu modifierMenu = new PopupMenu();
+        int compatibleCount = App.modifierRegistry.getCompatibleCount(source);
         for (int fi = 0; fi < compatibleCount; fi++) {
             final int idx = fi;
-            Filter<?> newFilter = App.filterRegistry.createCompatible(source, idx);
-            filterMenu.addItem(new MenuItem(newFilter.getName(), new ChangeListener() {
+            Modifier<?> newModifier = App.modifierRegistry.createCompatible(source, idx);
+            modifierMenu.addItem(new MenuItem(newModifier.getName(), new ChangeListener() {
                 @Override
                 public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                    source.getFilters().add((Filter) newFilter);
+                    source.getModifiers().add((Modifier) newModifier);
                     var p = App.root.getFrontendProject();
-                    if (p != null) p.undoManager.record(new UndoManager.AddFilterCommand(source, newFilter));
+                    if (p != null) p.undoManager.record(new UndoManager.AddModifierCommand(source, newModifier));
                     rebuildContent();
                 }
             }));
@@ -153,7 +153,7 @@ public class SegDetailView extends VisTable {
         addBtn.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeListener.ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                filterMenu.showMenu(getStage(), addBtn);
+                modifierMenu.showMenu(getStage(), addBtn);
             }
         });
         content.add(addBtn).pad(4).left();

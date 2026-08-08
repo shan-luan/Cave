@@ -18,7 +18,7 @@ public abstract class Source<T extends Frame> implements Serializable {
     protected transient T frame;
     @Serial
     private static final long serialVersionUID = 1L;
-    private final List<Filter<? super T>> filters = new ArrayList<>();
+    private final List<Modifier<? super T>> modifiers = new ArrayList<>();
     private transient Segment segment;
 
     /**
@@ -34,8 +34,8 @@ public abstract class Source<T extends Frame> implements Serializable {
      */
     public final T get(long time, Track track){
         T frame = generate(time, track);
-        for (Filter<? super T> filter : filters) {
-            filter.filter(frame, time);
+        for (Modifier<? super T> modifier : modifiers) {
+            modifier.modify(frame, time);
         }
         return frame;
     }
@@ -44,11 +44,11 @@ public abstract class Source<T extends Frame> implements Serializable {
      */
     public void prefetch(){};
     protected abstract T generate(long time, Track track);
-    public List<Filter<? super T>> getFilters() {
-            return filters;
+    public List<Modifier<? super T>> getModifiers() {
+            return modifiers;
         }
-    public Source<T> attach(Filter<? super T> filter){
-       filters.add(filter);
+    public Source<T> attach(Modifier<? super T> modifier){
+       modifiers.add(modifier);
             return this;
     }
     public Source() {

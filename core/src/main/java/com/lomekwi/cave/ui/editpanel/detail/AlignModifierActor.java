@@ -5,25 +5,25 @@ import com.badlogic.gdx.scenes.scene2d.ui.ButtonGroup;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.pipeline.image.AlignFilter;
+import com.lomekwi.cave.pipeline.image.AlignModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
-public class AlignFilterActor extends FilterActor {
+public class AlignModifierActor extends ModifierActor {
     private static final String[][] LABELS = {
         {"左上", "中上", "右上"},
         {"左中", "正中", "右中"},
         {"左下", "中下", "右下"},
     };
 
-    private final AlignFilter alignFilter;
+    private final AlignModifier alignModifier;
     private final VisTextButton[][] buttons = new VisTextButton[3][3];
     private boolean suppressRefresh;
 
-    public AlignFilterActor(AlignFilter filter) {
-        super(filter.getName(), filter);
-        this.alignFilter = filter;
+    public AlignModifierActor(AlignModifier modifier) {
+        super(modifier.getName(), modifier);
+        this.alignModifier = modifier;
 
         ButtonGroup<VisTextButton> group = new ButtonGroup<>();
         for (int v = 0; v < 3; v++) {
@@ -37,14 +37,14 @@ public class AlignFilterActor extends FilterActor {
                     public void changed(ChangeEvent event, Actor actor) {
                         if (suppressRefresh) return;
                         if (!b.isChecked()) return;
-                        AlignFilter.HAlign newH = AlignFilter.HAlign.values()[hh];
-                        AlignFilter.VAlign newV = AlignFilter.VAlign.values()[hv];
+                        AlignModifier.HAlign newH = AlignModifier.HAlign.values()[hh];
+                        AlignModifier.VAlign newV = AlignModifier.VAlign.values()[hv];
                         Project p = App.root.getFrontendProject();
                         if (p != null) {
-                            p.undoManager.record(new UndoManager.AlignFilterCommand(
-                                alignFilter, alignFilter.getHAlign(), alignFilter.getVAlign(), newH, newV));
+                            p.undoManager.record(new UndoManager.AlignModifierCommand(
+                                alignModifier, alignModifier.getHAlign(), alignModifier.getVAlign(), newH, newV));
                         }
-                        alignFilter.setAlign(newH, newV);
+                        alignModifier.setAlign(newH, newV);
                         if (p != null) p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                     }
                 });
@@ -54,16 +54,16 @@ public class AlignFilterActor extends FilterActor {
             row();
         }
 
-        syncFromFilter();
+        syncFromModifier();
     }
 
-    public void syncFromFilter() {
+    public void syncFromModifier() {
         suppressRefresh = true;
         for (int v = 0; v < 3; v++) {
             for (int h = 0; h < 3; h++) {
                 buttons[v][h].setChecked(
-                    alignFilter.getHAlign() == AlignFilter.HAlign.values()[h]
-                        && alignFilter.getVAlign() == AlignFilter.VAlign.values()[v]);
+                    alignModifier.getHAlign() == AlignModifier.HAlign.values()[h]
+                        && alignModifier.getVAlign() == AlignModifier.VAlign.values()[v]);
             }
         }
         suppressRefresh = false;

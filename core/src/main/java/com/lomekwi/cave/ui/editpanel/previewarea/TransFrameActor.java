@@ -14,19 +14,19 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.lomekwi.cave.app.selection.Selectable;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.pipeline.image.Transformable;
-import com.lomekwi.cave.pipeline.image.TransFilter;
+import com.lomekwi.cave.pipeline.image.TransModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.detail.TransFilterActor;
+import com.lomekwi.cave.ui.editpanel.detail.TransModifierActor;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.ArrayList;
@@ -44,10 +44,10 @@ public class TransFrameActor extends Actor implements Selectable {
 
     private boolean selected;
 
-    private TransFilter dragFilter;
+    private TransModifier dragModifier;
     private boolean dragging;
     private float startCanvasX, startCanvasY;
-    private float startFilterDx, startFilterDy;
+    private float startModifierDx, startModifierDy;
     private float dragCos, dragSin, dragScaleX, dragScaleY;
 
     protected boolean gizmoDragging;
@@ -61,7 +61,7 @@ public class TransFrameActor extends Actor implements Selectable {
     protected float gizmoAnchorLocalX, gizmoAnchorLocalY;
     protected float startGizmoCanvasX, startGizmoCanvasY;
     protected float startGizmoLocalX, startGizmoLocalY;
-    protected UndoManager.TransFilterState gizmoOldState;
+    protected UndoManager.TransModifierState gizmoOldState;
 
     private static final Vector2 dragStagePos = new Vector2();
     private static final Vector2 tmp1 = new Vector2();
@@ -95,9 +95,9 @@ public class TransFrameActor extends Actor implements Selectable {
                     return true;
                 }
 
-                dragFilter = findOrCreateTransformFilter(source);
-                startFilterDx = dragFilter.dx.getFloat();
-                startFilterDy = dragFilter.dy.getFloat();
+                dragModifier = findOrCreateTransModifier(source);
+                startModifierDx = dragModifier.dx.getFloat();
+                startModifierDy = dragModifier.dy.getFloat();
                 Actor p = getParent();
                 startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX();
                 startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY();
@@ -113,7 +113,7 @@ public class TransFrameActor extends Actor implements Selectable {
                     updateGizmoDrag(event.getStageX(), event.getStageY());
                     return;
                 }
-                if (dragFilter == null) return;
+                if (dragModifier == null) return;
                 dragging = true;
                 updateDrag(event.getStageX(), event.getStageY());
             }
@@ -124,32 +124,32 @@ public class TransFrameActor extends Actor implements Selectable {
                     finishGizmoDrag();
                     return;
                 }
-                if (dragFilter != null && dragging) {
+                if (dragModifier != null && dragging) {
                     Project p = App.root.getFrontendProject();
                     if (p != null) {
-                        final TransFilter filter = dragFilter;
-                        final float oldDx = startFilterDx, oldDy = startFilterDy;
-                        final float newDx = filter.dx.getFloat(), newDy = filter.dy.getFloat();
+                        final TransModifier modifier = dragModifier;
+                        final float oldDx = startModifierDx, oldDy = startModifierDy;
+                        final float newDx = modifier.dx.getFloat(), newDy = modifier.dy.getFloat();
                         p.undoManager.record(new UndoManager.UndoableCommand() {
                             @Override
                             public void undo() {
-                                filter.dx.set(oldDx);
-                                filter.dy.set(oldDy);
-                                if (filter.getActor() instanceof TransFilterActor ta) ta.syncFromFilter();
+                                modifier.dx.set(oldDx);
+                                modifier.dy.set(oldDy);
+                                if (modifier.getActor() instanceof TransModifierActor ta) ta.syncFromModifier();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
                             @Override
                             public void redo() {
-                                filter.dx.set(newDx);
-                                filter.dy.set(newDy);
-                                if (filter.getActor() instanceof TransFilterActor ta) ta.syncFromFilter();
+                                modifier.dx.set(newDx);
+                                modifier.dy.set(newDy);
+                                if (modifier.getActor() instanceof TransModifierActor ta) ta.syncFromModifier();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
                         });
                         p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                     }
                 }
-                if (dragFilter != null && !dragging && !gizmoDragging) {
+                if (dragModifier != null && !dragging && !gizmoDragging) {
                     Segment segment = frame.getSource() != null ? frame.getSource().getSegment() : null;
                     if (segment != null && segment.getTrack() != null) {
                         var editPanel = App.root.getFrontendEditPanel();
@@ -159,7 +159,7 @@ public class TransFrameActor extends Actor implements Selectable {
                         }
                     }
                 }
-                dragFilter = null;
+                dragModifier = null;
                 dragging = false;
                 gizmoDragging = false;
                 gizmoHandle = null;
@@ -220,7 +220,7 @@ public class TransFrameActor extends Actor implements Selectable {
         setScaleX(transform.isFlipX() ? -1 : 1);
         setScaleY(transform.isFlipY() ? -1 : 1);
 
-        if (dragFilter == null || getParent() == null || getStage() == null) return;
+        if (dragModifier == null || getParent() == null || getStage() == null) return;
         dragStagePos.set(Gdx.input.getX(), Gdx.input.getY());
         getStage().screenToStageCoordinates(dragStagePos);
         if (gizmoDragging) {
@@ -326,26 +326,26 @@ public class TransFrameActor extends Actor implements Selectable {
         };
     }
 
-    // FIXME: 手柄锚点和缩放基于本地坐标轴计算，当 dragFilter 有旋转时与视觉轴不匹配。
+    // FIXME: 手柄锚点和缩放基于本地坐标轴计算，当 dragModifier 有旋转时与视觉轴不匹配。
     //        视觉"向外"拖拽可能映射到本地"朝向锚点"，导致缩放方向相反。
     //        需在画布空间测量锚点→手柄的视觉距离来计算缩放，再映射回本地 scaleX/scaleY。
     protected void startGizmoDrag(Source<?> source, Gizmo.Handle handle, float stageX, float stageY) {
         gizmoHandle = handle;
         gizmoDragging = true;
 
-        dragFilter = findOrCreateTransformFilter(source);
+        dragModifier = findOrCreateTransModifier(source);
         gizmoStartW = getWidth();
         gizmoStartH = getHeight();
-        gizmoStartDx = dragFilter.dx.getFloat();
-        gizmoStartDy = dragFilter.dy.getFloat();
-        gizmoStartScaleX = dragFilter.scaleX.getFloat();
-        gizmoStartScaleY = dragFilter.scaleY.getFloat();
-        gizmoStartRotation = dragFilter.dRotation.getFloat();
-        gizmoOldState = new UndoManager.TransFilterState(
+        gizmoStartDx = dragModifier.dx.getFloat();
+        gizmoStartDy = dragModifier.dy.getFloat();
+        gizmoStartScaleX = dragModifier.scaleX.getFloat();
+        gizmoStartScaleY = dragModifier.scaleY.getFloat();
+        gizmoStartRotation = dragModifier.dRotation.getFloat();
+        gizmoOldState = new UndoManager.TransModifierState(
             gizmoStartDx, gizmoStartDy,
             gizmoStartScaleX, gizmoStartScaleY,
             gizmoStartRotation,
-            dragFilter.flipX(), dragFilter.flipY());
+            dragModifier.flipX(), dragModifier.flipY());
 
         computeDragContext();
 
@@ -466,8 +466,8 @@ public class TransFrameActor extends Actor implements Selectable {
             case ROTATE -> {}
         }
 
-        dragFilter.scaleX.set(newScaleX);
-        dragFilter.scaleY.set(newScaleY);
+        dragModifier.scaleX.set(newScaleX);
+        dragModifier.scaleY.set(newScaleY);
 
         float scaleChangeW = newScaleX / gizmoStartScaleX;
         float scaleChangeH = newScaleY / gizmoStartScaleY;
@@ -478,12 +478,12 @@ public class TransFrameActor extends Actor implements Selectable {
         float ddx = (compX * dragCos + compY * dragSin) / dragScaleX;
         float ddy = (-compX * dragSin + compY * dragCos) / dragScaleY;
 
-        dragFilter.dx.set(gizmoStartDx + ddx);
-        dragFilter.dy.set(gizmoStartDy + ddy);
+        dragModifier.dx.set(gizmoStartDx + ddx);
+        dragModifier.dy.set(gizmoStartDy + ddy);
 
-        applyFilters();
-        if (dragFilter.getActor() instanceof TransFilterActor ta) {
-            ta.syncFromFilter();
+        applyModifiers();
+        if (dragModifier.getActor() instanceof TransModifierActor ta) {
+            ta.syncFromModifier();
         }
     }
 
@@ -503,31 +503,31 @@ public class TransFrameActor extends Actor implements Selectable {
             delta = Math.round(delta / 15f) * 15f;
         }
 
-        dragFilter.dRotation.set(gizmoStartRotation + delta);
-        applyFilters();
-        if (dragFilter.getActor() instanceof TransFilterActor ta) {
-            ta.syncFromFilter();
+        dragModifier.dRotation.set(gizmoStartRotation + delta);
+        applyModifiers();
+        if (dragModifier.getActor() instanceof TransModifierActor ta) {
+            ta.syncFromModifier();
         }
     }
 
     protected void finishGizmoDrag() {
         Project p = App.root.getFrontendProject();
-        if (p != null && dragFilter != null && gizmoOldState != null) {
-            TransFilter filter = dragFilter;
-            UndoManager.TransFilterState newState = new UndoManager.TransFilterState(
-                filter.dx.getFloat(), filter.dy.getFloat(),
-                filter.scaleX.getFloat(), filter.scaleY.getFloat(),
-                filter.dRotation.getFloat(),
-                filter.flipX(), filter.flipY());
+        if (p != null && dragModifier != null && gizmoOldState != null) {
+            TransModifier modifier = dragModifier;
+            UndoManager.TransModifierState newState = new UndoManager.TransModifierState(
+                modifier.dx.getFloat(), modifier.dy.getFloat(),
+                modifier.scaleX.getFloat(), modifier.scaleY.getFloat(),
+                modifier.dRotation.getFloat(),
+                modifier.flipX(), modifier.flipY());
             if (!gizmoOldState.equals(newState)) {
-                p.undoManager.record(new UndoManager.TransformFilterCommand(
-                    filter, gizmoOldState, newState));
+                p.undoManager.record(new UndoManager.TransformModifierCommand(
+                    modifier, gizmoOldState, newState));
             }
             p.projEventBus.post(RefreshRequestEvent.INSTANCE);
         }
         gizmoDragging = false;
         gizmoHandle = null;
-        dragFilter = null;
+        dragModifier = null;
         gizmoOldState = null;
     }
 
@@ -542,24 +542,24 @@ public class TransFrameActor extends Actor implements Selectable {
         dy += snapAdjust.y;
         float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
         float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
-        dragFilter.dx.set(startFilterDx + localDx);
-        dragFilter.dy.set(startFilterDy + localDy);
-        applyFilters();
-        if (dragFilter.getActor() instanceof TransFilterActor ta) {
-            ta.syncFromFilter();
+        dragModifier.dx.set(startModifierDx + localDx);
+        dragModifier.dy.set(startModifierDy + localDy);
+        applyModifiers();
+        if (dragModifier.getActor() instanceof TransModifierActor ta) {
+            ta.syncFromModifier();
         }
     }
 
     @SuppressWarnings({"unchecked"})
-    private void applyFilters() {
+    private void applyModifiers() {
         transformable.reset();
         Source<?> source = frame.getSource();
         if (source != null) {
             long localTime = frame.timestamp;
             Segment seg = source.getSegment();
             if (seg != null) localTime -= seg.getOrigin();
-            for (Filter<?> f : source.getFilters()) {
-                ((Filter<? super Transformable>) f).filter(transformable, localTime);
+            for (Modifier<?> m : source.getModifiers()) {
+                ((Modifier<? super Transformable>) m).modify(transformable, localTime);
             }
         }
     }
@@ -568,9 +568,9 @@ public class TransFrameActor extends Actor implements Selectable {
         Transform t = new Transform(0, 0, 0);
         Source<?> source = frame.getSource();
         if (source != null) {
-            for (Filter<?> f : source.getFilters()) {
-                if (f == dragFilter) break;
-                if (f instanceof TransFilter tf) {
+            for (Modifier<?> m : source.getModifiers()) {
+                if (m == dragModifier) break;
+                if (m instanceof TransModifier tf) {
                     t.applyLocal(tf.dx.getFloat(), tf.dy.getFloat(), tf.scaleX.getFloat(), tf.scaleY.getFloat(),
                         tf.dRotation.getFloat(),
                         tf.flipX(), tf.flipY());
@@ -674,15 +674,15 @@ public class TransFrameActor extends Actor implements Selectable {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static TransFilter findOrCreateTransformFilter(Source<?> source) {
-        List<Filter<?>> filters = (List) source.getFilters();
-        for (int i = filters.size() - 1; i >= 0; i--) {
-            Filter<?> f = filters.get(i);
-            if (f instanceof TransFilter) {
-                return (TransFilter) f;
+    private static TransModifier findOrCreateTransModifier(Source<?> source) {
+        List<Modifier<?>> modifiers = (List) source.getModifiers();
+        for (int i = modifiers.size() - 1; i >= 0; i--) {
+            Modifier<?> f = modifiers.get(i);
+            if (f instanceof TransModifier) {
+                return (TransModifier) f;
             }
         }
-        TransFilter tf = new TransFilter(source, 0, 0, 1, 1, 0, false, false);
+        TransModifier tf = new TransModifier(source, 0, 0, 1, 1, 0, false, false);
         ((Source) source).attach(tf);
         return tf;
     }

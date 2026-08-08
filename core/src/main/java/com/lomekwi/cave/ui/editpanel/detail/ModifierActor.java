@@ -7,7 +7,7 @@ import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.UndoManager;
@@ -15,16 +15,16 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 
 import java.util.List;
 
-public abstract class FilterActor extends VisWindow {
-    protected Filter<?> filter;
+public abstract class ModifierActor extends VisWindow {
+    protected Modifier<?> modifier;
     protected Source<?> source;
     private Runnable rebuildCallback;
     private boolean dragging;
     private float dragStageY, dragWindowY;
 
-    public FilterActor(String title, Filter<?> filter) {
+    public ModifierActor(String title, Modifier<?> modifier) {
         super(title);
-        this.filter = filter;
+        this.modifier = modifier;
         align(Align.top | Align.left);
         defaults().left();
         addCloseButton();
@@ -71,13 +71,13 @@ public abstract class FilterActor extends VisWindow {
 
     @Override
     public void close() {
-        filter.invalidateDetailActor();
-        int index = source.getFilters().indexOf(filter);
+        modifier.invalidateDetailActor();
+        int index = source.getModifiers().indexOf(modifier);
         if (index < 0) return;
-        source.getFilters().remove(filter);
+        source.getModifiers().remove(modifier);
         Project p = App.root.getFrontendProject();
         if (p != null) {
-            p.undoManager.record(new UndoManager.RemoveFilterCommand(source, filter, index));
+            p.undoManager.record(new UndoManager.RemoveModifierCommand(source, modifier, index));
             p.projEventBus.post(RefreshRequestEvent.INSTANCE);
         }
         remove();
@@ -89,25 +89,25 @@ public abstract class FilterActor extends VisWindow {
         Actor p = getParent();
         if (!(p instanceof VisTable content)) return;
 
-        List filters = source.getFilters();
-        int myIndex = filters.indexOf(filter);
+        List modifiers = source.getModifiers();
+        int myIndex = modifiers.indexOf(modifier);
         if (myIndex < 0) return;
 
         float myCenterY = getY() + getHeight() / 2;
         int target = 0;
         for (Actor child : content.getChildren()) {
-            if (!(child instanceof FilterActor) || child == this) continue;
+            if (!(child instanceof ModifierActor) || child == this) continue;
             if (child.getY() + child.getHeight() / 2 > myCenterY) target++;
         }
 
         if (target == myIndex) return;
 
-        filters.remove(myIndex);
-        filters.add(target, filter);
+        modifiers.remove(myIndex);
+        modifiers.add(target, modifier);
 
         Project pj = App.root.getFrontendProject();
         if (pj != null) {
-            pj.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, myIndex, target));
+            pj.undoManager.record(new UndoManager.ReorderModifierCommand(source, modifier, myIndex, target));
             pj.projEventBus.post(RefreshRequestEvent.INSTANCE);
         }
     }

@@ -1,14 +1,14 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.AlignFilter;
-import com.lomekwi.cave.pipeline.image.TransFilter;
+import com.lomekwi.cave.pipeline.image.AlignModifier;
+import com.lomekwi.cave.pipeline.image.TransModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.detail.AlignFilterActor;
+import com.lomekwi.cave.ui.editpanel.detail.AlignModifierActor;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
@@ -213,8 +213,8 @@ public class UndoManager {
     }
 
 
-    private static List filterList(Source<?> source) {
-        return source.getFilters();
+    private static List modifierList(Source<?> source) {
+        return source.getModifiers();
     }
 
     private static void postRefresh(Source<?> source) {
@@ -229,55 +229,55 @@ public class UndoManager {
         }
     }
 
-    public record AddFilterCommand(Source<?> source, Filter<?> filter) implements UndoableCommand {
+    public record AddModifierCommand(Source<?> source, Modifier<?> modifier) implements UndoableCommand {
         @Override
         public void undo() {
-            filterList(source).remove(filter);
+            modifierList(source).remove(modifier);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            filterList(source).add(filter);
+            modifierList(source).add(modifier);
             postRefresh(source);
         }
     }
 
-    public record RemoveFilterCommand(Source<?> source, Filter<?> filter, int index) implements UndoableCommand {
+    public record RemoveModifierCommand(Source<?> source, Modifier<?> modifier, int index) implements UndoableCommand {
         @Override
         public void undo() {
-            filterList(source).add(index, filter);
+            modifierList(source).add(index, modifier);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            filterList(source).remove(filter);
+            modifierList(source).remove(modifier);
             postRefresh(source);
         }
     }
 
-    public record ReorderFilterCommand(Source<?> source, Filter<?> filter, int oldIndex, int newIndex) implements UndoableCommand {
+    public record ReorderModifierCommand(Source<?> source, Modifier<?> modifier, int oldIndex, int newIndex) implements UndoableCommand {
         @Override
         public void undo() {
-            filterList(source).remove(filter);
-            filterList(source).add(oldIndex, filter);
+            modifierList(source).remove(modifier);
+            modifierList(source).add(oldIndex, modifier);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            filterList(source).remove(filter);
-            filterList(source).add(newIndex, filter);
+            modifierList(source).remove(modifier);
+            modifierList(source).add(newIndex, modifier);
             postRefresh(source);
         }
     }
 
-    public record TransFilterState(float dx, float dy, float scaleX, float scaleY,
+    public record TransModifierState(float dx, float dy, float scaleX, float scaleY,
                                     float dRotation,
                                     boolean flipX, boolean flipY) {}
 
-    public record TransformFilterCommand(TransFilter filter, TransFilterState oldState, TransFilterState newState) implements UndoableCommand {
+    public record TransformModifierCommand(TransModifier modifier, TransModifierState oldState, TransModifierState newState) implements UndoableCommand {
         @Override
         public void undo() {
             applyState(oldState);
@@ -288,33 +288,33 @@ public class UndoManager {
             applyState(newState);
         }
 
-        private void applyState(TransFilterState s) {
-            filter.dx.set(s.dx);
-            filter.dy.set(s.dy);
-            filter.scaleX.set(s.scaleX);
-            filter.scaleY.set(s.scaleY);
-            filter.dRotation.set(s.dRotation);
-            filter.flipX(s.flipX);
-            filter.flipY(s.flipY);
-            filter.invalidateDetailActor();
-            postRefresh(filter.getSource());
+        private void applyState(TransModifierState s) {
+            modifier.dx.set(s.dx);
+            modifier.dy.set(s.dy);
+            modifier.scaleX.set(s.scaleX);
+            modifier.scaleY.set(s.scaleY);
+            modifier.dRotation.set(s.dRotation);
+            modifier.flipX(s.flipX);
+            modifier.flipY(s.flipY);
+            modifier.invalidateDetailActor();
+            postRefresh(modifier.getSource());
         }
     }
 
-    public record AlignFilterCommand(AlignFilter filter, AlignFilter.HAlign oldH, AlignFilter.VAlign oldV,
-                                     AlignFilter.HAlign newH, AlignFilter.VAlign newV) implements UndoableCommand {
+    public record AlignModifierCommand(AlignModifier modifier, AlignModifier.HAlign oldH, AlignModifier.VAlign oldV,
+                                     AlignModifier.HAlign newH, AlignModifier.VAlign newV) implements UndoableCommand {
         @Override
         public void undo() {
-            filter.setAlign(oldH, oldV);
-            if (filter.getActor() instanceof AlignFilterActor aa) aa.syncFromFilter();
-            postRefresh(filter.getSource());
+            modifier.setAlign(oldH, oldV);
+            if (modifier.getActor() instanceof AlignModifierActor aa) aa.syncFromModifier();
+            postRefresh(modifier.getSource());
         }
 
         @Override
         public void redo() {
-            filter.setAlign(newH, newV);
-            if (filter.getActor() instanceof AlignFilterActor aa) aa.syncFromFilter();
-            postRefresh(filter.getSource());
+            modifier.setAlign(newH, newV);
+            if (modifier.getActor() instanceof AlignModifierActor aa) aa.syncFromModifier();
+            postRefresh(modifier.getSource());
         }
     }
 }

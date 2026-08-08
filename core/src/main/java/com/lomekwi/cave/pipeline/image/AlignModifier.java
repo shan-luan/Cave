@@ -1,15 +1,15 @@
 package com.lomekwi.cave.pipeline.image;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.ui.editpanel.detail.AlignFilterActor;
+import com.lomekwi.cave.ui.editpanel.detail.AlignModifierActor;
 
-public class AlignFilter extends Filter<Transformable> {
+public class AlignModifier extends Modifier<Transformable> {
     private HAlign hAlign = HAlign.LEFT;
     private VAlign vAlign = VAlign.BOTTOM;
 
-    public AlignFilter(Source<?> source) {
+    public AlignModifier(Source<?> source) {
         super(source);
     }
 
@@ -58,7 +58,7 @@ public class AlignFilter extends Filter<Transformable> {
     }
 
     @Override
-    public void filter(Transformable frame, long time) {
+    public void modify(Transformable frame, long time) {
         Transform t = frame.getTransform();
         t.applyLocal(
             hAlign.offset(frame.getBaseWidth()),
@@ -68,6 +68,6 @@ public class AlignFilter extends Filter<Transformable> {
 
     @Override
     protected Actor newActor() {
-        return new AlignFilterActor(this);
+        return new AlignModifierActor(this);
     }
 }
