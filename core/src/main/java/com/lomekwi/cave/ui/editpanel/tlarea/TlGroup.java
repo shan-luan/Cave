@@ -416,18 +416,6 @@ public class TlGroup extends Group implements Focusable {
         }
     }
 
-    private void removeFromGroup(Segment segment) {
-        SegmentGroup g = segment.getGroup();
-        if (g != null) {
-            g.remove(segment);
-            if (g.size() < 2) {
-                for (Segment s : new HashSet<>(g.getSegments())) {
-                    g.remove(s);
-                }
-            }
-        }
-    }
-
     //FIXME:跨项目粘贴的资源问题
     void performPaste() {
         var clip = App.copyManager.getClipboard();
@@ -619,8 +607,6 @@ class SegDragHandler {
         private long dragOldDuration;
         private Track dragOldTrack;
 
-        // 重建循环中，对被迭代的轨道进行结构变更（remove/add/resize/move）会触发
-        // TreeRangeMap 的迭代器产生 ConcurrentModificationException。因此拖拽期间的
         // 模型变更先推迟到本帧迭代完成后再应用，避免同一线程上的变更破坏迭代。
         private boolean committing;
         private final @NonNull ArrayList<Runnable> deferredMutations = new ArrayList<>();
@@ -677,14 +663,16 @@ class SegDragHandler {
                     target = absoluteTimeToX(Math.max(snapped, 0));
 
                     if (groupMembers != null) {
-                        handleGroupFrontResize(actor, xToAbsoluteTime(target));
+                        handleGroupFrontResize(xToAbsoluteTime(target));
                         break;
                     }
 
                     Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
 
                     if (!t.isFree(nr, Set.of(e.getValue()))) {
-                        long minStart = t.getEntry(r.lowerEndpoint() + 1, -1, true).getKey().upperEndpoint();
+                        var prevEntry = t.getEntry(r.lowerEndpoint() + 1, -1, true);
+                        if (prevEntry == null) return;
+                        long minStart = prevEntry.getKey().upperEndpoint();
                         target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
                         nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
                     }
@@ -709,14 +697,16 @@ class SegDragHandler {
                     if (newWidth < 1f) return;
 
                     if (groupMembers != null) {
-                        handleGroupBehindResize(actor, xToAbsoluteTime(upper));
+                        handleGroupBehindResize(xToAbsoluteTime(upper));
                         break;
                     }
 
                     Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
 
                     if (!t.isFree(nr, Set.of(e.getValue()))) {
-                        long maxEnd = t.getEntry(r.upperEndpoint() - 1, 1, true).getKey().lowerEndpoint();
+                        var nextEntry = t.getEntry(r.upperEndpoint() - 1, 1, true);
+                        if (nextEntry == null) return;
+                        long maxEnd = nextEntry.getKey().lowerEndpoint();
                         upper = absoluteTimeToX(maxEnd);
                         newWidth = upper - actor.getX();
                         nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
@@ -765,7 +755,7 @@ class SegDragHandler {
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
 
                     if (groupMembers != null) {
-                        handleGroupMiddleDrag(actor, target, newTrack, targetY);
+                        handleGroupMiddleDrag(target, newTrack, targetY);
                         for (Segment ms : groupMembers) {
                             SegActor ma = ms.getActor();
                             if (ma != null && ma.getParent() == TlGroup.this) ma.toFront();
@@ -899,7 +889,7 @@ class SegDragHandler {
             return best;
         }
 
-        private void handleGroupMiddleDrag(SegActor actor, long target, Track newTrack, float targetY) {
+        private void handleGroupMiddleDrag(long target, Track newTrack, float targetY) {
 
             long timeDelta = target - dragOldStart;
             int trackDelta = newTrack.index - dragOldTrack.index;
@@ -1033,7 +1023,7 @@ class SegDragHandler {
 
         }
 
-        private void handleGroupFrontResize(SegActor actor, long newStart) {
+        private void handleGroupFrontResize(long newStart) {
             long timeDelta = newStart - dragOldStart;
             int n = groupMembers.size();
 
@@ -1062,18 +1052,15 @@ class SegDragHandler {
                     }
                 }
                 if (rightMinDelta > timeDelta) {
-                    long snappedDelta = rightMinDelta;
                     boolean ok = true;
                     for (int i = 0; i < n; i++) {
-                        long snappedStart = groupOrigStarts[i] + snappedDelta;
+                        long snappedStart = groupOrigStarts[i] + rightMinDelta;
                         long snappedEnd = groupOrigStarts[i] + groupOrigDurations[i];
                         if (snappedStart >= snappedEnd || snappedStart < 0) { ok = false; break; }
                         newStarts[i] = snappedStart;
                         newDurations[i] = snappedEnd - snappedStart;
                     }
-                    if (ok && timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
-                        timeDelta = snappedDelta;
-                    } else {
+                    if (!ok || !timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
                         return;
                     }
                 } else {
@@ -1110,7 +1097,7 @@ class SegDragHandler {
 
         }
 
-        private void handleGroupBehindResize(SegActor actor, long newEnd) {
+        private void handleGroupBehindResize(long newEnd) {
             long oldEnd = dragOldStart + dragOldDuration;
             long timeDelta = newEnd - oldEnd;
             int n = groupMembers.size();
@@ -1138,16 +1125,13 @@ class SegDragHandler {
                     }
                 }
                 if (leftMaxDelta < timeDelta && leftMaxDelta >= 0) {
-                    long snappedDelta = leftMaxDelta;
                     boolean ok = true;
                     for (int i = 0; i < n; i++) {
-                        long msNewEnd = groupOrigStarts[i] + groupOrigDurations[i] + snappedDelta;
+                        long msNewEnd = groupOrigStarts[i] + groupOrigDurations[i] + leftMaxDelta;
                         if (msNewEnd <= groupOrigStarts[i]) { ok = false; break; }
                         newDurations[i] = msNewEnd - groupOrigStarts[i];
                     }
-                    if (ok && timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
-                        timeDelta = snappedDelta;
-                    } else {
+                    if (!ok || !timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
                         return;
                     }
                 } else {
@@ -1275,6 +1259,7 @@ class SegDragHandler {
             long time = xToAbsoluteTime(local.x);
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(time);
+            if (entry == null) return;
             splitSegment(entry.getValue(), time);
             dirty = true;
         }
@@ -1331,6 +1316,7 @@ class SegDragHandler {
             int trackIndex = yToTrackIndex(local.y);
             Track track = timeline.getTrack(trackIndex);
             var entry = track.getEntry(xToAbsoluteTime(local.x));
+            if (entry == null) return;
             var seg = entry.getValue();
             var r = seg.getRange();
             long start = r.lowerEndpoint();
