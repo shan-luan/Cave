@@ -199,6 +199,7 @@ public class Root implements ApplicationListener {
 
         tabbedPane = new TopTabbedPane();
         mainLayout.add(tabbedPane.getTable()).fillX().top().row();
+        tabbedPane.refreshVisibility();
         majorArea=new VisTable();
         mainLayout.add(majorArea).fill().expand().row();
 

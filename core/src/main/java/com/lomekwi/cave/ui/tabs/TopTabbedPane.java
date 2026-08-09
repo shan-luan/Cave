@@ -2,14 +2,13 @@ package com.lomekwi.cave.ui.tabs;
 
 import com.google.common.eventbus.Subscribe;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
-import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
 import com.lomekwi.cave.project.ProjectBackgroundedEvent;
 import com.lomekwi.cave.project.ProjectFrontedEvent;
 import com.lomekwi.cave.project.ProjectLoadedEvent;
 import com.lomekwi.cave.app.App;
 
-public class TopTabbedPane extends TabbedPane {
+public class TopTabbedPane extends AutoHideTabbedPane {
     private ProjectTab currentProjectTab;
 
     public TopTabbedPane() {
