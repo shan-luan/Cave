@@ -14,4 +14,8 @@ public class AppAudioOut {
     public AudioDevice getAudioDevice() {
         return audioDevice;
     }
+
+    public synchronized void writeSamples(float[] samples) {
+        audioDevice.writeSamples(samples, 0, samples.length);
+    }
 }

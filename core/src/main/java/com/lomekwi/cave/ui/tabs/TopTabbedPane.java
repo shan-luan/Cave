@@ -42,6 +42,7 @@ public class TopTabbedPane extends TabbedPane {
             @Override
             public void removedTab(Tab tab) {
                 if (tab instanceof ProjectTab) {
+                    ((ProjectTab) tab).getProject().playhead.setPlaying(false);
                     ((ProjectTab) tab).getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
                     if (currentProjectTab == tab) {
                         currentProjectTab = null;

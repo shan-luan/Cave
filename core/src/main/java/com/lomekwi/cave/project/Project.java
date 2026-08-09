@@ -97,6 +97,7 @@ public class Project implements Serializable, AutoCloseable {
 
 
     public void close() {
+        projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
         App.appEventBus.unregister(this);
         isActive = false;
         stopTrackLoops();

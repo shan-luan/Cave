@@ -294,13 +294,18 @@ public class Track implements Serializable,Iterable<Segment> {
                         Gdx.app.debug("Track"+index, "找到片段: " + s);
                         s.sync(t);
                         long end = r.upperEndpoint();
-                        while (t< end && !updateNeeded){
+                        while (t< end && !updateNeeded && !Thread.currentThread().isInterrupted()){
                             t=timeline.project.playhead.getTime();
                             Frame frame = s.get(t);
                             if(updateNeeded) break;
                             if (frame != null) {
                                 timeline.project.projEventBus.post(frame);
-                                sinkPhaser.arriveAndAwaitAdvance();
+                                int phase = sinkPhaser.arrive();
+                                try {
+                                    sinkPhaser.awaitAdvanceInterruptibly(phase);
+                                } catch (InterruptedException ie) {
+                                    Thread.currentThread().interrupt();
+                                }
                             }
                         }
                     }
