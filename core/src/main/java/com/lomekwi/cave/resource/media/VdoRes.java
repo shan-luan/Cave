@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class VdoRes extends MedRes implements Previewable {
+public class VdoRes extends MedRes implements Previewable, Showable {
     private int width;
     private int height;
     private long frameLength;
@@ -69,6 +69,11 @@ public class VdoRes extends MedRes implements Previewable {
     @Override
     public Texture getPreview(long time) {
         return getThumbnailer().get(time);
+    }
+
+    @Override
+    public Texture getPreview() {
+        return getThumbnailer().get(duration / 2);
     }
 
     @Override

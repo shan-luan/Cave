@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 import static com.lomekwi.cave.util.Units.SECOND;
 
-public class ImgRes extends MedRes implements Previewable {
+public class ImgRes extends MedRes implements Previewable, Showable {
     private int width;
     private int height;
     private transient ByteBuffer cachedPixels;
@@ -103,6 +103,11 @@ public class ImgRes extends MedRes implements Previewable {
 
     @Override
     public Texture getPreview(long time) {
+        return getTexture();
+    }
+
+    @Override
+    public Texture getPreview() {
         return getTexture();
     }
 

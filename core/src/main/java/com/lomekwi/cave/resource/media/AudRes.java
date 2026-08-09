@@ -7,6 +7,7 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 import com.lomekwi.cave.resource.decoder.DecRes;
+import com.lomekwi.cave.ui.Colors;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,12 +15,13 @@ import java.io.Serial;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AudRes extends MedRes implements Previewable {
+public class AudRes extends MedRes implements Previewable, Showable {
     @Serial
     private static final long serialVersionUID = 1L;
     private long frameLength;
 
     private transient Waveformer waveformer;
+    private transient SingleWaveform singleWaveform;
 
     public AudRes(String path) {
         super(path);
@@ -64,10 +66,23 @@ public class AudRes extends MedRes implements Previewable {
         return getWaveformer().bucketDuration;
     }
 
+    @Override
+    public Texture getPreview() {
+        return getSingleWaveform().get();
+    }
+
+    private SingleWaveform getSingleWaveform() {
+        if (singleWaveform == null) {
+            singleWaveform = new SingleWaveform();
+        }
+        return singleWaveform;
+    }
+
     @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         waveformer = null;
+        singleWaveform = null;
     }
 
     @Override
@@ -75,6 +90,78 @@ public class AudRes extends MedRes implements Previewable {
         super.close();
         if (waveformer != null) {
             waveformer.dispose();
+        }
+        if (singleWaveform != null) {
+            singleWaveform.dispose();
+        }
+    }
+
+    private class SingleWaveform {
+        private static final int W = 160;
+        private static final int H = 90;
+        private final AtomicBoolean generating = new AtomicBoolean(false);
+        private transient volatile Texture texture;
+
+        Texture get() {
+            if (texture != null) return texture;
+            if (generating.compareAndSet(false, true)) {
+                App.workerExecutor.submit(this::generate);
+            }
+            return null;
+        }
+
+        private void generate() {
+            AudDecRes dec = newDecoder();
+            AudFrame frame = new AudFrame(44100, 2, null);
+            float[] peaks = new float[W];
+            try {
+                dec.start();
+                long frameLen = dec.getLengthPerFrame();
+                long t = 0;
+                int col = 0;
+                while (col < W) {
+                    long colEnd = (col + 1) * duration / W;
+                    dec.get(t, frame);
+                    float[] samples = frame.getSamples();
+                    if (samples == null) break;
+                    for (float s : samples) {
+                        float a = s < 0 ? -s : s;
+                        if (a > peaks[col]) peaks[col] = a;
+                    }
+                    t += frameLen;
+                    if (t >= colEnd) col++;
+                }
+
+                Pixmap pm = new Pixmap(W, H, Pixmap.Format.RGBA8888);
+                pm.setColor(0, 0, 0, 0);
+                pm.fill();
+                int mid = H / 2;
+                pm.setColor(Colors.ACCENT);
+                for (int x = 0; x < W; x++) {
+                    float p = Math.min(1f, peaks[x]);
+                    int amp = (int) (p * (mid - 2));
+                    pm.drawLine(x, mid - amp, x, mid + amp);
+                }
+                final Pixmap fp = pm;
+                Gdx.app.postRunnable(() -> {
+                    if (texture != null) texture.dispose();
+                    texture = new Texture(fp);
+                    texture.setFilter(
+                        Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                    fp.dispose();
+                });
+            } catch (Exception e) {
+                Gdx.app.error("AudRes", "Single waveform failed for " + getPath(), e);
+            } finally {
+                try { dec.close(); } catch (Exception ignored) {}
+            }
+        }
+
+        void dispose() {
+            if (texture != null) {
+                texture.dispose();
+                texture = null;
+            }
         }
     }
 

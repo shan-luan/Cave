@@ -14,8 +14,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimap;
 import com.lomekwi.cave.resource.Resource;
 import com.lomekwi.cave.resource.media.MediaCreatedEvent;
-import com.lomekwi.cave.resource.media.MedRes;
-import com.lomekwi.cave.resource.media.Previewable;
+import com.lomekwi.cave.resource.media.Showable;
 import com.lomekwi.cave.ui.widget.EllipsisLabel;
 
 import com.lomekwi.cave.app.App;
@@ -47,7 +46,7 @@ public class MediaPool extends FlowGroup {
 
                 File file = (File) payload.getObject();
                 if(!resources.containsKey(file)){
-                    MediaPoolItem item = new MediaPoolItem(file, findPreviewable(file));
+                    MediaPoolItem item = new MediaPoolItem(file, findShowable(file));
                     addActor(item);
                     registerDragSource(item);
                 }
@@ -55,7 +54,7 @@ public class MediaPool extends FlowGroup {
         });
 
         resources.keySet().forEach(file -> {
-            MediaPoolItem item = new MediaPoolItem(file, findPreviewable(file));
+            MediaPoolItem item = new MediaPoolItem(file, findShowable(file));
             addActor(item);
             registerDragSource(item);
         });
@@ -63,9 +62,9 @@ public class MediaPool extends FlowGroup {
         eventBus.register(this);
     }
 
-    private Previewable findPreviewable(File file) {
+    private Showable findShowable(File file) {
         for (Resource r : resources.get(file)) {
-            if (r instanceof Previewable) return (Previewable) r;
+            if (r instanceof Showable) return (Showable) r;
         }
         return null;
     }
@@ -78,8 +77,8 @@ public class MediaPool extends FlowGroup {
                 return;
             }
         }
-        Previewable pv = event.medRes() instanceof Previewable
-            ? (Previewable) event.medRes() : null;
+        Showable pv = event.medRes() instanceof Showable
+            ? (Showable) event.medRes() : null;
         MediaPoolItem item = new MediaPoolItem(file, pv);
         addActor(item);
         registerDragSource(item);
@@ -99,18 +98,18 @@ public class MediaPool extends FlowGroup {
 
     public class MediaPoolItem extends VisTable {
         private final File file;
-        final Previewable previewable;
+        final Showable previewable;
         private final VisImage image;
         private boolean requested;
 
-        public MediaPoolItem(File file, Previewable previewable){
+        public MediaPoolItem(File file, Showable previewable){
             super();
             this.file = file;
             this.previewable = previewable;
 
             image = new VisImage(new Texture("libgdx.png"));
-            add(image).size(100).row();
-            add(new EllipsisLabel(file.getName(), 10));
+            add(image).size(128, 72).pad(4).row();
+            add(new EllipsisLabel(file.getName(), 10)).padBottom(4);
 
             if (previewable != null) {
                 requested = true;
@@ -121,7 +120,7 @@ public class MediaPool extends FlowGroup {
         public void act(float delta) {
             super.act(delta);
             if (requested) {
-                Texture tex = previewable.getPreview(0);
+                Texture tex = previewable.getPreview();
                 if (tex != null) {
                     image.setDrawable((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
                     image.setDrawable(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(tex));
