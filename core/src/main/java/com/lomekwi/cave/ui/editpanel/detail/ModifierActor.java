@@ -27,6 +27,7 @@ public abstract class ModifierActor extends VisWindow {
         this.modifier = modifier;
         align(Align.top | Align.left);
         defaults().left();
+        setKeepWithinStage(false);
         addCloseButton();
         setMovable(false);
         addListener(new InputListener() {
