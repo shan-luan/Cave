@@ -49,6 +49,7 @@ public class TransFrameActor extends Actor implements Selectable {
     private float startCanvasX, startCanvasY;
     private float startModifierDx, startModifierDy;
     private float dragCos, dragSin, dragScaleX, dragScaleY;
+    private boolean dragFlipX, dragFlipY;
 
     protected boolean gizmoDragging;
     protected Gizmo.Handle gizmoHandle;
@@ -59,8 +60,9 @@ public class TransFrameActor extends Actor implements Selectable {
     protected float gizmoStartRotation;
     protected float gizmoStartAngle;
     protected float gizmoAnchorLocalX, gizmoAnchorLocalY;
-    protected float startGizmoCanvasX, startGizmoCanvasY;
-    protected float startGizmoLocalX, startGizmoLocalY;
+    protected float gizmoAnchorStageX, gizmoAnchorStageY;
+    protected float gizmoCos, gizmoSin;
+    protected boolean gizmoFlipX, gizmoFlipY;
     protected UndoManager.TransModifierState gizmoOldState;
 
     private static final Vector2 dragStagePos = new Vector2();
@@ -326,9 +328,6 @@ public class TransFrameActor extends Actor implements Selectable {
         };
     }
 
-    // FIXME: 手柄锚点和缩放基于本地坐标轴计算，当 dragModifier 有旋转时与视觉轴不匹配。
-    //        视觉"向外"拖拽可能映射到本地"朝向锚点"，导致缩放方向相反。
-    //        需在画布空间测量锚点→手柄的视觉距离来计算缩放，再映射回本地 scaleX/scaleY。
     protected void startGizmoDrag(Source<?> source, Gizmo.Handle handle, float stageX, float stageY) {
         gizmoHandle = handle;
         gizmoDragging = true;
@@ -348,28 +347,6 @@ public class TransFrameActor extends Actor implements Selectable {
             dragModifier.flipX(), dragModifier.flipY());
 
         computeDragContext();
-
-        Actor p = getParent();
-        if (p != null) {
-            startGizmoCanvasX = (stageX - p.getX()) / p.getScaleX();
-            startGizmoCanvasY = (stageY - p.getY()) / p.getScaleY();
-        } else {
-            startGizmoCanvasX = stageX;
-            startGizmoCanvasY = stageY;
-        }
-        Vector2 gizmoLocalPos = tmp1;
-        gizmoLocalPos.set(stageX, stageY);
-        stageToLocalCoordinates(gizmoLocalPos);
-        startGizmoLocalX = gizmoLocalPos.x;
-        startGizmoLocalY = gizmoLocalPos.y;
-
-        if (handle == Gizmo.Handle.ROTATE) {
-            Vector2 centerStagePos = tmp1;
-            centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
-            localToStageCoordinates(centerStagePos);
-            gizmoStartAngle = (float) Math.toDegrees(Math.atan2(
-                stageY - centerStagePos.y, stageX - centerStagePos.x));
-        }
 
         switch (handle) {
             case NW -> {
@@ -406,6 +383,27 @@ public class TransFrameActor extends Actor implements Selectable {
             }
             case ROTATE -> {}
         }
+
+        // 锚点在 stage 坐标下的固定位置
+        tmp1.set(gizmoAnchorLocalX, gizmoAnchorLocalY);
+        localToStageCoordinates(tmp1);
+        gizmoAnchorStageX = tmp1.x;
+        gizmoAnchorStageY = tmp1.y;
+
+        // 总变换（含 dragModifier 自身的旋转/翻转）
+        float totalRad = (float) Math.toRadians(getRotation());
+        gizmoCos = (float) Math.cos(totalRad);
+        gizmoSin = (float) Math.sin(totalRad);
+        gizmoFlipX = getScaleX() < 0;
+        gizmoFlipY = getScaleY() < 0;
+
+        if (handle == Gizmo.Handle.ROTATE) {
+            Vector2 centerStagePos = tmp1;
+            centerStagePos.set(getWidth() / 2f, getHeight() / 2f);
+            localToStageCoordinates(centerStagePos);
+            gizmoStartAngle = (float) Math.toDegrees(Math.atan2(
+                stageY - centerStagePos.y, stageX - centerStagePos.x));
+        }
     }
 
     protected void updateGizmoDrag(float stageX, float stageY) {
@@ -414,13 +412,19 @@ public class TransFrameActor extends Actor implements Selectable {
             return;
         }
 
+        // stage 坐标取差后换算为画布本地 delta（canvas 仅平移+均匀缩放）
         Actor p = getParent();
-        float canvasX = p != null ? (stageX - p.getX()) / p.getScaleX() : stageX;
-        float canvasY = p != null ? (stageY - p.getY()) / p.getScaleY() : stageY;
-        float canvasDeltaX = canvasX - startGizmoCanvasX;
-        float canvasDeltaY = canvasY - startGizmoCanvasY;
-        float localX = startGizmoLocalX + (canvasDeltaX * dragCos + canvasDeltaY * dragSin) / dragScaleX;
-        float localY = startGizmoLocalY + (-canvasDeltaX * dragSin + canvasDeltaY * dragCos) / dragScaleY;
+        float canvasDeltaX = p != null ? (stageX - gizmoAnchorStageX) / p.getScaleX() : stageX - gizmoAnchorStageX;
+        float canvasDeltaY = p != null ? (stageY - gizmoAnchorStageY) / p.getScaleY() : stageY - gizmoAnchorStageY;
+
+        // 画布空间 → 本地空间（用含 dragModifier 的总变换）
+        float dLocalX = canvasDeltaX * gizmoCos + canvasDeltaY * gizmoSin;
+        float dLocalY = -canvasDeltaX * gizmoSin + canvasDeltaY * gizmoCos;
+        if (gizmoFlipX) dLocalX = -dLocalX;
+        if (gizmoFlipY) dLocalY = -dLocalY;
+
+        float localX = gizmoAnchorLocalX + dLocalX;
+        float localY = gizmoAnchorLocalY + dLocalY;
 
         localX = clampToAnchor(localX, gizmoAnchorLocalX, gizmoHandle, true);
         localY = clampToAnchor(localY, gizmoAnchorLocalY, gizmoHandle, false);
@@ -472,11 +476,23 @@ public class TransFrameActor extends Actor implements Selectable {
         float scaleChangeW = newScaleX / gizmoStartScaleX;
         float scaleChangeH = newScaleY / gizmoStartScaleY;
 
-        float compX = gizmoAnchorLocalX * (1f - scaleChangeW);
-        float compY = gizmoAnchorLocalY * (1f - scaleChangeH);
+        // 锚点补偿（画布空间）：锚点相对中心偏移随缩放变化，扣掉中心位移后保持锚点不动
+        float halfW = gizmoStartW * 0.5f;
+        float halfH = gizmoStartH * 0.5f;
+        float compX = (scaleChangeW - 1f) * (halfW - gizmoAnchorLocalX);
+        float compY = (scaleChangeH - 1f) * (halfH - gizmoAnchorLocalY);
+        float rotCompX = gizmoCos * compX - gizmoSin * compY;
+        float rotCompY = gizmoSin * compX + gizmoCos * compY;
+        if (gizmoFlipX) rotCompX = -rotCompX;
+        if (gizmoFlipY) rotCompY = -rotCompY;
+        float posDeltaX = rotCompX - (scaleChangeW - 1f) * halfW;
+        float posDeltaY = rotCompY - (scaleChangeH - 1f) * halfH;
 
-        float ddx = (compX * dragCos + compY * dragSin) / dragScaleX;
-        float ddy = (-compX * dragSin + compY * dragCos) / dragScaleY;
+        // 画布位移 → dragModifier 本地位移（仅用其之前的变换）
+        float ddx = (posDeltaX * dragCos + posDeltaY * dragSin) / dragScaleX;
+        float ddy = (-posDeltaX * dragSin + posDeltaY * dragCos) / dragScaleY;
+        if (dragFlipX) ddx = -ddx;
+        if (dragFlipY) ddy = -ddy;
 
         dragModifier.dx.set(gizmoStartDx + ddx);
         dragModifier.dy.set(gizmoStartDy + ddy);
@@ -542,6 +558,8 @@ public class TransFrameActor extends Actor implements Selectable {
         dy += snapAdjust.y;
         float localDx = (dx * dragCos + dy * dragSin) / dragScaleX;
         float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
+        if (dragFlipX) localDx = -localDx;
+        if (dragFlipY) localDy = -localDy;
         dragModifier.dx.set(startModifierDx + localDx);
         dragModifier.dy.set(startModifierDy + localDy);
         applyModifiers();
@@ -581,6 +599,8 @@ public class TransFrameActor extends Actor implements Selectable {
         dragScaleY = t.getScaleY();
         if (dragScaleX < 0.0001f) dragScaleX = 1f;
         if (dragScaleY < 0.0001f) dragScaleY = 1f;
+        dragFlipX = t.isFlipX();
+        dragFlipY = t.isFlipY();
         float rotRad = t.getRotationRadians();
         dragCos = (float) Math.cos(rotRad);
         dragSin = (float) Math.sin(rotRad);
@@ -773,12 +793,40 @@ public class TransFrameActor extends Actor implements Selectable {
                 Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
                 return;
             }
+            if (handle == Handle.ROTATE) {
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
+                return;
+            }
+            // 光标由锚点→手柄的屏幕方向决定，旋转/翻转后仍与视觉一致
+            float w = getWidth(), h = getHeight();
+            float hx, hy, ax, ay;
             switch (handle) {
-                case NW, SE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NWSEResize);
-                case NE, SW -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NESWResize);
-                case N, S -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.VerticalResize);
-                case E, W -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.HorizontalResize);
-                case ROTATE -> Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
+                case NW -> { hx = 0; hy = h; ax = w; ay = 0; }
+                case N -> { hx = w / 2f; hy = h; ax = w / 2f; ay = 0; }
+                case NE -> { hx = w; hy = h; ax = 0; ay = 0; }
+                case E -> { hx = w; hy = h / 2f; ax = 0; ay = h / 2f; }
+                case SE -> { hx = w; hy = 0; ax = 0; ay = h; }
+                case S -> { hx = w / 2f; hy = 0; ax = w / 2f; ay = h; }
+                case SW -> { hx = 0; hy = 0; ax = w; ay = h; }
+                case W -> { hx = 0; hy = h / 2f; ax = w; ay = h / 2f; }
+                default -> { hx = w; hy = 0; ax = 0; ay = h; }
+            }
+            tmp1.set(ax, ay);
+            tmp2.set(hx, hy);
+            localToStageCoordinates(tmp1);
+            localToStageCoordinates(tmp2);
+            float dx = tmp2.x - tmp1.x;
+            float dy = tmp2.y - tmp1.y;
+            if (handle == Handle.NW || handle == Handle.NE || handle == Handle.SE || handle == Handle.SW) {
+                if (dx * dy > 0) {
+                    Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NESWResize);
+                } else {
+                    Gdx.graphics.setSystemCursor(Cursor.SystemCursor.NWSEResize);
+                }
+            } else if (Math.abs(dx) > Math.abs(dy)) {
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.HorizontalResize);
+            } else {
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.VerticalResize);
             }
         }
 
