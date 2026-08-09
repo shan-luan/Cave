@@ -1,6 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea;
 
 import static com.lomekwi.cave.util.Units.SECOND;
+import static com.lomekwi.cave.util.Units.niceScale;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -180,7 +181,8 @@ public class TlGroup extends Group implements Focusable {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         renderer.drawBackground();
-        renderer.drawSplitters();
+        renderer.drawTrackBands();
+        renderer.drawTicks();
         super.draw(batch, parentAlpha);
         renderer.drawPlayhead();
         if (marqueeActive) {
@@ -1358,23 +1360,37 @@ class SegDragHandler {
 
     class TimelineRenderer {
         final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
-        private static final Color black = new Color(0, 0, 0, 0.5f);
+        private static final float PIXELS_PER_TICK = 200f;
+        private static final Color background = new Color(0.08f, 0.08f, 0.08f, 1f);
+        private static final Color contentArea = new Color(1f,1f,1f, 0.05f);
+        private static final Color trackBand   = new Color(1f,1f,1f, 0.03f);
+        private static final Color tickLine = new Color(1f,1f,1f, 0.06f);
 
         void drawBackground() {
-            shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Color.DARK_GRAY);
+            shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), background);
 
             final float startX = absoluteTimeToX(0);
             final float endX = absoluteTimeToX(timeline.getLength());
 
-            shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Color.GRAY);
+            shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), contentArea);
         }
 
-        void drawSplitters() {
-            float offset = ((view.trackYShift % view.trackHeight) + view.trackHeight) % view.trackHeight;
-            float startY = getHeight() + offset;
+        void drawTicks() {
+            final long interval = niceScale((long) (view.durationTime * PIXELS_PER_TICK / getWidth()));
+            final long start = (view.startTime / interval) * interval;
 
-            for (float y = startY; y > -view.trackHeight; y -= view.trackHeight) {
-                shapeDrawer.line(0, y, getWidth(), y, black);
+            for (long t = start; t < view.startTime + view.durationTime; t += interval) {
+                float x = absoluteTimeToX(t);
+                shapeDrawer.filledRectangle(x, 0, 1, getHeight(), tickLine);
+            }
+        }
+
+        void drawTrackBands() {
+            final float top = getHeight() + view.trackYShift;
+            for (int i = 0; ; i += 2) {
+                final float y = top - i * view.trackHeight;
+                if (y <= -view.trackHeight) break;
+                shapeDrawer.filledRectangle(0, y - view.trackHeight, getWidth(), view.trackHeight, trackBand);
             }
         }
 
