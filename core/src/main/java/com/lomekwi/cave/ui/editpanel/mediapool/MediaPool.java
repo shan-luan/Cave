@@ -108,6 +108,7 @@ public class MediaPool extends FlowGroup {
             this.previewable = previewable;
 
             image = new VisImage(new Texture("libgdx.png"));
+            image.setScaling(com.badlogic.gdx.utils.Scaling.fit);
             add(image).size(128, 72).pad(4).row();
             add(new EllipsisLabel(file.getName(), 10)).padBottom(4);
 
