@@ -3,6 +3,8 @@ package com.lomekwi.cave.ui.editpanel.previewarea;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -19,6 +21,7 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
 import com.lomekwi.cave.task.ExportPresetsChangedEvent;
+import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.ui.Focusable;
 import com.lomekwi.cave.ui.widget.PanZoomCanvas;
 import com.lomekwi.cave.util.Units;
@@ -193,6 +196,7 @@ public class PreviewArea extends Group implements Focusable {
     private static final int TICK_PIXEL_TARGET = 80;
 
     private static final Color PRESET_OUTLINE = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+    private static final Vector2 guidePos = new Vector2();
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
@@ -200,6 +204,27 @@ public class PreviewArea extends Group implements Focusable {
         drawAxes();
         drawPresetOutlines();
         super.draw(batch, parentAlpha);
+        drawSnapGuides();
+    }
+
+    private void drawSnapGuides() {
+        var drawer = App.root.getShapeDrawer();
+        for (Actor child : canvas.getChildren()) {
+            if (!(child instanceof TransFrameActor tfa)) continue;
+            float lx = tfa.getSnapLineX();
+            float ly = tfa.getSnapLineY();
+            if (Float.isNaN(lx) && Float.isNaN(ly)) continue;
+            if (!Float.isNaN(lx)) {
+                guidePos.set(lx, 0);
+                canvas.localToParentCoordinates(guidePos);
+                drawer.line(guidePos.x, getY(), guidePos.x, getY() + getHeight(), Colors.SNAP_GUIDE, 2);
+            }
+            if (!Float.isNaN(ly)) {
+                guidePos.set(0, ly);
+                canvas.localToParentCoordinates(guidePos);
+                drawer.line(getX(), guidePos.y, getX() + getWidth(), guidePos.y, Colors.SNAP_GUIDE, 2);
+            }
+        }
     }
 
     @Subscribe

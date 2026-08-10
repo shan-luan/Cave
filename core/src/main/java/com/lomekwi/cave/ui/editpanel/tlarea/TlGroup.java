@@ -23,6 +23,7 @@ import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.Playhead;
 
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.ui.Focusable;
 
 import java.util.ArrayList;
@@ -1440,7 +1441,7 @@ class SegDragHandler {
 
         void drawSnapIndicator() {
             final float x = absoluteTimeToX(snapIndicatorTime);
-            shapeDrawer.line(x, 0, x, getHeight(), Color.YELLOW, 2);
+            shapeDrawer.line(x, 0, x, getHeight(), Colors.SNAP_GUIDE, 2);
         }
     }
 

@@ -82,6 +82,10 @@ public class TransFrameActor extends Actor implements Selectable {
     private List<float[]> siblingBBoxes;
     private static final Vector2 snapAdjust = new Vector2();
 
+    /** 移动吸附时的提示线位置（画布坐标），NaN 表示无吸附 */
+    private float snapLineX = Float.NaN;
+    private float snapLineY = Float.NaN;
+
     public <T extends Frame & Transformable> TransFrameActor(T frame) {
         this.frame = frame;
         this.transformable = frame;
@@ -167,6 +171,8 @@ public class TransFrameActor extends Actor implements Selectable {
                 gizmoHandle = null;
                 myStartBBox = null;
                 siblingBBoxes = null;
+                snapLineX = Float.NaN;
+                snapLineY = Float.NaN;
             }
 
             @Override
@@ -649,6 +655,8 @@ public class TransFrameActor extends Actor implements Selectable {
 
     private void computeSnapAdjustment(float dx, float dy) {
         snapAdjust.set(0, 0);
+        snapLineX = Float.NaN;
+        snapLineY = Float.NaN;
         if (myStartBBox == null || siblingBBoxes == null) return;
         Actor p = getParent();
         float threshold = (p != null) ? SNAP_THRESHOLD_SCREEN / p.getScaleX() : SNAP_THRESHOLD_SCREEN;
@@ -661,36 +669,43 @@ public class TransFrameActor extends Actor implements Selectable {
         float pcy = myStartBBox[5] + dy;
 
         float bestSnapX = 0, bestSnapY = 0;
+        float bestLineX = Float.NaN, bestLineY = Float.NaN;
         float bestDistX = threshold, bestDistY = threshold;
 
         for (float[] s : siblingBBoxes) {
             float d;
 
             d = s[0] - pl;
-            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; bestLineX = s[0]; }
             d = s[1] - pl;
-            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; bestLineX = s[1]; }
             d = s[1] - pr;
-            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; bestLineX = s[1]; }
             d = s[0] - pr;
-            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; bestLineX = s[0]; }
             d = s[4] - pcx;
-            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; }
+            if (Math.abs(d) < bestDistX) { bestDistX = Math.abs(d); bestSnapX = d; bestLineX = s[4]; }
 
             d = s[2] - pb;
-            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; bestLineY = s[2]; }
             d = s[3] - pb;
-            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; bestLineY = s[3]; }
             d = s[3] - pt;
-            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; bestLineY = s[3]; }
             d = s[2] - pt;
-            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; bestLineY = s[2]; }
             d = s[5] - pcy;
-            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; }
+            if (Math.abs(d) < bestDistY) { bestDistY = Math.abs(d); bestSnapY = d; bestLineY = s[5]; }
         }
 
-        if (bestDistX < threshold) snapAdjust.x = bestSnapX;
-        if (bestDistY < threshold) snapAdjust.y = bestSnapY;
+        if (bestDistX < threshold) {
+            snapAdjust.x = bestSnapX;
+            snapLineX = bestLineX;
+        }
+        if (bestDistY < threshold) {
+            snapAdjust.y = bestSnapY;
+            snapLineY = bestLineY;
+        }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -709,6 +724,14 @@ public class TransFrameActor extends Actor implements Selectable {
 
     public boolean isSelected() {
         return selected;
+    }
+
+    public float getSnapLineX() {
+        return snapLineX;
+    }
+
+    public float getSnapLineY() {
+        return snapLineY;
     }
 
     public void setSelected(boolean selected) {
