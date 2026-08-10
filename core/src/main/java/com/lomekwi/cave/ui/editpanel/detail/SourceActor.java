@@ -9,5 +9,6 @@ public abstract class SourceActor extends VisWindow {
         align(Align.top | Align.left);
         defaults().left();
         setKeepWithinStage(false);
+        setMovable(false);
     }
 }
