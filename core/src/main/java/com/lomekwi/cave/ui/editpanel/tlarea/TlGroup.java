@@ -63,6 +63,9 @@ public class TlGroup extends Group implements Focusable {
     float marqueeStartX, marqueeStartY;
     float marqueeEndX, marqueeEndY;
 
+    /** 拖拽吸附时的吸附时间点，-1 表示无吸附 */
+    long snapIndicatorTime = -1;
+
     public TlGroup(Project project) {
         this.project = project;
         this.timeline = project.timeline;
@@ -185,6 +188,9 @@ public class TlGroup extends Group implements Focusable {
         renderer.drawTicks();
         super.draw(batch, parentAlpha);
         renderer.drawPlayhead();
+        if (snapIndicatorTime >= 0) {
+            renderer.drawSnapIndicator();
+        }
         if (marqueeActive) {
             float x = Math.min(marqueeStartX, marqueeEndX);
             float y = Math.min(marqueeStartY, marqueeEndY);
@@ -650,6 +656,8 @@ class SegDragHandler {
 
         void segDrag(SegActor actor, float diffToActorX, float diffToActorY) {
 
+            snapIndicatorTime = -1;
+
             Track t = actor.getSegment().getTrack();
             var e = actor.getSegment().getEntry();
             var r = e.getKey();
@@ -661,20 +669,24 @@ class SegDragHandler {
                     if (target >= upper) return;
                     target = Math.max(target, absoluteTimeToX(0));
 
-                    long snapped = snapTime(xToAbsoluteTime(target), getSnapIgnoreSet(e.getValue()));
-                    target = absoluteTimeToX(Math.max(snapped, 0));
+                    long rawTime = xToAbsoluteTime(target);
+                    long snapped = snapTime(rawTime, getSnapIgnoreSet(e.getValue()));
+                    long appliedStart = Math.max(snapped, 0);
+                    snapIndicatorTime = appliedStart != rawTime ? appliedStart : -1;
+                    target = absoluteTimeToX(appliedStart);
 
                     if (groupMembers != null) {
-                        handleGroupFrontResize(xToAbsoluteTime(target));
+                        handleGroupFrontResize(appliedStart);
                         break;
                     }
 
-                    Range<Long> nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
+                    Range<Long> nr = Range.closedOpen(appliedStart, r.upperEndpoint());
 
                     if (!t.isFree(nr, Set.of(e.getValue()))) {
                         var prevEntry = t.getEntry(r.lowerEndpoint() + 1, -1, true);
                         if (prevEntry == null) return;
                         long minStart = prevEntry.getKey().upperEndpoint();
+                        snapIndicatorTime = minStart;
                         target = Math.max(absoluteTimeToX(minStart), absoluteTimeToX(0));
                         nr = Range.closedOpen(xToAbsoluteTime(target), r.upperEndpoint());
                     }
@@ -693,22 +705,26 @@ class SegDragHandler {
                     float newWidth = diffToActorX;
                     float upper = actor.getX() + newWidth;
 
-                    long snapped = snapTime(xToAbsoluteTime(upper), getSnapIgnoreSet(e.getValue()));
-                    upper = absoluteTimeToX(Math.max(snapped, 0));
+                    long rawUpper = xToAbsoluteTime(upper);
+                    long snapped = snapTime(rawUpper, getSnapIgnoreSet(e.getValue()));
+                    long appliedUpper = Math.max(snapped, 0);
+                    snapIndicatorTime = appliedUpper != rawUpper ? appliedUpper : -1;
+                    upper = absoluteTimeToX(appliedUpper);
                     newWidth = upper - actor.getX();
                     if (newWidth < 1f) return;
 
                     if (groupMembers != null) {
-                        handleGroupBehindResize(xToAbsoluteTime(upper));
+                        handleGroupBehindResize(appliedUpper);
                         break;
                     }
 
-                    Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
+                    Range<Long> nr = Range.closedOpen(r.lowerEndpoint(), appliedUpper);
 
                     if (!t.isFree(nr, Set.of(e.getValue()))) {
                         var nextEntry = t.getEntry(r.upperEndpoint() - 1, 1, true);
                         if (nextEntry == null) return;
                         long maxEnd = nextEntry.getKey().lowerEndpoint();
+                        snapIndicatorTime = maxEnd;
                         upper = absoluteTimeToX(maxEnd);
                         newWidth = upper - actor.getX();
                         nr = Range.closedOpen(r.lowerEndpoint(), xToAbsoluteTime(upper));
@@ -742,13 +758,17 @@ class SegDragHandler {
                         if (startMoved && endMoved) {
                             if (Math.abs(snappedStart - target) <= Math.abs(snappedEnd - target)) {
                                 target = snappedStart;
+                                snapIndicatorTime = snappedStart;
                             } else {
                                 target = snappedEnd;
+                                snapIndicatorTime = target + duration;
                             }
                         } else if (startMoved) {
                             target = snappedStart;
+                            snapIndicatorTime = snappedStart;
                         } else if (endMoved) {
                             target = snappedEnd;
+                            snapIndicatorTime = target + duration;
                         }
                         if (target < 0) target = 0;
                         targetX = absoluteTimeToX(target);
@@ -771,6 +791,7 @@ class SegDragHandler {
 
                     if (!canMove) {
                         long snappedTarget = -1;
+                        long snappedIndicator = -1;
                         long maxOccEnd = -1;
                         long minOccStart = Long.MAX_VALUE;
                         for (var occ : newTrack.getSubRangeMapAsEntrySet(Range.closedOpen(target, target + duration))) {
@@ -785,15 +806,18 @@ class SegDragHandler {
 
                         if (rightTarget >= 0 && newTrack.isFree(Range.closedOpen(rightTarget, rightTarget + duration), self)) {
                             snappedTarget = rightTarget;
+                            snappedIndicator = rightTarget;
                         }
                         if (leftTarget >= 0 && newTrack.isFree(Range.closedOpen(leftTarget, leftTarget + duration), self)) {
                             if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
                                 snappedTarget = leftTarget;
+                                snappedIndicator = leftTarget + duration;
                             }
                         }
 
                         if (snappedTarget >= 0) {
                             target = snappedTarget;
+                            if (snappedIndicator >= 0) snapIndicatorTime = snappedIndicator;
                             targetX = absoluteTimeToX(target);
                             /*nr = Range.closedOpen(target, target + duration);*/
                             canMove = true;
@@ -930,6 +954,7 @@ class SegDragHandler {
                 }
 
                 long snappedTarget = -1;
+                long snappedIndicator = -1;
 
                 float mousePx = absoluteTimeToX(target);
 
@@ -948,6 +973,7 @@ class SegDragHandler {
                         }
                         if (ok && timeline.canMoveGroup(groupMembers, rightStarts, groupOrigDurations, rightTracks)) {
                             snappedTarget = rightTarget;
+                            snappedIndicator = rightTarget;
                         }
                     }
                 }
@@ -968,6 +994,7 @@ class SegDragHandler {
                         if (ok && timeline.canMoveGroup(groupMembers, leftStarts, groupOrigDurations, leftTracks)) {
                             if (snappedTarget < 0 || Math.abs(leftTarget - target) < Math.abs(snappedTarget - target)) {
                                 snappedTarget = leftTarget;
+                                snappedIndicator = leftTarget + groupOrigDurations[0];
                             }
                         }
                     }
@@ -975,6 +1002,7 @@ class SegDragHandler {
 
                 if (snappedTarget >= 0) {
                     target = snappedTarget;
+                    if (snappedIndicator >= 0) snapIndicatorTime = snappedIndicator;
                     timeDelta = target - dragOldStart;
                     for (int i = 0; i < n; i++) {
                         newStarts[i] = groupOrigStarts[i] + timeDelta;
@@ -1065,6 +1093,7 @@ class SegDragHandler {
                     if (!ok || !timeline.canMoveGroup(groupMembers, newStarts, newDurations, groupOrigTracks)) {
                         return;
                     }
+                    snapIndicatorTime = groupOrigStarts[0] + rightMinDelta;
                 } else {
                     return;
                 }
@@ -1136,6 +1165,7 @@ class SegDragHandler {
                     if (!ok || !timeline.canMoveGroup(groupMembers, groupOrigStarts, newDurations, groupOrigTracks)) {
                         return;
                     }
+                    snapIndicatorTime = groupOrigStarts[0] + groupOrigDurations[0] + leftMaxDelta;
                 } else {
                     return;
                 }
@@ -1167,6 +1197,7 @@ class SegDragHandler {
 
         void segDragEnd(SegActor actor) {
             dirty = true;
+            snapIndicatorTime = -1;
 
             var seg = actor.getSegment();
 
@@ -1405,6 +1436,11 @@ class SegDragHandler {
             );
 
             shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3);
+        }
+
+        void drawSnapIndicator() {
+            final float x = absoluteTimeToX(snapIndicatorTime);
+            shapeDrawer.line(x, 0, x, getHeight(), Color.YELLOW, 2);
         }
     }
 
