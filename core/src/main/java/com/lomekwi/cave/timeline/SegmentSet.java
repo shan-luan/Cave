@@ -6,7 +6,9 @@ import com.lomekwi.cave.app.selection.Selectable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class SegmentSet implements Serializable, Selectable, Copyable {
@@ -72,10 +74,20 @@ public class SegmentSet implements Serializable, Selectable, Copyable {
             return commonGroup.copy();
         }
         SegmentSet set = new SegmentSet();
+        Map<SegmentGroup, SegmentGroup> groupCopies = new HashMap<>();
         for (Segment seg : segments) {
             var dup = seg.duplicate();
             dup.setTrack(seg.getTrack());
-            set.segments.add(dup);
+            SegmentGroup g = seg.getGroup();
+            if (g != null) {
+                SegmentGroup copyG = groupCopies.get(g);
+                if (copyG == null) {
+                    copyG = new SegmentGroup();
+                    groupCopies.put(g, copyG);
+                }
+                copyG.add(dup);
+            }
+            set.add(dup);
         }
         return set;
     }

@@ -478,6 +478,8 @@ public class TlGroup extends Group implements Focusable {
         sorted.sort(java.util.Comparator.comparingInt(s -> s.getTrack().index));
 
         int minTrack = sorted.get(0).getTrack().index;
+        long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
+        long timeOffset = baseTime - minStart;
 
         for (Segment seg : sorted) {
             long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
@@ -486,18 +488,18 @@ public class TlGroup extends Group implements Focusable {
             int trackOffset = seg.getTrack().index - minTrack;
             int ti = baseTrack + trackOffset;
             Track track = timeline.getTrack(ti);
-            var range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            long segStart = seg.getRange().lowerEndpoint() + timeOffset;
+            var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
             while (!track.isFree(range, Set.of())) {
                 ti++;
                 track = timeline.getTrack(ti);
-                range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+                range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
             }
 
-            long originOffset = seg.getOrigin() - seg.getRange().lowerEndpoint();
-            seg.setOrigin(baseTime + originOffset);
+            seg.setOrigin(seg.getOrigin() + timeOffset);
 
-            timeline.add(track, seg, baseTime, duration);
-            cmds.add(new UndoManager.AddSegCommand(track, seg, baseTime, duration));
+            timeline.add(track, seg, segStart, duration);
+            cmds.add(new UndoManager.AddSegCommand(track, seg, segStart, duration));
             pasted.add(seg);
         }
 
@@ -523,6 +525,8 @@ public class TlGroup extends Group implements Focusable {
         sorted.sort(java.util.Comparator.comparingInt(s -> s.getTrack().index));
 
         int minTrack = sorted.get(0).getTrack().index;
+        long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
+        long timeOffset = baseTime - minStart;
 
         for (Segment seg : sorted) {
             long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
@@ -531,18 +535,18 @@ public class TlGroup extends Group implements Focusable {
             int trackOffset = seg.getTrack().index - minTrack;
             int ti = baseTrack + trackOffset;
             Track track = timeline.getTrack(ti);
-            var range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+            long segStart = seg.getRange().lowerEndpoint() + timeOffset;
+            var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
             while (!track.isFree(range, Set.of())) {
                 ti++;
                 track = timeline.getTrack(ti);
-                range = com.google.common.collect.Range.closedOpen(baseTime, baseTime + duration);
+                range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
             }
 
-            long originOffset = seg.getOrigin() - seg.getRange().lowerEndpoint();
-            seg.setOrigin(baseTime + originOffset);
+            seg.setOrigin(seg.getOrigin() + timeOffset);
 
-            timeline.add(track, seg, baseTime, duration);
-            cmds.add(new UndoManager.AddSegCommand(track, seg, baseTime, duration));
+            timeline.add(track, seg, segStart, duration);
+            cmds.add(new UndoManager.AddSegCommand(track, seg, segStart, duration));
         }
 
         if (!cmds.isEmpty()) {
