@@ -36,6 +36,7 @@ import java.util.List;
  */
 @NullMarked
 public class PreviewArea extends Group implements Focusable {
+
     private final Project project;
     private final PanZoomCanvas panZoom = new PanZoomCanvas(0.07f, 30f, 1000f);
     private final Group canvas = panZoom.getCanvas();
@@ -65,19 +66,13 @@ public class PreviewArea extends Group implements Focusable {
         addListener(new ClickListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                if(x<0||x>getWidth()||y<0||y>getHeight())return false;
-                if (button == 0 && event.getTarget() == PreviewArea.this) {
-                    var editPanel = App.root.getFrontendEditPanel();
-                    if (editPanel != null) {
-                        var tlGroup = editPanel.getTlGroup();
-                        tlGroup.clearSelection();
-                    }
-                }
-                return true;
+                if (x < 0 || x > getWidth() || y < 0 || y > getHeight()) return false;
+                return super.touchDown(event, x, y, pointer, button);
             }
 
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                if (event.getTarget() instanceof TransFrameActor) return;
                 var editPanel = App.root.getFrontendEditPanel();
                 if (editPanel != null) {
                     var tlGroup = editPanel.getTlGroup();
