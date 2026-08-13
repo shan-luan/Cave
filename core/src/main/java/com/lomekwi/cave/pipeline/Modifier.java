@@ -19,7 +19,7 @@ public abstract class Modifier<T> implements Serializable {
         return source;
     }
 
-    public abstract void modify(T frame, long time);
+    public abstract <F extends T> F modify(F frame, long time);
 
     public abstract String getName();
 

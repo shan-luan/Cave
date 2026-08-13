@@ -58,12 +58,13 @@ public class AlignModifier extends Modifier<Transformable> {
     }
 
     @Override
-    public void modify(Transformable frame, long time) {
+    public <F extends Transformable> F modify(F frame, long time) {
         Transform t = frame.getTransform();
         t.applyLocal(
             hAlign.offset(frame.getBaseWidth()),
             vAlign.offset(frame.getBaseHeight()),
             1f, 1f, 0f, false, false);
+        return frame;
     }
 
     @Override

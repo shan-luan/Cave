@@ -32,9 +32,10 @@ public TransModifier(Source<?> source) {
     public String getName() { return "变换"; }
 
     @Override
-    public void modify(Transformable frame, long time) {
+    public <F extends Transformable> F modify(F frame, long time) {
         Transform t = frame.getTransform();
         t.applyLocal(dx.getFloat(), dy.getFloat(), scaleX.getFloat(), scaleY.getFloat(), dRotation.getFloat(), flipX, flipY);
+        return frame;
     }
 
     @Override
