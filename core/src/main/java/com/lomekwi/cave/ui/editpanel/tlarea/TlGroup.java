@@ -4,11 +4,15 @@ import static com.lomekwi.cave.util.Units.SECOND;
 import static com.lomekwi.cave.util.Units.niceScale;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.app.shortcut.ShortcutAction;
 import com.lomekwi.cave.timeline.Segment;
@@ -85,6 +89,34 @@ public class TlGroup extends Group implements Focusable {
         addListener(new TlGroupInputListener(this));
         addCaptureListener(new TlGroupCaptureListener(this));
         App.root.getDragAndDrop().addTarget(new TlGroupDropTarget(this));
+        addListener(new DragListener() {
+            {
+                setButton(Input.Buttons.MIDDLE);
+            }
+
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (super.touchDown(event, x, y, pointer, button)) {
+                    Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void drag(InputEvent event, float x, float y, int pointer) {
+                view.scrollHorizontal(-getDeltaX(), getWidth());
+                view.trackYShift = Math.max(0, view.trackYShift + getDeltaY());
+                dirty = true;
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize);
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                super.touchUp(event, x, y, pointer, button);
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+            }
+        });
     }
 
     @Override

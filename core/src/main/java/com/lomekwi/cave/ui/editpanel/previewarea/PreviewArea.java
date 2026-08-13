@@ -280,6 +280,7 @@ public class PreviewArea extends Group implements Focusable {
 
     @Override
     public void sizeChanged() {
+        panZoom.setSize(getWidth(), getHeight());
         if (lastWidth > 0 && lastHeight > 0) {
             if (refViewportArea < 0) {
                 refViewportArea = lastWidth * lastHeight;

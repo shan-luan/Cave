@@ -1,8 +1,15 @@
 package com.lomekwi.cave.ui.widget;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
+import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 
@@ -29,10 +36,45 @@ public class PanZoomCanvas extends WidgetGroup {
         this.maxZoom = maxZoom;
         this.moveSpeed = moveSpeed;
         addActor(canvas);
+        addListener(new DragListener() {
+            {
+                setButton(Input.Buttons.MIDDLE);
+            }
+
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (super.touchDown(event, x, y, pointer, button)) {
+                    Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize);
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void drag(InputEvent event, float x, float y, int pointer) {
+                xOffset += getDeltaX();
+                yOffset += getDeltaY();
+                updateCanvas();
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                super.touchUp(event, x, y, pointer, button);
+                Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow);
+            }
+        });
     }
 
     public Group getCanvas() {
         return canvas;
+    }
+
+    @Override
+    public Actor hit(float x, float y, boolean touchable) {
+        Actor hit = super.hit(x, y, touchable);
+        if (hit != null) return hit;
+        if (touchable && getTouchable() != Touchable.enabled) return null;
+        return x >= 0 && x < getWidth() && y >= 0 && y < getHeight() ? this : null;
     }
 
     public float getScale() {
