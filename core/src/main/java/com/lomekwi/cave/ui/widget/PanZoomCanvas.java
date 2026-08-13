@@ -2,6 +2,7 @@ package com.lomekwi.cave.ui.widget;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 
@@ -10,7 +11,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
  * 键盘焦点获得时按 SCROLL_* 热键平移。缩放由 zoom * baseScale 构成，
  * baseScale 供外部按视口尺寸适配（如预览区），默认 1。
  */
-public class PanZoomCanvas extends Group {
+public class PanZoomCanvas extends WidgetGroup {
     private final Group canvas = new Group();
     private float xOffset, yOffset;
     private float zoom = 1f;

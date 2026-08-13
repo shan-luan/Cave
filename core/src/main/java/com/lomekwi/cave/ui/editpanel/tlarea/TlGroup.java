@@ -187,6 +187,7 @@ public class TlGroup extends Group implements Focusable {
         renderer.drawBackground();
         renderer.drawTrackBands();
         renderer.drawTicks();
+        batch.setColor(Color.WHITE);
         super.draw(batch, parentAlpha);
         renderer.drawPlayhead();
         if (snapIndicatorTime >= 0) {

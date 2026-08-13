@@ -16,8 +16,10 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
@@ -53,7 +55,7 @@ public class Root implements ApplicationListener {
     private ToastManager toastManager;
 
     private VisTable mainLayout;
-    private VisTable majorArea;
+    private Container<Table> majorArea;
 
     private TopBar topBar;
     private TopTabbedPane tabbedPane;
@@ -200,7 +202,25 @@ public class Root implements ApplicationListener {
         tabbedPane = new TopTabbedPane();
         mainLayout.add(tabbedPane.getTable()).fillX().top().row();
         tabbedPane.refreshVisibility();
-        majorArea=new VisTable();
+        majorArea = new Container<Table>() {
+            @Override
+            public float getMinHeight() {
+                return 0;
+            }
+            @Override
+            public float getMinWidth() {
+                return 0;
+            }
+            @Override
+            public float getPrefHeight() {
+                return 0;
+            }
+            @Override
+            public float getPrefWidth() {
+                return 0;
+            }
+        };
+        majorArea.fill();
         mainLayout.add(majorArea).fill().expand().row();
 
         stage.addActor(mainLayout);
@@ -254,7 +274,7 @@ public class Root implements ApplicationListener {
     public VisTable getMainLayout() {
         return mainLayout;
     }
-    public VisTable getMajorArea() {
+    public Container<Table> getMajorArea() {
         return majorArea;
     }
     public TopTabbedPane getTabbedPane() {

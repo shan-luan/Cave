@@ -6,6 +6,7 @@ import com.lomekwi.cave.ui.nodeeditor.NodeEditorView;
 import com.lomekwi.cave.util.i18n.I18N;
 
 public class NodeEditorTab extends Tab {
+    private final Table content = new NodeEditorView();
 
     public NodeEditorTab() {
         super(false, true);
@@ -18,6 +19,6 @@ public class NodeEditorTab extends Tab {
 
     @Override
     public Table getContentTable() {
-        return new NodeEditorView();
+        return content;
     }
 }

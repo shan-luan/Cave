@@ -138,9 +138,9 @@ public class TopBar extends MenuBar {
 
         addMenu(new MenuX(i18n("工具"))
             .withItem(new MenuItem(i18n("节点编辑器"), new ChangeListenerX(() -> {
-                var tab = new NodeEditorTab();
-                App.root.getTabbedPane().add(tab);
-                App.root.getTabbedPane().switchTab(tab);
+                var ep = App.root.getFrontendEditPanel();
+                if (ep == null) return;
+                ep.getTlTabs().add(new NodeEditorTab());
             })))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {
                 new SettingsDialog();

@@ -21,8 +21,7 @@ public class TopTabbedPane extends AutoHideTabbedPane {
                     currentProjectTab.getProject().playhead.setPlaying(false);
                 }
 
-                App.root.getMajorArea().clear();
-                App.root.getMajorArea().add(tab.getContentTable()).grow();
+                App.root.getMajorArea().setActor(tab.getContentTable());
 
                 if (currentProjectTab != null && currentProjectTab != tab) {
                     currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE);
@@ -51,7 +50,7 @@ public class TopTabbedPane extends AutoHideTabbedPane {
 
             @Override
             public void removedAllTabs() {
-                App.root.getMajorArea().clear();
+                App.root.getMajorArea().setActor(null);
                 App.appEventBus.post(TabSwitchedEvent.INSTANCE);
             }
         });
