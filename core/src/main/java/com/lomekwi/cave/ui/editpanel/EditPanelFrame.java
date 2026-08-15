@@ -11,7 +11,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.ui.editpanel.detail.SegDetailView;
+import com.lomekwi.cave.ui.editpanel.inspector.Inspector;
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree;
 
 import org.jspecify.annotations.NonNull;
@@ -21,7 +21,7 @@ public class EditPanelFrame extends VisTable {
     private final VisSplitPane mediaPoolAndFileTreeSplitPane;
     private final VisSplitPane previewAndTimelineSplitPane;
     private final VisSplitPane previewAndDetailSplitPane;
-    private final SegDetailView detailPanel;
+    private final Inspector detailPanel;
     private EditPanel editPanel;
     private EditPanelFrame() {
         VisTable treePanel = new VisTable();
@@ -45,7 +45,7 @@ public class EditPanelFrame extends VisTable {
         ScrollPane fileTreeScrollPane = new VisScrollPane(treePanel);
         mediaPoolAndFileTreeSplitPane = new VisSplitPane(null, fileTreeScrollPane, true);
         mediaPoolAndFileTreeSplitPane.setSplitAmount(0.33f);
-        detailPanel = new SegDetailView();
+        detailPanel = new Inspector();
         previewAndDetailSplitPane = new VisSplitPane(null, detailPanel, false);
         previewAndDetailSplitPane.setSplitAmount(0.75f);
         previewAndTimelineSplitPane = new VisSplitPane(previewAndDetailSplitPane, null, true);
@@ -71,7 +71,7 @@ public class EditPanelFrame extends VisTable {
         return this;
     }
 
-    public SegDetailView getDetailPanel() {
+    public Inspector getDetailPanel() {
         return detailPanel;
     }
 

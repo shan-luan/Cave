@@ -1,14 +1,12 @@
 package com.lomekwi.cave.pipeline.audio;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.app.AppAudioOut;
-import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.detail.AudClipSrcActor;
-import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
+import com.lomekwi.cave.ui.editpanel.inspector.AudClipSrcActor;
+import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 

@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.ui.editpanel.detail.TransModifierActor;
+import com.lomekwi.cave.ui.editpanel.inspector.TransModifierActor;
 
 public class TransModifier extends Modifier<Transformable> {
     public Modifier.Val dx, dy, scaleX, scaleY, dRotation;

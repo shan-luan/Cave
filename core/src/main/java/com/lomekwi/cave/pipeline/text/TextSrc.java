@@ -4,15 +4,13 @@ import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
-import com.lomekwi.cave.ui.editpanel.detail.TextSrcActor;
+import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
+import com.lomekwi.cave.ui.editpanel.inspector.TextSrcActor;
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor;

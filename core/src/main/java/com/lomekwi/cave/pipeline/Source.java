@@ -2,7 +2,7 @@ package com.lomekwi.cave.pipeline;
 
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.detail.SourceActor;
+import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;

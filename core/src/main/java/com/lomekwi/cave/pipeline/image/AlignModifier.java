@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.ui.editpanel.detail.AlignModifierActor;
+import com.lomekwi.cave.ui.editpanel.inspector.AlignModifierActor;
 
 public class AlignModifier extends Modifier<Transformable> {
     private HAlign hAlign = HAlign.LEFT;

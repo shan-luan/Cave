@@ -8,7 +8,7 @@ import com.lomekwi.cave.pipeline.image.TransModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.detail.AlignModifierActor;
+import com.lomekwi.cave.ui.editpanel.inspector.AlignModifierActor;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;

@@ -26,7 +26,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.detail.TransModifierActor;
+import com.lomekwi.cave.ui.editpanel.inspector.TransModifierActor;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.ArrayList;

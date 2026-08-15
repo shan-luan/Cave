@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.editpanel.detail;
+package com.lomekwi.cave.ui.editpanel.inspector;
 
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
@@ -28,12 +28,12 @@ import com.lomekwi.cave.timeline.SegmentSelectedEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SegDetailView extends VisTable {
+public class Inspector extends VisTable {
     private final VisTable content;
     private Segment currentSeg;
     private SegmentSet currentSegSet;
 
-    public SegDetailView() {
+    public Inspector() {
         content = new VisTable();
         VisScrollPane scrollPane = new VisScrollPane(content);
         add(scrollPane).grow();

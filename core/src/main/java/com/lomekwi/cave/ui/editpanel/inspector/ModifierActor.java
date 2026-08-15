@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.editpanel.detail;
+package com.lomekwi.cave.ui.editpanel.inspector;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
