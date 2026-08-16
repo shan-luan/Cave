@@ -31,6 +31,7 @@ import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.ui.Focusable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -348,6 +349,28 @@ public class TlGroup extends Group implements Focusable {
         App.appEventBus.post(e);
     }
 
+    public void selectSegments(Collection<Segment> segments) {
+        clearSelection();
+        for (Segment seg : segments) {
+            selectedSegments.add(seg);
+            seg.setSelected(true);
+        }
+        int count = selectedSegments.size();
+        if (count == 1) {
+            Segment seg = selectedSegments.getSegments().iterator().next();
+            var e = new SegmentSelectedEvent(seg, seg.getTrack(), 1);
+            project.projEventBus.post(e);
+            App.appEventBus.post(e);
+        } else if (count >= 2) {
+            var e = new SegmentSelectedEvent(null, null, count);
+            project.projEventBus.post(e);
+            App.appEventBus.post(e);
+            var ge = new SegmentSetSelectedEvent(selectedSegments, count);
+            project.projEventBus.post(ge);
+            App.appEventBus.post(ge);
+        }
+    }
+
     public SegmentSet selectedSegments() {
         return selectedSegments;
     }
@@ -471,20 +494,27 @@ public class TlGroup extends Group implements Focusable {
         long baseTime = Math.max(xToAbsoluteTime(local.x), 0);
         int baseTrack = Math.max(yToTrackIndex(local.y), 0);
 
+        List<Segment> pasted;
         if (clip instanceof SegmentGroup templateGroup) {
-            pasteGroup(templateGroup, baseTime, baseTrack);
+            pasted = pasteGroup(templateGroup, baseTime, baseTrack);
         } else if (clip instanceof SegmentSet templateSet) {
-            pasteSet(templateSet, baseTime, baseTrack);
+            pasted = pasteSet(templateSet, baseTime, baseTrack);
         } else if (clip instanceof Segment template) {
-            pasteSegment(template, baseTime, baseTrack);
+            pasted = pasteSegment(template, baseTime, baseTrack);
+        } else {
+            pasted = List.of();
+        }
+
+        if (!pasted.isEmpty()) {
+            selectSegments(pasted);
         }
 
         App.copyManager.refreshClipboard();
     }
 
-    private void pasteSegment(Segment template, long time, int baseTrack) {
+    private List<Segment> pasteSegment(Segment template, long time, int baseTrack) {
         long duration = template.getRange().upperEndpoint() - template.getRange().lowerEndpoint();
-        if (duration <= 0) return;
+        if (duration <= 0) return List.of();
 
         Track track = timeline.getTrack(baseTrack);
         var range = com.google.common.collect.Range.closedOpen(time, time + duration);
@@ -500,9 +530,10 @@ public class TlGroup extends Group implements Focusable {
         timeline.add(track, template, time, duration);
         project.undoManager.record(new UndoManager.AddSegCommand(track, template, time, duration));
         markTimelineDirty();
+        return List.of(template);
     }
 
-    private void pasteGroup(SegmentGroup template, long baseTime, int baseTrack) {
+    private List<Segment> pasteGroup(SegmentGroup template, long baseTime, int baseTrack) {
         var cmds = new ArrayList<UndoManager.UndoableCommand>();
         var pasted = new ArrayList<Segment>();
 
@@ -540,18 +571,13 @@ public class TlGroup extends Group implements Focusable {
                 cmds.toArray(new UndoManager.UndoableCommand[0])));
         }
 
-        if (pasted.size() >= 2) {
-            SegmentGroup newGroup = new SegmentGroup();
-            for (Segment seg : pasted) {
-                newGroup.add(seg);
-            }
-        }
-
         markTimelineDirty();
+        return pasted;
     }
 
-    private void pasteSet(SegmentSet template, long baseTime, int baseTrack) {
+    private List<Segment> pasteSet(SegmentSet template, long baseTime, int baseTrack) {
         var cmds = new ArrayList<UndoManager.UndoableCommand>();
+        var pasted = new ArrayList<Segment>();
 
         List<Segment> sorted = new ArrayList<>(template.getSegments());
         sorted.sort(java.util.Comparator.comparingInt(s -> s.getTrack().index));
@@ -579,6 +605,7 @@ public class TlGroup extends Group implements Focusable {
 
             timeline.add(track, seg, segStart, duration);
             cmds.add(new UndoManager.AddSegCommand(track, seg, segStart, duration));
+            pasted.add(seg);
         }
 
         if (!cmds.isEmpty()) {
@@ -587,6 +614,7 @@ public class TlGroup extends Group implements Focusable {
         }
 
         markTimelineDirty();
+        return pasted;
     }
 
     // -- 委托给 SegDragHandler --
