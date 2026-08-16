@@ -5,17 +5,17 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.VisTable;
-import com.kotcrab.vis.ui.widget.VisWindow;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
+import com.lomekwi.cave.ui.widget.Card;
 
 import java.util.List;
 
-public abstract class ModifierActor extends VisWindow {
+public abstract class ModifierActor extends Card {
     protected Modifier<?> modifier;
     protected Source<?> source;
     private Runnable rebuildCallback;
@@ -27,9 +27,7 @@ public abstract class ModifierActor extends VisWindow {
         this.modifier = modifier;
         align(Align.top | Align.left);
         defaults().left();
-        setKeepWithinStage(false);
         addCloseButton();
-        setMovable(false);
         addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
