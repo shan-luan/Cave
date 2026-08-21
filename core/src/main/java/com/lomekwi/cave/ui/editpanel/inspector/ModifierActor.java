@@ -4,6 +4,10 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.kotcrab.vis.ui.VisUI;
+import com.kotcrab.vis.ui.widget.VisImageButton;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Modifier;
@@ -27,6 +31,8 @@ public abstract class ModifierActor extends Card {
         this.modifier = modifier;
         align(Align.top | Align.left);
         defaults().left();
+        addMoveButton(true);
+        addMoveButton(false);
         addCloseButton();
         addListener(new InputListener() {
             @Override
@@ -66,6 +72,47 @@ public abstract class ModifierActor extends Card {
 
     public void setRebuildCallback(Runnable callback) {
         this.rebuildCallback = callback;
+    }
+
+    private void addMoveButton(boolean up) {
+        VisImageButton.VisImageButtonStyle style = new VisImageButton.VisImageButtonStyle(
+            VisUI.getSkin().get("close-window", VisImageButton.VisImageButtonStyle.class));
+        style.imageUp = VisUI.getSkin().getDrawable(up ? "select-up" : "select-down");
+        VisImageButton button = new VisImageButton(style);
+        getTitleTable().add(button);
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeListener.ChangeEvent event, Actor actor) {
+                move(up);
+            }
+        });
+        button.addListener(new ClickListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                event.cancel();
+                return true;
+            }
+        });
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void move(boolean up) {
+        if (source == null) return;
+        List modifiers = source.getModifiers();
+        int index = modifiers.indexOf(modifier);
+        if (index < 0) return;
+        int target = up ? index - 1 : index + 1;
+        if (target < 0 || target >= modifiers.size()) return;
+        modifiers.remove(index);
+        modifiers.add(target, modifier);
+        Project p = App.root.getFrontendProject();
+        if (p != null) {
+            p.undoManager.record(new UndoManager.ReorderModifierCommand(source, modifier, index, target));
+            p.projEventBus.post(RefreshRequestEvent.INSTANCE);
+        }
+        if (rebuildCallback != null) {
+            rebuildCallback.run();
+        }
     }
 
     @Override
