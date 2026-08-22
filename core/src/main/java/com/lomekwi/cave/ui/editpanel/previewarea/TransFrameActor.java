@@ -26,7 +26,6 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.inspector.TransModifierActor;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.ArrayList;
@@ -141,14 +140,14 @@ public class TransFrameActor extends Actor implements Selectable {
                             public void undo() {
                                 modifier.dx.set(oldDx);
                                 modifier.dy.set(oldDy);
-                                if (modifier.getActor() instanceof TransModifierActor ta) ta.syncFromModifier();
+                                modifier.getActor().syncFromModel();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
                             @Override
                             public void redo() {
                                 modifier.dx.set(newDx);
                                 modifier.dy.set(newDy);
-                                if (modifier.getActor() instanceof TransModifierActor ta) ta.syncFromModifier();
+                                modifier.getActor().syncFromModel();
                                 p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                             }
                         });
@@ -504,9 +503,7 @@ public class TransFrameActor extends Actor implements Selectable {
         dragModifier.dy.set(gizmoStartDy + ddy);
 
         applyModifiers();
-        if (dragModifier.getActor() instanceof TransModifierActor ta) {
-            ta.syncFromModifier();
-        }
+        dragModifier.getActor().syncFromModel();
     }
 
     protected void updateRotateDrag(float stageX, float stageY) {
@@ -527,9 +524,7 @@ public class TransFrameActor extends Actor implements Selectable {
 
         dragModifier.dRotation.set(gizmoStartRotation + delta);
         applyModifiers();
-        if (dragModifier.getActor() instanceof TransModifierActor ta) {
-            ta.syncFromModifier();
-        }
+        dragModifier.getActor().syncFromModel();
     }
 
     protected void finishGizmoDrag() {
@@ -569,9 +564,7 @@ public class TransFrameActor extends Actor implements Selectable {
         dragModifier.dx.set(startModifierDx + localDx);
         dragModifier.dy.set(startModifierDy + localDy);
         applyModifiers();
-        if (dragModifier.getActor() instanceof TransModifierActor ta) {
-            ta.syncFromModifier();
-        }
+        dragModifier.getActor().syncFromModel();
     }
 
     @SuppressWarnings({"unchecked"})

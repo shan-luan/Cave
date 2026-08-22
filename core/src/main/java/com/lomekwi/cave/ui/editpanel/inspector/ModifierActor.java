@@ -3,9 +3,9 @@ package com.lomekwi.cave.ui.editpanel.inspector;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisImageButton;
 import com.kotcrab.vis.ui.widget.VisTable;
@@ -19,15 +19,18 @@ import com.lomekwi.cave.ui.widget.Card;
 
 import java.util.List;
 
-public abstract class ModifierActor extends Card {
-    protected Modifier<?> modifier;
-    protected Source<?> source;
+/** 通用修改器卡：由 {@code modifier.getParams()} 自动生成内容，无子类。 */
+public final class ModifierActor extends Card {
+    private final Modifier<?> modifier;
+    private final Source<?> source;
+    private final ParamBinder binder;
     private Runnable rebuildCallback;
     private boolean dragging;
     private float dragStageY, dragWindowY;
 
-    public ModifierActor(String title, Modifier<?> modifier) {
-        super(title);
+    public ModifierActor(Source<?> source, Modifier<?> modifier) {
+        super(modifier.getName());
+        this.source = source;
         this.modifier = modifier;
         align(Align.top | Align.left);
         defaults().left();
@@ -64,14 +67,34 @@ public abstract class ModifierActor extends Card {
                 }
             }
         });
+
+        binder = new ParamBinder(new ParamBinder.Owner() {
+            @Override
+            public Source<?> source() {
+                return source;
+            }
+
+            @Override
+            public void invalidateDetailActor() {
+                modifier.invalidateDetailActor();
+            }
+        });
+        binder.bind(this, modifier.getParams());
     }
 
-    public void setSource(Source<?> source) {
-        this.source = source;
+    /** 模型被外部（gizmo、undo 等）修改后，把当前值回显到 widget。 */
+    public void syncFromModel() {
+        binder.syncFromModel();
     }
 
     public void setRebuildCallback(Runnable callback) {
         this.rebuildCallback = callback;
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        binder.tick();
     }
 
     private void addMoveButton(boolean up) {

@@ -4,18 +4,18 @@ import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.lomekwi.cave.pipeline.Param;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
-import com.lomekwi.cave.ui.editpanel.inspector.TextSrcActor;
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor;
 
 import java.io.Serial;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class TextSrc extends Source<TextFrame> {
@@ -143,8 +143,14 @@ public class TextSrc extends Source<TextFrame> {
     }
 
     @Override
-    public SourceActor getSourceActor() {
-        return new TextSrcActor(this);
+    public List<Param<?>> getParams() {
+        return List.of(
+            new Param.TextInput("文本", this::getText, this::setText, true),
+            new Param.FileSelect("字体", "选择字体文件",
+                new String[]{".ttf", ".otf", ".ttc"},
+                this::getFontPath, this::setFontPath),
+            new Param.IntSpin("字号", this::getFontSize, this::setFontSize, 1, 500, 1)
+        );
     }
 
     @Override

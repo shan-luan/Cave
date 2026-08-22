@@ -18,6 +18,8 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -306,7 +308,11 @@ public class Root implements ApplicationListener {
         skin.get("default", LinkLabel.LinkLabelStyle.class).font = font;
         skin.get("default", VisTextButton.VisTextButtonStyle.class).font = font;
         skin.get("default", VisTextField.VisTextFieldStyle.class).font = font;
-       return skin;
+        SelectBox.SelectBoxStyle selectStyle = skin.get("default", SelectBox.SelectBoxStyle.class);
+        selectStyle.font = font;
+        selectStyle.listStyle.font = font;
+        skin.get("default", List.ListStyle.class).font = font;
+        return skin;
     }
 
     public Project getFrontendProject() {

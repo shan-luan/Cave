@@ -123,14 +123,11 @@ public class Inspector extends VisTable {
 
     private void appendSegmentInfo(Segment seg) {
         Source<?> source = seg.getSource();
-        content.add(source.getSourceActor()).growX().pad(4).row();
+        content.add(new SourceActor(source)).growX().pad(4).row();
         for (Modifier<?> modifier : source.getModifiers()) {
             var actor = modifier.getActor();
             if (actor != null) {
-                if (actor instanceof ModifierActor ma) {
-                    ma.setSource(source);
-                    ma.setRebuildCallback(this::rebuildContent);
-                }
+                actor.setRebuildCallback(this::rebuildContent);
                 content.add(actor).growX().pad(4).row();
             }
         }

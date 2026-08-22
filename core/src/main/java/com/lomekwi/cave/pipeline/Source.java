@@ -69,6 +69,12 @@ public abstract class Source<T extends Frame> implements Serializable {
     public abstract Class<T> getFrameType();
     public void onDuplicate(Source<?> original){
     }
-    public abstract SourceActor getSourceActor();
+    public SourceActor getSourceActor() {
+        return new SourceActor(this);
+    }
+    /** 暴露所有可显示/可修改的条目，UI 据此自动生成 widget。 */
+    public List<Param<?>> getParams() {
+        return List.of();
+    }
     public abstract SegActor createSegActor(Segment segment);
 }

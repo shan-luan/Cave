@@ -1,9 +1,10 @@
 package com.lomekwi.cave.pipeline.image;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Modifier;
+import com.lomekwi.cave.pipeline.Param;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.ui.editpanel.inspector.AlignModifierActor;
+
+import java.util.List;
 
 public class AlignModifier extends Modifier<Transformable> {
     private HAlign hAlign = HAlign.LEFT;
@@ -47,9 +48,17 @@ public class AlignModifier extends Modifier<Transformable> {
         return vAlign;
     }
 
-    public void setAlign(HAlign hAlign, VAlign vAlign) {
+    public void setHAlign(HAlign hAlign) {
         this.hAlign = hAlign;
+    }
+
+    public void setVAlign(VAlign vAlign) {
         this.vAlign = vAlign;
+    }
+
+    public void setAlign(HAlign hAlign, VAlign vAlign) {
+        setHAlign(hAlign);
+        setVAlign(vAlign);
     }
 
     @Override
@@ -68,7 +77,16 @@ public class AlignModifier extends Modifier<Transformable> {
     }
 
     @Override
-    protected Actor newActor() {
-        return new AlignModifierActor(this);
+    public List<Param<?>> getParams() {
+        return List.of(
+            new Param.Choice("水平对齐",
+                new String[]{"左", "中", "右"},
+                () -> hAlign.ordinal(), i -> setHAlign(HAlign.values()[i]))
+                .undo(Param.UndoMode.IMMEDIATE),
+            new Param.Choice("垂直对齐",
+                new String[]{"上", "中", "下"},
+                () -> vAlign.ordinal(), i -> setVAlign(VAlign.values()[i]))
+                .undo(Param.UndoMode.IMMEDIATE)
+        );
     }
 }

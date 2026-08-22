@@ -1,15 +1,16 @@
 package com.lomekwi.cave.pipeline;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.lomekwi.cave.ui.editpanel.inspector.ModifierActor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 public abstract class Modifier<T> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Source<?> source;
-    private transient Actor actor;
+    private transient ModifierActor actor;
 
     public Modifier(Source<?> source) {
         this.source = source;
@@ -23,14 +24,17 @@ public abstract class Modifier<T> implements Serializable {
 
     public abstract String getName();
 
-    public Actor getActor() {
+    /** 暴露所有可显示/可修改的条目，UI 据此自动生成 widget。 */
+    public List<Param<?>> getParams() {
+        return List.of();
+    }
+
+    public ModifierActor getActor() {
         if (actor == null) {
-            actor = newActor();
+            actor = new ModifierActor(source, this);
         }
         return actor;
     }
-
-    protected abstract Actor newActor();
 
     public void invalidateDetailActor() {
         actor = null;

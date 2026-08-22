@@ -1,14 +1,15 @@
 package com.lomekwi.cave.pipeline.image;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Modifier;
+import com.lomekwi.cave.pipeline.Param;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.ui.editpanel.inspector.TransModifierActor;
+
+import java.util.List;
 
 public class TransModifier extends Modifier<Transformable> {
     public Modifier.Val dx, dy, scaleX, scaleY, dRotation;
     private boolean flipX, flipY;
-public TransModifier(Source<?> source) {
+    public TransModifier(Source<?> source) {
         this(source, 0, 0, 1, 1, 0, false, false);
     }
 
@@ -39,7 +40,15 @@ public TransModifier(Source<?> source) {
     }
 
     @Override
-    protected Actor newActor() {
-        return new TransModifierActor(this);
+    public List<Param<?>> getParams() {
+        return List.of(
+            new Param.FloatSpin("位移 X", dx, -9999, 9999, 1, 1).undo(Param.UndoMode.BATCHED),
+            new Param.FloatSpin("位移 Y", dy, -9999, 9999, 1, 1).undo(Param.UndoMode.BATCHED),
+            new Param.FloatSpin("缩放 X", scaleX, 0.01f, 100, 0.01f, 2).undo(Param.UndoMode.BATCHED),
+            new Param.FloatSpin("缩放 Y", scaleY, 0.01f, 100, 0.01f, 2).undo(Param.UndoMode.BATCHED),
+            new Param.FloatSpin("旋转", dRotation, -9999, 9999, 1, 1).undo(Param.UndoMode.BATCHED),
+            new Param.BoolCheck("水平翻转", this::flipX, this::flipX).undo(Param.UndoMode.BATCHED),
+            new Param.BoolCheck("垂直翻转", this::flipY, this::flipY).undo(Param.UndoMode.BATCHED)
+        );
     }
 }

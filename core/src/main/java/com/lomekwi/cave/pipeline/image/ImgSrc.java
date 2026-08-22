@@ -3,17 +3,17 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.lomekwi.cave.pipeline.Param;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.ui.editpanel.inspector.ImgSrcActor;
-import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.ImgSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class ImgSrc extends Source<ImgFrame> {
@@ -105,8 +105,11 @@ public class ImgSrc extends Source<ImgFrame> {
     }
 
     @Override
-    public SourceActor getSourceActor() {
-        return new ImgSrcActor(this);
+    public List<Param<?>> getParams() {
+        return List.of(
+            new Param.Info("路径", () -> imgRes.getPath()),
+            new Param.Info("分辨率", () -> imgRes.getWidth() + " × " + imgRes.getHeight())
+        );
     }
 
     @Override

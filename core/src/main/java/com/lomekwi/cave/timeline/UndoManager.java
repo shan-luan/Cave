@@ -8,7 +8,6 @@ import com.lomekwi.cave.pipeline.image.TransModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
-import com.lomekwi.cave.ui.editpanel.inspector.AlignModifierActor;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
@@ -217,7 +216,8 @@ public class UndoManager {
         return source.getModifiers();
     }
 
-    private static void postRefresh(Source<?> source) {
+    /** 模型被外部修改后刷新 UI：触发检查器重建与时间线刷新。 */
+    public static void postRefresh(Source<?> source) {
         Segment seg = source.getSegment();
         if (seg != null) {
             Track track = seg.getTrack();
@@ -239,6 +239,30 @@ public class UndoManager {
         @Override
         public void redo() {
             modifierList(source).add(modifier);
+            postRefresh(source);
+        }
+    }
+
+    /**
+     * 通用参数变更命令。owner 为 Modifier 或 Source。
+     */
+    public record ParamChangeCommand<T>(Object owner, com.lomekwi.cave.pipeline.Param<T> param,
+                                        T oldValue, T newValue) implements UndoableCommand {
+        @Override
+        public void undo() {
+            param.set(oldValue);
+            afterApply();
+        }
+
+        @Override
+        public void redo() {
+            param.set(newValue);
+            afterApply();
+        }
+
+        private void afterApply() {
+            Source<?> source = owner instanceof Modifier<?> m ? m.getSource() : (Source<?>) owner;
+            if (owner instanceof Modifier<?> m) m.invalidateDetailActor();
             postRefresh(source);
         }
     }
@@ -302,18 +326,16 @@ public class UndoManager {
     }
 
     public record AlignModifierCommand(AlignModifier modifier, AlignModifier.HAlign oldH, AlignModifier.VAlign oldV,
-                                     AlignModifier.HAlign newH, AlignModifier.VAlign newV) implements UndoableCommand {
+                                      AlignModifier.HAlign newH, AlignModifier.VAlign newV) implements UndoableCommand {
         @Override
         public void undo() {
             modifier.setAlign(oldH, oldV);
-            if (modifier.getActor() instanceof AlignModifierActor aa) aa.syncFromModifier();
             postRefresh(modifier.getSource());
         }
 
         @Override
         public void redo() {
             modifier.setAlign(newH, newV);
-            if (modifier.getActor() instanceof AlignModifierActor aa) aa.syncFromModifier();
             postRefresh(modifier.getSource());
         }
     }
