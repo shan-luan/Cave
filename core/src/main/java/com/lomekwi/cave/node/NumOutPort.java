@@ -1,11 +1,13 @@
 package com.lomekwi.cave.node;
 
-public abstract class NumOutPort extends Node.OutPort<double[]>{
-    private final double[] val=new double[1];
+import com.lomekwi.cave.pipeline.num.NumFrame;
+
+public abstract class NumOutPort extends Node.OutPort<NumFrame>{
+    private final NumFrame val=new NumFrame(null);
 
     @Override
-    public double[] getData() {
-        val[0] = getVal();
+    public NumFrame getData() {
+        val.setVal(getVal());
         return val;
     }
     protected abstract double getVal();
