@@ -13,6 +13,9 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisImageButton;
 import com.kotcrab.vis.ui.widget.VisTable;
 
+/**
+ * 一个长的像window的table.
+ */
 public class Card extends VisTable {
     private final Label titleLabel;
     private final Table titleTable;
