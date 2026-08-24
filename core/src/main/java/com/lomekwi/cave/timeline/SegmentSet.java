@@ -5,34 +5,55 @@ import com.lomekwi.cave.app.selection.Selectable;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.AbstractCollection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class SegmentSet implements Serializable, Selectable, Copyable {
+/**
+ * 当前选中的一组片段，实现 {@link Collection}{@code <Segment>}，
+ * 可直接传给以 Collection 为参数的 API、或直接遍历。
+ */
+public class SegmentSet extends AbstractCollection<Segment> implements Serializable, Selectable, Copyable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Set<Segment> segments = new LinkedHashSet<>();
     private transient boolean selected;
 
-    public void add(Segment segment) {
-        segments.add(segment);
+    @Override
+    public boolean add(Segment segment) {
+        return segments.add(segment);
     }
 
-    public void remove(Segment segment) {
-        segments.remove(segment);
+    @Override
+    public boolean remove(Object o) {
+        return segments.remove(o);
     }
 
-    public boolean contains(Segment segment) {
-        return segments.contains(segment);
-    }
-
+    @Override
     public void clear() {
         segments.clear();
     }
 
+    @Override
+    public boolean contains(Object o) {
+        return segments.contains(o);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return segments.isEmpty();
+    }
+
+    @Override
+    public Iterator<Segment> iterator() {
+        return segments.iterator();
+    }
+
+    @Override
     public int size() {
         return segments.size();
     }

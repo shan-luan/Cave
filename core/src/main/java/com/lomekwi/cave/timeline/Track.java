@@ -11,6 +11,9 @@ import com.lomekwi.cave.timeline.playback.PlayStateChangedEvent;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
+import com.lomekwi.cave.util.Ranges;
+
+import static com.lomekwi.cave.util.Ranges.shift;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
@@ -22,6 +25,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -62,28 +66,118 @@ public class Track implements Serializable,Iterable<Segment> {
         return sources.asMapOfRanges().isEmpty();
     }
 
-    synchronized protected void add(Segment segment, long start, long duration) {
-        var r = Range.closedOpen(start, start + duration);
+    /**
+     * 尝试在轨道中加入一个片段。仅当可加入时才会被真的加入。
+     * @return 如果目标区间被占用而不能添加，将目标区间偏移多少时间才可以添加。返回0时不需要偏移即成功添加。本类的其他返回long的方法大多也是此语义。
+     */
+    synchronized protected long tryAdd(Segment segment,Range<Long> r) {
+        var shift=getShift(r);
+        if(shift==0) {
+            override(segment,r);
+        }
+        return shift;
+    }
+    synchronized protected long getShift(Range<Long> r){
+        return getShift(r, (Range<Long>) null);
+    }
+    synchronized protected long getShift(Range<Long> r,@Nullable Range<Long> exclude){
+        return pickShift(getShiftForward(r, exclude), getShiftBackward(r, exclude));
+    }
+    synchronized protected long getShift(Range<Long> r,Collection<Segment> ignore){
+        return pickShift(getShiftForward(r, ignore), getShiftBackward(r, ignore));
+    }
+    synchronized protected long getShiftForward(Range<Long> r,@Nullable Range<Long> exclude){
+        return shiftScan(r, exclude, List.of(), true);
+    }
+    synchronized protected long getShiftForward(Range<Long> r,Collection<Segment> ignore){
+        return shiftScan(r, null, ignore, true);
+    }
+    synchronized protected long getShiftBackward(Range<Long> r,@Nullable Range<Long> exclude){
+        return shiftScan(r, exclude, List.of(), false);
+    }
+    synchronized protected long getShiftBackward(Range<Long> r,Collection<Segment> ignore){
+        return shiftScan(r, null, ignore, false);
+    }
+
+    private synchronized long pickShift(long forward, long backward){
+        boolean fOk = forward != Long.MAX_VALUE;
+        boolean bOk = backward != Long.MIN_VALUE;
+        if (fOk && bOk) {
+            return Math.abs(forward) <= Math.abs(backward) ? forward : backward;
+        }
+        if (fOk) return forward;
+        if (bOk) return backward;
+        return 0;
+    }
+
+    private synchronized long shiftScan(Range<Long> r,@Nullable Range<Long> exclude,Collection<Segment> ignore,boolean forward){
+        long lo = r.lowerEndpoint();
+        long hi = r.upperEndpoint();
+        long s = 0;
+        for (int step = 0; step < MAX_SLIDE_STEPS; step++) {
+            if (freeAt(shift(r, s), exclude, ignore)) {
+                return s;
+            }
+            if (forward) {
+                long maxEnd = Long.MIN_VALUE;
+                boolean found = false;
+                for (var e : sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet()) {
+                    if (exclude != null && e.getKey().isConnected(exclude)) continue;
+                    if (ignore.contains(e.getValue())) continue;
+                    found = true;
+                    maxEnd = Math.max(maxEnd, e.getKey().upperEndpoint());
+                }
+                if (!found) return s;
+                long next = maxEnd - lo;
+                if (next <= s) return Long.MAX_VALUE;
+                s = next;
+            } else {
+                long minStart = Long.MAX_VALUE;
+                boolean found = false;
+                for (var e : sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet()) {
+                    if (exclude != null && e.getKey().isConnected(exclude)) continue;
+                    if (ignore.contains(e.getValue())) continue;
+                    found = true;
+                    minStart = Math.min(minStart, e.getKey().lowerEndpoint());
+                }
+                if (!found) return s;
+                long next = minStart - hi;
+                if (lo + next < 0) return Long.MIN_VALUE;
+                if (next >= s) return s;
+                s = next;
+            }
+        }
+        return s;
+    }
+
+    private synchronized boolean freeAt(Range<Long> range,@Nullable Range<Long> exclude,Collection<Segment> ignore){
+        for (var e : sources.subRangeMap(range).asMapOfRanges().entrySet()) {
+            if (exclude != null && e.getKey().isConnected(exclude)) continue;
+            if (ignore.contains(e.getValue())) continue;
+            return false;
+        }
+        return true;
+    }
+    private static final int MAX_SLIDE_STEPS = 10000;
+    synchronized protected void override(Segment segment,Range<Long> r){
         sources.put(r, segment);
         segment.setTrack(this);
         segment.setRange(r);
         onChanged();
     }
-
-    synchronized protected void remove(long start, long duration) {
-        sources.remove(Range.closedOpen(start, start + duration));
-        onChanged();
-    }
-    synchronized protected void remove(Range<Long> range) {
-        sources.remove(range);
-        onChanged();
-    }
-    synchronized protected void remove(long time) {
-        var entry = sources.getEntry(time);
-        if (entry != null) {
-            sources.remove(entry.getKey());
+    synchronized protected boolean remove(Segment segment){
+        var r = segment.getRange();
+        if(r != null && this.equals(segment.getTrack())){
+            sources.remove(r);
+            return true;
+        }else {
+            return false;
         }
-        onChanged();
+    }
+    synchronized protected void remove(Collection<Segment> segments){
+        for(var s : segments){
+            remove(s);
+        }
     }
 
     /**
@@ -93,7 +187,7 @@ public class Track implements Serializable,Iterable<Segment> {
      * @param ignore 不视为障碍的片段集合（为空时相当于完全空闲检查）
      * @return 如果范围内没有任何非忽略片段占用则返回 true
      */
-    synchronized public boolean isFree(Range<Long> range, Set<Segment> ignore) {
+    synchronized public boolean isFree(Range<Long> range, Collection<Segment> ignore) {
         var m = sources.subRangeMap(range).asMapOfRanges();
         if (m.isEmpty()) return true;
         if (ignore.isEmpty()) return false;
@@ -103,22 +197,88 @@ public class Track implements Serializable,Iterable<Segment> {
         return true;
     }
 
-    synchronized protected void split(long time){
-        var entry = sources.getEntry(time);
-        if (entry == null) return;
-        var s = entry.getValue();
-        long start = entry.getKey().lowerEndpoint();
-        long duration = entry.getKey().upperEndpoint() - start;
-        long offset = time - start;
-        var ns = s.duplicate();
-        sources.remove(Range.closedOpen(start, start + duration));
-        add(s, start, offset);
-        add(ns, time, duration - offset);
+    synchronized protected boolean split(long time){
+        var s = sources.get(time);
+        if (s == null) return false;
+        var r = s.getRange();
+        long lo = r.lowerEndpoint();
+        long hi = r.upperEndpoint();
+        if (time <= lo || time >= hi) return false;
+        var right = s.duplicate();
+        sources.remove(r);
+        override(s, Range.closedOpen(lo, time));
+        override(right, Range.closedOpen(time, hi));
+        return true;
     }
 
-    synchronized protected void resize(Entry<Range<Long>, Segment> e, long start, long duration) {
-        remove(e.getKey());
-        add(e.getValue(), start, duration);
+    private List<Segment> own(Collection<Segment> segments){
+        var out = new ArrayList<Segment>(segments.size());
+        for(var s : segments){
+            if(s.getTrack()==this) out.add(s);
+        }
+        return out;
+    }
+
+    synchronized protected long probeSetStart(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        long max=0;
+        for(var s : segments){
+            var r = s.getRange();
+            var t = Range.closedOpen(r.lowerEndpoint()+deltaTime, r.upperEndpoint());
+            var d = getShiftForward(t,segments);
+            max=Math.abs(d)>Math.abs(max)?d : max;
+        }
+        return max;
+    }
+
+    synchronized protected void setStart(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        remove(segments);
+        for(var s : segments){
+            var r = s.getRange();
+            override(s,Range.closedOpen(r.lowerEndpoint()+deltaTime, r.upperEndpoint()));
+        }
+    }
+
+    synchronized protected long probeSetEnd(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        long max=0;
+        for(var s : segments){
+            var r = s.getRange();
+            var t = Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()+deltaTime);
+            var d = getShiftBackward(t,segments);
+            max=Math.abs(d)>Math.abs(max)?d : max;
+        }
+        return max;
+    }
+
+    synchronized protected void setEnd(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        remove(segments);
+        for(var s : segments){
+            var r = s.getRange();
+            override(s,Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()+deltaTime));
+        }
+    }
+
+    synchronized protected long probeMove(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        long max=0;
+        for(var s : segments){
+            var r = s.getRange();
+            var d = getShift(shift(r,deltaTime),r);
+            max=Math.abs(d)>Math.abs(max)?d : max;
+        }
+        return max;
+    }
+
+    synchronized protected void move(Collection<Segment> segments,long deltaTime){
+        segments = own(segments);
+        remove(segments);
+        for(var s : segments){
+            override(s,shift(s.getRange(),deltaTime));
+            s.offsetOrigin(deltaTime);
+        }
     }
 
     synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time) {
@@ -135,7 +295,7 @@ public class Track implements Serializable,Iterable<Segment> {
     synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time,int offset,boolean excludeHit) {
         if(offset==0){
             if(excludeHit){
-                return null;//为什么会有人使用这个参数组合啊喂
+                return null;
             }else {
                 return sources.getEntry(time);
             }
@@ -262,7 +422,6 @@ public class Track implements Serializable,Iterable<Segment> {
                     if(!p.isPlaying()){
                         Gdx.app.debug("Track"+index, "因为播放头而尝试park...");
 
-                        //用于暂停时seek了或修改了轨道
                         var s = getEntry(t);
                         Frame f = null;
                         if (s != null) {
@@ -272,7 +431,7 @@ public class Track implements Serializable,Iterable<Segment> {
                         timeline.project.projEventBus.post(Objects.requireNonNullElse(f, gapFrame));
 
                         LockSupport.park();
-                        continue;//防止之前持有许可,一次park不够
+                        continue;
                     }else {
                         updateNeeded = false;
                     }
@@ -283,7 +442,7 @@ public class Track implements Serializable,Iterable<Segment> {
                         var next = getEntry(t,1,false);
                         if(next!=null){
                             parkTime = next.getKey().lowerEndpoint()-t;
-                            parkTime*=1000;//μs->ns
+                            parkTime*=1000;
                             parkTime=Math.max(parkTime,1);
                         }
                         Gdx.app.debug("Track"+index, "轨道线程等待: " + parkTime/1e9 + "秒");

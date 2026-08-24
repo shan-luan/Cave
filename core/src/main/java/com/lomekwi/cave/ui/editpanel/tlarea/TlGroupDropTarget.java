@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/** 时间线拖放目标 —— 接收拖入的文件并落地为片段。 */
 public class TlGroupDropTarget extends DragAndDrop.Target {
 
     private final TlGroup tlGroup;
@@ -55,7 +56,7 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
                 while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of())) {
                     targetTrack++;
                 }
-                tlGroup.timeline.add(tlGroup.timeline.getTrack(targetTrack), seg, startTime, duration);
+                tlGroup.timeline.add(tlGroup.timeline.getTrack(targetTrack), seg, range);
                 cmds.add(new UndoManager.AddSegCommand(tlGroup.timeline.getTrack(targetTrack), seg, startTime, duration));
                 trackOffset = targetTrack - baseTrack + 1;
                 added.add(seg);

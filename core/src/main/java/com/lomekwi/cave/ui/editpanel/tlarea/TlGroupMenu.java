@@ -89,7 +89,7 @@ public class TlGroupMenu extends PopupMenu {
             targetTrack++;
         }
 
-        tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration);
+        tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
         Project project = tlGroup.getProject();
         project.undoManager.record(new UndoManager.AddSegCommand(
             tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration));
@@ -119,7 +119,7 @@ public class TlGroupMenu extends PopupMenu {
                     targetTrack++;
                 }
 
-                tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration);
+                tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
                 cmds.add(new UndoManager.AddSegCommand(tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration));
                 trackOffset = targetTrack - baseTrack + 1;
                 added.add(seg);

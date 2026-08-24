@@ -11,4 +11,15 @@ dependencies {
   api "space.earlygrey:shapedrawer:$shapedrawerVersion"
 
   implementation "games.spooky.gdx:gdx-nativefilechooser:$gdxNativefilechooserVersion"
+
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+  testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  testImplementation "org.mockito:mockito-core:5.14.2"
+  testImplementation "org.objenesis:objenesis:3.4"
+}
+
+test {
+  minHeapSize = '1g'
+  maxHeapSize = '2g'
 }

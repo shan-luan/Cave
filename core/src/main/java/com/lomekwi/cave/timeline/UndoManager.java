@@ -97,13 +97,12 @@ public class UndoManager {
     public record AddSegCommand(Track track, Segment segment, long start, long duration) implements UndoableCommand {
         @Override
         public void undo() {
-            var r = Range.closedOpen(start, start + duration);
-            track.getTimeline().remove(track, r);
+            track.remove(segment);
         }
 
         @Override
         public void redo() {
-            track.getTimeline().add(track, segment, start, duration);
+            track.override(segment, Range.closedOpen(start, start + duration));
         }
     }
 
@@ -128,14 +127,13 @@ public class UndoManager {
 
         @Override
         public void undo() {
-            track.getTimeline().add(track, segment, start, duration);
+            track.override(segment, Range.closedOpen(start, start + duration));
             if (group != null) group.add(segment);
         }
 
         @Override
         public void redo() {
-            var r = Range.closedOpen(start, start + duration);
-            track.getTimeline().remove(track, r);
+            track.remove(segment);
             if (group != null) group.remove(segment);
         }
     }
@@ -143,29 +141,29 @@ public class UndoManager {
     public record ResizeSegCommand(Track track, Segment segment, long oldStart, long oldDuration, long newStart, long newDuration) implements UndoableCommand {
         @Override
         public void undo() {
-            track.getTimeline().remove(track, Range.closedOpen(newStart, newStart + newDuration));
-            track.getTimeline().add(track, segment, oldStart, oldDuration);
+            track.remove(segment);
+            track.override(segment, Range.closedOpen(oldStart, oldStart + oldDuration));
         }
 
         @Override
         public void redo() {
-            track.getTimeline().remove(track, Range.closedOpen(oldStart, oldStart + oldDuration));
-            track.getTimeline().add(track, segment, newStart, newDuration);
+            track.remove(segment);
+            track.override(segment, Range.closedOpen(newStart, newStart + newDuration));
         }
     }
 
     public record MoveSegCommand(Track fromTrack, Track toTrack, Segment segment, long oldStart, long oldDuration, long newStart, long newDuration) implements UndoableCommand {
         @Override
         public void undo() {
-            toTrack.getTimeline().remove(toTrack, Range.closedOpen(newStart, newStart + newDuration));
-            fromTrack.getTimeline().add(fromTrack, segment, oldStart, oldDuration);
+            toTrack.remove(segment);
+            fromTrack.override(segment, Range.closedOpen(oldStart, oldStart + oldDuration));
             segment.offsetOrigin(oldStart - newStart);
         }
 
         @Override
         public void redo() {
-            fromTrack.getTimeline().remove(fromTrack, Range.closedOpen(oldStart, oldStart + oldDuration));
-            toTrack.getTimeline().add(toTrack, segment, newStart, newDuration);
+            fromTrack.remove(segment);
+            toTrack.override(segment, Range.closedOpen(newStart, newStart + newDuration));
             segment.offsetOrigin(newStart - oldStart);
         }
     }
@@ -173,18 +171,18 @@ public class UndoManager {
     public record SplitSegCommand(Track track, Segment originalSeg, long originalStart, long originalDuration, Segment newSeg, long splitTime) implements UndoableCommand {
         @Override
         public void undo() {
-            var fullRange = Range.closedOpen(originalStart, originalStart + originalDuration);
-            track.getTimeline().remove(track, fullRange);
-            track.getTimeline().add(track, originalSeg, originalStart, originalDuration);
+            track.remove(originalSeg);
+            track.remove(newSeg);
+            track.override(originalSeg, Range.closedOpen(originalStart, originalStart + originalDuration));
         }
 
         @Override
         public void redo() {
             long offset = splitTime - originalStart;
-            var fullRange = Range.closedOpen(originalStart, originalStart + originalDuration);
-            track.getTimeline().remove(track, fullRange);
-            track.getTimeline().add(track, originalSeg, originalStart, offset);
-            track.getTimeline().add(track, newSeg, splitTime, originalDuration - offset);
+            track.remove(originalSeg);
+            track.remove(newSeg);
+            track.override(originalSeg, Range.closedOpen(originalStart, splitTime));
+            track.override(newSeg, Range.closedOpen(splitTime, originalStart + originalDuration));
         }
     }
 

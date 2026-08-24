@@ -5,6 +5,8 @@ import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.util.Duplicatable;
 
+import static com.lomekwi.cave.util.Ranges.shift;
+
 import org.jspecify.annotations.NullMarked;
 
 import java.io.IOException;
@@ -39,55 +41,77 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     public Timeline(Project project) {
         this.project = project;
     }
-    public Timeline add(Track track, Segment segment, long start, long duration) {
-        track.add(segment, start, duration);
-        lengthChanged = true;
-        return this;
+
+    public void remove(Segment segment){
+        segment.getTrack().remove(segment);
     }
-    public Timeline remove(Track track,long time) {
-        track.remove(time);
-        lengthChanged = true;
-        return this;
+    public void remove(Collection<Segment> segments){
+        for(var s : segments){
+            remove(s);
+        }
     }
-    public Timeline remove(Track track,long start,long duration) {
-        track.remove(start,duration);
-        lengthChanged = true;
-        return this;
+
+    public void add(Track track, Segment segment, Range<Long> range){
+        track.override(segment, range);
     }
-    public Timeline remove(Track track,Range<Long> range) {
-        track.remove(range);
-        lengthChanged = true;
-        return this;
-    }
-    public Timeline resize(Track track, Entry<Range<Long>, Segment> e, long start, long duration) {
-        track.resize(e,start,duration);
-        lengthChanged = true;
-        return this;
-    }
-    public Timeline move(Track track, Track newTrack, Entry<Range<Long>, Segment> e, long start, long duration) {
-        track.remove(e.getKey());
-        newTrack.add(e.getValue(),start,duration);
-        lengthChanged = true;
-        return this;
-    }
+
     public Timeline split(Track track,long time) {
         track.split(time);
         return this;
     }
-
-    /**
-     * 检查组移动是否有效——所有成员的目标位置均空闲且组内互不阻塞
-     */
-    public boolean canMoveGroup(List<Segment> members, long[] newStarts, long[] newDurations, Track[] newTracks) {
-        int n = members.size();
-        Set<Segment> ignore = new HashSet<>(members);
-        for (int i = 0; i < n; i++) {
-            if (newStarts[i] < 0 || newDurations[i] <= 0) return false;
-            var range = Range.closedOpen(newStarts[i], newStarts[i] + newDurations[i]);
-            if (!newTracks[i].isFree(range, ignore)) return false;
+    public Timeline split(long time){
+        for(var t : tracks){
+            t.split(time);
         }
-        return true;
+        return this;
     }
+
+    public long setStart(Collection<Segment> segments,long deltaTime){
+        return applyPerTrack(segments, deltaTime, false);
+    }
+
+    public long setEnd(Collection<Segment> segments,long deltaTime){
+        return applyPerTrack(segments, deltaTime, true);
+    }
+
+    private long applyPerTrack(Collection<Segment> segments, long deltaTime, boolean end){
+        Set<Track> tracks = new HashSet<>();
+        for (var s : segments) if (s.getTrack() != null) tracks.add(s.getTrack());
+
+        long max = 0;
+        for (var track : tracks) {
+            long d = end ? track.probeSetEnd(segments, deltaTime)
+                         : track.probeSetStart(segments, deltaTime);
+            max = Math.abs(d) > Math.abs(max) ? d : max;
+        }
+        if (max == 0) {
+            for (var track : tracks) {
+                if (end) track.setEnd(segments, deltaTime);
+                else track.setStart(segments, deltaTime);
+            }
+        }
+        return max;
+    }
+
+    public long move(Collection<Segment> segments,long deltaTime,int deltaTrack){
+        long max=0;
+        for(var s : segments){
+            var tr = getTrack(s.getTrack().index+deltaTrack);
+            var t = shift(s.getRange(),deltaTime);
+            var d = tr.getShift(t,segments);
+            max=Math.abs(d)>Math.abs(max)?d : max;
+        }
+        if(max==0){
+            remove(segments);
+            for(var s : segments){
+                var tr = getTrack(s.getTrack().index+deltaTrack);
+                tr.override(s,shift(s.getRange(),deltaTime));
+                s.offsetOrigin(deltaTime);
+            }
+        }
+        return max;
+    }
+
     /**
      * 获取指定索引的轨道，如果不存在则自动创建
      * @param index 轨道索引

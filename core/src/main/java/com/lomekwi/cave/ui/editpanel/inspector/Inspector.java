@@ -79,7 +79,7 @@ public class Inspector extends VisTable {
         content.clear();
         content.setFillParent(false);
         content.top();
-        List<Segment> segs = new ArrayList<>(set.getSegments());
+        List<Segment> segs = new ArrayList<>(set);
         segs.sort(null);
         boolean first = true;
         for (Segment seg : segs) {

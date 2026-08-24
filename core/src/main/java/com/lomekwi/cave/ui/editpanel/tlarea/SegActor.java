@@ -18,6 +18,7 @@ import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.ui.Colors;
 
+/** 时间线上单个片段的可视化表示与交互入口。 */
 public abstract class SegActor extends Actor {
     private final Segment segment;
     private DragSide dragSide=DragSide.NONE;
@@ -42,7 +43,7 @@ public abstract class SegActor extends Actor {
                 }
                 SegmentGroup group = segment.getGroup();
                 if (group != null) {
-                    for (Segment s : group.getSegments()) {
+                    for (Segment s : group) {
                         if (s != segment) {
                             s.getActor().setHovered(true);
                         }
@@ -58,7 +59,7 @@ public abstract class SegActor extends Actor {
                 }
                 SegmentGroup group = segment.getGroup();
                 if (group != null) {
-                    for (Segment s : group.getSegments()) {
+                    for (Segment s : group) {
                         if (s != segment) {
                             s.getActor().setHovered(false);
                         }

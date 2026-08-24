@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/** 时间线捕获阶段监听器 —— 处理框选与空白区播放头 seek。 */
 public class TlGroupCaptureListener extends InputListener {
 
     private final TlGroup tlGroup;
@@ -99,7 +100,7 @@ public class TlGroupCaptureListener extends InputListener {
 
                 if (segRight > minX && segLeft < maxX) {
                     if (seg.getGroup() != null) {
-                        toSelect.addAll(seg.getGroup().getSegments());
+                        toSelect.addAll(seg.getGroup());
                     } else {
                         toSelect.add(seg);
                     }

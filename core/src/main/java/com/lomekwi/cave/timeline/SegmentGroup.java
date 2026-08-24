@@ -5,36 +5,68 @@ import com.lomekwi.cave.app.selection.Selectable;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.AbstractCollection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class SegmentGroup implements Serializable, Selectable, Copyable {
+/**
+ * 一组被同时操作（选择/拖动/分割）的片段，实现 {@link Collection}{@code <Segment>}，
+ * 可直接传给以 Collection 为参数的 API。
+ */
+public class SegmentGroup extends AbstractCollection<Segment> implements Serializable, Selectable, Copyable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Set<Segment> segments = new LinkedHashSet<>();
     private transient boolean selected;
 
-    public void add(Segment segment) {
-        segments.add(segment);
-        segment.setGroup(this);
+    @Override
+    public boolean add(Segment segment) {
+        if (segments.add(segment)) {
+            segment.setGroup(this);
+            return true;
+        }
+        return false;
     }
 
-    public void remove(Segment segment) {
-        segments.remove(segment);
-        segment.setGroup(null);
+    @Override
+    public boolean remove(Object o) {
+        if (o instanceof Segment seg && segments.remove(seg)) {
+            seg.setGroup(null);
+            return true;
+        }
+        return false;
     }
 
+    @Override
+    public void clear() {
+        for (Segment s : segments) s.setGroup(null);
+        segments.clear();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        return segments.contains(o);
+    }
+
+    @Override
     public boolean isEmpty() {
         return segments.isEmpty();
     }
 
-    public Set<Segment> getSegments() {
-        return Collections.unmodifiableSet(segments);
+    @Override
+    public Iterator<Segment> iterator() {
+        return segments.iterator();
     }
 
+    @Override
     public int size() {
         return segments.size();
+    }
+
+    public Set<Segment> getSegments() {
+        return Collections.unmodifiableSet(segments);
     }
 
     @Override
