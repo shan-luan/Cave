@@ -1,6 +1,5 @@
 package com.lomekwi.cave.pipeline;
 
-import com.lomekwi.cave.pipeline.image.AlignModifier;
 import com.lomekwi.cave.pipeline.image.TransModifier;
 
 import java.lang.reflect.Constructor;
@@ -15,7 +14,6 @@ public class ModifierRegistry {
 
     public ModifierRegistry() {
         register(TransModifier.class);
-        register(AlignModifier.class);
     }
 
     public void register(Class<? extends Modifier<?>> modifierClass) {

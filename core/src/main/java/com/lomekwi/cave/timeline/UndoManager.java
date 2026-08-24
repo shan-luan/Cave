@@ -3,7 +3,6 @@ package com.lomekwi.cave.timeline;
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.AlignModifier;
 import com.lomekwi.cave.pipeline.image.TransModifier;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
@@ -321,21 +320,6 @@ public class UndoManager {
             modifier.flipX(s.flipX);
             modifier.flipY(s.flipY);
             modifier.invalidateDetailActor();
-            postRefresh(modifier.getSource());
-        }
-    }
-
-    public record AlignModifierCommand(AlignModifier modifier, AlignModifier.HAlign oldH, AlignModifier.VAlign oldV,
-                                      AlignModifier.HAlign newH, AlignModifier.VAlign newV) implements UndoableCommand {
-        @Override
-        public void undo() {
-            modifier.setAlign(oldH, oldV);
-            postRefresh(modifier.getSource());
-        }
-
-        @Override
-        public void redo() {
-            modifier.setAlign(newH, newV);
             postRefresh(modifier.getSource());
         }
     }

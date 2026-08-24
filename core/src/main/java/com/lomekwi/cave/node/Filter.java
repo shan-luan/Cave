@@ -40,6 +40,10 @@ public abstract class Filter<T> extends Node{
     }
 
     public abstract class FilterIn extends InPort<T>{
+        protected FilterIn(String name) {
+            super(name);
+        }
+
         @Override
         public final Set<Class<?>> getConstraint(){
             if(getFilterOut().isLinked()){
@@ -55,6 +59,10 @@ public abstract class Filter<T> extends Node{
         }
     }
     public abstract class FilterOut extends OutPort<T>{
+        protected FilterOut(String name) {
+            super(name);
+        }
+
         /**
          * @return 输入已连接时返回上游实际类型,否则返回 null 表示类型未知.
          */

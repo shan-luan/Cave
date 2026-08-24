@@ -5,7 +5,7 @@ import com.lomekwi.cave.ui.editpanel.inspector.ModifierActor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
-
+@Deprecated(forRemoval = true)//TODO:将被Filter替代。
 public abstract class Modifier<T> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

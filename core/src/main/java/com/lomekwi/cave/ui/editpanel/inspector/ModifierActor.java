@@ -19,8 +19,7 @@ import com.lomekwi.cave.ui.widget.Card;
 
 import java.util.List;
 
-/** 通用修改器卡：由 {@code modifier.getParams()} 自动生成内容，无子类。 */
-public final class ModifierActor extends Card {
+public class ModifierActor extends Card {
     private final Modifier<?> modifier;
     private final Source<?> source;
     private final ParamBinder binder;

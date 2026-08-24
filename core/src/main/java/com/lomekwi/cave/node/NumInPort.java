@@ -4,13 +4,14 @@ import com.lomekwi.cave.pipeline.num.NumFrame;
 
 import java.util.Set;
 
-public abstract class NumInPort extends Node.InPort<NumFrame> {
+public class NumInPort extends Node.InPort<NumFrame> {
 
-    public NumInPort() {
-        this(new NumFrame(null));
+    public NumInPort(String name) {
+        this(name, new NumFrame(null));
     }
 
-    public NumInPort(NumFrame defaultValue) {
+    public NumInPort(String name, NumFrame defaultValue) {
+        super(name);
         setDefaultData(defaultValue);
     }
 

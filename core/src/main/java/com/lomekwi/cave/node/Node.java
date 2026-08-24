@@ -39,9 +39,15 @@ public abstract class Node {
 
     public abstract static class InPort<T> {
 
+        private final String name;
+
         private T defaultData;
 
         private OutPort<? extends T> prev;
+
+        protected InPort(String name) {
+            this.name = name;
+        }
 
         public OutPort<? extends T> getPrev() {
             return prev;
@@ -107,13 +113,21 @@ public abstract class Node {
         public boolean isLinked(){
             return prev!=null;
         }
-        public abstract String getName();
+        public String getName() {
+            return name;
+        }
     }
 
 
     public abstract static class OutPort<T> {
 
+        private final String name;
+
         protected final Set<InPort<? super T>> next = new HashSet<>();
+
+        protected OutPort(String name) {
+            this.name = name;
+        }
 
         public abstract T getData();
 
@@ -157,6 +171,8 @@ public abstract class Node {
         public Set<InPort<? super T>> getNext(){
             return next;
         }
-        public abstract String getName();
+        public String getName() {
+            return name;
+        }
     }
 }
