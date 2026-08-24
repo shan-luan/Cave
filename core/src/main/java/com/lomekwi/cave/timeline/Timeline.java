@@ -173,12 +173,17 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     }
     /**
      * 开始记录：此后到 {@link #submit()} 之间对时间轴的每次修改都会记录一条命令，
-     * 最终在 submit 时合并为一条命令提交。若已在记录中则忽略本次调用。
+     * 最终在 close/submit 时合并为一条命令提交。
      */
-    public void record(){
-        if (recording) return;
+    public Recording record(){
+        assert !recording;
         recording = true;
         recorded.clear();
+        return this::submit;
+    }
+    /** 记录句柄，用于 try-with-resources：close() 即 {@link #submit()}。 */
+    public interface Recording extends AutoCloseable {
+        @Override void close();
     }
     /**
      * 结束记录，并把期间记录的所有命令合并为一条命令提交到项目的命令栈。

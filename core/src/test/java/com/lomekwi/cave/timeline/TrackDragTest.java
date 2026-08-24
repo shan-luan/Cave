@@ -338,10 +338,10 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t1, b, rng(500, 600));
 
-        // 模拟 UI 拖拽：record 期间直接改动模型，submit 时合并为一条复合命令
-        timeline.record();
-        timeline.move(List.of(a, b), 1000, 0);
-        timeline.submit();
+        // 模拟 UI 拖拽：record 期间直接改动模型，关闭时合并为一条复合命令
+        try (var h = timeline.record()) {
+            timeline.move(List.of(a, b), 1000, 0);
+        }
         assertEquals(rng(1000, 1100), a.getRange());
         assertEquals(2000, a.getOrigin());
         assertEquals(rng(1500, 1600), b.getRange());

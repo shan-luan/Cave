@@ -44,8 +44,7 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
             int baseTrack = tlGroup.yToTrackIndex(y);
             int trackOffset = 0;
             List<Segment> added = new ArrayList<>();
-            tlGroup.timeline.record();
-            try {
+            try (var h = tlGroup.timeline.record()) {
                 for (Segment seg : segments) {
                     seg.setOrigin(startTime);
                     long duration = seg.getDuration();
@@ -59,8 +58,6 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
                     trackOffset = targetTrack - baseTrack + 1;
                     added.add(seg);
                 }
-            } finally {
-                tlGroup.timeline.submit();
             }
             if (added.size() >= 2) {
                 SegmentGroup group = new SegmentGroup();

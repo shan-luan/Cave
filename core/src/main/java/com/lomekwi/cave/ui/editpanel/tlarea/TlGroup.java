@@ -470,7 +470,7 @@ public class TlGroup extends Group implements Focusable {
             });
         }
     }
-
+//FIXME:跨项目粘贴
     void performPaste() {
         var clip = App.copyManager.getClipboard();
         if (clip == null) return;
@@ -516,11 +516,8 @@ public class TlGroup extends Group implements Focusable {
 
         template.setOrigin(time + template.getOrigin() - template.getRange().lowerEndpoint());
 
-        timeline.record();
-        try {
+        try (var h = timeline.record()) {
             timeline.tryAdd(track, template, Range.closedOpen(time, time + duration));
-        } finally {
-            timeline.submit();
         }
         markTimelineDirty();
         return List.of(template);
@@ -536,8 +533,7 @@ public class TlGroup extends Group implements Focusable {
         long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
         long timeOffset = baseTime - minStart;
 
-        timeline.record();
-        try {
+        try (var h = timeline.record()) {
             for (Segment seg : sorted) {
                 long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
                 if (duration <= 0) continue;
@@ -558,8 +554,6 @@ public class TlGroup extends Group implements Focusable {
                 timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration));
                 pasted.add(seg);
             }
-        } finally {
-            timeline.submit();
         }
 
         markTimelineDirty();
@@ -576,8 +570,7 @@ public class TlGroup extends Group implements Focusable {
         long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
         long timeOffset = baseTime - minStart;
 
-        timeline.record();
-        try {
+        try (var h = timeline.record()) {
             for (Segment seg : sorted) {
                 long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
                 if (duration <= 0) continue;
@@ -598,8 +591,6 @@ public class TlGroup extends Group implements Focusable {
                 timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration));
                 pasted.add(seg);
             }
-        } finally {
-            timeline.submit();
         }
 
         markTimelineDirty();
@@ -656,7 +647,9 @@ public class TlGroup extends Group implements Focusable {
     @Override
     public void sizeChanged() {
         dirty = true;
-    }    class SegDragHandler {
+    }
+
+    class SegDragHandler {
         float firstX = Float.NaN, firstY = Float.NaN;
         private long dragOldStart;
         private long dragOldDuration;
@@ -966,11 +959,8 @@ public class TlGroup extends Group implements Focusable {
     void removeSeg(SegActor segActor) {
             removeActor(segActor);
             Segment s = segActor.getSegment();
-            timeline.record();
-            try {
+            try (var h = timeline.record()) {
                 timeline.remove(s);
-            } finally {
-                timeline.submit();
             }
             dirty = true;
         }
@@ -1002,8 +992,7 @@ public class TlGroup extends Group implements Focusable {
             List<Segment> beforeSegs = new ArrayList<>();
             List<Segment> afterSegs = new ArrayList<>();
             boolean splitAny = false;
-            timeline.record();
-            try {
+            try (var h = timeline.record()) {
                 for (Segment member : segs) {
                     var r = member.getRange();
                     long start = r.lowerEndpoint();
@@ -1020,8 +1009,6 @@ public class TlGroup extends Group implements Focusable {
                         afterSegs.add(member);
                     }
                 }
-            } finally {
-                timeline.submit();
             }
             if (splitAny && group != null) {
                 for (Segment member : segs) {
@@ -1052,11 +1039,8 @@ public class TlGroup extends Group implements Focusable {
             var entry = track.getEntry(xToAbsoluteTime(local.x));
             if (entry == null) return;
             var seg = entry.getValue();
-            timeline.record();
-            try {
+            try (var h = timeline.record()) {
                 timeline.remove(seg);
-            } finally {
-                timeline.submit();
             }
             dirty = true;
         }
@@ -1071,11 +1055,8 @@ public class TlGroup extends Group implements Focusable {
 
             clearSelection();
 
-            timeline.record();
-            try {
+            try (var h = timeline.record()) {
                 timeline.remove(segs);
-            } finally {
-                timeline.submit();
             }
             dirty = true;
         }

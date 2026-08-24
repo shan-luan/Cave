@@ -88,11 +88,9 @@ public class TlGroupMenu extends PopupMenu {
             targetTrack++;
         }
 
-        tlGroup.getTimeline().record();
-        try {
-            tlGroup.getTimeline().tryAdd(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
-        } finally {
-            tlGroup.getTimeline().submit();
+        var timeline = tlGroup.getTimeline();
+        try (var h = timeline.record()) {
+            timeline.tryAdd(timeline.getTrack(targetTrack), seg, range);
         }
 
         tlGroup.markTimelineDirty();
@@ -108,8 +106,8 @@ public class TlGroupMenu extends PopupMenu {
             int trackOffset = 0;
             List<Segment> added = new ArrayList<>();
 
-            tlGroup.getTimeline().record();
-            try {
+            var timeline = tlGroup.getTimeline();
+            try (var h = timeline.record()) {
                 for (Segment seg : segments) {
                     seg.setOrigin(time);
                     long duration = seg.getDuration();
@@ -117,16 +115,14 @@ public class TlGroupMenu extends PopupMenu {
 
                     int targetTrack = baseTrack + trackOffset;
                     var range = Range.closedOpen(time, time + duration);
-                    while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of())) {
+                    while (!timeline.getTrack(targetTrack).isFree(range, Set.of())) {
                         targetTrack++;
                     }
 
-                    tlGroup.getTimeline().tryAdd(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
+                    timeline.tryAdd(timeline.getTrack(targetTrack), seg, range);
                     trackOffset = targetTrack - baseTrack + 1;
                     added.add(seg);
                 }
-            } finally {
-                tlGroup.getTimeline().submit();
             }
 
             if (added.size() >= 2) {
