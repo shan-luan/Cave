@@ -55,19 +55,19 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     public long tryAdd(Track track, Segment segment, Range<Long> range){
         long shift = track.tryAdd(segment, range);
         if (shift == 0) {
-            push(new AddSegCommand(track, segment, range.lowerEndpoint(), range.upperEndpoint() - range.lowerEndpoint()));
+            push(new AddSegCommand(track, segment, range));
         }
         return shift;
     }
     protected void override(Track track, Segment segment, Range<Long> range){
         track.override(segment, range);
-        push(new AddSegCommand(track, segment, range.lowerEndpoint(), range.upperEndpoint() - range.lowerEndpoint()));
+        push(new AddSegCommand(track, segment, range));
     }
     public void remove(Segment segment){
         var track = segment.getTrack();
         var range = segment.getRange();
         if (track != null && range != null && track.remove(segment)) {
-            push(new RemoveSegCommand(track, segment, range.lowerEndpoint(), range.upperEndpoint() - range.lowerEndpoint(), segment.getGroup()));
+            push(new RemoveSegCommand(track, segment, range, segment.getGroup()));
         }
     }
     public void remove(Collection<Segment> segments){
@@ -86,7 +86,7 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         if (time <= lo || time >= hi) return;
         if (track.split(time)) {
             var right = track.getEntry(time).getValue();
-            push(new SplitSegCommand(track, s, lo, hi - lo, right, time));
+            push(new SplitSegCommand(track, s, r, right, time));
         }
     }
     public void split(long time){
@@ -125,11 +125,8 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
                 var track = s.getTrack();
                 var old = before.get(s);
                 var r = s.getRange();
-                if (track != null && old != null && r != null
-                    && (old.lowerEndpoint() != r.lowerEndpoint() || old.upperEndpoint() != r.upperEndpoint())) {
-                    push(new ResizeSegCommand(track, s,
-                        old.lowerEndpoint(), old.upperEndpoint() - old.lowerEndpoint(),
-                        r.lowerEndpoint(), r.upperEndpoint() - r.lowerEndpoint()));
+                if (track != null && old != null && r != null && !old.equals(r)) {
+                    push(new ResizeSegCommand(track, s, old, r));
                 }
             }
         }
@@ -149,11 +146,9 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
             for(var s : segments){
                 var from = s.getTrack();
                 var r = s.getRange();
-                long oldStart = r.lowerEndpoint();
-                long oldDur = r.upperEndpoint() - r.lowerEndpoint();
                 var to = getTrack(from.index + deltaTrack);
                 if (deltaTime != 0 || from != to) {
-                    cmds.add(new MoveSegCommand(from, to, s, oldStart, oldDur, oldStart + deltaTime, oldDur));
+                    cmds.add(new MoveSegCommand(from, to, s, r, shift(r, deltaTime)));
                 }
             }
             for(var s : segments){

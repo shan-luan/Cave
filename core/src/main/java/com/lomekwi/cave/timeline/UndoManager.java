@@ -94,7 +94,7 @@ public class UndoManager {
         void redo();
     }
 
-    public record AddSegCommand(Track track, Segment segment, long start, long duration) implements UndoableCommand {
+    public record AddSegCommand(Track track, Segment segment, Range<Long> range) implements UndoableCommand {
         @Override
         public void undo() {
             track.remove(segment);
@@ -102,32 +102,18 @@ public class UndoManager {
 
         @Override
         public void redo() {
-            track.override(segment, Range.closedOpen(start, start + duration));
+            track.override(segment, range);
         }
     }
 
-    public static class RemoveSegCommand implements UndoableCommand {
-        private final Track track;
-        private final Segment segment;
-        private final long start;
-        private final long duration;
-        private final SegmentGroup group;
-
-        public RemoveSegCommand(Track track, Segment segment, long start, long duration) {
-            this(track, segment, start, duration, null);
-        }
-
-        public RemoveSegCommand(Track track, Segment segment, long start, long duration, SegmentGroup group) {
-            this.track = track;
-            this.segment = segment;
-            this.start = start;
-            this.duration = duration;
-            this.group = group;
+    public record RemoveSegCommand(Track track, Segment segment, Range<Long> range, SegmentGroup group) implements UndoableCommand {
+        public RemoveSegCommand(Track track, Segment segment, Range<Long> range) {
+            this(track, segment, range, null);
         }
 
         @Override
         public void undo() {
-            track.override(segment, Range.closedOpen(start, start + duration));
+            track.override(segment, range);
             if (group != null) group.add(segment);
         }
 
@@ -138,51 +124,50 @@ public class UndoManager {
         }
     }
 
-    public record ResizeSegCommand(Track track, Segment segment, long oldStart, long oldDuration, long newStart, long newDuration) implements UndoableCommand {
+    public record ResizeSegCommand(Track track, Segment segment, Range<Long> oldRange, Range<Long> newRange) implements UndoableCommand {
         @Override
         public void undo() {
             track.remove(segment);
-            track.override(segment, Range.closedOpen(oldStart, oldStart + oldDuration));
+            track.override(segment, oldRange);
         }
 
         @Override
         public void redo() {
             track.remove(segment);
-            track.override(segment, Range.closedOpen(newStart, newStart + newDuration));
+            track.override(segment, newRange);
         }
     }
 
-    public record MoveSegCommand(Track fromTrack, Track toTrack, Segment segment, long oldStart, long oldDuration, long newStart, long newDuration) implements UndoableCommand {
+    public record MoveSegCommand(Track fromTrack, Track toTrack, Segment segment, Range<Long> oldRange, Range<Long> newRange) implements UndoableCommand {
         @Override
         public void undo() {
             toTrack.remove(segment);
-            fromTrack.override(segment, Range.closedOpen(oldStart, oldStart + oldDuration));
-            segment.offsetOrigin(oldStart - newStart);
+            fromTrack.override(segment, oldRange);
+            segment.offsetOrigin(oldRange.lowerEndpoint() - newRange.lowerEndpoint());
         }
 
         @Override
         public void redo() {
             fromTrack.remove(segment);
-            toTrack.override(segment, Range.closedOpen(newStart, newStart + newDuration));
-            segment.offsetOrigin(newStart - oldStart);
+            toTrack.override(segment, newRange);
+            segment.offsetOrigin(newRange.lowerEndpoint() - oldRange.lowerEndpoint());
         }
     }
 
-    public record SplitSegCommand(Track track, Segment originalSeg, long originalStart, long originalDuration, Segment newSeg, long splitTime) implements UndoableCommand {
+    public record SplitSegCommand(Track track, Segment originalSeg, Range<Long> originalRange, Segment newSeg, long splitTime) implements UndoableCommand {
         @Override
         public void undo() {
             track.remove(originalSeg);
             track.remove(newSeg);
-            track.override(originalSeg, Range.closedOpen(originalStart, originalStart + originalDuration));
+            track.override(originalSeg, originalRange);
         }
 
         @Override
         public void redo() {
-            long offset = splitTime - originalStart;
             track.remove(originalSeg);
             track.remove(newSeg);
-            track.override(originalSeg, Range.closedOpen(originalStart, splitTime));
-            track.override(newSeg, Range.closedOpen(splitTime, originalStart + originalDuration));
+            track.override(originalSeg, Range.closedOpen(originalRange.lowerEndpoint(), splitTime));
+            track.override(newSeg, Range.closedOpen(splitTime, originalRange.upperEndpoint()));
         }
     }
 

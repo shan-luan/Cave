@@ -275,7 +275,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, s, rng(0, 100));
         s.setOrigin(1000);
 
-        project.undoManager.execute(new UndoManager.MoveSegCommand(t0, t1, s, 0, 100, 50, 100));
+        project.undoManager.execute(new UndoManager.MoveSegCommand(t0, t1, s, rng(0, 100), rng(50, 150)));
         assertEquals(rng(50, 150), s.getRange());
         assertSame(t1, s.getTrack());
         assertEquals(1050, s.getOrigin());
@@ -297,7 +297,7 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        project.undoManager.execute(new UndoManager.ResizeSegCommand(t0, s, 0, 100, 30, 70));
+        project.undoManager.execute(new UndoManager.ResizeSegCommand(t0, s, rng(0, 100), rng(30, 100)));
         assertEquals(rng(30, 100), s.getRange());
 
         project.undoManager.undo();
@@ -314,7 +314,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, s, rng(0, 100));
         Segment right = s.duplicate();
 
-        project.undoManager.execute(new UndoManager.SplitSegCommand(t0, s, 0, 100, right, 40));
+        project.undoManager.execute(new UndoManager.SplitSegCommand(t0, s, rng(0, 100), right, 40));
 
         // execute 已应用分割：一分为二
         assertEquals(rng(0, 40), s.getRange());
