@@ -1,7 +1,6 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.util.Duplicatable;
 
@@ -19,7 +18,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import static java.util.Map.Entry;
 
 @NullMarked
 public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Timeline> {
@@ -55,15 +53,13 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         track.override(segment, range);
     }
 
-    public Timeline split(Track track,long time) {
+    public void split(Track track, long time) {
         track.split(time);
-        return this;
     }
-    public Timeline split(long time){
+    public void split(long time){
         for(var t : tracks){
             t.split(time);
         }
-        return this;
     }
 
     public long setStart(Collection<Segment> segments,long deltaTime){
