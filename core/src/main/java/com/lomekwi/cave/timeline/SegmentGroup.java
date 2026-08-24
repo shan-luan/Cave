@@ -6,6 +6,7 @@ import com.lomekwi.cave.app.selection.Selectable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -13,7 +14,6 @@ import java.util.Set;
 
 /**
  * 一组被同时操作（选择/拖动/分割）的片段，实现 {@link Collection}{@code <Segment>}，
- * 可直接传给以 Collection 为参数的 API。
  */
 public class SegmentGroup extends AbstractCollection<Segment> implements Serializable, Selectable, Copyable {
     @Serial

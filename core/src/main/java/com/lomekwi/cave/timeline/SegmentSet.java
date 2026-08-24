@@ -6,6 +6,7 @@ import com.lomekwi.cave.app.selection.Selectable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,7 +16,6 @@ import java.util.Set;
 
 /**
  * 当前选中的一组片段，实现 {@link Collection}{@code <Segment>}，
- * 可直接传给以 Collection 为参数的 API、或直接遍历。
  */
 public class SegmentSet extends AbstractCollection<Segment> implements Serializable, Selectable, Copyable {
     @Serial

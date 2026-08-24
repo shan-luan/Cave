@@ -9,8 +9,6 @@ import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.util.MimeType;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
-import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.timeline.UndoManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,24 +43,24 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
             long startTime = tlGroup.xToAbsoluteTime(x);
             int baseTrack = tlGroup.yToTrackIndex(y);
             int trackOffset = 0;
-            var cmds = new ArrayList<UndoManager.UndoableCommand>();
             List<Segment> added = new ArrayList<>();
-            for (Segment seg : segments) {
-                seg.setOrigin(startTime);
-                long duration = seg.getDuration();
-                if (duration <= 0) continue;
-                int targetTrack = baseTrack + trackOffset;
-                var range = Range.closedOpen(startTime, startTime + duration);
-                while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of())) {
-                    targetTrack++;
+            tlGroup.timeline.record();
+            try {
+                for (Segment seg : segments) {
+                    seg.setOrigin(startTime);
+                    long duration = seg.getDuration();
+                    if (duration <= 0) continue;
+                    int targetTrack = baseTrack + trackOffset;
+                    var range = Range.closedOpen(startTime, startTime + duration);
+                    while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of())) {
+                        targetTrack++;
+                    }
+                    tlGroup.timeline.tryAdd(tlGroup.timeline.getTrack(targetTrack), seg, range);
+                    trackOffset = targetTrack - baseTrack + 1;
+                    added.add(seg);
                 }
-                tlGroup.timeline.add(tlGroup.timeline.getTrack(targetTrack), seg, range);
-                cmds.add(new UndoManager.AddSegCommand(tlGroup.timeline.getTrack(targetTrack), seg, startTime, duration));
-                trackOffset = targetTrack - baseTrack + 1;
-                added.add(seg);
-            }
-            if (!cmds.isEmpty()) {
-                tlGroup.project.undoManager.record(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+            } finally {
+                tlGroup.timeline.submit();
             }
             if (added.size() >= 2) {
                 SegmentGroup group = new SegmentGroup();

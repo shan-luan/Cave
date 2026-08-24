@@ -12,7 +12,6 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSet;
-import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.util.MimeType;
 
@@ -89,10 +88,12 @@ public class TlGroupMenu extends PopupMenu {
             targetTrack++;
         }
 
-        tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
-        Project project = tlGroup.getProject();
-        project.undoManager.record(new UndoManager.AddSegCommand(
-            tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration));
+        tlGroup.getTimeline().record();
+        try {
+            tlGroup.getTimeline().tryAdd(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
+        } finally {
+            tlGroup.getTimeline().submit();
+        }
 
         tlGroup.markTimelineDirty();
     }
@@ -105,28 +106,27 @@ public class TlGroupMenu extends PopupMenu {
 
             int baseTrack = 0;
             int trackOffset = 0;
-            var cmds = new ArrayList<UndoManager.UndoableCommand>();
             List<Segment> added = new ArrayList<>();
 
-            for (Segment seg : segments) {
-                seg.setOrigin(time);
-                long duration = seg.getDuration();
-                if (duration <= 0) continue;
+            tlGroup.getTimeline().record();
+            try {
+                for (Segment seg : segments) {
+                    seg.setOrigin(time);
+                    long duration = seg.getDuration();
+                    if (duration <= 0) continue;
 
-                int targetTrack = baseTrack + trackOffset;
-                var range = Range.closedOpen(time, time + duration);
-                while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of())) {
-                    targetTrack++;
+                    int targetTrack = baseTrack + trackOffset;
+                    var range = Range.closedOpen(time, time + duration);
+                    while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of())) {
+                        targetTrack++;
+                    }
+
+                    tlGroup.getTimeline().tryAdd(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
+                    trackOffset = targetTrack - baseTrack + 1;
+                    added.add(seg);
                 }
-
-                tlGroup.getTimeline().add(tlGroup.getTimeline().getTrack(targetTrack), seg, range);
-                cmds.add(new UndoManager.AddSegCommand(tlGroup.getTimeline().getTrack(targetTrack), seg, time, duration));
-                trackOffset = targetTrack - baseTrack + 1;
-                added.add(seg);
-            }
-
-            if (!cmds.isEmpty()) {
-                project.undoManager.record(new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
+            } finally {
+                tlGroup.getTimeline().submit();
             }
 
             if (added.size() >= 2) {

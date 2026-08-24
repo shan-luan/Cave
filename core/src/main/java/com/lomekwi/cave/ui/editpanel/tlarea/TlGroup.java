@@ -42,8 +42,6 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-import org.jspecify.annotations.NonNull;
-
 public class TlGroup extends Group implements Focusable {
 
     private final TimelineRenderer renderer = new TimelineRenderer();
@@ -518,14 +516,17 @@ public class TlGroup extends Group implements Focusable {
 
         template.setOrigin(time + template.getOrigin() - template.getRange().lowerEndpoint());
 
-        timeline.add(track, template, Range.closedOpen(time, time + duration));
-        project.undoManager.record(new UndoManager.AddSegCommand(track, template, time, duration));
+        timeline.record();
+        try {
+            timeline.tryAdd(track, template, Range.closedOpen(time, time + duration));
+        } finally {
+            timeline.submit();
+        }
         markTimelineDirty();
         return List.of(template);
     }
 
     private List<Segment> pasteGroup(SegmentGroup template, long baseTime, int baseTrack) {
-        var cmds = new ArrayList<UndoManager.UndoableCommand>();
         var pasted = new ArrayList<Segment>();
 
         List<Segment> sorted = new ArrayList<>(template);
@@ -535,31 +536,30 @@ public class TlGroup extends Group implements Focusable {
         long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
         long timeOffset = baseTime - minStart;
 
-        for (Segment seg : sorted) {
-            long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
-            if (duration <= 0) continue;
+        timeline.record();
+        try {
+            for (Segment seg : sorted) {
+                long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
+                if (duration <= 0) continue;
 
-            int trackOffset = seg.getTrack().index - minTrack;
-            int ti = baseTrack + trackOffset;
-            Track track = timeline.getTrack(ti);
-            long segStart = seg.getRange().lowerEndpoint() + timeOffset;
-            var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
-            while (!track.isFree(range, Set.of())) {
-                ti++;
-                track = timeline.getTrack(ti);
-                range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                int trackOffset = seg.getTrack().index - minTrack;
+                int ti = baseTrack + trackOffset;
+                Track track = timeline.getTrack(ti);
+                long segStart = seg.getRange().lowerEndpoint() + timeOffset;
+                var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                while (!track.isFree(range, Set.of())) {
+                    ti++;
+                    track = timeline.getTrack(ti);
+                    range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                }
+
+                seg.setOrigin(seg.getOrigin() + timeOffset);
+
+                timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration));
+                pasted.add(seg);
             }
-
-            seg.setOrigin(seg.getOrigin() + timeOffset);
-
-            timeline.add(track, seg, Range.closedOpen(segStart, segStart + duration));
-            cmds.add(new UndoManager.AddSegCommand(track, seg, segStart, duration));
-            pasted.add(seg);
-        }
-
-        if (!cmds.isEmpty()) {
-            project.undoManager.record(new UndoManager.CompoundCommand(
-                cmds.toArray(new UndoManager.UndoableCommand[0])));
+        } finally {
+            timeline.submit();
         }
 
         markTimelineDirty();
@@ -567,7 +567,6 @@ public class TlGroup extends Group implements Focusable {
     }
 
     private List<Segment> pasteSet(SegmentSet template, long baseTime, int baseTrack) {
-        var cmds = new ArrayList<UndoManager.UndoableCommand>();
         var pasted = new ArrayList<Segment>();
 
         List<Segment> sorted = new ArrayList<>(template);
@@ -577,31 +576,30 @@ public class TlGroup extends Group implements Focusable {
         long minStart = sorted.stream().mapToLong(s -> s.getRange().lowerEndpoint()).min().orElse(baseTime);
         long timeOffset = baseTime - minStart;
 
-        for (Segment seg : sorted) {
-            long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
-            if (duration <= 0) continue;
+        timeline.record();
+        try {
+            for (Segment seg : sorted) {
+                long duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint();
+                if (duration <= 0) continue;
 
-            int trackOffset = seg.getTrack().index - minTrack;
-            int ti = baseTrack + trackOffset;
-            Track track = timeline.getTrack(ti);
-            long segStart = seg.getRange().lowerEndpoint() + timeOffset;
-            var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
-            while (!track.isFree(range, Set.of())) {
-                ti++;
-                track = timeline.getTrack(ti);
-                range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                int trackOffset = seg.getTrack().index - minTrack;
+                int ti = baseTrack + trackOffset;
+                Track track = timeline.getTrack(ti);
+                long segStart = seg.getRange().lowerEndpoint() + timeOffset;
+                var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                while (!track.isFree(range, Set.of())) {
+                    ti++;
+                    track = timeline.getTrack(ti);
+                    range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration);
+                }
+
+                seg.setOrigin(seg.getOrigin() + timeOffset);
+
+                timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration));
+                pasted.add(seg);
             }
-
-            seg.setOrigin(seg.getOrigin() + timeOffset);
-
-            timeline.add(track, seg, Range.closedOpen(segStart, segStart + duration));
-            cmds.add(new UndoManager.AddSegCommand(track, seg, segStart, duration));
-            pasted.add(seg);
-        }
-
-        if (!cmds.isEmpty()) {
-            project.undoManager.record(new UndoManager.CompoundCommand(
-                cmds.toArray(new UndoManager.UndoableCommand[0])));
+        } finally {
+            timeline.submit();
         }
 
         markTimelineDirty();
@@ -675,6 +673,7 @@ public class TlGroup extends Group implements Focusable {
             dragOldDuration = r.upperEndpoint() - dragOldStart;
             firstX = diffToActorX;
             firstY = diffToActorY;
+            timeline.record();
             initDragMembers(seg);
         }
 
@@ -956,11 +955,7 @@ public class TlGroup extends Group implements Focusable {
             dirty = true;
             snapIndicatorTime = -1;
 
-            var cmds = getUndoableCommands(actor);
-            if (!cmds.isEmpty()) {
-                project.undoManager.record(
-                    new UndoManager.CompoundCommand(cmds.toArray(new UndoManager.UndoableCommand[0])));
-            }
+            timeline.submit();
 
             dragMembers = null;
             dragOrigStarts = null;
@@ -968,51 +963,15 @@ public class TlGroup extends Group implements Focusable {
             dragOrigTracks = null;
         }
 
-    private @NonNull ArrayList<UndoManager.UndoableCommand> getUndoableCommands(SegActor actor) {
-        int n = dragMembers.size();
-        var cmds = new ArrayList<UndoManager.UndoableCommand>();
-        if (actor.getDragSide() == DragSide.MIDDLE) {
-            for (int i = 0; i < n; i++) {
-                Segment ms = dragMembers.get(i);
-                var msr = ms.getRange();
-                long newStart = msr.lowerEndpoint();
-                long newDuration = msr.upperEndpoint() - newStart;
-                Track newTrack = ms.getTrack();
-
-                if (dragOrigStarts[i] != newStart
-                    || dragOrigDurations[i] != newDuration
-                    || dragOrigTracks[i] != newTrack) {
-                    cmds.add(new UndoManager.MoveSegCommand(
-                        dragOrigTracks[i], newTrack, ms,
-                        dragOrigStarts[i], dragOrigDurations[i], newStart, newDuration));
-                }
-            }
-        } else {
-            for (int i = 0; i < n; i++) {
-                Segment ms = dragMembers.get(i);
-                var msr = ms.getRange();
-                long newStart = msr.lowerEndpoint();
-                long newDuration = msr.upperEndpoint() - newStart;
-
-                if (dragOrigStarts[i] != newStart
-                    || dragOrigDurations[i] != newDuration) {
-                    cmds.add(new UndoManager.ResizeSegCommand(
-                        dragOrigTracks[i], ms,
-                        dragOrigStarts[i], dragOrigDurations[i], newStart, newDuration));
-                }
-            }
-        }
-        return cmds;
-    }
-
     void removeSeg(SegActor segActor) {
             removeActor(segActor);
             Segment s = segActor.getSegment();
-            var r = s.getRange();
-            long start = r.lowerEndpoint();
-            long duration = r.upperEndpoint() - start;
-            Track track = s.getTrack();
-            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, s, start, duration, s.getGroup()));
+            timeline.record();
+            try {
+                timeline.remove(s);
+            } finally {
+                timeline.submit();
+            }
             dirty = true;
         }
 
@@ -1040,37 +999,39 @@ public class TlGroup extends Group implements Focusable {
         private void splitSegment(Segment seg, long time) {
             SegmentGroup group = seg.getGroup();
             var segs = group != null ? List.copyOf(group) : List.of(seg);
-            var commands = new ArrayList<UndoManager.UndoableCommand>();
             List<Segment> beforeSegs = new ArrayList<>();
             List<Segment> afterSegs = new ArrayList<>();
-            for (Segment member : segs) {
-                var r = member.getRange();
-                long start = r.lowerEndpoint();
-                long end = r.upperEndpoint();
-                if (time > start && time < end) {
-                    long duration = end - start;
-                    var ns = member.duplicate();
-                    commands.add(new UndoManager.SplitSegCommand(member.getTrack(), member, start, duration, ns, time));
-                    beforeSegs.add(member);
-                    afterSegs.add(ns);
-                } else if (end <= time) {
-                    beforeSegs.add(member);
-                } else {
-                    afterSegs.add(member);
+            boolean splitAny = false;
+            timeline.record();
+            try {
+                for (Segment member : segs) {
+                    var r = member.getRange();
+                    long start = r.lowerEndpoint();
+                    long end = r.upperEndpoint();
+                    if (time > start && time < end) {
+                        Track track = member.getTrack();
+                        timeline.split(track, time);
+                        beforeSegs.add(member);
+                        afterSegs.add(track.getEntry(time).getValue());
+                        splitAny = true;
+                    } else if (end <= time) {
+                        beforeSegs.add(member);
+                    } else {
+                        afterSegs.add(member);
+                    }
                 }
+            } finally {
+                timeline.submit();
             }
-            if (!commands.isEmpty()) {
-                project.undoManager.execute(new UndoManager.CompoundCommand(commands.toArray(new UndoManager.UndoableCommand[0])));
-                if (group != null) {
-                    for (Segment member : segs) {
-                        group.remove(member);
-                    }
-                    if (beforeSegs.size() >= 2) {
-                        regroup(beforeSegs);
-                    }
-                    if (afterSegs.size() >= 2) {
-                        regroup(afterSegs);
-                    }
+            if (splitAny && group != null) {
+                for (Segment member : segs) {
+                    group.remove(member);
+                }
+                if (beforeSegs.size() >= 2) {
+                    regroup(beforeSegs);
+                }
+                if (afterSegs.size() >= 2) {
+                    regroup(afterSegs);
                 }
             }
         }
@@ -1091,10 +1052,12 @@ public class TlGroup extends Group implements Focusable {
             var entry = track.getEntry(xToAbsoluteTime(local.x));
             if (entry == null) return;
             var seg = entry.getValue();
-            var r = seg.getRange();
-            long start = r.lowerEndpoint();
-            long duration = r.upperEndpoint() - start;
-            project.undoManager.execute(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
+            timeline.record();
+            try {
+                timeline.remove(seg);
+            } finally {
+                timeline.submit();
+            }
             dirty = true;
         }
 
@@ -1104,21 +1067,16 @@ public class TlGroup extends Group implements Focusable {
                 return;
             }
 
-            var cmds = new ArrayList<UndoManager.UndoableCommand>();
             var segs = List.copyOf(selectedSegments);
 
             clearSelection();
 
-            for (Segment seg : segs) {
-                var r = seg.getRange();
-                long start = r.lowerEndpoint();
-                long duration = r.upperEndpoint() - start;
-                Track track = seg.getTrack();
-                cmds.add(new UndoManager.RemoveSegCommand(track, seg, start, duration, seg.getGroup()));
+            timeline.record();
+            try {
+                timeline.remove(segs);
+            } finally {
+                timeline.submit();
             }
-
-            project.undoManager.execute(new UndoManager.CompoundCommand(
-                cmds.toArray(new UndoManager.UndoableCommand[0])));
             dirty = true;
         }
 

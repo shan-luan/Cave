@@ -52,7 +52,7 @@ public class TrackDragTest extends GdxTestBase {
     public void addPlacesSegmentAndSetsRangeAndTrack() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         assertSame(s, t0.getEntry(50).getValue());
         assertEquals(rng(0, 100), s.getRange());
@@ -64,8 +64,8 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment a = newSeg(100);
         Segment b = newSeg(100);
-        timeline.add(t0, a, rng(0, 100));
-        timeline.add(t0, b, rng(0, 100));
+        timeline.override(t0, a, rng(0, 100));
+        timeline.override(t0, b, rng(0, 100));
 
         assertSame(b, t0.getEntry(50).getValue());
         assertEquals(1, countOn(t0));
@@ -75,7 +75,7 @@ public class TrackDragTest extends GdxTestBase {
     public void removeSegmentRemovesIt() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         timeline.remove(s);
         assertTrue(t0.getEntry(50) == null);
@@ -87,8 +87,8 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment a = newSeg(100);
         Segment b = newSeg(100);
-        timeline.add(t0, a, rng(0, 100));
-        timeline.add(t0, b, rng(500, 600));
+        timeline.override(t0, a, rng(0, 100));
+        timeline.override(t0, b, rng(500, 600));
 
         timeline.remove(List.of(a, b));
         assertTrue(t0.isEmpty());
@@ -103,7 +103,7 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
         s.setOrigin(1000);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         long fix = timeline.move(List.of(s), 200, 0);
 
@@ -118,7 +118,7 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Track t1 = timeline.getTrack(1);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         long fix = timeline.move(List.of(s), 0, 1);
 
@@ -135,8 +135,8 @@ public class TrackDragTest extends GdxTestBase {
         Track t1 = timeline.getTrack(1);
         Segment a = newSeg(100);
         Segment b = newSeg(100);
-        timeline.add(t0, a, rng(0, 100));
-        timeline.add(t1, b, rng(500, 600));
+        timeline.override(t0, a, rng(0, 100));
+        timeline.override(t1, b, rng(500, 600));
 
         long fix = timeline.move(List.of(a, b), 1000, 0);
 
@@ -152,9 +152,9 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment mover = newSeg(100);
         Segment obstacle = newSeg(1000);
-        timeline.add(t0, mover, rng(0, 100));
+        timeline.override(t0, mover, rng(0, 100));
         // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会撞上它
-        timeline.add(t0, obstacle, rng(100, 1100));
+        timeline.override(t0, obstacle, rng(100, 1100));
 
         long fix = timeline.move(List.of(mover), 150, 0);
 
@@ -170,8 +170,8 @@ public class TrackDragTest extends GdxTestBase {
         Track t1 = timeline.getTrack(1);
         Segment mover = newSeg(100);
         Segment obstacle = newSeg(1000);
-        timeline.add(t0, mover, rng(0, 100));
-        timeline.add(t1, obstacle, rng(0, 1000)); // 目标轨道同区间被占据
+        timeline.override(t0, mover, rng(0, 100));
+        timeline.override(t1, obstacle, rng(0, 1000)); // 目标轨道同区间被占据
 
         long fix = timeline.move(List.of(mover), 0, 1);
 
@@ -189,7 +189,7 @@ public class TrackDragTest extends GdxTestBase {
     public void setStartSlidesFrontKeepsEndFixed() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         long fix = timeline.setStart(List.of(s), 30);
 
@@ -204,7 +204,7 @@ public class TrackDragTest extends GdxTestBase {
     public void setEndSlidesBackKeepsStartFixed() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         long fix = timeline.setEnd(List.of(s), 50);
 
@@ -216,7 +216,7 @@ public class TrackDragTest extends GdxTestBase {
     public void setEndShrinksBackwards() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         long fix = timeline.setEnd(List.of(s), -20);
 
@@ -229,8 +229,8 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
         Segment obstacle = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
-        timeline.add(t0, obstacle, rng(50, 150)); // 把 s 起点推到 50 会撞上
+        timeline.override(t0, s, rng(0, 100));
+        timeline.override(t0, obstacle, rng(50, 150)); // 把 s 起点推到 50 会撞上
 
         long fix = timeline.setStart(List.of(s), 50);
 
@@ -247,7 +247,7 @@ public class TrackDragTest extends GdxTestBase {
     public void splitSplitsSegmentIntoTwoHalvesWithCorrectRanges() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         timeline.split(t0, 40);
 
@@ -272,7 +272,7 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Track t1 = timeline.getTrack(1);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
         s.setOrigin(1000);
 
         project.undoManager.execute(new UndoManager.MoveSegCommand(t0, t1, s, 0, 100, 50, 100));
@@ -295,7 +295,7 @@ public class TrackDragTest extends GdxTestBase {
     public void undoRedoResizeSegCommandRestoresState() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
 
         project.undoManager.execute(new UndoManager.ResizeSegCommand(t0, s, 0, 100, 30, 70));
         assertEquals(rng(30, 100), s.getRange());
@@ -311,7 +311,7 @@ public class TrackDragTest extends GdxTestBase {
     public void undoRedoSplitSegCommandRestoresState() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.add(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 100));
         Segment right = s.duplicate();
 
         project.undoManager.execute(new UndoManager.SplitSegCommand(t0, s, 0, 100, right, 40));
@@ -335,20 +335,17 @@ public class TrackDragTest extends GdxTestBase {
         a.setOrigin(1000);
         Segment b = newSeg(100);
         b.setOrigin(2000);
-        timeline.add(t0, a, rng(0, 100));
-        timeline.add(t1, b, rng(500, 600));
+        timeline.override(t0, a, rng(0, 100));
+        timeline.override(t1, b, rng(500, 600));
 
-        // 模拟 UI 拖拽：模型先被直接改动，结束时才 record 一条复合命令
+        // 模拟 UI 拖拽：record 期间直接改动模型，submit 时合并为一条复合命令
+        timeline.record();
         timeline.move(List.of(a, b), 1000, 0);
+        timeline.submit();
         assertEquals(rng(1000, 1100), a.getRange());
         assertEquals(2000, a.getOrigin());
         assertEquals(rng(1500, 1600), b.getRange());
         assertEquals(3000, b.getOrigin());
-
-        project.undoManager.record(new UndoManager.CompoundCommand(
-            new UndoManager.MoveSegCommand(t0, t0, a, 0, 100, 1000, 100),
-            new UndoManager.MoveSegCommand(t1, t1, b, 500, 100, 1500, 100)
-        ));
 
         project.undoManager.undo();
         assertEquals(rng(0, 100), a.getRange());

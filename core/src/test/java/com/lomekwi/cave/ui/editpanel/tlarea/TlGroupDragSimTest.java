@@ -87,7 +87,7 @@ public class TlGroupDragSimTest extends GdxTestBase {
 
     /** 在模型上放置一个片段，并按 act() 的 NONE 逻辑摆好 Actor。 */
     private SegActor place(Track track, Segment s, long start, long end) {
-        timeline.add(track, s, Range.closedOpen(start, end));
+        timeline.tryAdd(track, s, Range.closedOpen(start, end));
         SegActor actor = s.getActor();
         actor.setPosition(absX(start), trackTopY(track.index));
         actor.setSize(absX(end) - absX(start), view.trackHeight);
