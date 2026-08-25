@@ -4,9 +4,11 @@ import com.google.common.collect.Range;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.UndoManager.AddSegCommand;
 import com.lomekwi.cave.timeline.UndoManager.CompoundCommand;
-import com.lomekwi.cave.timeline.UndoManager.MoveSegCommand;
+import com.lomekwi.cave.timeline.UndoManager.MergeableCommand;
+import com.lomekwi.cave.timeline.UndoManager.MoveSegsCommand;
 import com.lomekwi.cave.timeline.UndoManager.RemoveSegCommand;
-import com.lomekwi.cave.timeline.UndoManager.ResizeSegCommand;
+import com.lomekwi.cave.timeline.UndoManager.RemoveSegsCommand;
+import com.lomekwi.cave.timeline.UndoManager.ResizeSegsCommand;
 import com.lomekwi.cave.timeline.UndoManager.SplitSegCommand;
 import com.lomekwi.cave.timeline.UndoManager.UndoableCommand;
 import com.lomekwi.cave.util.Duplicatable;
@@ -71,8 +73,16 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         }
     }
     public void remove(Collection<Segment> segments){
+        List<RemoveSegsCommand.RemoveEntry> entries = new ArrayList<>(segments.size());
         for(var s : segments){
-            remove(s);
+            var track = s.getTrack();
+            var range = s.getRange();
+            if (track != null && range != null && track.remove(s)) {
+                entries.add(new RemoveSegsCommand.RemoveEntry(track, s, range, s.getGroup()));
+            }
+        }
+        if (!entries.isEmpty()) {
+            push(new RemoveSegsCommand(entries));
         }
     }
 
@@ -114,20 +124,24 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
             max = Math.abs(d) > Math.abs(max) ? d : max;
         }
         if (max == 0) {
-            // 先捕获各片段的旧区间，再执行修改，最后逐片段记录命令
+            // 先捕获各片段的旧区间，再执行修改，最后批量记录命令
             Map<Segment, Range<Long>> before = new HashMap<>();
             for (var s : segments) before.put(s, s.getRange());
             for (var track : tracks) {
                 if (end) track.setEnd(segments, deltaTime);
                 else track.setStart(segments, deltaTime);
             }
+            List<ResizeSegsCommand.ResizeEntry> entries = new ArrayList<>();
             for (var s : segments) {
                 var track = s.getTrack();
                 var old = before.get(s);
                 var r = s.getRange();
                 if (track != null && old != null && r != null && !old.equals(r)) {
-                    push(new ResizeSegCommand(track, s, old, r));
+                    entries.add(new ResizeSegsCommand.ResizeEntry(track, s, old, r));
                 }
+            }
+            if (!entries.isEmpty()) {
+                push(new ResizeSegsCommand(entries));
             }
         }
         return max;
@@ -142,13 +156,13 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         }
         if(max==0){
             // 先按旧状态构造命令，再执行移动（内部移除直接走 Track，避免重复记录）
-            List<MoveSegCommand> cmds = new ArrayList<>(segments.size());
+            List<MoveSegsCommand.MoveEntry> entries = new ArrayList<>(segments.size());
             for(var s : segments){
                 var from = s.getTrack();
                 var r = s.getRange();
                 var to = getTrack(from.index + deltaTrack);
                 if (deltaTime != 0 || from != to) {
-                    cmds.add(new MoveSegCommand(from, to, s, r, shift(r, deltaTime)));
+                    entries.add(new MoveSegsCommand.MoveEntry(from, to, s, r, shift(r, deltaTime)));
                 }
             }
             for(var s : segments){
@@ -160,8 +174,8 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
                 tr.override(s,shift(s.getRange(),deltaTime));
                 s.offsetOrigin(deltaTime);
             }
-            for(var cmd : cmds){
-                push(cmd);
+            if (!entries.isEmpty()) {
+                push(new MoveSegsCommand(entries));
             }
         }
         return max;
@@ -188,12 +202,25 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         if (!recording) return;
         recording = false;
         if (recorded.isEmpty()) return;
-        project.undoManager.record(new CompoundCommand(recorded.toArray(new UndoableCommand[0])));
+        if (recorded.size() == 1) {
+            project.undoManager.record(recorded.get(0));
+        } else {
+            project.undoManager.record(new CompoundCommand(recorded.toArray(new UndoableCommand[0])));
+        }
         recorded.clear();
     }
-    /** 记录模式下把一次修改对应的命令压入记录栈。 */
+    /** 记录模式下把一次修改对应的命令压入记录栈。同类型命令会与栈尾合并。 */
     private void push(UndoableCommand command){
-        if (recording) recorded.add(command);
+        if (!recording) return;
+        // 与 recording 栈中最近命令合并
+        if (!recorded.isEmpty() && command instanceof MergeableCommand) {
+            var last = recorded.get(recorded.size() - 1);
+            if (last.getClass() == command.getClass()) {
+                MergeableCommand lm = (MergeableCommand) last;
+                if (lm.merge(command)) return;
+            }
+        }
+        recorded.add(command);
     }
 
     /**
