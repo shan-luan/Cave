@@ -29,6 +29,7 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     private transient Track track;
     private transient SegActor actor;
     private transient Range<Long> range;
+    @Deprecated
     private transient AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     private transient boolean selected;
     private SegmentGroup group;

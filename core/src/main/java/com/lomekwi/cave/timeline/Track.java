@@ -223,15 +223,19 @@ public class Track implements Serializable,Iterable<Segment> {
         long max=0;
         for(var s : segments){
             var r = s.getRange();
-            long newLo = r.lowerEndpoint()+deltaTime;
-            if(newLo < s.getMinStart()){
-                long suggested = s.getMinStart() - r.lowerEndpoint();
-                max=Math.abs(suggested - deltaTime)>Math.abs(max)?(suggested - deltaTime) : max;
-                continue;
+            long candidateLo = r.lowerEndpoint()+deltaTime;
+            // 自身限制：起点不能越过源范围
+            long newLo = Math.max(candidateLo, s.getMinStart());
+            // 其他片段限制：终点固定，只右移起点，推开所有与候选区间重叠的障碍
+            if(candidateLo < r.upperEndpoint()){
+                var overlap = sources.subRangeMap(Range.closedOpen(candidateLo, r.upperEndpoint())).asMapOfRanges();
+                for(var e : overlap.entrySet()){
+                    if(segments.contains(e.getValue())) continue;
+                    newLo = Math.max(newLo, e.getKey().upperEndpoint());
+                }
             }
-            var t = Range.closedOpen(newLo, r.upperEndpoint());
-            var d = getShiftForward(t,segments);
-            max=Math.abs(d)>Math.abs(max)?d : max;
+            long needed = newLo - candidateLo;
+            if(needed > max) max = needed;
         }
         return max;
     }
@@ -250,15 +254,19 @@ public class Track implements Serializable,Iterable<Segment> {
         long max=0;
         for(var s : segments){
             var r = s.getRange();
-            long newHi = r.upperEndpoint()+deltaTime;
-            if(newHi > s.getMaxEnd()){
-                long suggested = s.getMaxEnd() - r.upperEndpoint();
-                max=Math.abs(suggested - deltaTime)>Math.abs(max)?(suggested - deltaTime) : max;
-                continue;
+            long candidateHi = r.upperEndpoint()+deltaTime;
+            // 自身限制：终点不能越过源范围
+            long newHi = Math.min(candidateHi, s.getMaxEnd());
+            // 其他片段限制：起点固定，只左移终点，让开所有与候选区间重叠的障碍
+            if(candidateHi > r.lowerEndpoint()){
+                var overlap = sources.subRangeMap(Range.closedOpen(r.lowerEndpoint(), candidateHi)).asMapOfRanges();
+                for(var e : overlap.entrySet()){
+                    if(segments.contains(e.getValue())) continue;
+                    newHi = Math.min(newHi, e.getKey().lowerEndpoint());
+                }
             }
-            var t = Range.closedOpen(r.lowerEndpoint(), newHi);
-            var d = getShiftBackward(t,segments);
-            max=Math.abs(d)>Math.abs(max)?d : max;
+            long needed = newHi - candidateHi;
+            if(needed < max) max = needed;
         }
         return max;
     }

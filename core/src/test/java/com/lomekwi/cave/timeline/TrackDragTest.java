@@ -239,6 +239,42 @@ public class TrackDragTest extends GdxTestBase {
         assertSame(obstacle, t0.getEntry(60).getValue());
     }
 
+    @Test
+    public void setStartReturnsExactCorrectionCombiningOwnLimitAndCollision() {
+        Track t0 = timeline.getTrack(0);
+        Segment s = newSeg(200);
+        Segment obstacle = newSeg(50);
+        timeline.override(t0, s, rng(50, 100));   // 前端已被裁切，origin=0 → minStart=0
+        timeline.override(t0, obstacle, rng(0, 50)); // 占住 [0,50)
+
+        // 想把前端拖到 -10（delta=-60）：minStart 允许回到 0，但 [0,50) 被 obstacle 占据
+        long fix = timeline.setStart(List.of(s), -60);
+
+        // 一次修正应同时夹住自身下界和障碍，返回精确补偿量
+        assertEquals(60, fix);
+        // 直接应用修正后的 delta 应一次成功
+        assertEquals(0, timeline.setStart(List.of(s), -60 + fix));
+        assertEquals(rng(50, 100), s.getRange());
+    }
+
+    @Test
+    public void setEndReturnsExactCorrectionCombiningOwnLimitAndCollision() {
+        Track t0 = timeline.getTrack(0);
+        Segment s = newSeg(100);
+        Segment obstacle = newSeg(40);
+        timeline.override(t0, s, rng(0, 50));
+        timeline.override(t0, obstacle, rng(80, 120)); // 占住 [80,120)
+
+        // 想把尾端拖到 250（delta=200）：maxEnd=100 会夹到 100，但 [80,100) 被 obstacle 占据
+        long fix = timeline.setEnd(List.of(s), 200);
+
+        // 一次修正应同时夹住自身上界和障碍
+        assertEquals(-170, fix);
+        // 直接应用修正后的 delta 应一次成功
+        assertEquals(0, timeline.setEnd(List.of(s), 200 + fix));
+        assertEquals(rng(0, 80), s.getRange());
+    }
+
     // ---------------------------------------------------------------------
     // split
     // ---------------------------------------------------------------------
