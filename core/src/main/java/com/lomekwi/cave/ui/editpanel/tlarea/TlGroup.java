@@ -178,10 +178,6 @@ public class TlGroup extends Group implements Focusable {
                             );
                             Stage s = getStage();
                             float feedX = stageToLocalCoordinates(s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY()))).x - actor.getX();
-                            Gdx.app.log("Drag", "act重建喂回 FRONT/BEHIND: dragSide=" + actor.getDragSide()
-                                + " 片段(" + actor.getX() + ", " + actor.getY() + ")"
-                                + " feedX=" + feedX
-                                + " 片段范围=" + r);
                             dragHandler.segDrag(actor, feedX, Float.NaN);
                             actor.setHeight(view.trackHeight);
                             break;
@@ -198,10 +194,6 @@ public class TlGroup extends Group implements Focusable {
                             Vector2 local = stageToLocalCoordinates(stage.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
                             float fx = local.x - actor.getX();
                             float fy = local.y - actor.getY();
-                            Gdx.app.log("Drag", "act重建喂回 MIDDLE: 片段(" + actor.getX() + ", " + actor.getY() + ")"
-                                + " 鼠标本地(" + local.x + ", " + local.y + ")"
-                                + " feed(" + fx + ", " + fy + ")"
-                                + " 范围=" + r);
                             dragHandler.segDrag(actor, fx, fy);
                             break;
                         case NONE:
@@ -679,21 +671,6 @@ public class TlGroup extends Group implements Focusable {
             firstY = diffToActorY;
             timeline.record();
             initDragMembers(seg);
-            Gdx.app.log("Drag", "initDrag: dragOldStart=" + dragOldStart
-                + " dragOldDuration=" + dragOldDuration
-                + " firstX=" + firstX + " firstY=" + firstY
-                + " dragMembers数量=" + dragMembers.size()
-                + " segment=" + seg);
-            for (int i = 0; i < dragMembers.size(); i++) {
-                Segment ms = dragMembers.get(i);
-                long minAllowed = ms.getOrigin();
-                long maxAllowed = ms.getOrigin() + ms.getDuration();
-                Gdx.app.log("Drag", "  member[" + i + "] 允许范围=[" + minAllowed + ".." + maxAllowed + ")"
-                    + " 当前范围=" + ms.getRange()
-                    + " origin=" + ms.getOrigin()
-                    + " source时长=" + ms.getDuration()
-                    + " 轨道#" + ms.getTrack().index);
-            }
         }
 
         /** 拖拽中：每次鼠标移动 / act() 重建都会调用，按 DragSide 分派到三种分支。 */
@@ -702,14 +679,6 @@ public class TlGroup extends Group implements Focusable {
             snapIndicatorTime = -1;
 
             var r = actor.getSegment().getRange();
-
-            Gdx.app.log("Drag", "segDrag: dragSide=" + actor.getDragSide()
-                + " diffToActor(" + diffToActorX + ", " + diffToActorY + ")"
-                + " 片段位置(" + actor.getX() + ", " + actor.getY() + ")"
-                + " 片段尺寸(" + actor.getWidth() + ", " + actor.getHeight() + ")"
-                + " 片段范围=" + r
-                + " 鼠标屏幕(" + Gdx.input.getX() + ", " + Gdx.input.getY() + ")"
-                + " 鼠标对应时间=" + xToAbsoluteTime(actor.getX() + diffToActorX));
 
             switch (actor.getDragSide()) {
                 case FRONT: {
@@ -722,9 +691,6 @@ public class TlGroup extends Group implements Focusable {
                     long snapped = snapTime(rawTime, getSnapIgnoreSetForResize(actor.getSegment().getTrack()));
                     long appliedStart = Math.max(snapped, 0);
                     snapIndicatorTime = appliedStart != rawTime ? appliedStart : -1;
-                    if (snapIndicatorTime >= 0) {
-                        Gdx.app.log("Drag", "FRONT 吸附: rawTime=" + rawTime + " -> snapped=" + appliedStart);
-                    }
 
                     handleFrontResize(appliedStart);
                     break;
@@ -738,9 +704,6 @@ public class TlGroup extends Group implements Focusable {
                     long snapped = snapTime(rawUpper, getSnapIgnoreSetForResize(actor.getSegment().getTrack()));
                     long appliedUpper = Math.max(snapped, 0);
                     snapIndicatorTime = appliedUpper != rawUpper ? appliedUpper : -1;
-                    if (snapIndicatorTime >= 0) {
-                        Gdx.app.log("Drag", "BEHIND 吸附: rawUpper=" + rawUpper + " -> snapped=" + appliedUpper);
-                    }
                     upper = absoluteTimeToX(appliedUpper);
                     newWidth = upper - actor.getX();
                     if (newWidth < 1f) return;
@@ -782,12 +745,6 @@ public class TlGroup extends Group implements Focusable {
                             snapIndicatorTime = target + duration;
                         }
                         if (target < 0) target = 0;
-                    }
-
-                    if (snapIndicatorTime >= 0) {
-                        Gdx.app.log("Drag", "MIDDLE 吸附: snapIndicatorTime=" + snapIndicatorTime
-                            + " target=" + target
-                            + " deltaX=" + deltaX + " deltaY=" + deltaY);
                     }
 
                     var newTrack = timeline.getTrack(Math.max(0, yToTrackIndex(targetY + view.trackHeight / 2)));
@@ -887,11 +844,6 @@ public class TlGroup extends Group implements Focusable {
         // 整体平移。模型 move/setStart/setEnd 都按相对当前位置位移，因此这里的
         // deltaTime/deltaTrack 必须相对当前模型状态，避免重建重放反复累加。
         private void handleMiddleDrag(long target, Track newTrack, float targetY) {
-            Gdx.app.log("Drag", "handleMiddleDrag: target=" + target
-                + " 新轨道#" + newTrack.index
-                + " targetY=" + targetY
-                + " dragMembers=" + dragMembers.size());
-
             List<Segment> members = List.copyOf(dragMembers);
 
             int trackDelta = newTrack.index - members.get(0).getTrack().index;
@@ -907,11 +859,7 @@ public class TlGroup extends Group implements Focusable {
 
             for (int tries = 0; tries < 6; tries++) {
                 long fix = timeline.move(members, appliedDelta, trackDelta);
-                Gdx.app.log("Drag", "  move tries=" + tries + " appliedDelta=" + appliedDelta + " trackDelta=" + trackDelta + " fix=" + fix);
                 if (fix == 0) {
-                    Gdx.app.log("Drag", "handleMiddleDrag 成功: appliedDelta=" + appliedDelta
-                        + " trackDelta=" + trackDelta
-                        + " tries=" + tries);
                     for (int i = 0; i < members.size(); i++) {
                         Segment ms = dragMembers.get(i);
                         SegActor msActor = ms.getActor();
@@ -928,22 +876,13 @@ public class TlGroup extends Group implements Focusable {
                 long cand = appliedDelta + fix;
                 long candStart0 = members.get(0).getRange().lowerEndpoint() + cand;
                 float candPx = absoluteTimeToX(candStart0);
-                if (Math.abs(candPx - mousePx) > 200f) {
-                    Gdx.app.log("Drag", "  MIDDLE放弃: candPx偏离鼠标>200px mousePx=" + mousePx + " candPx=" + candPx);
-                    return;
-                }
+                if (Math.abs(candPx - mousePx) > 200f) return;
                 appliedDelta = cand;
                 snapIndicatorTime = candStart0;
             }
-            Gdx.app.log("Drag", "  MIDDLE放弃: 6次重试耗尽 最终范围=" + members.get(0).getRange());
         }
 
         private void handleFrontResize(long newStart) {
-            Gdx.app.log("Drag", "handleFrontResize: newStart=" + newStart
-                + " dragOldStart=" + dragOldStart
-                + " dragOldDuration=" + dragOldDuration
-                + " absDelta=" + (newStart - dragOldStart));
-
             long absDelta = newStart - dragOldStart;
             int n = dragMembers.size();
             for (int i = 0; i < n; i++) {
@@ -959,11 +898,7 @@ public class TlGroup extends Group implements Focusable {
 
             for (int tries = 0; tries < 6; tries++) {
                 long fix = timeline.setStart(members, appliedDelta);
-                Gdx.app.log("Drag", "  setStart tries=" + tries + " appliedDelta=" + appliedDelta + " fix=" + fix);
                 if (fix == 0) {
-                    Gdx.app.log("Drag", "handleFrontResize 成功: appliedDelta=" + appliedDelta
-                        + " tries=" + tries
-                        + " 新范围=" + dragMembers.get(0).getRange());
                     for (int i = 0; i < n; i++) {
                         Segment ms = dragMembers.get(i);
                         long ns = ms.getRange().lowerEndpoint();
@@ -977,28 +912,15 @@ public class TlGroup extends Group implements Focusable {
                 long cand = appliedDelta + fix;
                 long candStart0 = members.get(0).getRange().lowerEndpoint() + cand;
                 float candPx = absoluteTimeToX(candStart0);
-                if (candPx - mousePx > 200f) {
-                    Gdx.app.log("Drag", "  FRONT放弃: candPx偏离鼠标>200px mousePx=" + mousePx + " candPx=" + candPx);
-                    return;
-                }
-                if (candStart0 >= members.get(0).getRange().upperEndpoint() || candStart0 < 0) {
-                    Gdx.app.log("Drag", "  FRONT放弃: candStart0越界 candStart0=" + candStart0 + " upper=" + members.get(0).getRange().upperEndpoint());
-                    return;
-                }
+                if (candPx - mousePx > 200f) return;
+                if (candStart0 >= members.get(0).getRange().upperEndpoint() || candStart0 < 0) return;
                 appliedDelta = cand;
             }
-            Gdx.app.log("Drag", "  FRONT放弃: 6次重试耗尽 最终范围=" + members.get(0).getRange()
-                + " 允许最小开始=" + members.get(0).getOrigin());
         }
 
         private void handleBehindResize(long newEnd) {
             long oldEnd = dragOldStart + dragOldDuration;
             long absDelta = newEnd - oldEnd;
-            Gdx.app.log("Drag", "handleBehindResize: newEnd=" + newEnd
-                + " oldEnd=" + oldEnd
-                + " dragOldStart=" + dragOldStart
-                + " dragOldDuration=" + dragOldDuration
-                + " absDelta=" + absDelta);
             int n = dragMembers.size();
             for (int i = 0; i < n; i++) {
                 long ne = dragOrigStarts[i] + dragOrigDurations[i] + absDelta;
@@ -1013,11 +935,7 @@ public class TlGroup extends Group implements Focusable {
 
             for (int tries = 0; tries < 6; tries++) {
                 long fix = timeline.setEnd(members, appliedDelta);
-                Gdx.app.log("Drag", "  setEnd tries=" + tries + " appliedDelta=" + appliedDelta + " fix=" + fix);
                 if (fix == 0) {
-                    Gdx.app.log("Drag", "handleBehindResize 成功: appliedDelta=" + appliedDelta
-                        + " tries=" + tries
-                        + " 新范围=" + dragMembers.get(0).getRange());
                     for (int i = 0; i < n; i++) {
                         Segment ms = dragMembers.get(i);
                         SegActor msActor = ms.getActor();
@@ -1030,27 +948,13 @@ public class TlGroup extends Group implements Focusable {
                 long cand = appliedDelta + fix;
                 long candEnd0 = members.get(0).getRange().upperEndpoint() + cand;
                 float candPx = absoluteTimeToX(candEnd0);
-                if (mousePx - candPx > 200f) {
-                    Gdx.app.log("Drag", "  BEHIND放弃: candPx偏离鼠标>200px mousePx=" + mousePx + " candPx=" + candPx);
-                    return;
-                }
-                if (candEnd0 <= members.get(0).getRange().lowerEndpoint()) {
-                    Gdx.app.log("Drag", "  BEHIND放弃: candEnd0<=lowerEndpoint candEnd0=" + candEnd0 + " lower=" + members.get(0).getRange().lowerEndpoint());
-                    return;
-                }
+                if (mousePx - candPx > 200f) return;
+                if (candEnd0 <= members.get(0).getRange().lowerEndpoint()) return;
                 appliedDelta = cand;
             }
-            Gdx.app.log("Drag", "  BEHIND放弃: 6次重试耗尽 最终范围=" + members.get(0).getRange()
-                + " 允许最大结束=" + (members.get(0).getOrigin() + members.get(0).getDuration()));
         }
 
         void segDragEnd(SegActor actor) {
-            Gdx.app.log("Drag", "=== 拖拽结束 === dragSide=" + actor.getDragSide()
-                + " 最终范围=" + actor.getSegment().getRange()
-                + " 轨道#" + actor.getSegment().getTrack().index
-                + " 最终位置(" + actor.getX() + ", " + actor.getY() + ")"
-                + " origin=" + actor.getSegment().getOrigin());
-
             dirty = true;
             snapIndicatorTime = -1;
 

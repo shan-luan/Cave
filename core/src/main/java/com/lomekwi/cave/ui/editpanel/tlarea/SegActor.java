@@ -80,14 +80,6 @@ public abstract class SegActor extends Actor {
                     } else {
                         dragSide = DragSide.MIDDLE;
                     }
-                    Gdx.app.log("Drag", "=== 拖拽开始 === dragSide=" + dragSide
-                        + " 鼠标本地(" + x + ", " + y + ")"
-                        + " 鼠标屏幕(" + event.getStageX() + ", " + event.getStageY() + ")"
-                        + " 片段范围=" + segment.getRange()
-                        + " 轨道#" + segment.getTrack().index
-                        + " 片段位置(" + getX() + ", " + getY() + ")"
-                        + " 片段尺寸(" + getWidth() + ", " + getHeight() + ")"
-                        + " origin=" + segment.getOrigin());
                     event.stop();
                     boolean alreadySelected = tlGroup.selectedSegments().contains(segment);
                     if (!alreadySelected) {
@@ -102,10 +94,6 @@ public abstract class SegActor extends Actor {
             }
             @Override
             public void touchDragged (InputEvent event, float x, float y, int pointer) {
-                Gdx.app.log("Drag", "touchDragged: 鼠标本地(" + x + ", " + y + ")"
-                    + " 鼠标屏幕(" + event.getStageX() + ", " + event.getStageY() + ")"
-                    + " dragSide=" + dragSide
-                    + " 片段位置(" + getX() + ", " + getY() + ")");
                 ((TlGroup) getParent()).segDrag(SegActor.this,x,y);
             }
             @Override
