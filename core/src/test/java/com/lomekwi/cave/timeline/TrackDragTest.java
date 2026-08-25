@@ -204,12 +204,12 @@ public class TrackDragTest extends GdxTestBase {
     public void setEndSlidesBackKeepsStartFixed() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
-        timeline.override(t0, s, rng(0, 100));
+        timeline.override(t0, s, rng(0, 50));
 
         long fix = timeline.setEnd(List.of(s), 50);
 
         assertEquals(0, fix);
-        assertEquals(rng(0, 150), s.getRange());
+        assertEquals(rng(0, 100), s.getRange());
     }
 
     @Test

@@ -685,7 +685,7 @@ public class TlGroup extends Group implements Focusable {
                     target = Math.max(target, absoluteTimeToX(0));
 
                     long rawTime = xToAbsoluteTime(target);
-                    long snapped = snapTime(rawTime, getSnapIgnoreSet());
+                    long snapped = snapTime(rawTime, getSnapIgnoreSetForResize(actor.getSegment().getTrack()));
                     long appliedStart = Math.max(snapped, 0);
                     snapIndicatorTime = appliedStart != rawTime ? appliedStart : -1;
 
@@ -698,7 +698,7 @@ public class TlGroup extends Group implements Focusable {
                     float upper = actor.getX() + newWidth;
 
                     long rawUpper = xToAbsoluteTime(upper);
-                    long snapped = snapTime(rawUpper, getSnapIgnoreSet());
+                    long snapped = snapTime(rawUpper, getSnapIgnoreSetForResize(actor.getSegment().getTrack()));
                     long appliedUpper = Math.max(snapped, 0);
                     snapIndicatorTime = appliedUpper != rawUpper ? appliedUpper : -1;
                     upper = absoluteTimeToX(appliedUpper);
@@ -783,6 +783,15 @@ public class TlGroup extends Group implements Focusable {
 
         private Set<Segment> getSnapIgnoreSet() {
             return new HashSet<>(dragMembers);
+        }
+
+        /** 裁切时的吸附忽略集：在 dragMembers 之外额外忽略同轨道所有片段 */
+        private Set<Segment> getSnapIgnoreSetForResize(Track track) {
+            Set<Segment> ignore = new HashSet<>(dragMembers);
+            for (Segment s : track) {
+                ignore.add(s);
+            }
+            return ignore;
         }
 
         private static final float SNAP_THRESHOLD_PX = 10f;
@@ -903,7 +912,6 @@ public class TlGroup extends Group implements Focusable {
                 if (candPx - mousePx > 200f) return;
                 if (candStart0 >= members.get(0).getRange().upperEndpoint() || candStart0 < 0) return;
                 appliedDelta = cand;
-                snapIndicatorTime = candStart0;
             }
         }
 
@@ -940,7 +948,6 @@ public class TlGroup extends Group implements Focusable {
                 if (mousePx - candPx > 200f) return;
                 if (candEnd0 <= members.get(0).getRange().lowerEndpoint()) return;
                 appliedDelta = cand;
-                snapIndicatorTime = candEnd0;
             }
         }
 

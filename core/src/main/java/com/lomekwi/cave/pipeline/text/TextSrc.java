@@ -129,7 +129,7 @@ public class TextSrc extends Source<TextFrame> {
 
     @Override
     public long getDuration() {
-        return text.length()*SECOND;
+        return Long.MAX_VALUE;
     }
 
     @Override

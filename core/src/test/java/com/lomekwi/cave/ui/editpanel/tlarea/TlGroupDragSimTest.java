@@ -186,7 +186,7 @@ public class TlGroupDragSimTest extends GdxTestBase {
     public void frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable() throws Exception {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(1000_000L);
-        s.setOrigin(5_000_000L);
+        s.setOrigin(0);
         SegActor actor = place(t0, s, 0, 1000_000L);
 
         setDragSide(actor, DragSide.FRONT);
@@ -195,13 +195,13 @@ public class TlGroupDragSimTest extends GdxTestBase {
         float newFrontLocalX = 50f; // 起点右移 50px=50ms
         tl.segDrag(actor, newFrontLocalX, view.trackHeight / 2);
         assertEquals(Range.closedOpen(50_000L, 1000_000L), s.getRange());
-        assertEquals(5_000_000L, s.getOrigin());
+        assertEquals(0, s.getOrigin());
 
         // 鼠标不动（停在裁切后的新起点 absX(50000)），重建喂回：起点与 origin 都必须稳定
         for (int i = 0; i < 5; i++) {
             rebuildAndFeed(actor, absX(50_000L), view.trackHeight / 2);
             assertEquals(Range.closedOpen(50_000L, 1000_000L), s.getRange());
-            assertEquals(5_000_000L, s.getOrigin());
+            assertEquals(0, s.getOrigin());
         }
     }
 

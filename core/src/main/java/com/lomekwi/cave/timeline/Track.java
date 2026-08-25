@@ -142,7 +142,6 @@ public class Track implements Serializable,Iterable<Segment> {
                 }
                 if (!found) return s;
                 long next = minStart - hi;
-                if (lo + next < 0) return Long.MIN_VALUE;
                 if (next >= s) return s;
                 s = next;
             }
@@ -224,7 +223,14 @@ public class Track implements Serializable,Iterable<Segment> {
         long max=0;
         for(var s : segments){
             var r = s.getRange();
-            var t = Range.closedOpen(r.lowerEndpoint()+deltaTime, r.upperEndpoint());
+            long newLo = r.lowerEndpoint()+deltaTime;
+            if(newLo < s.getMinStart()){
+                long suggested = s.getMinStart() - r.lowerEndpoint();
+                if(suggested == 0) suggested = deltaTime;
+                max=Math.abs(suggested)>Math.abs(max)?suggested : max;
+                continue;
+            }
+            var t = Range.closedOpen(newLo, r.upperEndpoint());
             var d = getShiftForward(t,segments);
             max=Math.abs(d)>Math.abs(max)?d : max;
         }
@@ -245,7 +251,14 @@ public class Track implements Serializable,Iterable<Segment> {
         long max=0;
         for(var s : segments){
             var r = s.getRange();
-            var t = Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()+deltaTime);
+            long newHi = r.upperEndpoint()+deltaTime;
+            if(newHi > s.getMaxEnd()){
+                long suggested = s.getMaxEnd() - r.upperEndpoint();
+                if(suggested == 0) suggested = deltaTime;
+                max=Math.abs(suggested)>Math.abs(max)?suggested : max;
+                continue;
+            }
+            var t = Range.closedOpen(r.lowerEndpoint(), newHi);
             var d = getShiftBackward(t,segments);
             max=Math.abs(d)>Math.abs(max)?d : max;
         }
