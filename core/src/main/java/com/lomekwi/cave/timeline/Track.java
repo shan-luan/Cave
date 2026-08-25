@@ -226,8 +226,7 @@ public class Track implements Serializable,Iterable<Segment> {
             long newLo = r.lowerEndpoint()+deltaTime;
             if(newLo < s.getMinStart()){
                 long suggested = s.getMinStart() - r.lowerEndpoint();
-                if(suggested == 0) suggested = deltaTime;
-                max=Math.abs(suggested)>Math.abs(max)?suggested : max;
+                max=Math.abs(suggested - deltaTime)>Math.abs(max)?(suggested - deltaTime) : max;
                 continue;
             }
             var t = Range.closedOpen(newLo, r.upperEndpoint());
@@ -254,8 +253,7 @@ public class Track implements Serializable,Iterable<Segment> {
             long newHi = r.upperEndpoint()+deltaTime;
             if(newHi > s.getMaxEnd()){
                 long suggested = s.getMaxEnd() - r.upperEndpoint();
-                if(suggested == 0) suggested = deltaTime;
-                max=Math.abs(suggested)>Math.abs(max)?suggested : max;
+                max=Math.abs(suggested - deltaTime)>Math.abs(max)?(suggested - deltaTime) : max;
                 continue;
             }
             var t = Range.closedOpen(r.lowerEndpoint(), newHi);
