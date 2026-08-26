@@ -229,14 +229,14 @@ public class TrackDragTest extends GdxTestBase {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
         Segment obstacle = newSeg(100);
-        timeline.override(t0, s, rng(0, 100));
-        timeline.override(t0, obstacle, rng(50, 150)); // 把 s 起点推到 50 会撞上
+        timeline.override(t0, obstacle, rng(0, 100)); // 左侧障碍占住 [0,100)
+        timeline.override(t0, s, rng(100, 200));      // 把 s 起点往左推到 50 会撞上它
 
-        long fix = timeline.setStart(List.of(s), 50);
+        long fix = timeline.setStart(List.of(s), -50);
 
         assertTrue(fix != 0);
-        assertEquals(rng(0, 100), s.getRange());
-        assertSame(obstacle, t0.get(60));
+        assertEquals(rng(100, 200), s.getRange());
+        assertSame(obstacle, t0.get(50));
     }
 
     @Test
@@ -273,6 +273,54 @@ public class TrackDragTest extends GdxTestBase {
         // 直接应用修正后的 delta 应一次成功
         assertEquals(0, timeline.setEnd(List.of(s), 200 + fix));
         assertEquals(rng(0, 80), s.getRange());
+    }
+
+    @Test
+    public void groupSetEndAdjacentMembersDoNotOverlap() {
+        Track t0 = timeline.getTrack(0);
+        Segment a = newSeg(100);
+        Segment b = newSeg(100);
+        a.setOrigin(500); // 允许尾端伸展
+        b.setOrigin(600);
+        timeline.override(t0, a, rng(0, 100));
+        timeline.override(t0, b, rng(100, 200)); // 与 a 相邻
+
+        try (var h = timeline.record()) {
+            assertEquals(0, timeline.setEnd(List.of(a, b), 50));
+        }
+
+        // 伸展被后一个成员的起点挡住：a 不变，只有 b 伸展，两者不重叠
+        assertEquals(rng(0, 100), a.getRange());
+        assertEquals(rng(100, 250), b.getRange());
+        assertSame(a, t0.get(50));
+        assertSame(b, t0.get(150));
+
+        project.undoManager.undo();
+        assertEquals(rng(0, 100), a.getRange());
+        assertEquals(rng(100, 200), b.getRange());
+    }
+
+    @Test
+    public void groupSetStartAdjacentMembersDoNotOverlap() {
+        Track t0 = timeline.getTrack(0);
+        Segment a = newSeg(100);
+        Segment b = newSeg(100);
+        timeline.override(t0, a, rng(100, 200));
+        timeline.override(t0, b, rng(200, 300)); // 与 a 相邻
+
+        try (var h = timeline.record()) {
+            assertEquals(0, timeline.setStart(List.of(a, b), -50));
+        }
+
+        // 前移被前一个成员的终点挡住：a 前移，b 不变，两者不重叠
+        assertEquals(rng(50, 200), a.getRange());
+        assertEquals(rng(200, 300), b.getRange());
+        assertSame(a, t0.get(100));
+        assertSame(b, t0.get(250));
+
+        project.undoManager.undo();
+        assertEquals(rng(100, 200), a.getRange());
+        assertEquals(rng(200, 300), b.getRange());
     }
 
     // ---------------------------------------------------------------------

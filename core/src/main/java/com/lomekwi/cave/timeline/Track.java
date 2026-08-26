@@ -26,8 +26,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -160,11 +164,29 @@ public class Track implements Serializable,Iterable<Segment> {
         sources.put(r, segment);
         segment.setTrack(this);
         segment.setRange(r);
+        syncSegmentRanges();
         onChanged();
+    }
+    /**
+     * TreeRangeMap 放入与既有区间部分重叠的区间时，会把被覆盖片段未覆盖的部分
+     * 重新挂到相邻的新区间上，但不会回写该片段的 range 字段，导致
+     * segment.getRange() 与它在轨道中的实际区间失步（后续 remove/undo 会读到错误区间）。
+     * 这里把所有在轨片段的 range 字段与其实际区间重新对齐。
+     */
+    private void syncSegmentRanges(){
+        for (var e : sources.asMapOfRanges().entrySet()) {
+            var key = e.getKey();
+            var s = e.getValue();
+            if (!key.equals(s.getRange())) {
+                s.setRange(key);
+            }
+        }
     }
     synchronized protected boolean remove(Segment segment){
         var r = segment.getRange();
-        if(r != null && this.equals(segment.getTrack())){
+        // 仅当片段确实以该区间存在于本轨道时才移除；已被覆盖/丢弃的片段
+        // 若按失步的 range 移除会误删其他片段。
+        if(r != null && this.equals(segment.getTrack()) && sources.get(r.lowerEndpoint()) == segment){
             sources.remove(r);
             return true;
         }else {
@@ -241,10 +263,36 @@ public class Track implements Serializable,Iterable<Segment> {
 
     synchronized protected void setStart(Collection<Segment> segments,long deltaTime){
         segments = own(segments);
-        remove(segments);
-        for(var s : segments){
+        // 过滤出移动后区间仍然合法的片段（起点不能越过终点），避免构造非法区间
+        Map<Segment, Range<Long>> targets = new LinkedHashMap<>();
+        for (var s : segments) {
             var r = s.getRange();
-            override(s,Range.closedOpen(r.lowerEndpoint()+deltaTime, r.upperEndpoint()));
+            if (r.lowerEndpoint() + deltaTime < r.upperEndpoint()) {
+                targets.put(s, Range.closedOpen(r.lowerEndpoint() + deltaTime, r.upperEndpoint()));
+            }
+        }
+        // 同一轨道上相邻成员一起前移时不允许相互重叠：成员的起点至少到
+        // 同一轨道内上一个成员的终点（组内 resize 不产生重叠区间）
+        if (deltaTime < 0 && targets.size() > 1) {
+            Map<Track, List<Segment>> byTrack = new HashMap<>();
+            for (var s : targets.keySet()) {
+                byTrack.computeIfAbsent(s.getTrack(), k -> new ArrayList<>()).add(s);
+            }
+            for (var list : byTrack.values()) {
+                list.sort(Comparator.comparingLong(s -> s.getRange().lowerEndpoint()));
+                for (int i = 1; i < list.size(); i++) {
+                    Segment cur = list.get(i);
+                    long floor = list.get(i - 1).getRange().upperEndpoint();
+                    var t = targets.get(cur);
+                    if (t.lowerEndpoint() < floor) {
+                        targets.put(cur, Range.closedOpen(floor, t.upperEndpoint()));
+                    }
+                }
+            }
+        }
+        remove(targets.keySet());
+        for (var e : targets.entrySet()) {
+            override(e.getKey(), e.getValue());
         }
     }
 
@@ -273,10 +321,36 @@ public class Track implements Serializable,Iterable<Segment> {
 
     synchronized protected void setEnd(Collection<Segment> segments,long deltaTime){
         segments = own(segments);
-        remove(segments);
-        for(var s : segments){
+        // 过滤出移动后区间仍然合法的片段（终点不能越过起点），避免构造非法区间
+        Map<Segment, Range<Long>> targets = new LinkedHashMap<>();
+        for (var s : segments) {
             var r = s.getRange();
-            override(s,Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint()+deltaTime));
+            if (r.upperEndpoint() + deltaTime > r.lowerEndpoint()) {
+                targets.put(s, Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint() + deltaTime));
+            }
+        }
+        // 同一轨道上相邻成员一起伸展时不允许相互重叠：成员的终点最多到
+        // 同一轨道内下一个成员的起点（组内 resize 不产生重叠区间）
+        if (deltaTime > 0 && targets.size() > 1) {
+            Map<Track, List<Segment>> byTrack = new HashMap<>();
+            for (var s : targets.keySet()) {
+                byTrack.computeIfAbsent(s.getTrack(), k -> new ArrayList<>()).add(s);
+            }
+            for (var list : byTrack.values()) {
+                list.sort(Comparator.comparingLong(s -> s.getRange().lowerEndpoint()));
+                for (int i = 0; i + 1 < list.size(); i++) {
+                    Segment cur = list.get(i);
+                    long cap = list.get(i + 1).getRange().lowerEndpoint();
+                    var t = targets.get(cur);
+                    if (t.upperEndpoint() > cap) {
+                        targets.put(cur, Range.closedOpen(t.lowerEndpoint(), cap));
+                    }
+                }
+            }
+        }
+        remove(targets.keySet());
+        for (var e : targets.entrySet()) {
+            override(e.getKey(), e.getValue());
         }
     }
 
@@ -348,6 +422,47 @@ public class Track implements Serializable,Iterable<Segment> {
     synchronized public Set<Entry<Range<Long>, Segment>> getSubRangeMapAsEntrySet(Range<Long> range) {
         return Collections.unmodifiableSet(sources.subRangeMap(range).asMapOfRanges().entrySet());
     }
+
+    /**
+     * 两条轨道相等，当且仅当轨道索引相同、片段区间集合逐项相同。
+     * RangeMap 的 entrySet 迭代顺序总是按区间从小到大，因此两侧可以逐项对齐比较。
+     * 片段本身不做身份比较，而是逐字段比较（源类型/时长、origin、区间），
+     * 以便跨时间线（如序列化快照）的结构对比。
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Track other)) return false;
+        if (index != other.index) return false;
+        var a = sources.asMapOfRanges().entrySet();
+        var b = other.sources.asMapOfRanges().entrySet();
+        if (a.size() != b.size()) return false;
+        Iterator<Entry<Range<Long>, Segment>> ia = a.iterator();
+        Iterator<Entry<Range<Long>, Segment>> ib = b.iterator();
+        while (ia.hasNext()) {
+            var ea = ia.next();
+            var eb = ib.next();
+            if (!ea.getKey().equals(eb.getKey())) return false;
+            if (!segmentEquals(ea.getValue(), eb.getValue())) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(index);
+    }
+
+    private static boolean segmentEquals(Segment a, Segment b) {
+        if (a == b) return true;
+        var sa = a.getSource();
+        var sb = b.getSource();
+        return sa.getClass() == sb.getClass()
+            && sa.getDuration() == sb.getDuration()
+            && a.getOrigin() == b.getOrigin()
+            && Objects.equals(a.getRange(), b.getRange());
+    }
+
     private void onChanged() {
         lengthChanged = true;
         if(worker != null){

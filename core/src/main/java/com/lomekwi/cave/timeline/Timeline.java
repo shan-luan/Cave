@@ -16,6 +16,7 @@ import com.lomekwi.cave.util.Duplicatable;
 import static com.lomekwi.cave.util.Ranges.shift;
 
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -257,6 +258,40 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     }
     public List<Track> getTracks() {
         return tracks;
+    }
+
+    /**
+     * 两个时间线相等，当且仅当每个轨道对应相等：按索引逐位比较轨道内容。
+     * 由于 {@link #getTrack(int)} 会按需自动创建空轨道、而撤销不会删除轨道，
+     * 比较时把"缺失"与"空轨道"视为相等（只允许尾部为空的差异）。
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Timeline other)) return false;
+        int max = Math.max(tracks.size(), other.tracks.size());
+        for (int i = 0; i < max; i++) {
+            @Nullable Track a = i < tracks.size() ? tracks.get(i) : null;
+            @Nullable Track b = i < other.tracks.size() ? other.tracks.get(i) : null;
+            if (!trackEquals(a, b)) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 1;
+        for (Track track : tracks) {
+            if (track.isEmpty()) continue;
+            h = 31 * h + track.hashCode();
+        }
+        return h;
+    }
+
+    private static boolean trackEquals(@Nullable Track a, @Nullable Track b) {
+        if (a == null) return b == null || b.isEmpty();
+        if (b == null) return a.isEmpty();
+        return a.equals(b);
     }
 
     /**
