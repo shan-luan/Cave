@@ -224,7 +224,7 @@ public class Track implements Serializable,Iterable<Segment> {
         if(deltaTime==0) return 0;
         var f = segments.stream().filter(s -> s.getTrack()==this);
         if(deltaTime>0){
-            return f.mapToLong(s -> max(0,s.getRange().lowerEndpoint()+deltaTime-s.getRange().upperEndpoint())).min().orElse(-deltaTime);
+            return f.mapToLong(s -> -max(0,s.getRange().lowerEndpoint()+deltaTime-s.getRange().upperEndpoint())).min().orElse(-deltaTime);
         }else {
             return f.mapToLong(s -> {
                 var newStart = s.getRange().lowerEndpoint()+deltaTime;
