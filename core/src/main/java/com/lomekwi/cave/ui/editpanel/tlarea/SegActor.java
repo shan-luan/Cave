@@ -98,7 +98,7 @@ public abstract class SegActor extends Actor {
             }
             @Override
             public void touchUp (InputEvent event, float x, float y, int pointer, int button) {
-                ((TlGroup) getParent()).segDragEnd(SegActor.this);
+                ((TlGroup) getParent()).finishDrag(SegActor.this);
                 dragSide=DragSide.NONE;
                 setCursor(Cursor.SystemCursor.Arrow);
             }

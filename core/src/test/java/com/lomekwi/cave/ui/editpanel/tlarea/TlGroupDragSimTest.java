@@ -139,7 +139,7 @@ public class TlGroupDragSimTest extends GdxTestBase {
             assertEquals(5_000_000L + 100_000L, s.getOrigin());
         }
 
-        tl.segDragEnd(actor);
+        tl.finishDrag(actor);
 
         project.undoManager.undo();
         assertEquals(Range.closedOpen(0L, 1000_000L), s.getRange());

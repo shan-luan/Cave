@@ -54,7 +54,7 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        assertSame(s, t0.getEntry(50).getValue());
+        assertSame(s, t0.get(50));
         assertEquals(rng(0, 100), s.getRange());
         assertSame(t0, s.getTrack());
     }
@@ -67,7 +67,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t0, b, rng(0, 100));
 
-        assertSame(b, t0.getEntry(50).getValue());
+        assertSame(b, t0.get(50));
         assertEquals(1, countOn(t0));
     }
 
@@ -78,7 +78,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, s, rng(0, 100));
 
         timeline.remove(s);
-        assertTrue(t0.getEntry(50) == null);
+        assertTrue(t0.get(50) == null);
         assertTrue(t0.isEmpty());
     }
 
@@ -126,7 +126,7 @@ public class TrackDragTest extends GdxTestBase {
         assertSame(t1, s.getTrack());
         assertEquals(rng(0, 100), s.getRange());
         assertTrue(t0.isEmpty());
-        assertSame(s, t1.getEntry(50).getValue());
+        assertSame(s, t1.get(50));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class TrackDragTest extends GdxTestBase {
         assertTrue(fix != 0);
         // 未发生移动：mover 仍在原处
         assertEquals(rng(0, 100), mover.getRange());
-        assertSame(obstacle, t0.getEntry(200).getValue());
+        assertSame(obstacle, t0.get(200));
     }
 
     @Test
@@ -178,7 +178,7 @@ public class TrackDragTest extends GdxTestBase {
         assertTrue(fix != 0);
         assertSame(t0, mover.getTrack());
         assertEquals(rng(0, 100), mover.getRange());
-        assertSame(obstacle, t1.getEntry(50).getValue());
+        assertSame(obstacle, t1.get(50));
     }
 
     // ---------------------------------------------------------------------
@@ -236,7 +236,7 @@ public class TrackDragTest extends GdxTestBase {
 
         assertTrue(fix != 0);
         assertEquals(rng(0, 100), s.getRange());
-        assertSame(obstacle, t0.getEntry(60).getValue());
+        assertSame(obstacle, t0.get(60));
     }
 
     @Test
@@ -289,9 +289,9 @@ public class TrackDragTest extends GdxTestBase {
 
         // 原始片段被压缩到左半
         assertEquals(rng(0, 40), s.getRange());
-        assertSame(s, t0.getEntry(20).getValue());
+        assertSame(s, t0.get(20));
         // 右半是不相同的另一个片段
-        Segment right = t0.getEntry(60).getValue();
+        Segment right = t0.get(60);
         assertNotSame(s, right);
         assertEquals(rng(40, 100), right.getRange());
         assertSame(t0, right.getTrack());
@@ -360,7 +360,7 @@ public class TrackDragTest extends GdxTestBase {
         project.undoManager.undo();
         assertEquals(rng(0, 100), s.getRange());
         assertEquals(1, countOn(t0));
-        assertSame(s, t0.getEntry(50).getValue());
+        assertSame(s, t0.get(50));
     }
 
     @Test

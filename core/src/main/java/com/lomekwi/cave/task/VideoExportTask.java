@@ -13,9 +13,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.audio.AudClipSrc;
 import com.lomekwi.cave.pipeline.audio.AudFrame;
-import com.lomekwi.cave.pipeline.image.ImgFrame;
 import com.lomekwi.cave.pipeline.image.Renderable;
-import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.decoder.AudDecRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Timeline;
@@ -87,10 +85,8 @@ public class VideoExportTask implements Task{
                 for(var track : timeline){
                     var seg = activeSegments[i];
                     if(seg==null||!seg.getRange().contains(t)){
-                        var e= track.getEntry(t);
-                        seg = null;
-                        if(e!=null){
-                            seg=e.getValue();
+                        seg = track.get(t);
+                        if(seg!=null){
                             seg.sync(t);
                         }
                         activeSegments[i]=seg;
@@ -126,10 +122,8 @@ public class VideoExportTask implements Task{
 
                 Segment seg = active[i];
                 if (seg == null || !seg.getRange().contains(audioT)) {
-                    var entry = tracks[i].getEntry(audioT);
-                    seg = null;
-                    if (entry != null && entry.getValue().getSource() instanceof AudClipSrc) {
-                        seg = entry.getValue();
+                    seg = tracks[i].get(audioT);
+                    if (seg != null && seg.getSource() instanceof AudClipSrc) {
                         seg.sync(audioT);
                     }
                     active[i] = seg;

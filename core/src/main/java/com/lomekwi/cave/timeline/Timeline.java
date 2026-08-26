@@ -87,15 +87,14 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     }
 
     public void split(Track track, long time) {
-        var e = track.getEntry(time);
-        if (e == null) return;
-        var s = e.getValue();
+        var s = track.get(time);
+        if (s == null) return;
         var r = s.getRange();
         long lo = r.lowerEndpoint();
         long hi = r.upperEndpoint();
         if (time <= lo || time >= hi) return;
         if (track.split(time)) {
-            var right = track.getEntry(time).getValue();
+            var right = track.get(time);
             push(new SplitSegCommand(track, s, r, right, time));
         }
     }
@@ -114,6 +113,7 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
     }
 
     private long applyPerTrack(Collection<Segment> segments, long deltaTime, boolean end){
+        if (deltaTime == 0) return 0;
         Set<Track> tracks = new HashSet<>();
         for (var s : segments) if (s.getTrack() != null) tracks.add(s.getTrack());
 

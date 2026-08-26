@@ -11,7 +11,6 @@ import com.lomekwi.cave.timeline.playback.PlayStateChangedEvent;
 import com.lomekwi.cave.timeline.playback.Playhead;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import com.lomekwi.cave.timeline.playback.SeekEvent;
-import com.lomekwi.cave.util.Ranges;
 
 import static com.lomekwi.cave.util.Ranges.shift;
 
@@ -29,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -219,14 +217,15 @@ public class Track implements Serializable,Iterable<Segment> {
     }
 
     synchronized protected long probeSetStart(Collection<Segment> segments,long deltaTime){
+        if (deltaTime == 0) return 0;
         segments = own(segments);
         long max=0;
         for(var s : segments){
             var r = s.getRange();
             long candidateLo = r.lowerEndpoint()+deltaTime;
-            // 自身限制：起点不能越过源范围
+            // 自身限制
             long newLo = Math.max(candidateLo, s.getMinStart());
-            // 其他片段限制：终点固定，只右移起点，推开所有与候选区间重叠的障碍
+            // 其他片段限制
             if(candidateLo < r.upperEndpoint()){
                 var overlap = sources.subRangeMap(Range.closedOpen(candidateLo, r.upperEndpoint())).asMapOfRanges();
                 for(var e : overlap.entrySet()){
@@ -250,14 +249,15 @@ public class Track implements Serializable,Iterable<Segment> {
     }
 
     synchronized protected long probeSetEnd(Collection<Segment> segments,long deltaTime){
+        if (deltaTime == 0) return 0;
         segments = own(segments);
         long max=0;
         for(var s : segments){
             var r = s.getRange();
             long candidateHi = r.upperEndpoint()+deltaTime;
-            // 自身限制：终点不能越过源范围
+            // 自身限制
             long newHi = Math.min(candidateHi, s.getMaxEnd());
-            // 其他片段限制：起点固定，只左移终点，让开所有与候选区间重叠的障碍
+            // 其他片段限制
             if(candidateHi > r.lowerEndpoint()){
                 var overlap = sources.subRangeMap(Range.closedOpen(r.lowerEndpoint(), candidateHi)).asMapOfRanges();
                 for(var e : overlap.entrySet()){
@@ -300,35 +300,35 @@ public class Track implements Serializable,Iterable<Segment> {
         }
     }
 
-    synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time) {
-        return sources.getEntry(time);
+    synchronized public @Nullable Segment get(long time) {
+        return sources.get(time);
     }
     /**
-     * 获取指定时间点的片段条目，支持偏移查找
+     * 获取指定时间点的片段，支持偏移查找
      *
      * @param time      查询的时间点
      * @param offset    偏移量，0表示精确匹配时间点；正数表示查找该时间之后的第一个片段；负数表示查找该时间之前的最后一个片段。建议只使用-1,0,1，防止接口变动。
      * @param excludeHit 是否排除命中时间点的片段本身。true表示跳过包含time的片段，false表示可以返回包含time的片段
-     * @return 找到的片段条目，如果未找到则返回null
+     * @return 找到的片段，如果未找到则返回null
      */
-    synchronized public Map.@Nullable Entry<Range<Long>, Segment> getEntry(long time,int offset,boolean excludeHit) {
+    synchronized public @Nullable Segment get(long time, int offset, boolean excludeHit) {
         if(offset==0){
             if(excludeHit){
                 return null;
             }else {
-                return sources.getEntry(time);
+                return sources.get(time);
             }
         } else if (offset > 0) {
             var m =sources.subRangeMap(Range.atLeast(time)).asMapOfRanges();
             for(var entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
-                return entry;
+                return entry.getValue();
             }
         }else {
             var m =sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges();
             for(var entry:m.entrySet()){
                 if(excludeHit&&entry.getKey().contains(time)) continue;
-                return entry;
+                return entry.getValue();
             }
         }
         return null;
@@ -441,11 +441,11 @@ public class Track implements Serializable,Iterable<Segment> {
                     if(!p.isPlaying()){
                         Gdx.app.debug("Track"+index, "因为播放头而尝试park...");
 
-                        var s = getEntry(t);
+                        var s = get(t);
                         Frame f = null;
                         if (s != null) {
-                            s.getValue().sync(t);
-                            f = s.getValue().get(t);
+                            s.sync(t);
+                            f = s.get(t);
                         }
                         timeline.project.projEventBus.post(Objects.requireNonNullElse(f, gapFrame));
 
@@ -454,21 +454,20 @@ public class Track implements Serializable,Iterable<Segment> {
                     }else {
                         updateNeeded = false;
                     }
-                    var e = getEntry(t);
-                    if(e == null){
+                    var s = get(t);
+                    if(s == null){
                         timeline.project.projEventBus.post(gapFrame);
                         long parkTime = Long.MAX_VALUE;
-                        var next = getEntry(t,1,false);
+                        var next = get(t,1,false);
                         if(next!=null){
-                            parkTime = next.getKey().lowerEndpoint()-t;
+                            parkTime = next.getRange().lowerEndpoint()-t;
                             parkTime*=1000;
                             parkTime=Math.max(parkTime,1);
                         }
                         Gdx.app.debug("Track"+index, "轨道线程等待: " + parkTime/1e9 + "秒");
                         LockSupport.parkNanos(parkTime);
                     }else{
-                        var s=e.getValue();
-                        var r=e.getKey();
+                        var r = s.getRange();
                         Gdx.app.debug("Track"+index, "找到片段: " + s);
                         s.sync(t);
                         long end = r.upperEndpoint();

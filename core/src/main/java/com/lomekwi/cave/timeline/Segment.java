@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.AbstractMap;
 import java.util.Iterator;
 
 public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable, Comparable<Segment> {
@@ -29,8 +28,6 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     private transient Track track;
     private transient SegActor actor;
     private transient Range<Long> range;
-    @Deprecated
-    private transient AbstractMap.SimpleImmutableEntry<Range<Long>, Segment> entry;
     private transient boolean selected;
     private SegmentGroup group;
     public boolean isSelected() {
@@ -127,13 +124,9 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     private long rangeStart() {
         return range == null ? Long.MAX_VALUE : range.lowerEndpoint();
     }
-    public AbstractMap.Entry<Range<Long>, Segment> getEntry() {
-        return entry;
-    }
     protected void setRange(Range<Long> range) {
         if(range.equals(this.range))return;
         this.range = range;
-        entry = new AbstractMap.SimpleImmutableEntry<>(range,this);
     }
 
     @Serial

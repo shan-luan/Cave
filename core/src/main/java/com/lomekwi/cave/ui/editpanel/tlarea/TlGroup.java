@@ -608,8 +608,8 @@ public class TlGroup extends Group implements Focusable {
         dragHandler.segDrag(actor, diffToActorX, diffToActorY);
     }
 
-    protected void segDragEnd(SegActor actor) {
-        dragHandler.segDragEnd(actor);
+    protected void finishDrag(SegActor actor) {
+        dragHandler.finish(actor);
     }
 
     public void removeSeg(SegActor segActor) {
@@ -896,25 +896,25 @@ public class TlGroup extends Group implements Focusable {
             long currentStart0 = members.get(0).getRange().lowerEndpoint();
             long appliedDelta = newStart - currentStart0;
 
-            for (int tries = 0; tries < 6; tries++) {
-                long fix = timeline.setStart(members, appliedDelta);
-                if (fix == 0) {
-                    for (int i = 0; i < n; i++) {
-                        Segment ms = dragMembers.get(i);
-                        long ns = ms.getRange().lowerEndpoint();
-                        long oe = ms.getRange().upperEndpoint();
-                        SegActor msActor = ms.getActor();
-                        msActor.setX(absoluteTimeToX(ns));
-                        msActor.setWidth(absoluteTimeToX(oe) - absoluteTimeToX(ns));
-                    }
-                    return;
-                }
+            // 失败时模型不变，把返回的 fix 加进 delta 再调一次即可；cand 为 0 等价于没动。
+            long fix = timeline.setStart(members, appliedDelta);
+            if (fix != 0) {
                 long cand = appliedDelta + fix;
+                if (cand == 0) return;
                 long candStart0 = members.get(0).getRange().lowerEndpoint() + cand;
                 float candPx = absoluteTimeToX(candStart0);
                 if (candPx - mousePx > 200f) return;
                 if (candStart0 >= members.get(0).getRange().upperEndpoint() || candStart0 < 0) return;
-                appliedDelta = cand;
+                timeline.setStart(members, cand);
+            }
+
+            for (int i = 0; i < n; i++) {
+                Segment ms = dragMembers.get(i);
+                long ns = ms.getRange().lowerEndpoint();
+                long oe = ms.getRange().upperEndpoint();
+                SegActor msActor = ms.getActor();
+                msActor.setX(absoluteTimeToX(ns));
+                msActor.setWidth(absoluteTimeToX(oe) - absoluteTimeToX(ns));
             }
         }
 
@@ -933,28 +933,28 @@ public class TlGroup extends Group implements Focusable {
             long currentEnd0 = members.get(0).getRange().upperEndpoint();
             long appliedDelta = newEnd - currentEnd0;
 
-            for (int tries = 0; tries < 6; tries++) {
-                long fix = timeline.setEnd(members, appliedDelta);
-                if (fix == 0) {
-                    for (int i = 0; i < n; i++) {
-                        Segment ms = dragMembers.get(i);
-                        SegActor msActor = ms.getActor();
-                        msActor.setWidth(
-                            absoluteTimeToX(ms.getRange().upperEndpoint())
-                                - absoluteTimeToX(ms.getRange().lowerEndpoint()));
-                    }
-                    return;
-                }
+            // 失败时模型不变，把返回的 fix 加进 delta 再调一次即可；cand 为 0 等价于没动。
+            long fix = timeline.setEnd(members, appliedDelta);
+            if (fix != 0) {
                 long cand = appliedDelta + fix;
+                if (cand == 0) return;
                 long candEnd0 = members.get(0).getRange().upperEndpoint() + cand;
                 float candPx = absoluteTimeToX(candEnd0);
                 if (mousePx - candPx > 200f) return;
                 if (candEnd0 <= members.get(0).getRange().lowerEndpoint()) return;
-                appliedDelta = cand;
+                timeline.setEnd(members, cand);
+            }
+
+            for (int i = 0; i < n; i++) {
+                Segment ms = dragMembers.get(i);
+                SegActor msActor = ms.getActor();
+                msActor.setWidth(
+                    absoluteTimeToX(ms.getRange().upperEndpoint())
+                        - absoluteTimeToX(ms.getRange().lowerEndpoint()));
             }
         }
 
-        void segDragEnd(SegActor actor) {
+        void finish(SegActor actor) {
             dirty = true;
             snapIndicatorTime = -1;
 
@@ -990,9 +990,9 @@ public class TlGroup extends Group implements Focusable {
             int trackIndex = yToTrackIndex(local.y);
             long time = xToAbsoluteTime(local.x);
             Track track = timeline.getTrack(trackIndex);
-            var entry = track.getEntry(time);
-            if (entry == null) return;
-            splitSegment(entry.getValue(), time);
+            var seg = track.get(time);
+            if (seg == null) return;
+            splitSegment(seg, time);
             dirty = true;
         }
 
@@ -1011,7 +1011,7 @@ public class TlGroup extends Group implements Focusable {
                         Track track = member.getTrack();
                         timeline.split(track, time);
                         beforeSegs.add(member);
-                        afterSegs.add(track.getEntry(time).getValue());
+                        afterSegs.add(track.get(time));
                         splitAny = true;
                     } else if (end <= time) {
                         beforeSegs.add(member);
@@ -1046,9 +1046,8 @@ public class TlGroup extends Group implements Focusable {
                 s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())));
             int trackIndex = yToTrackIndex(local.y);
             Track track = timeline.getTrack(trackIndex);
-            var entry = track.getEntry(xToAbsoluteTime(local.x));
-            if (entry == null) return;
-            var seg = entry.getValue();
+            var seg = track.get(xToAbsoluteTime(local.x));
+            if (seg == null) return;
             try (var h = timeline.record()) {
                 timeline.remove(seg);
             }

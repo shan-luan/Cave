@@ -3,22 +3,16 @@ package com.lomekwi.cave.ui.editpanel.tlarea;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 
 import com.google.common.collect.Range;
 
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.SegmentSelectedEvent;
-import com.lomekwi.cave.timeline.SegmentSet;
 import com.lomekwi.cave.timeline.SegmentSetSelectedEvent;
 import com.lomekwi.cave.timeline.Track;
-import com.lomekwi.cave.timeline.Timeline;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /** 时间线捕获阶段监听器 —— 处理框选与空白区播放头 seek。 */
@@ -45,7 +39,7 @@ public class TlGroupCaptureListener extends InputListener {
 
         int trackIndex = tlGroup.yToTrackIndex(y);
         boolean onSegment = trackIndex >= 0 && trackIndex < tlGroup.timeline.getTracks().size()
-            && tlGroup.timeline.getTrack(trackIndex).getEntry(tlGroup.xToAbsoluteTime(x)) != null;
+            && tlGroup.timeline.getTrack(trackIndex).get(tlGroup.xToAbsoluteTime(x)) != null;
         if (!onSegment) {
             tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0));
         }
