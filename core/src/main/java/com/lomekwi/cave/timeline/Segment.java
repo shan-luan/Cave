@@ -183,11 +183,7 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
      * @author shan_luan_
      */
     public Optional<Segment> prev(){
-        var e = track.getSubRangeMapAsEntrySet(Range.atMost(range.lowerEndpoint()-1));//-1,防止取到自己。
-        for(var prev : e){
-            return Optional.of(prev.getValue());
-        }
-        return Optional.empty();
+        return Optional.ofNullable(track.get(range.lowerEndpoint(), -1, true));
     }
     public Range<Long> nextRange(){
         if(next().isPresent()){
