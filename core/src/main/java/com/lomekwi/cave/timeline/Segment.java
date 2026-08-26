@@ -13,6 +13,7 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Optional;
 
 public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable, Comparable<Segment> {
     @Serial
@@ -166,5 +167,40 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
         segment.range = range;
         segment.source.onDuplicate(source);
         return segment;
+    }
+    /**
+     * @author shan_luan_
+     */
+    public Optional<Segment> next(){
+        var e = track.getSubRangeMapAsEntrySet(Range.atLeast(range.upperEndpoint()));
+        for(var next : e){
+            return Optional.of(next.getValue());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * @author shan_luan_
+     */
+    public Optional<Segment> prev(){
+        var e = track.getSubRangeMapAsEntrySet(Range.atMost(range.lowerEndpoint()-1));//-1,防止取到自己。
+        for(var prev : e){
+            return Optional.of(prev.getValue());
+        }
+        return Optional.empty();
+    }
+    public Range<Long> nextRange(){
+        if(next().isPresent()){
+            return next().orElseThrow().getRange();
+        }else {
+            return Range.singleton(Long.MAX_VALUE);
+        }
+    }
+    public Range<Long> prevRange(){
+        if(prev().isPresent()){
+            return prev().orElseThrow().getRange();
+        }else {
+            return Range.singleton(0L);
+        }
     }
 }

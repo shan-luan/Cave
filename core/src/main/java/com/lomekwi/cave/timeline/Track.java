@@ -26,10 +26,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +36,8 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.Map.Entry;
+import static java.lang.Math.*;
+import static com.google.common.primitives.Longs.*;
 
 @NullMarked
 public class Track implements Serializable,Iterable<Segment> {
@@ -160,33 +159,21 @@ public class Track implements Serializable,Iterable<Segment> {
         return true;
     }
     private static final int MAX_SLIDE_STEPS = 10000;
+
+    /**
+     *只是不检查。千万不要真的拿来覆盖。
+     * @author shan_luan_
+     */
     synchronized protected void override(Segment segment,Range<Long> r){
+        assert isFree(r,Collections.singleton(segment));
         sources.put(r, segment);
         segment.setTrack(this);
         segment.setRange(r);
-        syncSegmentRanges();
         onChanged();
-    }
-    /**
-     * TreeRangeMap 放入与既有区间部分重叠的区间时，会把被覆盖片段未覆盖的部分
-     * 重新挂到相邻的新区间上，但不会回写该片段的 range 字段，导致
-     * segment.getRange() 与它在轨道中的实际区间失步（后续 remove/undo 会读到错误区间）。
-     * 这里把所有在轨片段的 range 字段与其实际区间重新对齐。
-     */
-    private void syncSegmentRanges(){
-        for (var e : sources.asMapOfRanges().entrySet()) {
-            var key = e.getKey();
-            var s = e.getValue();
-            if (!key.equals(s.getRange())) {
-                s.setRange(key);
-            }
-        }
     }
     synchronized protected boolean remove(Segment segment){
         var r = segment.getRange();
-        // 仅当片段确实以该区间存在于本轨道时才移除；已被覆盖/丢弃的片段
-        // 若按失步的 range 移除会误删其他片段。
-        if(r != null && this.equals(segment.getTrack()) && sources.get(r.lowerEndpoint()) == segment){
+        if(r != null){
             sources.remove(r);
             return true;
         }else {
@@ -230,128 +217,66 @@ public class Track implements Serializable,Iterable<Segment> {
         return true;
     }
 
-    private List<Segment> own(Collection<Segment> segments){
-        var out = new ArrayList<Segment>(segments.size());
-        for(var s : segments){
-            if(s.getTrack()==this) out.add(s);
-        }
-        return out;
-    }
-
+    /**
+     * @author shan_luan_
+     */
     synchronized protected long probeSetStart(Collection<Segment> segments,long deltaTime){
-        if (deltaTime == 0) return 0;
-        segments = own(segments);
-        long max=0;
-        for(var s : segments){
-            var r = s.getRange();
-            long candidateLo = r.lowerEndpoint()+deltaTime;
-            // 自身限制
-            long newLo = Math.max(candidateLo, s.getMinStart());
-            // 其他片段限制
-            if(candidateLo < r.upperEndpoint()){
-                var overlap = sources.subRangeMap(Range.closedOpen(candidateLo, r.upperEndpoint())).asMapOfRanges();
-                for(var e : overlap.entrySet()){
-                    if(segments.contains(e.getValue())) continue;
-                    newLo = Math.max(newLo, e.getKey().upperEndpoint());
-                }
-            }
-            long needed = newLo - candidateLo;
-            if(needed > max) max = needed;
+        if(deltaTime==0) return 0;
+        var f = segments.stream().filter(s -> s.getTrack()==this);
+        if(deltaTime>0){
+            return f.mapToLong(s -> max(0,s.getRange().lowerEndpoint()+deltaTime-s.getRange().upperEndpoint())).min().orElse(-deltaTime);
+        }else {
+            return f.mapToLong(s -> {
+                var newStart = s.getRange().lowerEndpoint()+deltaTime;
+                return -min(
+                    newStart-s.prevRange().upperEndpoint(),
+                    newStart-s.getMinStart(),
+                    0
+                );
+            }).max().orElse(-deltaTime);
         }
-        return max;
     }
-
+//ai shit impl.
+private List<Segment> own(Collection<Segment> segments){
+    var out = new ArrayList<Segment>(segments.size());
+    for(var s : segments){
+        if(s.getTrack()==this) out.add(s);
+    }
+    return out;
+}
     synchronized protected void setStart(Collection<Segment> segments,long deltaTime){
-        segments = own(segments);
-        // 过滤出移动后区间仍然合法的片段（起点不能越过终点），避免构造非法区间
-        Map<Segment, Range<Long>> targets = new LinkedHashMap<>();
-        for (var s : segments) {
-            var r = s.getRange();
-            if (r.lowerEndpoint() + deltaTime < r.upperEndpoint()) {
-                targets.put(s, Range.closedOpen(r.lowerEndpoint() + deltaTime, r.upperEndpoint()));
-            }
-        }
-        // 同一轨道上相邻成员一起前移时不允许相互重叠：成员的起点至少到
-        // 同一轨道内上一个成员的终点（组内 resize 不产生重叠区间）
-        if (deltaTime < 0 && targets.size() > 1) {
-            Map<Track, List<Segment>> byTrack = new HashMap<>();
-            for (var s : targets.keySet()) {
-                byTrack.computeIfAbsent(s.getTrack(), k -> new ArrayList<>()).add(s);
-            }
-            for (var list : byTrack.values()) {
-                list.sort(Comparator.comparingLong(s -> s.getRange().lowerEndpoint()));
-                for (int i = 1; i < list.size(); i++) {
-                    Segment cur = list.get(i);
-                    long floor = list.get(i - 1).getRange().upperEndpoint();
-                    var t = targets.get(cur);
-                    if (t.lowerEndpoint() < floor) {
-                        targets.put(cur, Range.closedOpen(floor, t.upperEndpoint()));
-                    }
-                }
-            }
-        }
-        remove(targets.keySet());
-        for (var e : targets.entrySet()) {
-            override(e.getKey(), e.getValue());
-        }
+        segments.stream().filter(s->s.getTrack()==this).forEach(s -> setStart(s,deltaTime));
+    }
+    synchronized protected void setStart(Segment segment,long deltaTime){
+        remove(segment);
+        override(segment,Range.closedOpen(segment.getRange().lowerEndpoint()+deltaTime,segment.getRange().upperEndpoint()));
     }
 
+    /**
+     * @author shan_luan_
+     */
     synchronized protected long probeSetEnd(Collection<Segment> segments,long deltaTime){
-        if (deltaTime == 0) return 0;
-        segments = own(segments);
-        long max=0;
-        for(var s : segments){
-            var r = s.getRange();
-            long candidateHi = r.upperEndpoint()+deltaTime;
-            // 自身限制
-            long newHi = Math.min(candidateHi, s.getMaxEnd());
-            // 其他片段限制
-            if(candidateHi > r.lowerEndpoint()){
-                var overlap = sources.subRangeMap(Range.closedOpen(r.lowerEndpoint(), candidateHi)).asMapOfRanges();
-                for(var e : overlap.entrySet()){
-                    if(segments.contains(e.getValue())) continue;
-                    newHi = Math.min(newHi, e.getKey().lowerEndpoint());
-                }
-            }
-            long needed = newHi - candidateHi;
-            if(needed < max) max = needed;
+        if(deltaTime==0) return 0;
+        var f = segments.stream().filter(s -> s.getTrack()==this);
+        if(deltaTime>0){
+            return f.mapToLong(s -> {
+                var newEnd = s.getRange().upperEndpoint()+deltaTime;
+                return min(
+                    s.nextRange().lowerEndpoint()-newEnd
+                    ,s.getMaxEnd()-newEnd
+                    ,0
+                );
+            }).min().orElse(-deltaTime);
+        }else {
+            return f.mapToLong(s -> max(0,s.getRange().lowerEndpoint()-s.getRange().upperEndpoint()-deltaTime)).min().orElse(-deltaTime);
         }
-        return max;
     }
-
     synchronized protected void setEnd(Collection<Segment> segments,long deltaTime){
-        segments = own(segments);
-        // 过滤出移动后区间仍然合法的片段（终点不能越过起点），避免构造非法区间
-        Map<Segment, Range<Long>> targets = new LinkedHashMap<>();
-        for (var s : segments) {
-            var r = s.getRange();
-            if (r.upperEndpoint() + deltaTime > r.lowerEndpoint()) {
-                targets.put(s, Range.closedOpen(r.lowerEndpoint(), r.upperEndpoint() + deltaTime));
-            }
-        }
-        // 同一轨道上相邻成员一起伸展时不允许相互重叠：成员的终点最多到
-        // 同一轨道内下一个成员的起点（组内 resize 不产生重叠区间）
-        if (deltaTime > 0 && targets.size() > 1) {
-            Map<Track, List<Segment>> byTrack = new HashMap<>();
-            for (var s : targets.keySet()) {
-                byTrack.computeIfAbsent(s.getTrack(), k -> new ArrayList<>()).add(s);
-            }
-            for (var list : byTrack.values()) {
-                list.sort(Comparator.comparingLong(s -> s.getRange().lowerEndpoint()));
-                for (int i = 0; i + 1 < list.size(); i++) {
-                    Segment cur = list.get(i);
-                    long cap = list.get(i + 1).getRange().lowerEndpoint();
-                    var t = targets.get(cur);
-                    if (t.upperEndpoint() > cap) {
-                        targets.put(cur, Range.closedOpen(t.lowerEndpoint(), cap));
-                    }
-                }
-            }
-        }
-        remove(targets.keySet());
-        for (var e : targets.entrySet()) {
-            override(e.getKey(), e.getValue());
-        }
+        segments.stream().filter(s->s.getTrack()==this).forEach(s -> setEnd(s,deltaTime));
+    }
+    synchronized protected void setEnd(Segment segment,long deltaTime){
+        remove(segment);
+        override(segment,Range.closedOpen(segment.getRange().lowerEndpoint(),segment.getRange().upperEndpoint()+deltaTime));
     }
 
     synchronized protected long probeMove(Collection<Segment> segments,long deltaTime){
