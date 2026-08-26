@@ -60,14 +60,16 @@ public class TrackDragTest extends GdxTestBase {
     }
 
     @Test
-    public void addOverwritesExistingSegmentAtSameRange() {
+    public void tryAddAtOccupiedRangeDoesNotReplace() {
         Track t0 = timeline.getTrack(0);
         Segment a = newSeg(100);
         Segment b = newSeg(100);
         timeline.override(t0, a, rng(0, 100));
-        timeline.override(t0, b, rng(0, 100));
 
-        assertSame(b, t0.get(50));
+        long shift = timeline.tryAdd(t0, b, rng(0, 100));
+
+        assertTrue(shift != 0);
+        assertSame(a, t0.get(50));
         assertEquals(1, countOn(t0));
     }
 
@@ -285,17 +287,16 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t0, b, rng(100, 200)); // 与 a 相邻
 
-        try (var h = timeline.record()) {
-            assertEquals(0, timeline.setEnd(List.of(a, b), 50));
-        }
-
-        // 伸展被后一个成员的起点挡住：a 不变，只有 b 伸展，两者不重叠
+        // 伸展被后一个成员的起点挡住：整组操作被拒绝，返回修正量，模型不变
+        long fix = timeline.setEnd(List.of(a, b), 50);
+        assertEquals(-50, fix);
         assertEquals(rng(0, 100), a.getRange());
-        assertEquals(rng(100, 250), b.getRange());
+        assertEquals(rng(100, 200), b.getRange());
         assertSame(a, t0.get(50));
         assertSame(b, t0.get(150));
 
-        project.undoManager.undo();
+        // 修正量把 delta 归零，重试不产生任何变化，成员仍不重叠
+        assertEquals(0, timeline.setEnd(List.of(a, b), 50 + fix));
         assertEquals(rng(0, 100), a.getRange());
         assertEquals(rng(100, 200), b.getRange());
     }
@@ -308,17 +309,16 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(100, 200));
         timeline.override(t0, b, rng(200, 300)); // 与 a 相邻
 
-        try (var h = timeline.record()) {
-            assertEquals(0, timeline.setStart(List.of(a, b), -50));
-        }
-
-        // 前移被前一个成员的终点挡住：a 前移，b 不变，两者不重叠
-        assertEquals(rng(50, 200), a.getRange());
+        // 前移被前一个成员的终点挡住：整组操作被拒绝，返回修正量，模型不变
+        long fix = timeline.setStart(List.of(a, b), -50);
+        assertEquals(50, fix);
+        assertEquals(rng(100, 200), a.getRange());
         assertEquals(rng(200, 300), b.getRange());
         assertSame(a, t0.get(100));
         assertSame(b, t0.get(250));
 
-        project.undoManager.undo();
+        // 修正量把 delta 归零，重试不产生任何变化，成员仍不重叠
+        assertEquals(0, timeline.setStart(List.of(a, b), -50 + fix));
         assertEquals(rng(100, 200), a.getRange());
         assertEquals(rng(200, 300), b.getRange());
     }
