@@ -196,7 +196,10 @@ public class UndoRedoRobustnessTest extends GdxTestBase {
         if (minIdx + trackDelta < 0) trackDelta = 0;
         long deltaTime = rnd.nextLong(SPAN / 2) - SPAN / 4;
         try (var h = timeline.record()) {
-            timeline.move(members, deltaTime, trackDelta);
+            // 与 UI 一致：时间维度可放置后再移动轨道
+            if (timeline.moveTime(members, deltaTime) == 0) {
+                timeline.moveTrack(members, trackDelta);
+            }
         }
     }
 

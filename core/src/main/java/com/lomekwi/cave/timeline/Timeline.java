@@ -147,10 +147,14 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
         }
         return max;
     }
-    public long move(Collection<Segment> segments,long deltaTime,int deltaTrack){
+    /**
+     * 仅按时间平移片段（轨道不变）。
+     * @return “时间修正”：若目标时间区间被占用而无法直接放置，返回为放置所需额外偏移的时间量（调用方应把 deltaTime 加上它再试）；返回 0 表示可放置并已应用。
+     */
+    public long moveTime(Collection<Segment> segments,long deltaTime){
         long max=0;
         for(var s : segments){
-            var tr = getTrack(s.getTrack().index+deltaTrack);
+            var tr = s.getTrack();
             var t = shift(s.getRange(),deltaTime);
             var d = tr.getShift(t,segments);
             max=Math.abs(d)>Math.abs(max)?d : max;
@@ -159,11 +163,9 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
             // 先按旧状态构造命令，再执行移动（内部移除直接走 Track，避免重复记录）
             List<MoveSegsCommand.MoveEntry> entries = new ArrayList<>(segments.size());
             for(var s : segments){
-                var from = s.getTrack();
                 var r = s.getRange();
-                var to = getTrack(from.index + deltaTrack);
-                if (deltaTime != 0 || from != to) {
-                    entries.add(new MoveSegsCommand.MoveEntry(from, to, s, r, shift(r, deltaTime)));
+                if (deltaTime != 0) {
+                    entries.add(new MoveSegsCommand.MoveEntry(s.getTrack(), s.getTrack(), s, r, shift(r, deltaTime)));
                 }
             }
             for(var s : segments){
@@ -171,7 +173,7 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
                 if(t != null) t.remove(s);
             }
             for(var s : segments){
-                var tr = getTrack(s.getTrack().index+deltaTrack);
+                var tr = s.getTrack();
                 tr.override(s,shift(s.getRange(),deltaTime));
                 s.offsetOrigin(deltaTime);
             }
@@ -180,6 +182,68 @@ public class Timeline implements Serializable,Iterable<Track>, Duplicatable<Time
             }
         }
         return max;
+    }
+
+    /**
+     * 仅按轨道索引平移片段（时间区间不变）。整组按统一的 deltaTrack 同步移动，保持组内成员相对间距。
+     * @return “轨道修正”：若目标轨道与占用冲突而无法直接放置，返回为放置所需额外增加的轨道偏移（调用方应把 deltaTrack 加上它再试）；找不到可放置轨道时返回 -deltaTrack（保持原位）；返回 0 表示可放置并已应用。
+     */
+    public int moveTrack(Collection<Segment> segments,int deltaTrack){
+        int fix = findPlaceableTrack(segments, deltaTrack);
+        // 需要修正时只把修正量返回给调用方，不落位；调用方把 deltaTrack 加上 fix 再试。
+        if (fix != 0) return fix;
+
+        List<MoveSegsCommand.MoveEntry> entries = new ArrayList<>(segments.size());
+        for(var s : segments){
+            var from = s.getTrack();
+            var to = getTrack(from.index + deltaTrack);
+            if (from != to) {
+                entries.add(new MoveSegsCommand.MoveEntry(from, to, s, s.getRange(), s.getRange()));
+            }
+        }
+        for(var s : segments){
+            var t = s.getTrack();
+            if(t != null) t.remove(s);
+        }
+        for(var s : segments){
+            getTrack(s.getTrack().index + deltaTrack).override(s, s.getRange());
+        }
+        if (!entries.isEmpty()) {
+            push(new MoveSegsCommand(entries));
+        }
+        return 0;
+    }
+
+    /**
+     * 找出整组在 deltaTrack+fix 处能放下的轨道修正量 fix；找不到时返回 -deltaTrack（保持原位）。
+     * 索引越大的轨道越可能为空，因此扫描总能结束。
+     */
+    private int findPlaceableTrack(Collection<Segment> segments, int deltaTrack){
+        int minIdx = segments.iterator().next().getTrack().index;
+        for (var s : segments) minIdx = Math.min(minIdx, s.getTrack().index);
+        int base = minIdx + deltaTrack;
+        if (base < 0) return -deltaTrack;
+        for (int step = 0; step <= tracks.size(); step++) {
+            // 正负方向交替扫描，优先绝对值小者；同距时优先 +方向（向右扩展）
+            if (canPlaceGroupOnTrack(segments, base + step)) return step;
+            if (step > 0 && canPlaceGroupOnTrack(segments, base - step)) return -step;
+        }
+        return -deltaTrack;
+    }
+
+    /**
+     * 整组按统一偏移移动后，是否每个成员在各自目标轨道上都不与既有片段冲突。
+     * 目标轨道尚不存在（索引 ≥ tracks.size()）时视为空闲。
+     */
+    private boolean canPlaceGroupOnTrack(Collection<Segment> segments, int target){
+        if (target < 0) return false;
+        int refIdx = segments.iterator().next().getTrack().index;
+        for (var s : segments) refIdx = Math.min(refIdx, s.getTrack().index);
+        for (var s : segments){
+            int ti = s.getTrack().index + (target - refIdx);
+            if (ti < tracks.size() && !tracks.get(ti).isFree(s.getRange(), segments)) return false;
+        }
+        return true;
     }
     /**
      * 开始记录：此后到 {@link #submit()} 之间对时间轴的每次修改都会记录一条命令，

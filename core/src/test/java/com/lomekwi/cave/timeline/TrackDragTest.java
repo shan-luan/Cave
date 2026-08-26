@@ -105,7 +105,7 @@ public class TrackDragTest extends GdxTestBase {
         s.setOrigin(1000);
         timeline.override(t0, s, rng(0, 100));
 
-        long fix = timeline.move(List.of(s), 200, 0);
+        long fix = timeline.moveTime(List.of(s), 200);
 
         assertEquals(0, fix);
         assertEquals(rng(200, 300), s.getRange());
@@ -120,7 +120,7 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        long fix = timeline.move(List.of(s), 0, 1);
+        int fix = timeline.moveTrack(List.of(s), 1);
 
         assertEquals(0, fix);
         assertSame(t1, s.getTrack());
@@ -138,7 +138,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t1, b, rng(500, 600));
 
-        long fix = timeline.move(List.of(a, b), 1000, 0);
+        long fix = timeline.moveTime(List.of(a, b), 1000);
 
         assertEquals(0, fix);
         assertEquals(rng(1000, 1100), a.getRange());
@@ -156,7 +156,7 @@ public class TrackDragTest extends GdxTestBase {
         // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会撞上它
         timeline.override(t0, obstacle, rng(100, 1100));
 
-        long fix = timeline.move(List.of(mover), 150, 0);
+        long fix = timeline.moveTime(List.of(mover), 150);
 
         assertTrue(fix != 0);
         // 未发生移动：mover 仍在原处
@@ -173,7 +173,7 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, mover, rng(0, 100));
         timeline.override(t1, obstacle, rng(0, 1000)); // 目标轨道同区间被占据
 
-        long fix = timeline.move(List.of(mover), 0, 1);
+        int fix = timeline.moveTrack(List.of(mover), 1);
 
         assertTrue(fix != 0);
         assertSame(t0, mover.getTrack());
@@ -424,7 +424,7 @@ public class TrackDragTest extends GdxTestBase {
 
         // 模拟 UI 拖拽：record 期间直接改动模型，关闭时合并为一条复合命令
         try (var h = timeline.record()) {
-            timeline.move(List.of(a, b), 1000, 0);
+            timeline.moveTime(List.of(a, b), 1000);
         }
         assertEquals(rng(1000, 1100), a.getRange());
         assertEquals(2000, a.getOrigin());

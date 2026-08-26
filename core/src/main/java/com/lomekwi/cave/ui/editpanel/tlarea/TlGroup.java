@@ -858,8 +858,12 @@ public class TlGroup extends Group implements Focusable {
             long appliedDelta = target - currentStart0;
 
             for (int tries = 0; tries < 6; tries++) {
-                long fix = timeline.move(members, appliedDelta, trackDelta);
+                long fix = timeline.moveTime(members, appliedDelta);
                 if (fix == 0) {
+                    // 时间维度已可放置，再处理轨道移动；轨道放不下则不落位。
+                    if (trackDelta != 0 && timeline.moveTrack(members, trackDelta) != 0) {
+                        return;
+                    }
                     for (int i = 0; i < members.size(); i++) {
                         Segment ms = dragMembers.get(i);
                         SegActor msActor = ms.getActor();
