@@ -20,14 +20,16 @@ import org.objenesis.ObjenesisStd;
 import java.lang.reflect.Field;
 
 /**
- * 用真实 SegDragHandler 模拟"鼠标拖拽"交互，验证重构后的 UI 拖拽逻辑：
- * 1) 小幅拖拽不应被放大成大幅移动（多次 act() 重建喂回必须幂等）；
- * 2) 拖拽边缘裁切时不该改变片段 origin。
+ * 用真实 SegActor 拖拽会话模拟"鼠标拖拽"交互，验证重构后的 UI 拖拽逻辑：
+ * 1) 小幅拖拽不应被放大成大幅移动；
+ * 2) 拖拽边缘裁切时不该改变片段 origin；
+ * 3) act() 重建是模型的纯投影：重建不得改动模型，模型状态必须稳定。
  *
  * 说明：TlGroup 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
  * 在 headless 测试里不便构造。因此这里用 Objenesis 绕过构造函数实例化，
- * 再反射填入拖拽处理器真正依赖的模型/视图字段，其余 UI 保持空。
- * actor 不挂 parent（Group 内部 children 未初始化），但处理器只读它的位置/尺寸。
+ * 再反射填入拖拽逻辑真正依赖的模型/视图字段，其余 UI 保持空。
+ * actor 不挂 parent（Group 内部 children 未初始化），直接注入 TlGroup 引用，
+ * 拖拽逻辑只读 actor 的位置/尺寸。
  */
 public class TlGroupDragSimTest extends GdxTestBase {
 
@@ -54,7 +56,6 @@ public class TlGroupDragSimTest extends GdxTestBase {
         setField(tl, "project", project);
         setField(tl, "selectedSegments", new SegmentSet());
         setField(tl, "dirty", true);
-        setField(tl, "snapIndicatorTime", -1L);
 
         view = new TlGroup.ViewState();
         view.startTime = 0;
@@ -62,9 +63,6 @@ public class TlGroupDragSimTest extends GdxTestBase {
         view.trackHeight = TRACK_H;
         view.trackYShift = 0;
         setField(tl, "view", view);
-
-        TlGroup.SegDragHandler handler = tl.new SegDragHandler();
-        setField(tl, "dragHandler", handler);
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {
@@ -85,28 +83,22 @@ public class TlGroupDragSimTest extends GdxTestBase {
         return tl.getHeight() + view.trackYShift - (index + 1) * view.trackHeight;
     }
 
-    /** 在模型上放置一个片段，并按 act() 的 NONE 逻辑摆好 Actor。 */
+    /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
     private SegActor place(Track track, Segment s, long start, long end) {
         timeline.tryAdd(track, s, Range.closedOpen(start, end));
         SegActor actor = s.getActor();
+        actor.tl = tl;
         actor.setPosition(absX(start), trackTopY(track.index));
         actor.setSize(absX(end) - absX(start), view.trackHeight);
         return actor;
     }
 
-    private void setDragSide(SegActor actor, DragSide side) throws Exception {
-        Field f = SegActor.class.getDeclaredField("dragSide");
-        f.setAccessible(true);
-        f.set(actor, side);
-    }
-
-    /** 模拟 act() 重建：把 actor 贴回模型，再用固定鼠标位置喂给 handler。 */
-    private void rebuildAndFeed(SegActor actor, float mouseLocalX, float mouseLocalY) {
+    /** 模拟 act() 重建：actor 纯粹按模型摆位，不得改动模型。 */
+    private void rebuildFromModel(SegActor actor) {
         Segment s = actor.getSegment();
         var r = s.getRange();
         actor.setPosition(absX(r.lowerEndpoint()), trackTopY(s.getTrack().index));
         actor.setSize(absX(r.upperEndpoint()) - absX(r.lowerEndpoint()), view.trackHeight);
-        tl.segDrag(actor, mouseLocalX - actor.getX(), mouseLocalY - actor.getY());
     }
 
     // ---------------------------------------------------------------------
@@ -122,24 +114,24 @@ public class TlGroupDragSimTest extends GdxTestBase {
 
         float firstX = actor.getWidth() / 2;
         float firstY = view.trackHeight / 2;
-        setDragSide(actor, DragSide.MIDDLE);
-        tl.initDrag(actor, firstX, firstY);
+        actor.dragSide = DragSide.MIDDLE;
+        actor.initDrag(firstX, firstY);
 
         float mouseLocalX = actor.getX() + firstX + 100f; // 右移 100px
         float mouseLocalY = actor.getY() + firstY;
 
         // 事件驱动一次：应恰好移动 100_000µs
-        tl.segDrag(actor, mouseLocalX - actor.getX(), mouseLocalY - actor.getY());
+        actor.dragTo(mouseLocalX - actor.getX(), mouseLocalY - actor.getY());
         assertEquals(Range.closedOpen(100_000L, 1000_000L + 100_000L), s.getRange());
 
-        // 鼠标不动，多帧重建喂回：位置必须稳定（幂等）
+        // 鼠标不动，多帧重建（纯投影）：模型与 origin 必须稳定
         for (int i = 0; i < 5; i++) {
-            rebuildAndFeed(actor, mouseLocalX, mouseLocalY);
+            rebuildFromModel(actor);
             assertEquals(Range.closedOpen(100_000L, 1000_000L + 100_000L), s.getRange());
             assertEquals(5_000_000L + 100_000L, s.getOrigin());
         }
 
-        tl.finishDrag(actor);
+        actor.finishDrag();
 
         project.undoManager.undo();
         assertEquals(Range.closedOpen(0L, 1000_000L), s.getRange());
@@ -160,20 +152,20 @@ public class TlGroupDragSimTest extends GdxTestBase {
 
         float firstX = actor.getWidth() / 2;
         float firstY = view.trackHeight / 2;
-        setDragSide(actor, DragSide.MIDDLE);
-        tl.initDrag(actor, firstX, firstY);
+        actor.dragSide = DragSide.MIDDLE;
+        actor.initDrag(firstX, firstY);
 
         // 目标的 yToTrackIndex(targetY + trackHeight/2) == 2
         float mouseLocalY = 200f;
         float mouseLocalX = actor.getX() + firstX;
-        tl.segDrag(actor, mouseLocalX - actor.getX(), mouseLocalY - actor.getY());
+        actor.dragTo(mouseLocalX - actor.getX(), mouseLocalY - actor.getY());
 
         // 应恰好落到轨道 2，而不是越跳越远
         assertEquals(2, s.getTrack().index);
 
-        // 鼠标不动，重建喂回：轨道必须稳定（幂等）
+        // 鼠标不动，多帧重建（纯投影）：轨道必须稳定
         for (int i = 0; i < 5; i++) {
-            rebuildAndFeed(actor, mouseLocalX, mouseLocalY);
+            rebuildFromModel(actor);
             assertEquals(2, s.getTrack().index);
         }
     }
@@ -189,17 +181,17 @@ public class TlGroupDragSimTest extends GdxTestBase {
         s.setOrigin(0);
         SegActor actor = place(t0, s, 0, 1000_000L);
 
-        setDragSide(actor, DragSide.FRONT);
-        tl.initDrag(actor, 5f, view.trackHeight / 2);
+        actor.dragSide = DragSide.FRONT;
+        actor.initDrag(5f, view.trackHeight / 2);
 
         float newFrontLocalX = 50f; // 起点右移 50px=50ms
-        tl.segDrag(actor, newFrontLocalX, view.trackHeight / 2);
+        actor.dragTo(newFrontLocalX, view.trackHeight / 2);
         assertEquals(Range.closedOpen(50_000L, 1000_000L), s.getRange());
         assertEquals(0, s.getOrigin());
 
-        // 鼠标不动（停在裁切后的新起点 absX(50000)），重建喂回：起点与 origin 都必须稳定
+        // 鼠标不动（停在裁切后的新起点 absX(50000)），多帧重建：起点与 origin 都必须稳定
         for (int i = 0; i < 5; i++) {
-            rebuildAndFeed(actor, absX(50_000L), view.trackHeight / 2);
+            rebuildFromModel(actor);
             assertEquals(Range.closedOpen(50_000L, 1000_000L), s.getRange());
             assertEquals(0, s.getOrigin());
         }
@@ -212,17 +204,17 @@ public class TlGroupDragSimTest extends GdxTestBase {
         s.setOrigin(5_000_000L);
         SegActor actor = place(t0, s, 0, 1000_000L);
 
-        setDragSide(actor, DragSide.BEHIND);
-        tl.initDrag(actor, actor.getWidth(), view.trackHeight / 2);
+        actor.dragSide = DragSide.BEHIND;
+        actor.initDrag(actor.getWidth(), view.trackHeight / 2);
 
         float newWidth = actor.getWidth() + 60f; // 终点右移 60px=60ms
-        tl.segDrag(actor, newWidth, view.trackHeight / 2);
+        actor.dragTo(newWidth, view.trackHeight / 2);
         assertEquals(Range.closedOpen(0L, 1000_000L + 60_000L), s.getRange());
         assertEquals(5_000_000L, s.getOrigin());
 
-        // 鼠标不动，重建喂回：终点与 origin 都必须稳定
+        // 鼠标不动，多帧重建：终点与 origin 都必须稳定
         for (int i = 0; i < 5; i++) {
-            rebuildAndFeed(actor, absX(1000_000L + 60_000L), view.trackHeight / 2);
+            rebuildFromModel(actor);
             assertEquals(Range.closedOpen(0L, 1000_000L + 60_000L), s.getRange());
             assertEquals(5_000_000L, s.getOrigin());
         }

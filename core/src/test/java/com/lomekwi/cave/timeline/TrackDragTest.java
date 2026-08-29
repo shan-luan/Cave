@@ -13,15 +13,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 拖拽 API 的模型级测试。
- * 目标：重构后的 Timeline/Track 在"正常拖拽"场景下的行为与重构前（HEAD）等效。
+ * 目标：验证截断式（clamp）的探测/应用语义：执行方法一次调用即把 deltaTime
+ * 同向截断到最大可用偏移量并应用，返回实际应用的偏移量（0 = 未移动）。
  *
  * 覆盖：
  *  - add/remove 基础放置与覆盖
- *  - move（整体平移）：无阻碍时精确落位 + origin 同步；有阻碍时不落位且返回非零修正量
- *  - setStart/setEnd（头/尾裁切）：只动对应端点；有阻碍时返回非零修正量
+ *  - move（整体平移）：无阻碍时精确落位 + origin 同步；有阻碍时截断到与障碍贴合或原地不动
+ *  - setStart/setEnd（头/尾裁切）：只动对应端点；越界/受阻时截断到边界
  *  - split：一分为二，两侧区间正确
  *  - Undo/redo：统一经 UndoManager 还原/重放
  */
@@ -107,9 +109,9 @@ public class TrackDragTest extends GdxTestBase {
         s.setOrigin(1000);
         timeline.override(t0, s, rng(0, 100));
 
-        long fix = timeline.moveTime(List.of(s), 200);
+        long applied = timeline.moveTime(List.of(s), 200);
 
-        assertEquals(0, fix);
+        assertEquals(200, applied);
         assertEquals(rng(200, 300), s.getRange());
         assertSame(t0, s.getTrack());
         assertEquals(1200, s.getOrigin());
@@ -122,9 +124,10 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        int fix = timeline.moveTrack(List.of(s), 1);
+        int applied = timeline.moveTrack(List.of(s), 1);
 
-        assertEquals(0, fix);
+        // 返回实际落位的轨道偏移
+        assertEquals(1, applied);
         assertSame(t1, s.getTrack());
         assertEquals(rng(0, 100), s.getRange());
         assertTrue(t0.isEmpty());
@@ -140,13 +143,30 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t1, b, rng(500, 600));
 
-        long fix = timeline.moveTime(List.of(a, b), 1000);
+        long applied = timeline.moveTime(List.of(a, b), 1000);
 
-        assertEquals(0, fix);
+        assertEquals(1000, applied);
         assertEquals(rng(1000, 1100), a.getRange());
         assertEquals(rng(1500, 1600), b.getRange());
         assertSame(t0, a.getTrack());
         assertSame(t1, b.getTrack());
+    }
+
+    @Test
+    public void moveTimeBackwardClampsAtZeroForLeadingMember() {
+        Track t0 = timeline.getTrack(0);
+        Segment a = newSeg(100);
+        Segment b = newSeg(100);
+        timeline.override(t0, a, rng(50, 150));
+        timeline.override(t0, b, rng(200, 300));
+
+        // 锚定 b 拖到 0（整体偏移 -200）：组内更靠前的 a 起点 50 只能到 0，
+        // 整组偏移被夹到 -50，a/b 都不能越过时间轴 0
+        long applied = timeline.moveTime(List.of(a, b), -200);
+
+        assertEquals(-50, applied);
+        assertEquals(rng(0, 100), a.getRange());
+        assertEquals(rng(150, 250), b.getRange());
     }
 
     @Test
@@ -158,12 +178,31 @@ public class TrackDragTest extends GdxTestBase {
         // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会撞上它
         timeline.override(t0, obstacle, rng(100, 1100));
 
-        long fix = timeline.moveTime(List.of(mover), 150);
+        // 右侧紧贴障碍：最大可用偏移为 0，完全无法移动
+        long applied = timeline.moveTime(List.of(mover), 150);
 
-        assertTrue(fix != 0);
-        // 未发生移动：mover 仍在原处
+        assertEquals(0, applied);
         assertEquals(rng(0, 100), mover.getRange());
         assertSame(obstacle, t0.get(200));
+    }
+
+    @Test
+    public void moveTimeClampsAtObstacleEdge() {
+        Track t0 = timeline.getTrack(0);
+        Segment mover = newSeg(100);
+        Segment obstacle = newSeg(100);
+        timeline.override(t0, mover, rng(0, 100));
+        timeline.override(t0, obstacle, rng(300, 400));
+
+        // 请求 +250：最多移到与障碍贴合（+200），一次调用直接应用
+        long applied = timeline.moveTime(List.of(mover), 250);
+        assertEquals(200, applied);
+        assertEquals(rng(200, 300), mover.getRange());
+        assertSame(obstacle, t0.get(350));
+
+        // 请求在可用范围内时全额应用（返回带符号的实际偏移）
+        assertEquals(-50, timeline.moveTime(List.of(mover), -50));
+        assertEquals(rng(150, 250), mover.getRange());
     }
 
     @Test
@@ -175,9 +214,10 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, mover, rng(0, 100));
         timeline.override(t1, obstacle, rng(0, 1000)); // 目标轨道同区间被占据
 
-        int fix = timeline.moveTrack(List.of(mover), 1);
+        // 目标轨道被占据且方向上无更近的可落点：偏移截断为 0，保持原位
+        int applied = timeline.moveTrack(List.of(mover), 1);
 
-        assertTrue(fix != 0);
+        assertEquals(0, applied);
         assertSame(t0, mover.getTrack());
         assertEquals(rng(0, 100), mover.getRange());
         assertSame(obstacle, t1.get(50));
@@ -193,9 +233,9 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        long fix = timeline.setStart(List.of(s), 30);
+        long applied = timeline.setStart(List.of(s), 30);
 
-        assertEquals(0, fix);
+        assertEquals(30, applied);
         assertEquals(rng(30, 100), s.getRange());
         assertSame(t0, s.getTrack());
         // 裁切不改 origin
@@ -208,9 +248,9 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 50));
 
-        long fix = timeline.setEnd(List.of(s), 50);
+        long applied = timeline.setEnd(List.of(s), 50);
 
-        assertEquals(0, fix);
+        assertEquals(50, applied);
         assertEquals(rng(0, 100), s.getRange());
     }
 
@@ -220,9 +260,9 @@ public class TrackDragTest extends GdxTestBase {
         Segment s = newSeg(100);
         timeline.override(t0, s, rng(0, 100));
 
-        long fix = timeline.setEnd(List.of(s), -20);
+        long applied = timeline.setEnd(List.of(s), -20);
 
-        assertEquals(0, fix);
+        assertEquals(-20, applied);
         assertEquals(rng(0, 80), s.getRange());
     }
 
@@ -234,47 +274,46 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, obstacle, rng(0, 100)); // 左侧障碍占住 [0,100)
         timeline.override(t0, s, rng(100, 200));      // 把 s 起点往左推到 50 会撞上它
 
-        long fix = timeline.setStart(List.of(s), -50);
+        // 左侧紧贴障碍：最大可用偏移为 0，完全无法移动
+        long applied = timeline.setStart(List.of(s), -50);
 
-        assertTrue(fix != 0);
+        assertEquals(0, applied);
         assertEquals(rng(100, 200), s.getRange());
         assertSame(obstacle, t0.get(50));
     }
 
     @Test
-    public void setStartReturnsExactCorrectionCombiningOwnLimitAndCollision() {
+    public void setStartBackwardClampsToNearestObstacleEdge() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(200);
         Segment obstacle = newSeg(50);
-        timeline.override(t0, s, rng(50, 100));   // 前端已被裁切，origin=0 → minStart=0
-        timeline.override(t0, obstacle, rng(0, 50)); // 占住 [0,50)
+        timeline.override(t0, s, rng(50, 100));      // 前端已被裁切，origin=0 → minStart=0
+        timeline.override(t0, obstacle, rng(0, 30)); // 占住 [0,30)
 
-        // 想把前端拖到 -10（delta=-60）：minStart 允许回到 0，但 [0,50) 被 obstacle 占据
-        long fix = timeline.setStart(List.of(s), -60);
+        // 想把前端拖到 -10（delta=-60）：minStart 允许回到 0，但 obstacle 终点 30 更近，
+        // 一次调用直接左移到与障碍贴合（起点 30，偏移 -20）
+        long applied = timeline.setStart(List.of(s), -60);
 
-        // 一次修正应同时夹住自身下界和障碍，返回精确补偿量
-        assertEquals(60, fix);
-        // 直接应用修正后的 delta 应一次成功
-        assertEquals(0, timeline.setStart(List.of(s), -60 + fix));
-        assertEquals(rng(50, 100), s.getRange());
+        assertEquals(-20, applied);
+        assertEquals(rng(30, 100), s.getRange());
+        assertSame(obstacle, t0.get(10));
     }
 
     @Test
-    public void setEndReturnsExactCorrectionCombiningOwnLimitAndCollision() {
+    public void setEndForwardClampsToNearestObstacleEdge() {
         Track t0 = timeline.getTrack(0);
         Segment s = newSeg(100);
         Segment obstacle = newSeg(40);
         timeline.override(t0, s, rng(0, 50));
         timeline.override(t0, obstacle, rng(80, 120)); // 占住 [80,120)
 
-        // 想把尾端拖到 250（delta=200）：maxEnd=100 会夹到 100，但 [80,100) 被 obstacle 占据
-        long fix = timeline.setEnd(List.of(s), 200);
+        // 想把尾端拖到 250（delta=200）：maxEnd=100 与 obstacle 起点 80 相比 80 更近，
+        // 一次调用直接右移到与障碍贴合（终点 80，偏移 +30）
+        long applied = timeline.setEnd(List.of(s), 200);
 
-        // 一次修正应同时夹住自身上界和障碍
-        assertEquals(-170, fix);
-        // 直接应用修正后的 delta 应一次成功
-        assertEquals(0, timeline.setEnd(List.of(s), 200 + fix));
+        assertEquals(30, applied);
         assertEquals(rng(0, 80), s.getRange());
+        assertSame(obstacle, t0.get(90));
     }
 
     @Test
@@ -287,16 +326,16 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(0, 100));
         timeline.override(t0, b, rng(100, 200)); // 与 a 相邻
 
-        // 伸展被后一个成员的起点挡住：整组操作被拒绝，返回修正量，模型不变
-        long fix = timeline.setEnd(List.of(a, b), 50);
-        assertEquals(-50, fix);
+        // 伸展被后一个成员的起点挡住：整组偏移截断为 0，模型不变
+        long applied = timeline.setEnd(List.of(a, b), 50);
+        assertEquals(0, applied);
         assertEquals(rng(0, 100), a.getRange());
         assertEquals(rng(100, 200), b.getRange());
         assertSame(a, t0.get(50));
         assertSame(b, t0.get(150));
 
-        // 修正量把 delta 归零，重试不产生任何变化，成员仍不重叠
-        assertEquals(0, timeline.setEnd(List.of(a, b), 50 + fix));
+        // 再次请求仍截断为 0，成员仍不重叠
+        assertEquals(0, timeline.setEnd(List.of(a, b), 50));
         assertEquals(rng(0, 100), a.getRange());
         assertEquals(rng(100, 200), b.getRange());
     }
@@ -309,18 +348,52 @@ public class TrackDragTest extends GdxTestBase {
         timeline.override(t0, a, rng(100, 200));
         timeline.override(t0, b, rng(200, 300)); // 与 a 相邻
 
-        // 前移被前一个成员的终点挡住：整组操作被拒绝，返回修正量，模型不变
-        long fix = timeline.setStart(List.of(a, b), -50);
-        assertEquals(50, fix);
+        // 前移被前一个成员的终点挡住：整组偏移截断为 0，模型不变
+        long applied = timeline.setStart(List.of(a, b), -50);
+        assertEquals(0, applied);
         assertEquals(rng(100, 200), a.getRange());
         assertEquals(rng(200, 300), b.getRange());
         assertSame(a, t0.get(100));
         assertSame(b, t0.get(250));
 
-        // 修正量把 delta 归零，重试不产生任何变化，成员仍不重叠
-        assertEquals(0, timeline.setStart(List.of(a, b), -50 + fix));
+        // 再次请求仍截断为 0，成员仍不重叠
+        assertEquals(0, timeline.setStart(List.of(a, b), -50));
         assertEquals(rng(100, 200), a.getRange());
         assertEquals(rng(200, 300), b.getRange());
+    }
+
+    // ---------------------------------------------------------------------
+    // snapTime（吸附点获取）
+    // ---------------------------------------------------------------------
+
+    @Test
+    public void snapTimeSnapsToNearestEdgeWithinThreshold() {
+        Track t0 = timeline.getTrack(0);
+        Segment a = newSeg(100);
+        Segment b = newSeg(100);
+        timeline.override(t0, a, rng(100, 200));
+        timeline.override(t0, b, rng(400, 500));
+
+        // 距 a 起点 100 仅 5：吸附到 100
+        assertEquals(100, timeline.snapTime(105, 10, Set.of()));
+        // 距 b 终点 500 仅 3：吸附到 500
+        assertEquals(500, timeline.snapTime(497, 10, Set.of()));
+        // 阈值内无更近端点：返回原值
+        assertEquals(300, timeline.snapTime(300, 10, Set.of()));
+        // 阈值外：不吸附
+        assertEquals(120, timeline.snapTime(120, 10, Set.of()));
+    }
+
+    @Test
+    public void snapTimeIgnoresGivenSegmentsAndSnapsToZero() {
+        Track t0 = timeline.getTrack(0);
+        Segment a = newSeg(100);
+        timeline.override(t0, a, rng(100, 200));
+
+        // ignore 中的片段不参与吸附
+        assertEquals(150, timeline.snapTime(150, 10, Set.of(a)));
+        // 距 0 比距任何端点都近：吸附到 0
+        assertEquals(0, timeline.snapTime(5, 10, Set.of()));
     }
 
     // ---------------------------------------------------------------------

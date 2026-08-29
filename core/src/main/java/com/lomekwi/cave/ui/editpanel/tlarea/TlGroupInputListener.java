@@ -73,11 +73,11 @@ public class TlGroupInputListener extends InputListener {
             return true;
         }
         if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {
-            tlGroup.dragHandler.splitAtCursor();
+            tlGroup.splitAtCursor();
             return true;
         }
         if (App.shortcutManager.isActive(TlGroup.Actions.DELETE)) {
-            tlGroup.dragHandler.deleteSelected();
+            tlGroup.deleteSelected();
             return true;
         }
         if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {

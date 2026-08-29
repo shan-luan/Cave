@@ -8,13 +8,16 @@ import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.util.Duplicatable;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Optional;
 
+@NullMarked
 public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segment>, Selectable, Copyable, Comparable<Segment> {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -26,21 +29,21 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     public Source<?> getSource() {
         return source;
     }
-    private transient Track track;
-    private transient SegActor actor;
-    private transient Range<Long> range;
+    private transient @Nullable Track track;
+    private transient @Nullable SegActor actor;
+    private transient @Nullable Range<Long> range;
     private transient boolean selected;
-    private SegmentGroup group;
+    private @Nullable SegmentGroup group;
     public boolean isSelected() {
         return selected;
     }
     public void setSelected(boolean selected) {
         this.selected = selected;
     }
-    public SegmentGroup getGroup() {
+    public @Nullable SegmentGroup getGroup() {
         return group;
     }
-    public void setGroup(SegmentGroup group) {
+    public void setGroup(@Nullable SegmentGroup group) {
         this.group = group;
     }
     /**
@@ -62,14 +65,14 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
         source.setSegment(this);
         actor = source.createSegActor(this);
     }
-    protected void setTrack(Track track) {
+    protected void setTrack(@Nullable Track track) {
         this.track = track;
     }
 
     /**
      * @param time 绝对时间
      */
-    public Frame get(long time) {
+    public @Nullable Frame get(long time) {
         var f = source.get(toLocalTime(time), track);
         if (f == null) return null;
         return f.withTime(time);
@@ -83,7 +86,7 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
         source.sync(toLocalTime(time), track);
     }
     public SegActor getActor() {
-        return actor;
+        return java.util.Objects.requireNonNull(actor, "Segment actor is not initialized");
     }
     public long toLocalTime(long time) {
         return time - origin;
@@ -92,11 +95,11 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     public long getDuration() {
         return source.getDuration();
     }
-    public Track getTrack(){
+    public @Nullable Track getTrack(){
         return track;
     }
 
-    public Range<Long> getRange() {
+    public @Nullable Range<Long> getRange() {
         return range;
     }
     /**获取拉伸时在时间轴上合法的最小起点*/
@@ -119,10 +122,12 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     }
 
     private int trackIndex() {
+        var track = this.track;
         return track == null ? Integer.MAX_VALUE : track.index;
     }
 
     private long rangeStart() {
+        var range = this.range;
         return range == null ? Long.MAX_VALUE : range.lowerEndpoint();
     }
     protected void setRange(Range<Long> range) {
@@ -141,14 +146,14 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
         return new IteratorImpl();
     }
     public class IteratorImpl implements Iterator<Frame> {
-        private long time = range.lowerEndpoint() % source.getLengthPerExportFrame();
+        private long time = requireRange().lowerEndpoint() % source.getLengthPerExportFrame();
         @Override
         public boolean hasNext() {
-            return time <= range.upperEndpoint();
+            return time <= requireRange().upperEndpoint();
         }
         @Override
         public Frame next() {
-            Frame f = get(time);
+            Frame f = java.util.Objects.requireNonNull(get(time), "Segment frame is unavailable");
             time += source.getLengthPerExportFrame();
             return f;
         }
@@ -171,32 +176,46 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     /**
      * @author shan_luan_
      */
-    public Optional<Segment> next(){
+    public @Nullable Segment next(){
+        var track = requireTrack();
+        var range = requireRange();
         var e = track.getSubRangeMapAsEntrySet(Range.atLeast(range.upperEndpoint()));
         for(var next : e){
-            return Optional.of(next.getValue());
+            return next.getValue();
         }
-        return Optional.empty();
+        return null;
     }
 
     /**
      * @author shan_luan_
      */
-    public Optional<Segment> prev(){
-        return Optional.ofNullable(track.get(range.lowerEndpoint(), -1, true));
+    public @Nullable Segment prev(){
+        var track = requireTrack();
+        var range = requireRange();
+        return track.get(range.lowerEndpoint(), -1, true);
     }
     public Range<Long> nextRange(){
-        if(next().isPresent()){
-            return next().orElseThrow().getRange();
+        var next = next();
+        if(next != null){
+            return next.requireRange();
         }else {
             return Range.singleton(Long.MAX_VALUE);
         }
     }
     public Range<Long> prevRange(){
-        if(prev().isPresent()){
-            return prev().orElseThrow().getRange();
+        var prev = prev();
+        if(prev != null){
+            return prev.requireRange();
         }else {
             return Range.singleton(0L);
         }
+    }
+
+    private Track requireTrack() {
+        return java.util.Objects.requireNonNull(track, "Segment is not attached to a track");
+    }
+
+    private Range<Long> requireRange() {
+        return java.util.Objects.requireNonNull(range, "Segment has no timeline range");
     }
 }

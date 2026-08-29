@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -69,7 +68,8 @@ public class Track implements Serializable,Iterable<Segment> {
 
     /**
      * 尝试在轨道中加入一个片段。仅当可加入时才会被真的加入。
-     * @return 如果目标区间被占用而不能添加，将目标区间偏移多少时间才可以添加。返回0时不需要偏移即成功添加。本类的其他返回long的方法大多也是此语义。
+     * @return 最大可用偏移量：0 表示目标区间空闲、已按原位加入；非 0 表示被占用、未加入，
+     * 返回能放下该区间的最近偏移（调用方可把目标区间偏移这么多后再试）。此语义专用于放置/粘贴。
      */
     synchronized protected long tryAdd(Segment segment,Range<Long> r) {
         var shift=getShift(r);
@@ -84,20 +84,11 @@ public class Track implements Serializable,Iterable<Segment> {
     synchronized protected long getShift(Range<Long> r,@Nullable Range<Long> exclude){
         return pickShift(getShiftForward(r, exclude), getShiftBackward(r, exclude));
     }
-    synchronized protected long getShift(Range<Long> r,Collection<Segment> ignore){
-        return pickShift(getShiftForward(r, ignore), getShiftBackward(r, ignore));
-    }
     synchronized protected long getShiftForward(Range<Long> r,@Nullable Range<Long> exclude){
         return shiftScan(r, exclude, List.of(), true);
     }
-    synchronized protected long getShiftForward(Range<Long> r,Collection<Segment> ignore){
-        return shiftScan(r, null, ignore, true);
-    }
     synchronized protected long getShiftBackward(Range<Long> r,@Nullable Range<Long> exclude){
         return shiftScan(r, exclude, List.of(), false);
-    }
-    synchronized protected long getShiftBackward(Range<Long> r,Collection<Segment> ignore){
-        return shiftScan(r, null, ignore, false);
     }
 
     private synchronized long pickShift(long forward, long backward){
@@ -116,7 +107,7 @@ public class Track implements Serializable,Iterable<Segment> {
         long hi = r.upperEndpoint();
         long s = 0;
         for (int step = 0; step < MAX_SLIDE_STEPS; step++) {
-            if (freeAt(shift(r, s), exclude, ignore)) {
+            if (isFree(shift(r, s), exclude, ignore)) {
                 return s;
             }
             if (forward) {
@@ -150,7 +141,7 @@ public class Track implements Serializable,Iterable<Segment> {
         return s;
     }
 
-    private synchronized boolean freeAt(Range<Long> range,@Nullable Range<Long> exclude,Collection<Segment> ignore){
+    private synchronized boolean isFree(Range<Long> range, @Nullable Range<Long> exclude, Collection<Segment> ignore){
         for (var e : sources.subRangeMap(range).asMapOfRanges().entrySet()) {
             if (exclude != null && e.getKey().isConnected(exclude)) continue;
             if (ignore.contains(e.getValue())) continue;
@@ -217,26 +208,41 @@ public class Track implements Serializable,Iterable<Segment> {
         return true;
     }
 
-    /**
-     * @author shan_luan_
-     */
-    synchronized protected long probeSetStart(Collection<Segment> segments,long deltaTime){
-        if(deltaTime==0) return 0;
-        var f = segments.stream().filter(s -> s.getTrack()==this);
-        if(deltaTime>0){
-            return f.mapToLong(s -> -max(0,s.getRange().lowerEndpoint()+deltaTime-s.getRange().upperEndpoint())).min().orElse(-deltaTime);
-        }else {
-            return f.mapToLong(s -> {
-                var newStart = s.getRange().lowerEndpoint()+deltaTime;
-                return -min(
-                    newStart-s.prevRange().upperEndpoint(),
-                    newStart-s.getMinStart(),
-                    0
-                );
-            }).max().orElse(-deltaTime);
-        }
+    /* ------------------------------------------------------------------
+     * 拖拽探测（probe*）与应用（setStart/setEnd/move）。
+     *
+     * 探测方法返回带符号的"最大可用偏移量"：沿 forward 指定方向最多可以
+     * 移动多少并成功应用。forward=true 返回非负数（向时间增大方向），
+     * forward=false 返回非正数（向时间减小方向），0 表示该方向上无法移动。
+     * 调用方只需把请求的 deltaTime 同向截断到该偏移量（取绝对值较小者）
+     * 即可直接应用，无需再按"修正量"换算或重试。方向上没有限制时用
+     * Long.MAX_VALUE / Long.MIN_VALUE 表示无界。
+     * ------------------------------------------------------------------ */
+
+    /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */
+    static long tighter(long a, long b) {
+        if (a == Long.MAX_VALUE || a == Long.MIN_VALUE) return b;
+        if (b == Long.MAX_VALUE || b == Long.MIN_VALUE) return a;
+        return Math.abs(b) < Math.abs(a) ? b : a;
     }
-//ai shit impl.
+
+    /**
+     * 探测起点沿指定方向最多可移动多少。forward=右移（裁头，仅受自身长度限制）；
+     * 左移（伸头）受 0、origin 与前邻限制，越界时冻结。
+     */
+    synchronized protected long probeSetStart(Collection<Segment> segments, boolean forward){
+        return segments.stream()
+            .filter(s -> s.getTrack() == this)
+            .mapToLong(s -> {
+                var r = s.getRange();
+                long lo = r.lowerEndpoint();
+                if (forward) {
+                    return r.upperEndpoint() - 1 - lo; // 保持区间非空
+                }
+                return min(max(0, s.prevRange().upperEndpoint(), s.getMinStart()) - lo, 0);
+            })
+            .reduce(forward ? Long.MAX_VALUE : Long.MIN_VALUE, Track::tighter);
+    }
 private List<Segment> own(Collection<Segment> segments){
     var out = new ArrayList<Segment>(segments.size());
     for(var s : segments){
@@ -253,23 +259,21 @@ private List<Segment> own(Collection<Segment> segments){
     }
 
     /**
-     * @author shan_luan_
+     * 探测终点沿指定方向可移动多少。右移（伸尾）受后继起点与源长度 maxEnd 限制，越界时冻结；
+     * 左移（裁尾）仅受自身长度限制。
      */
-    synchronized protected long probeSetEnd(Collection<Segment> segments,long deltaTime){
-        if(deltaTime==0) return 0;
-        var f = segments.stream().filter(s -> s.getTrack()==this);
-        if(deltaTime>0){
-            return f.mapToLong(s -> {
-                var newEnd = s.getRange().upperEndpoint()+deltaTime;
-                return min(
-                    s.nextRange().lowerEndpoint()-newEnd
-                    ,s.getMaxEnd()-newEnd
-                    ,0
-                );
-            }).min().orElse(-deltaTime);
-        }else {
-            return f.mapToLong(s -> max(0,s.getRange().lowerEndpoint()-s.getRange().upperEndpoint()-deltaTime)).min().orElse(-deltaTime);
-        }
+    synchronized protected long probeSetEnd(Collection<Segment> segments, boolean forward){
+        return segments.stream()
+            .filter(s -> s.getTrack() == this)
+            .mapToLong(s -> {
+                var r = s.getRange();
+                long hi = r.upperEndpoint();
+                if (forward) {
+                    return max(min(s.nextRange().lowerEndpoint(), s.getMaxEnd()) - hi, 0);
+                }
+                return r.lowerEndpoint() + 1 - hi; // 保持区间非空
+            })
+            .reduce(forward ? Long.MAX_VALUE : Long.MIN_VALUE, Track::tighter);
     }
     synchronized protected void setEnd(Collection<Segment> segments,long deltaTime){
         segments.stream().filter(s->s.getTrack()==this).forEach(s -> setEnd(s,deltaTime));
@@ -279,15 +283,31 @@ private List<Segment> own(Collection<Segment> segments){
         override(segment,Range.closedOpen(segment.getRange().lowerEndpoint(),segment.getRange().upperEndpoint()+deltaTime));
     }
 
-    synchronized protected long probeMove(Collection<Segment> segments,long deltaTime){
-        segments = own(segments);
-        long max=0;
-        for(var s : segments){
-            var r = s.getRange();
-            var d = getShift(shift(r,deltaTime),r);
-            max=Math.abs(d)>Math.abs(max)?d : max;
-        }
-        return max;
+    /**
+     * 探测整组沿指定方向可平移多少：每个成员看 next()/prev() 一个候选，
+     * 是拖拽成员则跳过（其自身会继续找），否则即最近障碍；取全体最严者。
+     * 左移还受时间轴 0 限制。
+     */
+    synchronized protected long probeMove(Collection<Segment> segments, boolean forward) {
+        long noBlock = forward ? Long.MAX_VALUE : Long.MIN_VALUE; // 该方向无障碍 = 无界
+        return segments.stream()
+            .filter(s -> s.getTrack() == this)
+            .mapToLong(s -> {
+                var r = s.getRange();
+                if (forward) {
+                    var next = s.next();
+                    return next == null || segments.contains(next)
+                        ? noBlock
+                        : next.getRange().lowerEndpoint() - r.upperEndpoint();
+                }
+                long lo = r.lowerEndpoint();
+                var prev = s.prev();
+                long obstacle = prev == null || segments.contains(prev)
+                    ? noBlock
+                    : prev.getRange().upperEndpoint() - lo;
+                return tighter(-lo, obstacle); // 0 边界：偏移 ≥ -lo
+            })
+            .reduce(noBlock, Track::tighter);
     }
 
     synchronized protected void move(Collection<Segment> segments,long deltaTime){
