@@ -3,6 +3,9 @@ package com.lomekwi.cave.node;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * @author shan_luan_
+ */
 public abstract class Filter<T> extends Node{
     private FilterIn filterIn;
     private FilterOut filterOut;

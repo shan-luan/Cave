@@ -14,7 +14,7 @@ import java.util.List;
  * 帧源。仅应该被单个片段访问。
  * @param <T>
  */
-public abstract class Source<T extends Frame> implements Serializable {
+public abstract class Source<T extends Frame> implements Serializable {//TODO:实现Node.
     protected transient T frame;
     @Serial
     private static final long serialVersionUID = 1L;

@@ -5,12 +5,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @author shan_luan_
+ */
 public abstract class Node {
 
     private final List<InPort<?>> inPorts = new ArrayList<>();
     private final List<OutPort<?>> outPorts = new ArrayList<>();
 
-    public void remove() {
+    protected void remove() {
         for (InPort<?> in : inPorts) {
             in.unlink();
         }
@@ -21,10 +24,12 @@ public abstract class Node {
     }
     protected <P extends InPort<?>> P addInPort(P p){
         inPorts.add(p);
+        p.setOwner(this);
         return p;
     }
     protected <P extends OutPort<?>> P addOutPort(P p){
         outPorts.add(p);
+        p.setOwner(this);
         return p;
     }
     public abstract String getName();
@@ -45,8 +50,19 @@ public abstract class Node {
 
         private OutPort<? extends T> prev;
 
+        private Node owner;
+
         protected InPort(String name) {
             this.name = name;
+        }
+
+        void setOwner(Node owner) {
+            this.owner = owner;
+        }
+
+        /** @return 拥有此输入端口的节点 */
+        public Node getOwner() {
+            return owner;
         }
 
         public OutPort<? extends T> getPrev() {
@@ -91,7 +107,7 @@ public abstract class Node {
         }
 
         @SuppressWarnings("unchecked")
-        public boolean linkFrom(OutPort<?> p) {
+        protected boolean linkFrom(OutPort<?> p) {
             if (!canLinkFrom(p)) {
                 return false;
             }
@@ -104,7 +120,7 @@ public abstract class Node {
             return true;
         }
 
-        public void unlink() {
+        protected void unlink() {
             if (prev != null) {
                 prev.removeNext(this);
                 prev = null;
@@ -125,8 +141,19 @@ public abstract class Node {
 
         protected final Set<InPort<? super T>> next = new HashSet<>();
 
+        private Node owner;
+
         protected OutPort(String name) {
             this.name = name;
+        }
+
+        void setOwner(Node owner) {
+            this.owner = owner;
+        }
+
+        /** @return 拥有此输出端口的节点 */
+        public Node getOwner() {
+            return owner;
         }
 
         public abstract T getData();
@@ -137,7 +164,7 @@ public abstract class Node {
             return p.canLinkFrom(this);
         }
 
-        public boolean linkTo(InPort<?> p) {
+        protected boolean linkTo(InPort<?> p) {
             return p.linkFrom(this);
         }
 
@@ -150,13 +177,13 @@ public abstract class Node {
             next.remove(p);
         }
 
-        public void unlink(InPort<?> p) {
+        protected void unlink(InPort<?> p) {
             if (next.contains(p)) {
                 p.unlink();
             }
         }
 
-        public void unlinkAll() {
+        protected void unlinkAll() {
             for (InPort<?> p : Set.copyOf(next)) {
                 p.unlink();
             }
