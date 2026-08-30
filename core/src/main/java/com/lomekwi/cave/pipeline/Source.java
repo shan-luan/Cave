@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline;
 
+import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.FilterList;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
 import com.lomekwi.cave.ui.editpanel.inspector.SourceActor;
@@ -7,18 +9,35 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 帧源。仅应该被单个片段访问。
- * @param <T>
+ * 帧源。仅应该被单个片段访问。自身是 filter 链的头：
+ * 提供 FilterOut（链起点，输出 generate() 生成的帧）。
+ *
+ * @param <T> 帧类型
  */
-public abstract class Source<T extends Frame> implements Serializable {//TODO:实现Node.
+public abstract class Source<T extends Frame> extends Filter<T> implements Serializable {
     protected transient T frame;
+
+    /** 链头输出端口：输出本源生成的最新帧，供第一个 filter 消费。 */
+    public final FilterOut headOut = addOutPort(new FilterOut("输出") {
+        @Override
+        public T getData() {
+            return frame;
+        }
+
+        @Override
+        public Class<? extends T> getType() {
+            return getFrameType();
+        }
+    });
+
     @Serial
     private static final long serialVersionUID = 1L;
-    private final List<Modifier<? super T>> modifiers = new ArrayList<>();
+
+    private final List<Filter<? super T>> filters = new FilterList<>(this);
+
     private transient Segment segment;
 
     /**
@@ -28,29 +47,37 @@ public abstract class Source<T extends Frame> implements Serializable {//TODO:�
     public abstract void sync(long time, Track track) throws Exception;
 
     /**
-     *  获取指定时间的产品
+     * 获取指定时间的产品：生成帧后沿 filter 链（端口连接）求值，
+     * 返回链上最后一个 filter 的输出；无 filter 时返回原生帧。
      * @param time 绝对时间
      * @return 产品
      */
-    public final T get(long time, Track track){
-        T frame = generate(time, track);
-        for (Modifier<? super T> modifier : modifiers) {
-            frame = modifier.modify(frame, time);
+    @SuppressWarnings("unchecked")
+    public final T get(long time, Track track) {
+        frame = generate(time, track);
+        if (filters.isEmpty()) {
+            return frame;
         }
-        return frame;
+        // 沿 chain：headOut → f1.in → f1.out → ... → 最后一个 filter 的 out
+        return (T) filters.get(filters.size() - 1).getFilterOut().getData();
     }
+
     /**
      * 建议进行预取数据的耗时操作。
      */
-    public void prefetch(){};
+    public void prefetch(){}
+
     protected abstract T generate(long time, Track track);
-    public List<Modifier<? super T>> getModifiers() {
-            return modifiers;
-        }
-    public Source<T> attach(Modifier<? super T> modifier){
-       modifiers.add(modifier);
-            return this;
+
+    public List<Filter<? super T>> getFilters() {
+        return filters;
     }
+
+    public Source<T> attach(Filter<? super T> filter) {
+        filters.add(filter);
+        return this;
+    }
+
     public Source() {
     }
 
@@ -67,14 +94,20 @@ public abstract class Source<T extends Frame> implements Serializable {//TODO:�
     public abstract long getDuration();
     public abstract String getDisplayName();
     public abstract Class<T> getFrameType();
+
+    @Override
+    public Class<T> getType() {
+        return getFrameType();
+    }
     public void onDuplicate(Source<?> original){
     }
     public SourceActor getSourceActor() {
         return new SourceActor(this);
     }
-    /** 暴露所有可显示/可修改的条目，UI 据此自动生成 widget。 */
-    public List<Param<?>> getParams() {
-        return List.of();
-    }
     public abstract SegActor createSegActor(Segment segment);
+
+    @Override
+    public String getName() {
+        return getDisplayName();
+    }
 }

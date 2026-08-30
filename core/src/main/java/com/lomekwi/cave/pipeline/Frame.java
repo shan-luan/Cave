@@ -2,7 +2,13 @@ package com.lomekwi.cave.pipeline;
 
 import com.lomekwi.cave.timeline.Track;
 
-public abstract class Frame implements AutoCloseable{
+import java.io.Serial;
+import java.io.Serializable;
+
+public abstract class Frame implements AutoCloseable, Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public final Track track;
     public volatile long timestamp;
     private volatile boolean closed;

@@ -1,5 +1,7 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -8,7 +10,9 @@ import java.util.Set;
 /**
  * @author shan_luan_
  */
-public abstract class Node {
+public abstract class Node implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final List<InPort<?>> inPorts = new ArrayList<>();
     private final List<OutPort<?>> outPorts = new ArrayList<>();
@@ -42,7 +46,9 @@ public abstract class Node {
     }
 
 
-    public abstract static class InPort<T> {
+    public abstract static class InPort<T> implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         private final String name;
 
@@ -77,11 +83,11 @@ public abstract class Node {
             return prev == null ? getDefaultData() : prev.getData();
         }
 
-        protected T getDefaultData(){
+        public T getDefaultData(){
             return defaultData;
         };
 
-        protected void setDefaultData(T data) {
+        public void setDefaultData(T data) {
             defaultData=data;
         }
 
@@ -135,7 +141,9 @@ public abstract class Node {
     }
 
 
-    public abstract static class OutPort<T> {
+    public abstract static class OutPort<T> implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         private final String name;
 

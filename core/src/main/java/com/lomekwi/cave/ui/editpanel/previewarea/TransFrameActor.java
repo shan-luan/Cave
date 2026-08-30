@@ -14,14 +14,14 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.lomekwi.cave.app.selection.Selectable;
 import com.lomekwi.cave.app.App;
-import com.lomekwi.cave.pipeline.Modifier;
 import com.lomekwi.cave.task.ExportOptions;
 import com.lomekwi.cave.task.ExportOptionsSet;
+import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Frame;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.pipeline.image.Transformable;
-import com.lomekwi.cave.pipeline.image.TransModifier;
+import com.lomekwi.cave.pipeline.image.TransNode;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.UndoManager;
@@ -43,10 +43,10 @@ public class TransFrameActor extends Actor implements Selectable {
 
     private boolean selected;
 
-    private TransModifier dragModifier;
+    private TransNode dragModifier;
     private boolean dragging;
     private float startCanvasX, startCanvasY;
-    private float startModifierDx, startModifierDy;
+    private float startNodeDx, startNodeDy;
     private float dragCos, dragSin, dragScaleX, dragScaleY;
     private boolean dragFlipX, dragFlipY;
 
@@ -62,7 +62,7 @@ public class TransFrameActor extends Actor implements Selectable {
     protected float gizmoAnchorStageX, gizmoAnchorStageY;
     protected float gizmoCos, gizmoSin;
     protected boolean gizmoFlipX, gizmoFlipY;
-    protected UndoManager.TransModifierState gizmoOldState;
+    protected UndoManager.TransNodeState gizmoOldState;
 
     private static final Vector2 dragStagePos = new Vector2();
     private static final Vector2 tmp1 = new Vector2();
@@ -100,9 +100,9 @@ public class TransFrameActor extends Actor implements Selectable {
                     return true;
                 }
 
-                dragModifier = findOrCreateTransModifier(source);
-                startModifierDx = dragModifier.dx.getFloat();
-                startModifierDy = dragModifier.dy.getFloat();
+                dragModifier = findOrCreateTransNode(source);
+                startNodeDx = (float) dragModifier.getDx();
+                startNodeDy = (float) dragModifier.getDy();
                 Actor p = getParent();
                 startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX();
                 startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY();
@@ -132,25 +132,18 @@ public class TransFrameActor extends Actor implements Selectable {
                 if (dragModifier != null && dragging) {
                     Project p = App.root.getFrontendProject();
                     if (p != null) {
-                        final TransModifier modifier = dragModifier;
-                        final float oldDx = startModifierDx, oldDy = startModifierDy;
-                        final float newDx = modifier.dx.getFloat(), newDy = modifier.dy.getFloat();
-                        p.undoManager.record(new UndoManager.UndoableCommand() {
-                            @Override
-                            public void undo() {
-                                modifier.dx.set(oldDx);
-                                modifier.dy.set(oldDy);
-                                modifier.getActor().syncFromModel();
-                                p.projEventBus.post(RefreshRequestEvent.INSTANCE);
-                            }
-                            @Override
-                            public void redo() {
-                                modifier.dx.set(newDx);
-                                modifier.dy.set(newDy);
-                                modifier.getActor().syncFromModel();
-                                p.projEventBus.post(RefreshRequestEvent.INSTANCE);
-                            }
-                        });
+                        final TransNode node = dragModifier;
+                        final float oldDx = startNodeDx, oldDy = startNodeDy;
+                        final float newDx = (float) node.getDx(), newDy = (float) node.getDy();
+                        final float oldScaleX = (float) node.getScaleX(), oldScaleY = (float) node.getScaleY();
+                        final float newScaleX = gizmoStartScaleX, newScaleY = gizmoStartScaleY;
+                        final float oldRotation = gizmoStartRotation;
+                        final float newRotation = (float) node.getDRotation();
+                        final boolean oldFlipX = gizmoFlipX, oldFlipY = gizmoFlipY;
+                        final boolean newFlipX = node.flipX(), newFlipY = node.flipY();
+                        p.undoManager.record(new UndoManager.TransformNodeCommand(node,
+                            new UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
+                            new UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)));
                         p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                     }
                 }
@@ -337,15 +330,15 @@ public class TransFrameActor extends Actor implements Selectable {
         gizmoHandle = handle;
         gizmoDragging = true;
 
-        dragModifier = findOrCreateTransModifier(source);
+        dragModifier = findOrCreateTransNode(source);
         gizmoStartW = getWidth();
         gizmoStartH = getHeight();
-        gizmoStartDx = dragModifier.dx.getFloat();
-        gizmoStartDy = dragModifier.dy.getFloat();
-        gizmoStartScaleX = dragModifier.scaleX.getFloat();
-        gizmoStartScaleY = dragModifier.scaleY.getFloat();
-        gizmoStartRotation = dragModifier.dRotation.getFloat();
-        gizmoOldState = new UndoManager.TransModifierState(
+        gizmoStartDx = (float) dragModifier.getDx();
+        gizmoStartDy = (float) dragModifier.getDy();
+        gizmoStartScaleX = (float) dragModifier.getScaleX();
+        gizmoStartScaleY = (float) dragModifier.getScaleY();
+        gizmoStartRotation = (float) dragModifier.getDRotation();
+        gizmoOldState = new UndoManager.TransNodeState(
             gizmoStartDx, gizmoStartDy,
             gizmoStartScaleX, gizmoStartScaleY,
             gizmoStartRotation,
@@ -475,8 +468,8 @@ public class TransFrameActor extends Actor implements Selectable {
             case ROTATE -> {}
         }
 
-        dragModifier.scaleX.set(newScaleX);
-        dragModifier.scaleY.set(newScaleY);
+        dragModifier.setScaleX(newScaleX);
+        dragModifier.setScaleY(newScaleY);
 
         float scaleChangeW = newScaleX / gizmoStartScaleX;
         float scaleChangeH = newScaleY / gizmoStartScaleY;
@@ -499,11 +492,10 @@ public class TransFrameActor extends Actor implements Selectable {
         if (dragFlipX) ddx = -ddx;
         if (dragFlipY) ddy = -ddy;
 
-        dragModifier.dx.set(gizmoStartDx + ddx);
-        dragModifier.dy.set(gizmoStartDy + ddy);
+        dragModifier.setDx(gizmoStartDx + ddx);
+        dragModifier.setDy(gizmoStartDy + ddy);
 
         applyModifiers();
-        dragModifier.getActor().syncFromModel();
     }
 
     protected void updateRotateDrag(float stageX, float stageY) {
@@ -522,23 +514,22 @@ public class TransFrameActor extends Actor implements Selectable {
             delta = Math.round(delta / 15f) * 15f;
         }
 
-        dragModifier.dRotation.set(gizmoStartRotation + delta);
+        dragModifier.setDRotation(gizmoStartRotation + delta);
         applyModifiers();
-        dragModifier.getActor().syncFromModel();
     }
 
     protected void finishGizmoDrag() {
         Project p = App.root.getFrontendProject();
         if (p != null && dragModifier != null && gizmoOldState != null) {
-            TransModifier modifier = dragModifier;
-            UndoManager.TransModifierState newState = new UndoManager.TransModifierState(
-                modifier.dx.getFloat(), modifier.dy.getFloat(),
-                modifier.scaleX.getFloat(), modifier.scaleY.getFloat(),
-                modifier.dRotation.getFloat(),
-                modifier.flipX(), modifier.flipY());
+            TransNode node = dragModifier;
+            UndoManager.TransNodeState newState = new UndoManager.TransNodeState(
+                (float) node.getDx(), (float) node.getDy(),
+                (float) node.getScaleX(), (float) node.getScaleY(),
+                (float) node.getDRotation(),
+                node.flipX(), node.flipY());
             if (!gizmoOldState.equals(newState)) {
-                p.undoManager.record(new UndoManager.TransformModifierCommand(
-                    modifier, gizmoOldState, newState));
+                p.undoManager.record(new UndoManager.TransformNodeCommand(
+                    node, gizmoOldState, newState));
             }
             p.projEventBus.post(RefreshRequestEvent.INSTANCE);
         }
@@ -561,36 +552,45 @@ public class TransFrameActor extends Actor implements Selectable {
         float localDy = (-dx * dragSin + dy * dragCos) / dragScaleY;
         if (dragFlipX) localDx = -localDx;
         if (dragFlipY) localDy = -localDy;
-        dragModifier.dx.set(startModifierDx + localDx);
-        dragModifier.dy.set(startModifierDy + localDy);
+        dragModifier.setDx(startNodeDx + localDx);
+        dragModifier.setDy(startNodeDy + localDy);
         applyModifiers();
-        dragModifier.getActor().syncFromModel();
     }
 
-    @SuppressWarnings({"unchecked"})
     private void applyModifiers() {
         transformable.reset();
         Source<?> source = frame.getSource();
         if (source != null) {
-            long localTime = frame.timestamp;
-            Segment seg = source.getSegment();
-            if (seg != null) localTime -= seg.getOrigin();
-            for (Modifier<?> m : source.getModifiers()) {
-                ((Modifier<? super Transformable>) m).modify(transformable, localTime);
+            for (Filter<?> f : source.getFilters()) {
+                if (f instanceof TransNode node) {
+                    applyTransNode(node);
+                }
             }
         }
+    }
+
+    private void applyTransNode(TransNode node) {
+        Transformable target = transformable;
+        Transform t = target.getTransform();
+        if (t == null) {
+            t = new Transform();
+            target.setTransform(t);
+        }
+        t.applyLocal((float) node.getDx(), (float) node.getDy(),
+            (float) node.getScaleX(), (float) node.getScaleY(),
+            (float) node.getDRotation(), node.flipX(), node.flipY());
     }
 
     private void computeDragContext() {
         Transform t = new Transform(0, 0, 0);
         Source<?> source = frame.getSource();
         if (source != null) {
-            for (Modifier<?> m : source.getModifiers()) {
-                if (m == dragModifier) break;
-                if (m instanceof TransModifier tf) {
-                    t.applyLocal(tf.dx.getFloat(), tf.dy.getFloat(), tf.scaleX.getFloat(), tf.scaleY.getFloat(),
-                        tf.dRotation.getFloat(),
-                        tf.flipX(), tf.flipY());
+            for (Filter<?> f : source.getFilters()) {
+                if (f == dragModifier) break;
+                if (f instanceof TransNode tf) {
+                    t.applyLocal((float) tf.getDx(), (float) tf.getDy(),
+                        (float) tf.getScaleX(), (float) tf.getScaleY(),
+                        (float) tf.getDRotation(), tf.flipX(), tf.flipY());
                 }
             }
         }
@@ -702,15 +702,15 @@ public class TransFrameActor extends Actor implements Selectable {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static TransModifier findOrCreateTransModifier(Source<?> source) {
-        List<Modifier<?>> modifiers = (List) source.getModifiers();
-        for (int i = modifiers.size() - 1; i >= 0; i--) {
-            Modifier<?> f = modifiers.get(i);
-            if (f instanceof TransModifier) {
-                return (TransModifier) f;
+    private static TransNode findOrCreateTransNode(Source<?> source) {
+        List filters = source.getFilters();
+        for (int i = filters.size() - 1; i >= 0; i--) {
+            Object f = filters.get(i);
+            if (f instanceof TransNode tf) {
+                return tf;
             }
         }
-        TransModifier tf = new TransModifier(source, 0, 0, 1, 1, 0, false, false);
+        TransNode tf = new TransNode(0, 0, 1, 1, 0);
         ((Source) source).attach(tf);
         return tf;
     }

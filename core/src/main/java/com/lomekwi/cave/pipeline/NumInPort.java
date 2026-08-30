@@ -1,4 +1,4 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
 import com.lomekwi.cave.pipeline.num.NumFrame;
 

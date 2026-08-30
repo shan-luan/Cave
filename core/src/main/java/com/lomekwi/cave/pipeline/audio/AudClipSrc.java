@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.audio;
 
 import com.lomekwi.cave.app.AppAudioOut;
-import com.lomekwi.cave.pipeline.Param;
+import com.lomekwi.cave.pipeline.NumOutPort;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Segment;
@@ -10,7 +10,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
-import java.util.List;
 
 public class AudClipSrc extends Source<AudFrame> {
     private AudRes audRes;
@@ -20,6 +19,12 @@ public class AudClipSrc extends Source<AudFrame> {
     public AudClipSrc(AudRes audRes) {
         super();
         this.audRes = audRes;
+        addOutPort(new NumOutPort("时长") {
+            @Override
+            protected double getVal() {
+                return getDuration();
+            }
+        });
     }
 
     public AudRes getAudRes() {
@@ -68,14 +73,6 @@ public class AudClipSrc extends Source<AudFrame> {
         AudClipSrc src = (AudClipSrc) original;
         this.audRes = src.audRes;
     }
-    @Override
-    public List<Param<?>> getParams() {
-        return List.of(
-            new Param.Info("路径", () -> audRes.getPath()),
-            new Param.Info("总时长", () -> getDuration() / 1_000_000.0 + "s")
-        );
-    }
-
     @Override
     public SegActor createSegActor(Segment segment) {
         return new AudSegActor(segment);

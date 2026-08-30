@@ -1,4 +1,4 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
 import com.lomekwi.cave.pipeline.num.NumFrame;
 
@@ -14,5 +14,11 @@ public abstract class NumOutPort extends Node.OutPort<NumFrame>{
         val.setVal(getVal());
         return val;
     }
+
+    @Override
+    public Class<? extends NumFrame> getType() {
+        return NumFrame.class;
+    }
+
     protected abstract double getVal();
 }

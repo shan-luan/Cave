@@ -1,7 +1,8 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline.image;
 
-import com.lomekwi.cave.pipeline.image.Transform;
-import com.lomekwi.cave.pipeline.image.Transformable;
+import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.NumInPort;
+import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.num.NumFrame;
 
 public class TransNode extends Filter<Transformable> {

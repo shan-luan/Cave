@@ -1,9 +1,10 @@
 package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
-import com.lomekwi.cave.pipeline.Modifier;
+import com.lomekwi.cave.pipeline.Filter;
+import com.lomekwi.cave.pipeline.NumInPort;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.image.TransModifier;
+import com.lomekwi.cave.pipeline.image.TransNode;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
@@ -223,9 +224,8 @@ public class UndoManager {
         }
     }
 
-
-    private static List modifierList(Source<?> source) {
-        return source.getModifiers();
+    private static List filterList(Source<?> source) {
+        return source.getFilters();
     }
 
     // ──────────────── 批量命令（可合并） ────────────────
@@ -381,79 +381,80 @@ public class UndoManager {
         }
     }
 
-    public record AddModifierCommand(Source<?> source, Modifier<?> modifier) implements UndoableCommand {
+    public record AddFilterCommand(Source<?> source, Filter<?> filter) implements UndoableCommand {
         @Override
         public void undo() {
-            modifierList(source).remove(modifier);
+            filterList(source).remove(filter);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            modifierList(source).add(modifier);
+            filterList(source).add(filter);
             postRefresh(source);
         }
     }
 
-    /**
-     * 通用参数变更命令。owner 为 Modifier 或 Source。
-     */
-    public record ParamChangeCommand<T>(Object owner, com.lomekwi.cave.pipeline.Param<T> param,
-                                        T oldValue, T newValue) implements UndoableCommand {
+    public record RemoveFilterCommand(Source<?> source, Filter<?> filter, int index) implements UndoableCommand {
         @Override
         public void undo() {
-            param.set(oldValue);
-            afterApply();
-        }
-
-        @Override
-        public void redo() {
-            param.set(newValue);
-            afterApply();
-        }
-
-        private void afterApply() {
-            Source<?> source = owner instanceof Modifier<?> m ? m.getSource() : (Source<?>) owner;
-            if (owner instanceof Modifier<?> m) m.invalidateDetailActor();
-            postRefresh(source);
-        }
-    }
-
-    public record RemoveModifierCommand(Source<?> source, Modifier<?> modifier, int index) implements UndoableCommand {
-        @Override
-        public void undo() {
-            modifierList(source).add(index, modifier);
+            filterList(source).add(index, filter);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            modifierList(source).remove(modifier);
+            filterList(source).remove(filter);
             postRefresh(source);
         }
     }
 
-    public record ReorderModifierCommand(Source<?> source, Modifier<?> modifier, int oldIndex, int newIndex) implements UndoableCommand {
+    public record ReorderFilterCommand(Source<?> source, Filter<?> filter, int oldIndex, int newIndex) implements UndoableCommand {
         @Override
         public void undo() {
-            modifierList(source).remove(modifier);
-            modifierList(source).add(oldIndex, modifier);
+            filterList(source).remove(filter);
+            filterList(source).add(oldIndex, filter);
             postRefresh(source);
         }
 
         @Override
         public void redo() {
-            modifierList(source).remove(modifier);
-            modifierList(source).add(newIndex, modifier);
+            filterList(source).remove(filter);
+            filterList(source).add(newIndex, filter);
             postRefresh(source);
         }
     }
 
-    public record TransModifierState(float dx, float dy, float scaleX, float scaleY,
-                                    float dRotation,
-                                    boolean flipX, boolean flipY) {}
+    /** 数值输入端口默认值变更命令。 */
+    public record NumPortValueCommand(NumInPort port, double oldValue, double newValue) implements UndoableCommand {
+        @Override
+        public void undo() {
+            setValue(oldValue);
+        }
 
-    public record TransformModifierCommand(TransModifier modifier, TransModifierState oldState, TransModifierState newState) implements UndoableCommand {
+        @Override
+        public void redo() {
+            setValue(newValue);
+        }
+
+        private void setValue(double v) {
+            var def = port.getDefaultData();
+            if (def != null) def.setVal(v);
+            else port.getData().setVal(v);
+            // 通知所属源刷新：端口所属节点可能是 Source 或挂载在 Source 链上的 Filter
+            Source<?> source = null;
+            var owner = port.getOwner();
+            if (owner instanceof Source<?> s) source = s;
+            else if (owner instanceof Filter<?> f) source = f.getSource();
+            if (source != null) postRefresh(source);
+        }
+    }
+
+    public record TransNodeState(float dx, float dy, float scaleX, float scaleY,
+                                float dRotation,
+                                boolean flipX, boolean flipY) {}
+
+    public record TransformNodeCommand(TransNode node, TransNodeState oldState, TransNodeState newState) implements UndoableCommand {
         @Override
         public void undo() {
             applyState(oldState);
@@ -464,16 +465,16 @@ public class UndoManager {
             applyState(newState);
         }
 
-        private void applyState(TransModifierState s) {
-            modifier.dx.set(s.dx);
-            modifier.dy.set(s.dy);
-            modifier.scaleX.set(s.scaleX);
-            modifier.scaleY.set(s.scaleY);
-            modifier.dRotation.set(s.dRotation);
-            modifier.flipX(s.flipX);
-            modifier.flipY(s.flipY);
-            modifier.invalidateDetailActor();
-            postRefresh(modifier.getSource());
+        private void applyState(TransNodeState s) {
+            node.setDx(s.dx);
+            node.setDy(s.dy);
+            node.setScaleX(s.scaleX);
+            node.setScaleY(s.scaleY);
+            node.setDRotation(s.dRotation);
+            node.flipX(s.flipX);
+            node.flipY(s.flipY);
+            Source<?> source = node.getSource();
+            if (source != null) postRefresh(source);
         }
     }
 }

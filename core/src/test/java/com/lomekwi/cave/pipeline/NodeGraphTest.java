@@ -1,4 +1,4 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,11 +66,6 @@ public class NodeGraphTest {
                     @Override
                     protected double getVal() {
                         return val;
-                    }
-
-                    @Override
-                    public Class<? extends com.lomekwi.cave.pipeline.num.NumFrame> getType() {
-                        return com.lomekwi.cave.pipeline.num.NumFrame.class;
                     }
                 }));
             }

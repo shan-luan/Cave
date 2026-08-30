@@ -1,14 +1,33 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * 过滤器节点：单一 FilterIn/FilterOut，可挂载到某个 {@link Source} 的 filter 链上。
+ *
  * @author shan_luan_
  */
-public abstract class Filter<T> extends Node{
+public abstract class Filter<T> extends Node implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private FilterIn filterIn;
     private FilterOut filterOut;
+
+    /** 所属源（当此 filter 挂载到某个 Source 的链上时）；未挂载时为 null。 */
+    private Source<?> source;
+
+    /** 挂载到指定源。由 {@link FilterList} 在添加/移除 filter 时维护。 */
+    void setSource(Source<?> source) {
+        this.source = source;
+    }
+
+    public Source<?> getSource() {
+        return source;
+    }
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     protected <P extends InPort<?>> P addInPort(P p) {
@@ -70,7 +89,7 @@ public abstract class Filter<T> extends Node{
          * @return 输入已连接时返回上游实际类型,否则返回 null 表示类型未知.
          */
         @Override
-        public final Class<? extends T> getType(){
+        public Class<? extends T> getType(){
             if(getFilterIn().isLinked()){
                 return getFilterIn().getPrev().getType();
             }else {

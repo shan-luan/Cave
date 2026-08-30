@@ -4,7 +4,7 @@ import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.lomekwi.cave.pipeline.Param;
+import com.lomekwi.cave.pipeline.NumOutPort;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
@@ -15,7 +15,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor;
 
 import java.io.Serial;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class TextSrc extends Source<TextFrame> {
@@ -37,6 +36,12 @@ public class TextSrc extends Source<TextFrame> {
         super();
         this.text = text;
         fontRes = new FontRes("font/noto.otf");
+        addOutPort(new NumOutPort("字号") {
+            @Override
+            protected double getVal() {
+                return getFontSize();
+            }
+        });
     }
 
     public String getText() {
@@ -140,17 +145,6 @@ public class TextSrc extends Source<TextFrame> {
     @Override
     public String getDisplayName() {
         return "文本源";
-    }
-
-    @Override
-    public List<Param<?>> getParams() {
-        return List.of(
-            new Param.TextInput("文本", this::getText, this::setText, true),
-            new Param.FileSelect("字体", "选择字体文件",
-                new String[]{".ttf", ".otf", ".ttc"},
-                this::getFontPath, this::setFontPath),
-            new Param.IntSpin("字号", this::getFontSize, this::setFontSize, 1, 500, 1)
-        );
     }
 
     @Override

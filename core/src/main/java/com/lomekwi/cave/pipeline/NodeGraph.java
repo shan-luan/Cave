@@ -1,4 +1,4 @@
-package com.lomekwi.cave.node;
+package com.lomekwi.cave.pipeline;
 
 import com.google.common.graph.AbstractNetwork;
 import com.google.common.graph.ElementOrder;

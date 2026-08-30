@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.lomekwi.cave.pipeline.Param;
+import com.lomekwi.cave.pipeline.NumOutPort;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Segment;
@@ -13,7 +13,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor;
 
 import java.io.Serial;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class VdoClipSrc extends Source<ImgFrame> {
@@ -26,6 +25,24 @@ public class VdoClipSrc extends Source<ImgFrame> {
     public VdoClipSrc(VdoRes vdoRes) {
         super();
         this.vdoRes = vdoRes;
+        addOutPort(new NumOutPort("宽度") {
+            @Override
+            protected double getVal() {
+                return vdoRes.getWidth();
+            }
+        });
+        addOutPort(new NumOutPort("高度") {
+            @Override
+            protected double getVal() {
+                return vdoRes.getHeight();
+            }
+        });
+        addOutPort(new NumOutPort("时长") {
+            @Override
+            protected double getVal() {
+                return getDuration();
+            }
+        });
     }
 
     public VdoRes getVdoRes() {
@@ -97,15 +114,6 @@ public class VdoClipSrc extends Source<ImgFrame> {
         VdoClipSrc src = (VdoClipSrc) original;
         this.vdoRes =src.vdoRes;
     }
-    @Override
-    public List<Param<?>> getParams() {
-        return List.of(
-            new Param.Info("路径", () -> vdoRes.getPath()),
-            new Param.Info("分辨率", () -> vdoRes.getWidth() + " × " + vdoRes.getHeight()),
-            new Param.Info("总时长", () -> getDuration() / 1_000_000.0 + "s")
-        );
-    }
-
     @Override
     public SegActor createSegActor(Segment segment) {
         return new VdoSegActor(segment);

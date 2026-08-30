@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.lomekwi.cave.pipeline.Param;
+import com.lomekwi.cave.pipeline.NumOutPort;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.resource.media.ImgRes;
 import com.lomekwi.cave.timeline.Segment;
@@ -13,7 +13,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.ImgSegActor;
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor;
 
 import java.io.Serial;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class ImgSrc extends Source<ImgFrame> {
@@ -27,6 +26,24 @@ public class ImgSrc extends Source<ImgFrame> {
     public ImgSrc(ImgRes imgRes) {
         super();
         this.imgRes = imgRes;
+        addOutPort(new NumOutPort("宽度") {
+            @Override
+            protected double getVal() {
+                return imgRes.getWidth();
+            }
+        });
+        addOutPort(new NumOutPort("高度") {
+            @Override
+            protected double getVal() {
+                return imgRes.getHeight();
+            }
+        });
+        addOutPort(new NumOutPort("时长") {
+            @Override
+            protected double getVal() {
+                return getDuration();
+            }
+        });
     }
 
     public ImgRes getImgRes() {
@@ -102,14 +119,6 @@ public class ImgSrc extends Source<ImgFrame> {
     public void onDuplicate(Source<?> original) {
         ImgSrc src = (ImgSrc) original;
         this.imgRes = src.imgRes;
-    }
-
-    @Override
-    public List<Param<?>> getParams() {
-        return List.of(
-            new Param.Info("路径", () -> imgRes.getPath()),
-            new Param.Info("分辨率", () -> imgRes.getWidth() + " × " + imgRes.getHeight())
-        );
     }
 
     @Override
