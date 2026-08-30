@@ -159,6 +159,21 @@ public class FilterListTest {
     }
 
     @Test
+    public void add_atSize_appendsToTail() {
+        NumSrc src = new NumSrc(10);
+        AddFilter a = new AddFilter();
+        AddFilter b = new AddFilter();
+        src.getFilters().add(a);
+        // add(size) 是合法的追加语义，曾因 entryAt 越界而抛 IndexOutOfBounds
+        src.getFilters().add(1, b);
+
+        assertEquals(2, src.getFilters().size());
+        assertEquals(a, src.getFilters().get(0));
+        assertEquals(b, src.getFilters().get(1));
+        assertSame(a.getFilterOut(), b.getFilterIn().getPrev());
+    }
+
+    @Test
     public void remove_rewiresNeighbors() {
         NumSrc src = new NumSrc(10);
         AddFilter a = new AddFilter();

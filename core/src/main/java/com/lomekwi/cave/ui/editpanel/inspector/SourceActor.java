@@ -4,6 +4,7 @@ import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Node;
+import com.lomekwi.cave.pipeline.NumInPort;
 import com.lomekwi.cave.pipeline.NumOutPort;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.ui.widget.Card;
@@ -17,14 +18,13 @@ public final class SourceActor extends Card {
         align(Align.top | Align.left);
         defaults().left();
         for (Node.InPort<?> in : source.getInPorts()) {
+            if (!(in instanceof NumInPort)) continue; // 未知类型的输入端口不显示
             add(new VisLabel("> " + in.getName())).pad(2).left().row();
         }
         for (Node.OutPort<?> out : source.getOutPorts()) {
-            if (out instanceof Filter.FilterOut) continue; // 链头输出不显示
-            if (out instanceof NumOutPort numOut) {
-                String value = String.valueOf(numOut.getData().getVal());
-                add(new VisLabel("< " + out.getName() + ": " + value)).pad(2).left().row();
-            }
+            if (!(out instanceof NumOutPort numOut)) continue; // FilterOut 与未知类型的输出端口不显示
+            String value = String.valueOf(numOut.getData().getVal());
+            add(new VisLabel("< " + out.getName() + ": " + value)).pad(2).left().row();
         }
     }
 }

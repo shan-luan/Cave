@@ -176,7 +176,8 @@ public class FilterList<T> extends AbstractSequentialList<Filter<? super T>> imp
 
     @Override
     public void add(int index, Filter<? super T> filter) {
-        linkBefore(filter, entryAt(index));
+        // index == size 表示追加到尾部（AbstractSequentialList 语义）
+        linkBefore(filter, index == size ? tailEntry : entryAt(index));
     }
 
     @Override

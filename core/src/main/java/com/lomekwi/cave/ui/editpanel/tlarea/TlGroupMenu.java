@@ -14,6 +14,7 @@ import com.lomekwi.cave.timeline.SegmentGroup;
 import com.lomekwi.cave.timeline.SegmentSet;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.util.MimeType;
+import com.lomekwi.cave.util.Units;
 
 import java.io.File;
 import java.io.IOException;
@@ -79,8 +80,8 @@ public class TlGroupMenu extends PopupMenu {
     private void onAddText() {
         Segment seg = new Segment(new TextSrc());
         seg.setOrigin(time);
-        long duration = seg.getDuration();
-        if (duration <= 0) return;
+        // 文本片段固定时长 5 秒
+        long duration = 5 * Units.SECOND;
 
         int targetTrack = 0;
         var range = Range.closedOpen(time, time + duration);
