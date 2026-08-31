@@ -4,8 +4,10 @@ import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.lomekwi.cave.pipeline.NumOutPort;
+import com.lomekwi.cave.pipeline.NumInPort;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.StringInPort;
+import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
 import com.lomekwi.cave.timeline.Segment;
@@ -18,10 +20,12 @@ import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
 
 public class TextSrc extends Source<TextFrame> {
-    private String text;
+    private final StringInPort textIn = addInPort(new StringInPort("文本", "请输入文本"));
+    private final NumInPort fontSizeIn = addInPort(new NumInPort("字号", frame(48)));
     private transient FontRes fontRes;
-    private int fontSize = 48;
     private transient BitmapFont font;
+    /** 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体。 */
+    private transient int generatedFontSize;
     private transient TransFrameActor actor;
     private volatile transient boolean initialized;
 
@@ -34,22 +38,22 @@ public class TextSrc extends Source<TextFrame> {
 
     public TextSrc(String text) {
         super();
-        this.text = text;
+        textIn.setDefaultData(text);
         fontRes = new FontRes("font/noto.otf");
-        addOutPort(new NumOutPort("字号") {
-            @Override
-            protected double getVal() {
-                return getFontSize();
-            }
-        });
+    }
+
+    private static NumFrame frame(double v) {
+        NumFrame f = new NumFrame(null);
+        f.setVal(v);
+        return f;
     }
 
     public String getText() {
-        return text;
+        return textIn.getDefaultData();
     }
 
     public void setText(String text) {
-        this.text = text;
+        textIn.setDefaultData(text);
     }
 
     public FontRes getFontRes() {
@@ -64,11 +68,11 @@ public class TextSrc extends Source<TextFrame> {
     }
 
     public int getFontSize() {
-        return fontSize;
+        return (int) fontSizeIn.getDefaultData().getVal();
     }
 
     public void setFontSize(int fontSize) {
-        this.fontSize = fontSize;
+        fontSizeIn.getDefaultData().setVal(fontSize);
         invalidateFont();
     }
 
@@ -97,11 +101,17 @@ public class TextSrc extends Source<TextFrame> {
         if (frame != null && frame.track != track) {
             initialized = false;
         }
+        if (font != null && generatedFontSize != getFontSize()) {
+            // spinner 等外部直接改了端口值：丢弃旧字体，重建帧
+            font = null;
+            initialized = false;
+        }
         CountDownLatch cd = new CountDownLatch(1);
         if (!initialized) {
             Gdx.app.postRunnable(() -> {
                 if (font == null) {
-                    font = fontRes.getFont(fontSize);
+                    font = fontRes.getFont(getFontSize());
+                    generatedFontSize = getFontSize();
                 }
                 frame = new TextFrame(track, this);
                 frame.setFont(font);
@@ -122,7 +132,7 @@ public class TextSrc extends Source<TextFrame> {
                 return null;
             }
         }
-        frame.setText(text);
+        frame.setText(getText());
         frame.getTransform().reset(0, 0);
         return frame;
     }
@@ -155,8 +165,8 @@ public class TextSrc extends Source<TextFrame> {
     @Override
     public void onDuplicate(Source<?> original) {
         TextSrc src = (TextSrc) original;
-        this.text = src.text;
+        this.textIn.setDefaultData(src.getText());
+        this.fontSizeIn.getDefaultData().setVal(src.getFontSize());
         this.fontRes = new FontRes(src.fontRes.getPath());
-        this.fontSize = src.fontSize;
     }
 }

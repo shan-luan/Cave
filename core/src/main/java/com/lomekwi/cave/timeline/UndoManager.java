@@ -2,8 +2,9 @@ package com.lomekwi.cave.timeline;
 
 import com.google.common.collect.Range;
 import com.lomekwi.cave.pipeline.Filter;
-import com.lomekwi.cave.pipeline.NumInPort;
+import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.pipeline.image.TransNode;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent;
@@ -426,7 +427,7 @@ public class UndoManager {
     }
 
     /** 数值输入端口默认值变更命令。 */
-    public record NumPortValueCommand(NumInPort port, double oldValue, double newValue) implements UndoableCommand {
+    public record NumPortValueCommand(Node.InPort<?> port, double oldValue, double newValue) implements UndoableCommand {
         @Override
         public void undo() {
             setValue(oldValue);
@@ -438,9 +439,9 @@ public class UndoManager {
         }
 
         private void setValue(double v) {
-            var def = port.getDefaultData();
+            NumFrame def = (NumFrame) port.getDefaultData();
             if (def != null) def.setVal(v);
-            else port.getData().setVal(v);
+            else ((NumFrame) port.getData()).setVal(v);
             // 通知所属源刷新：端口所属节点可能是 Source 或挂载在 Source 链上的 Filter
             Source<?> source = null;
             var owner = port.getOwner();
