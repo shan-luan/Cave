@@ -4,9 +4,8 @@ import static com.lomekwi.cave.util.Units.SECOND;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.lomekwi.cave.pipeline.NumInPort;
+import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.StringInPort;
 import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.pipeline.image.Transform;
 import com.lomekwi.cave.resource.media.FontRes;
@@ -20,8 +19,10 @@ import java.io.Serial;
 import java.util.concurrent.CountDownLatch;
 
 public class TextSrc extends Source<TextFrame> {
-    private final StringInPort textIn = addInPort(new StringInPort("文本", "请输入文本"));
-    private final NumInPort fontSizeIn = addInPort(new NumInPort("字号", frame(48)));
+    private final Node.InPort<String> textIn = addInPort(
+        new Node.InPort<String>("文本", "请输入文本", String.class) {});
+    private final Node.InPort<NumFrame> fontSizeIn = addInPort(
+        new Node.InPort<NumFrame>("字号", frame(48), NumFrame.class) {});
     private transient FontRes fontRes;
     private transient BitmapFont font;
     /** 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体。 */

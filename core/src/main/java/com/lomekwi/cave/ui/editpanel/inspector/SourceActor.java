@@ -25,11 +25,13 @@ import java.util.Objects;
  * 通用源信息卡：显示源名称、输入端口与信息输出端口（不含参与 filter 链的 FilterOut）。
  */
 public final class SourceActor extends Card {
+    private final Source<?> source;
     /** 数值端口与 spinner 的绑定，用于每帧回显（undo 等外部修改后同步）。 */
     private final List<SpinnerBinding> bindings = new ArrayList<>();
 
     public SourceActor(Source<?> source) {
         super(source.getDisplayName());
+        this.source = source;
         align(Align.top | Align.left);
         defaults().left();
         for (Node.InPort<?> in : source.getInPorts()) {
@@ -62,7 +64,7 @@ public final class SourceActor extends Card {
                 if (oldVal == newVal) return;
                 Project p = App.root.getFrontendProject();
                 if (p != null) {
-                    p.undoManager.record(new UndoManager.NumPortValueCommand(port, oldVal, newVal));
+                    p.undoManager.record(new UndoManager.NumPortValueCommand(port, source, oldVal, newVal));
                     p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                 }
                 if (defaultData != null) defaultData.setVal(newVal);

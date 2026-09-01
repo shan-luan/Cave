@@ -3,8 +3,9 @@ package com.lomekwi.cave.pipeline.image;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.lomekwi.cave.pipeline.NumOutPort;
+import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.resource.media.VdoRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
@@ -25,22 +26,31 @@ public class VdoClipSrc extends Source<ImgFrame> {
     public VdoClipSrc(VdoRes vdoRes) {
         super();
         this.vdoRes = vdoRes;
-        addOutPort(new NumOutPort("宽度") {
+        addOutPort(new Node.OutPort<NumFrame>("宽度", NumFrame.class) {
+            private final NumFrame val = new NumFrame(null);
+
             @Override
-            protected double getVal() {
-                return vdoRes.getWidth();
+            public NumFrame getData() {
+                val.setVal(vdoRes.getWidth());
+                return val;
             }
         });
-        addOutPort(new NumOutPort("高度") {
+        addOutPort(new Node.OutPort<NumFrame>("高度", NumFrame.class) {
+            private final NumFrame val = new NumFrame(null);
+
             @Override
-            protected double getVal() {
-                return vdoRes.getHeight();
+            public NumFrame getData() {
+                val.setVal(vdoRes.getHeight());
+                return val;
             }
         });
-        addOutPort(new NumOutPort("时长") {
+        addOutPort(new Node.OutPort<NumFrame>("时长", NumFrame.class) {
+            private final NumFrame val = new NumFrame(null);
+
             @Override
-            protected double getVal() {
-                return getDuration();
+            public NumFrame getData() {
+                val.setVal(getDuration());
+                return val;
             }
         });
     }

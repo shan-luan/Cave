@@ -63,7 +63,7 @@ public abstract class Filter<T> extends Node implements Serializable {
 
     public abstract class FilterIn extends InPort<T>{
         protected FilterIn(String name) {
-            super(name);
+            super(name, Filter.this.getType());
         }
 
         @Override
@@ -82,7 +82,7 @@ public abstract class Filter<T> extends Node implements Serializable {
     }
     public abstract class FilterOut extends OutPort<T>{
         protected FilterOut(String name) {
-            super(name);
+            super(name, Filter.this.getType());
         }
 
         /**

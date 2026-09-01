@@ -427,7 +427,7 @@ public class UndoManager {
     }
 
     /** 数值输入端口默认值变更命令。 */
-    public record NumPortValueCommand(Node.InPort<?> port, double oldValue, double newValue) implements UndoableCommand {
+    public record NumPortValueCommand(Node.InPort<?> port, Source<?> source, double oldValue, double newValue) implements UndoableCommand {
         @Override
         public void undo() {
             setValue(oldValue);
@@ -442,11 +442,7 @@ public class UndoManager {
             NumFrame def = (NumFrame) port.getDefaultData();
             if (def != null) def.setVal(v);
             else ((NumFrame) port.getData()).setVal(v);
-            // 通知所属源刷新：端口所属节点可能是 Source 或挂载在 Source 链上的 Filter
-            Source<?> source = null;
-            var owner = port.getOwner();
-            if (owner instanceof Source<?> s) source = s;
-            else if (owner instanceof Filter<?> f) source = f.getSource();
+            // 通知所属源刷新：命令创建时端口所属节点为 Source，或挂载在 Source 链上的 Filter
             if (source != null) postRefresh(source);
         }
     }

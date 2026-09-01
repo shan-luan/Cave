@@ -103,7 +103,7 @@ public final class FilterActor extends Card {
                 if (oldVal == newVal) return;
                 Project p = App.root.getFrontendProject();
                 if (p != null) {
-                    p.undoManager.record(new UndoManager.NumPortValueCommand(port, oldVal, newVal));
+                    p.undoManager.record(new UndoManager.NumPortValueCommand(port, source, oldVal, newVal));
                     p.projEventBus.post(RefreshRequestEvent.INSTANCE);
                 }
                 if (defaultData != null) defaultData.setVal(newVal);

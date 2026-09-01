@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.lomekwi.cave.pipeline.num.NumFrame;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -32,7 +34,8 @@ public class FilterListTest {
 
     /** 最小可测 Filter：把传入帧的 val 加 delta。 */
     static final class AddFilter extends Filter<Numable> {
-        private final NumInPort delta = addInPort(new NumInPort("delta"));
+        private final Node.InPort<NumFrame> delta = addInPort(
+            new Node.InPort<NumFrame>("delta", new NumFrame(null), NumFrame.class) {});
         private final FilterIn in = addInPort(new FilterIn("in") {
         });
         private final FilterOut out = addOutPort(new FilterOut("out") {

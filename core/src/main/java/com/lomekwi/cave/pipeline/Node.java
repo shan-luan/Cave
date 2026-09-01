@@ -28,12 +28,10 @@ public abstract class Node implements Serializable {
     }
     protected <P extends InPort<?>> P addInPort(P p){
         inPorts.add(p);
-        p.setOwner(this);
         return p;
     }
     protected <P extends OutPort<?>> P addOutPort(P p){
         outPorts.add(p);
-        p.setOwner(this);
         return p;
     }
     public abstract String getName();
@@ -46,29 +44,26 @@ public abstract class Node implements Serializable {
     }
 
 
-    public abstract static class InPort<T> implements Serializable {
+    public abstract class InPort<T> implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;
 
+        private final Set<Class<?>> constraint;
+
         private T defaultData;
 
         private OutPort<? extends T> prev;
 
-        private Node owner;
-
-        protected InPort(String name) {
+        protected InPort(String name, Class<?>... constraint) {
             this.name = name;
+            this.constraint = Set.of(constraint);
         }
 
-        void setOwner(Node owner) {
-            this.owner = owner;
-        }
-
-        /** @return 拥有此输入端口的节点 */
-        public Node getOwner() {
-            return owner;
+        protected InPort(String name, T defaultValue, Class<?>... constraint) {
+            this(name, constraint);
+            this.defaultData = defaultValue;
         }
 
         public OutPort<? extends T> getPrev() {
@@ -94,7 +89,9 @@ public abstract class Node implements Serializable {
         /**
          * @return 可以连接到此输入端口的输出端口所需要满足的全部约束.即交叉类型(&).
          */
-        public abstract Set<Class<?>> getConstraint();
+        public Set<Class<?>> getConstraint() {
+            return constraint;
+        }
 
         public boolean canLinkFrom(OutPort<?> p) {
             Class<?> outType = p.getType();
@@ -113,7 +110,7 @@ public abstract class Node implements Serializable {
         }
 
         @SuppressWarnings("unchecked")
-        protected boolean linkFrom(OutPort<?> p) {
+        public boolean linkFrom(OutPort<?> p) {
             if (!canLinkFrom(p)) {
                 return false;
             }
@@ -126,7 +123,7 @@ public abstract class Node implements Serializable {
             return true;
         }
 
-        protected void unlink() {
+        public void unlink() {
             if (prev != null) {
                 prev.removeNext(this);
                 prev = null;
@@ -141,38 +138,32 @@ public abstract class Node implements Serializable {
     }
 
 
-    public abstract static class OutPort<T> implements Serializable {
+    public abstract class OutPort<T> implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
 
         private final String name;
 
+        private final Class<? extends T> type;
+
         protected final Set<InPort<? super T>> next = new HashSet<>();
 
-        private Node owner;
-
-        protected OutPort(String name) {
+        protected OutPort(String name, Class<? extends T> type) {
             this.name = name;
-        }
-
-        void setOwner(Node owner) {
-            this.owner = owner;
-        }
-
-        /** @return 拥有此输出端口的节点 */
-        public Node getOwner() {
-            return owner;
+            this.type = type;
         }
 
         public abstract T getData();
 
-        public abstract Class<? extends T> getType();
+        public Class<? extends T> getType() {
+            return type;
+        }
 
         public boolean canLinkTo(InPort<?> p) {
             return p.canLinkFrom(this);
         }
 
-        protected boolean linkTo(InPort<?> p) {
+        public boolean linkTo(InPort<?> p) {
             return p.linkFrom(this);
         }
 
@@ -185,13 +176,13 @@ public abstract class Node implements Serializable {
             next.remove(p);
         }
 
-        protected void unlink(InPort<?> p) {
+        public void unlink(InPort<?> p) {
             if (next.contains(p)) {
                 p.unlink();
             }
         }
 
-        protected void unlinkAll() {
+        public void unlinkAll() {
             for (InPort<?> p : Set.copyOf(next)) {
                 p.unlink();
             }

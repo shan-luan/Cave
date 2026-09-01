@@ -1,8 +1,9 @@
 package com.lomekwi.cave.pipeline.audio;
 
 import com.lomekwi.cave.app.AppAudioOut;
-import com.lomekwi.cave.pipeline.NumOutPort;
+import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
+import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.resource.media.AudRes;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.Track;
@@ -19,10 +20,13 @@ public class AudClipSrc extends Source<AudFrame> {
     public AudClipSrc(AudRes audRes) {
         super();
         this.audRes = audRes;
-        addOutPort(new NumOutPort("时长") {
+        addOutPort(new Node.OutPort<NumFrame>("时长", NumFrame.class) {
+            private final NumFrame val = new NumFrame(null);
+
             @Override
-            protected double getVal() {
-                return getDuration();
+            public NumFrame getData() {
+                val.setVal(getDuration());
+                return val;
             }
         });
     }
