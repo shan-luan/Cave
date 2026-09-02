@@ -8,28 +8,21 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisImageButton;
-import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
-import com.kotcrab.vis.ui.widget.VisTextArea;
-import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel;
-import com.kotcrab.vis.ui.widget.spinner.Spinner;
 import com.lomekwi.cave.app.App;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
-import com.lomekwi.cave.pipeline.num.NumFrame;
 import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
 import com.lomekwi.cave.ui.widget.Card;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 过滤器节点卡：显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
- * 标题栏上下交换与拖拽重排。数值端口每帧从模型回显（gizmo、undo 等外部修改后同步）。
+ * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 {@link CardWidgetsRegistry} 维护。
  */
 public final class FilterActor extends Card {
     private final Filter<?> filter;
@@ -37,8 +30,6 @@ public final class FilterActor extends Card {
     private Runnable rebuildCallback;
     private boolean dragging;
     private float dragStageY, dragWindowY;
-    /** 每帧把端口当前值回显到 spinner（gizmo、undo 等外部修改后的同步）。 */
-    private final List<SpinnerBinding> bindings = new ArrayList<>();
 
     public FilterActor(Source<?> source, Filter<?> filter) {
         super(filter.getName());
@@ -81,85 +72,11 @@ public final class FilterActor extends Card {
             }
         });
         for (Node.InPort<?> in : filter.getInPorts()) {
-            if (PortWidgets.acceptsString(in)) {
-                addTextRow(in);
-            } else if (PortWidgets.acceptsNumFrame(in)) {
-                addNumRow(in);
-            }
+            Actor widget = CardWidgetsRegistry.createEditor(in, source);
+            if (widget == null) continue; // 未注册该端口类型的 widget，不显示
+            add(widget).growX().pad(2).row();
         }
     }
-
-    private void addNumRow(Node.InPort<?> port) {
-        NumFrame defaultData = (NumFrame) port.getDefaultData();
-        double cur = defaultData != null ? defaultData.getVal() : 0;
-        SimpleFloatSpinnerModel model = new SimpleFloatSpinnerModel(
-            (float) cur, -99999, 99999, 1f, 2);
-        Spinner spinner = new Spinner("", model);
-        spinner.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
-                double newVal = ((SimpleFloatSpinnerModel) spinner.getModel()).getValue();
-                double oldVal = defaultData != null ? defaultData.getVal() : 0;
-                if (oldVal == newVal) return;
-                Project p = App.root.getFrontendProject();
-                if (p != null) {
-                    p.undoManager.record(new UndoManager.NumPortValueCommand(port, source, oldVal, newVal));
-                    p.projEventBus.post(RefreshRequestEvent.INSTANCE);
-                }
-                if (defaultData != null) defaultData.setVal(newVal);
-            }
-        });
-        add(new VisLabel(port.getName())).pad(2).left();
-        add(spinner).width(90).pad(2).row();
-        bindings.add(new SpinnerBinding(port, spinner, (SimpleFloatSpinnerModel) spinner.getModel()));
-    }
-
-    /** String 输入端口：绑定可编辑的文本输入区域。 */
-    private void addTextRow(Node.InPort<?> port) {
-        String defaultValue = (String) port.getDefaultData();
-        VisTextArea textArea = new VisTextArea(defaultValue == null ? "" : defaultValue);
-        // 撑高 prefHeight，否则 X2 皮肤下 linesShowing 为 0，文字不会绘制
-        textArea.setPrefRows(3);
-        add(new VisLabel(port.getName())).pad(2).left();
-        add(textArea).growX().pad(2).row();
-        textArea.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                String newVal = textArea.getText();
-                String oldVal = (String) port.getDefaultData();
-                if (Objects.equals(oldVal, newVal)) return;
-                @SuppressWarnings("unchecked")
-                Node.InPort<String> strPort = (Node.InPort<String>) port;
-                strPort.setDefaultData(newVal);
-                Project p = App.root.getFrontendProject();
-                if (p != null) {
-                    p.projEventBus.post(RefreshRequestEvent.INSTANCE);
-                }
-            }
-        });
-    }
-
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        // gizmo（TransFrameActor）、undo 等外部修改端口值后，把最新值回显到 spinner。
-        // 使用者正在拖动/输入时不覆盖，避免打断编辑。
-        for (SpinnerBinding binding : bindings) {
-            // 用户正在该字段输入时不覆盖，避免打断编辑
-            if (binding.spinner().getTextField().hasKeyboardFocus()) continue;
-            NumFrame data = (NumFrame) binding.port().getDefaultData();
-            double modelVal = data != null ? data.getVal() : 0;
-            float current = binding.model().getValue();
-            if (Math.abs(current - modelVal) > 0.005f) {
-                binding.model().setValue((float) modelVal, false);
-                binding.spinner().getTextField().setText(
-                    String.format(java.util.Locale.US, "%.2f", modelVal));
-            }
-        }
-    }
-
-    /** 端口与 spinner 的绑定，用于每帧回显。 */
-    private record SpinnerBinding(Node.InPort<?> port, Spinner spinner, SimpleFloatSpinnerModel model) {}
 
     /** 标题栏加上/下移动按钮，用于交换相邻 filter 的顺序。 */
     private void addMoveButton(boolean up) {
