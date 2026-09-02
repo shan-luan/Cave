@@ -160,6 +160,5 @@ Thumbs.db
 /assets/test.mp4
 
 ## opencode:
-/AGENTS.md
 /opencode.jsonc
 /.opencode/open-loop.state.json
