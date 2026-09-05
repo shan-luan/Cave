@@ -1,11 +1,12 @@
-package com.lomekwi.cave.ui.tabs;
+package com.lomekwi.cave.ui.tabs.edit;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
+import com.lomekwi.cave.ui.tabs.AutoHideTabbedPane;
 
-public class TlTabbedPane extends AutoHideTabbedPane {
+public class EditTabbedPane extends AutoHideTabbedPane {
     private final Container<Table> contentHost = new Container<>() {
         @Override
         public float getMinHeight() {
@@ -25,7 +26,7 @@ public class TlTabbedPane extends AutoHideTabbedPane {
         }
     };
 
-    public TlTabbedPane() {
+    public EditTabbedPane() {
         super();
         contentHost.fill();
         addListener(new TabbedPaneListener() {

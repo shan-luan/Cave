@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.tabs;
+package com.lomekwi.cave.ui.tabs.edit;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;

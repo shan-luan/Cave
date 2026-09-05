@@ -26,8 +26,8 @@ import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.settings.SettingsDialog;
-import com.lomekwi.cave.ui.tabs.NodeEditorTab;
-import com.lomekwi.cave.ui.tabs.TabSwitchedEvent;
+import com.lomekwi.cave.ui.tabs.edit.NodeEditorTab;
+import com.lomekwi.cave.ui.tabs.app.TabSwitchedEvent;
 import com.lomekwi.cave.app.App;
 
 import java.io.IOException;

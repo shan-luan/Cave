@@ -5,8 +5,8 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.ui.editpanel.previewarea.PreviewArea;
 import com.lomekwi.cave.ui.editpanel.mediapool.MediaPool;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
-import com.lomekwi.cave.ui.tabs.TimelineTab;
-import com.lomekwi.cave.ui.tabs.TlTabbedPane;
+import com.lomekwi.cave.ui.tabs.edit.TimelineTab;
+import com.lomekwi.cave.ui.tabs.edit.EditTabbedPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 
 import org.jspecify.annotations.NullMarked;
@@ -18,14 +18,14 @@ public class EditPanel {
     final VisTable tl;
     final Container<TlGroup> tlMain;
     final Container<MediaPool> res;
-    final TlTabbedPane tlTabs;
+    final EditTabbedPane tlTabs;
 
     public EditPanel(Project project) {
         super();
         this.project = project;
         previewArea = new PreviewArea(project);
         tlMain = new Container<>(new TlGroup(project)).fill().clip().minSize(0, 0);
-        tlTabs = new TlTabbedPane();
+        tlTabs = new EditTabbedPane();
         tlTabs.add(new TimelineTab(tlMain));
         tl = new VisTable();
         tl.add(tlTabs.getTable()).fillX().top().row();
@@ -42,7 +42,7 @@ public class EditPanel {
         return tlMain.getActor();
     }
 
-    public TlTabbedPane getTlTabs() {
+    public EditTabbedPane getTlTabs() {
         return tlTabs;
     }
 
