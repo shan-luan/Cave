@@ -44,7 +44,7 @@ public abstract class Node implements Serializable {
     }
 
 
-    public abstract class InPort<T> implements Serializable {
+    public class InPort<T> implements Serializable {
         @Serial
         private static final long serialVersionUID = 1L;
 
@@ -56,12 +56,12 @@ public abstract class Node implements Serializable {
 
         private OutPort<? extends T> prev;
 
-        protected InPort(String name, Class<?>... constraint) {
+        public InPort(String name, Class<?>... constraint) {
             this.name = name;
             this.constraint = Set.of(constraint);
         }
 
-        protected InPort(String name, T defaultValue, Class<?>... constraint) {
+        public InPort(String name, T defaultValue, Class<?>... constraint) {
             this(name, constraint);
             this.defaultData = defaultValue;
         }

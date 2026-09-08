@@ -21,7 +21,7 @@ public abstract class Source<T extends Frame> extends Filter<T> implements Seria
     protected transient T frame;
 
     /** 链头输出端口：输出本源生成的最新帧，供第一个 filter 消费。 */
-    public final FilterOut headOut = addOutPort(new FilterOut("输出") {
+    public final FilterOut headOut = addOutPort(new FilterOut() {
         @Override
         public T getData() {
             return frame;

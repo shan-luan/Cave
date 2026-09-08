@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.widget;
+package com.lomekwi.cave.ui.node;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;

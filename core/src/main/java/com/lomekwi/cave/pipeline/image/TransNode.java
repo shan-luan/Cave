@@ -1,22 +1,22 @@
 package com.lomekwi.cave.pipeline.image;
 
 import com.lomekwi.cave.pipeline.Filter;
-import com.lomekwi.cave.pipeline.Node;
-import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.num.NumFrame;
+
+import static com.lomekwi.cave.pipeline.Node.*;
 
 public class TransNode extends Filter<Transformable> {
 
-    private final Node.InPort<NumFrame> dx = addInPort(
-        new Node.InPort<NumFrame>("位移 X", new NumFrame(null), NumFrame.class) {});
-    private final Node.InPort<NumFrame> dy = addInPort(
-        new Node.InPort<NumFrame>("位移 Y", new NumFrame(null), NumFrame.class) {});
-    private final Node.InPort<NumFrame> scaleX = addInPort(
-        new Node.InPort<NumFrame>("缩放 X", frame(1), NumFrame.class) {});
-    private final Node.InPort<NumFrame> scaleY = addInPort(
-        new Node.InPort<NumFrame>("缩放 Y", frame(1), NumFrame.class) {});
-    private final Node.InPort<NumFrame> dRotation = addInPort(
-        new Node.InPort<NumFrame>("旋转", new NumFrame(null), NumFrame.class) {});
+    private final InPort<NumFrame> dx = addInPort(
+        new InPort<>("位移 X", new NumFrame(null), NumFrame.class));
+    private final InPort<NumFrame> dy = addInPort(
+        new InPort<>("位移 Y", new NumFrame(null), NumFrame.class));
+    private final InPort<NumFrame> scaleX = addInPort(
+        new InPort<>("缩放 X", frame(1), NumFrame.class));
+    private final InPort<NumFrame> scaleY = addInPort(
+        new InPort<>("缩放 Y", frame(1), NumFrame.class));
+    private final InPort<NumFrame> dRotation = addInPort(
+        new InPort<>("旋转", new NumFrame(null), NumFrame.class));
 
     private boolean flipX, flipY;
 
@@ -57,7 +57,7 @@ public class TransNode extends Filter<Transformable> {
         return f;
     }
 
-    private static double val(Node.InPort<NumFrame> p) {
+    private static double val(InPort<NumFrame> p) {
         return p.getData().getVal();
     }
 

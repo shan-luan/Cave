@@ -4,9 +4,9 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.num.NumFrame;
-import com.lomekwi.cave.ui.widget.NumOutputRow;
-import com.lomekwi.cave.ui.widget.NumPortEditor;
-import com.lomekwi.cave.ui.widget.TextPortEditor;
+import com.lomekwi.cave.ui.node.NumOutputRow;
+import com.lomekwi.cave.ui.node.NumPortEditor;
+import com.lomekwi.cave.ui.node.TextPortEditor;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -14,8 +14,8 @@ public abstract class Filter<T> extends Node implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private FilterIn filterIn;
-    private FilterOut filterOut;
+    protected FilterIn filterIn;
+    protected FilterOut filterOut;
 
     /** 所属源（当此 filter 挂载到某个 Source 的链上时）；未挂载时为 null。 */
     private Source<?> source;
@@ -61,9 +61,12 @@ public abstract class Filter<T> extends Node implements Serializable {
         return filterOut;
     }
 
-    public abstract class FilterIn extends InPort<T>{
-        protected FilterIn(String name) {
+    public class FilterIn extends InPort<T>{
+        public FilterIn(String name) {
             super(name, Filter.this.getType());
+        }
+        public FilterIn() {
+            super("输入", Filter.this.getType());
         }
 
         @Override
@@ -83,6 +86,9 @@ public abstract class Filter<T> extends Node implements Serializable {
     public abstract class FilterOut extends OutPort<T>{
         protected FilterOut(String name) {
             super(name, Filter.this.getType());
+        }
+        protected FilterOut() {
+            super("输出", Filter.this.getType());
         }
 
         /**

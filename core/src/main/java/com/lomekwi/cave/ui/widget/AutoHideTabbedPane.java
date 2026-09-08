@@ -1,4 +1,4 @@
-package com.lomekwi.cave.ui.tabs;
+package com.lomekwi.cave.ui.widget;
 
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;

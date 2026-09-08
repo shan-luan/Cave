@@ -2,11 +2,6 @@ package com.lomekwi.cave.ui.editpanel.inspector;
 
 import static com.lomekwi.cave.util.i18n.I18N.i18n;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Group;
-import com.badlogic.gdx.scenes.scene2d.ui.Cell;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.common.eventbus.Subscribe;
 import com.lomekwi.cave.app.App;
@@ -16,7 +11,6 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisScrollPane;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.kotcrab.vis.ui.widget.VisTextButton;
-import com.kotcrab.vis.ui.widget.VisTextField;
 import com.lomekwi.cave.pipeline.Filter;
 import com.lomekwi.cave.pipeline.Node;
 import com.lomekwi.cave.pipeline.Source;
@@ -91,7 +85,6 @@ public class Inspector extends VisTable {
             first = false;
             appendSegmentInfo(seg);
         }
-        collectInto(content);
     }
 
     private void showInfo(Segment seg) {
@@ -102,25 +95,6 @@ public class Inspector extends VisTable {
         content.setFillParent(false);
         content.top();
         appendSegmentInfo(seg);
-        collectInto(content);
-    }
-
-    private void collectInto(Actor actor) {
-        if (actor instanceof TextField || actor instanceof VisTextField) {
-            return;
-        }
-        if (actor instanceof Table table) {
-            for (Cell cell : table.getCells()) {
-                Object cellActor = cell.getActor();
-                if (cellActor instanceof Actor act) {
-                    collectInto(act);
-                }
-            }
-        } else if (actor instanceof Group group) {
-            for (Actor child : group.getChildren()) {
-                collectInto(child);
-            }
-        }
     }
 
     private void appendSegmentInfo(Segment seg) {

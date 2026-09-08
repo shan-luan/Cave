@@ -4,7 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab;
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener;
-import com.lomekwi.cave.ui.tabs.AutoHideTabbedPane;
+import com.lomekwi.cave.ui.widget.AutoHideTabbedPane;
 
 public class EditTabbedPane extends AutoHideTabbedPane {
     private final Container<Table> contentHost = new Container<>() {
