@@ -26,7 +26,6 @@ import com.lomekwi.cave.task.Task;
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup;
 import com.lomekwi.cave.ui.listeners.ChangeListenerX;
 import com.lomekwi.cave.ui.settings.SettingsDialog;
-import com.lomekwi.cave.ui.tabs.edit.NodeEditorTab;
 import com.lomekwi.cave.ui.tabs.app.TabSwitchedEvent;
 import com.lomekwi.cave.app.App;
 
@@ -137,11 +136,6 @@ public class TopBar extends MenuBar {
         addMenu(editMenu);
 
         addMenu(new MenuX(i18n("工具"))
-            .withItem(new MenuItem(i18n("节点编辑器"), new ChangeListenerX(() -> {
-                var ep = App.root.getFrontendEditPanel();
-                if (ep == null) return;
-                ep.getTlTabs().add(new NodeEditorTab());
-            })))
             .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() -> {
                 new SettingsDialog();
             })))

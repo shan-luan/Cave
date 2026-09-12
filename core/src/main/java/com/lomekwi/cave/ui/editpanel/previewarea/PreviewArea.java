@@ -187,10 +187,7 @@ public class PreviewArea extends Group implements Focusable {
         }
     }
 
-    private static final Color AXIS_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.6f);
     private static final int TICK_PIXEL_TARGET = 80;
-
-    private static final Color PRESET_OUTLINE = new Color(0.5f, 0.5f, 0.5f, 0.7f);
     private static final Vector2 guidePos = new Vector2();
 
     @Override
@@ -235,7 +232,7 @@ public class PreviewArea extends Group implements Focusable {
         float s = canvas.getScaleX();
         for (ExportOptions opts : exportOpts.presets) {
             if (opts.width <= 0 || opts.height <= 0) continue;
-            drawer.rectangle(ox, oy, opts.width * s, opts.height * s, PRESET_OUTLINE, 1);
+            drawer.rectangle(ox, oy, opts.width * s, opts.height * s, Colors.PREVIEW_GUIDE, 1);
         }
     }
 
@@ -248,8 +245,8 @@ public class PreviewArea extends Group implements Focusable {
         float y0 = getY();
         float y1 = getY() + getHeight();
 
-        drawer.line(x0, oy, x1, oy, AXIS_COLOR);
-        drawer.line(ox, y0, ox, y1, AXIS_COLOR);
+        drawer.line(x0, oy, x1, oy, Colors.PREVIEW_GUIDE);
+        drawer.line(ox, y0, ox, y1, Colors.PREVIEW_GUIDE);
 
         float tickHalf = 4f;
         float interval = Units.niceInterval(TICK_PIXEL_TARGET / canvas.getScaleX());
@@ -260,7 +257,7 @@ public class PreviewArea extends Group implements Focusable {
         for (double v = first; v <= endV; v += interval) {
             if (Math.abs(v) < interval * 0.01f) continue;
             float sx = ox + (float) v * canvas.getScaleX();
-            drawer.line(sx, oy - tickHalf, sx, oy + tickHalf, AXIS_COLOR);
+            drawer.line(sx, oy - tickHalf, sx, oy + tickHalf, Colors.PREVIEW_GUIDE);
         }
 
         startV = (y0 - oy) / canvas.getScaleX();
@@ -269,7 +266,7 @@ public class PreviewArea extends Group implements Focusable {
         for (double v = first; v <= endV; v += interval) {
             if (Math.abs(v) < interval * 0.01f) continue;
             float sy = oy + (float) v * canvas.getScaleX();
-            drawer.line(ox - tickHalf, sy, ox + tickHalf, sy, AXIS_COLOR);
+            drawer.line(ox - tickHalf, sy, ox + tickHalf, sy, Colors.PREVIEW_GUIDE);
         }
     }
 

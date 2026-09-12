@@ -30,7 +30,7 @@ public abstract class SegActor extends Actor {
     TlGroup tl;
     DragSide dragSide=DragSide.NONE;
 
-    // DRAG STATE //////////////////////////
+    // 拖拽状态 //////////////////////////
     float firstX = Float.NaN, firstY = Float.NaN;
     private long dragOldStart;
     private long dragOldDuration;
@@ -43,7 +43,6 @@ public abstract class SegActor extends Actor {
     private final Rectangle bounds = new Rectangle();
     private boolean hovered;
     private boolean menuInitialized;
-    private static final Color hoverColor = new Color(1, 1, 1, 0.25f);
     public SegActor(Segment segment) {
         this.segment = segment;
         addListener(new InputListener(){
@@ -149,7 +148,7 @@ public abstract class SegActor extends Actor {
     }
     private void drawSelectionOverlay(){
         if (hovered) {
-            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), hoverColor);
+            App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.SEGMENT_HOVER);
         }
     }
 

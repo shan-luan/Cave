@@ -191,10 +191,9 @@ public class FilterListTest {
         assertSame(src.headOut, a.getFilterIn().getPrev());
         assertSame(a.getFilterOut(), c.getFilterIn().getPrev());
         assertFalse(c.getFilterOut().isLinked());
-        // b 被移除且解除挂载
+        // b 被移除且解除连接
         assertNull(b.getFilterIn().getPrev());
         assertFalse(b.getFilterOut().isLinked());
-        assertNull(b.getSource());
 
         a.delta.getDefaultData().setVal(1);
         c.delta.getDefaultData().setVal(2);
@@ -221,8 +220,6 @@ public class FilterListTest {
         assertFalse(b.getFilterOut().isLinked());
         assertNull(a.getFilterIn().getPrev());
         assertFalse(a.getFilterOut().isLinked());
-        assertNull(a.getSource());
-        assertSame(src, c.getSource());
 
         c.delta.getDefaultData().setVal(5);
         b.delta.getDefaultData().setVal(1);
@@ -240,8 +237,6 @@ public class FilterListTest {
 
         assertEquals(0, src.getFilters().size());
         assertFalse(src.headOut.isLinked());
-        assertNull(a.getSource());
-        assertNull(b.getSource());
         assertEquals(10.0, src.get(0, null).val, 0);
     }
 
@@ -276,7 +271,6 @@ public class FilterListTest {
         assertSame(a.getFilterOut(), b.getFilterIn().getPrev());
         assertNull(mid.getFilterIn().getPrev());
         assertFalse(mid.getFilterOut().isLinked());
-        assertNull(mid.getSource());
     }
 
     @Test
@@ -296,7 +290,6 @@ public class FilterListTest {
         }
 
         assertEquals(1, copy.getFilters().size());
-        assertSame(copy, copy.getFilters().get(0).getSource());
         // 端口连接恢复
         assertSame(copy.headOut, copy.getFilters().get(0).getFilterIn().getPrev());
         assertFalse(copy.getFilters().get(0).getFilterOut().isLinked());

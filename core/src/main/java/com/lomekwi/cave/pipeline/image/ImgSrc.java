@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline.image;
 
+import static com.lomekwi.cave.util.Units.SECOND;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -112,7 +114,12 @@ public class ImgSrc extends Source<ImgFrame> {
 
     @Override
     public long getDuration() {
-        return imgRes.getDuration();
+        return Long.MAX_VALUE;
+    }
+
+    @Override
+    public long getDefaultSegmentDuration() {
+        return 5 * SECOND;
     }
 
     @Override

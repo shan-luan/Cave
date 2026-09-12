@@ -83,7 +83,7 @@ public class Root implements ApplicationListener {
         multiplexer.addProcessor(0, new InputProcessor() {
             @Override
             public boolean keyDown(int keycode) {
-                // TopActions that don't need a project
+                // 无需项目的 TopActions
                 if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
                     topBar.performNew();
                     return true;
@@ -100,7 +100,7 @@ public class Root implements ApplicationListener {
                 Project project = getFrontendProject();
                 if (project == null || project.undoManager == null) return false;
                 EditPanel ep = getFrontendEditPanel();
-                // TopActions that need a project
+                // 需要项目的 TopActions
                 if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
                     topBar.performSave();
                     return true;
@@ -112,13 +112,13 @@ public class Root implements ApplicationListener {
 
                 if (isTextInputFocused()) return false;
 
-                // Copy (global, no project needed)
+                // 复制（全局，无需项目）
                 if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
                     App.copyManager.copy();
                     return true;
                 }
 
-                // Undo / Redo
+                // 撤销 / 重做
                 if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
                     project.undoManager.undo();
                     if (ep != null) ep.getTlGroup().markTimelineDirty();

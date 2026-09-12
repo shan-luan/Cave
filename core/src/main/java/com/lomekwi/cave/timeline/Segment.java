@@ -108,7 +108,9 @@ public class Segment implements Serializable, Iterable<Frame>, Duplicatable<Segm
     }
     /**获取拉伸时在时间轴上合法的最大终点*/
     public long getMaxEnd(){
-        return origin+source.getDuration();
+        long duration = source.getDuration();
+        if (duration == Long.MAX_VALUE) return Long.MAX_VALUE;
+        return origin + duration;
     }
 
     /**

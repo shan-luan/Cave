@@ -23,7 +23,7 @@ public abstract class Node implements Serializable {
         }
 
         for (OutPort<?> out : outPorts) {
-            out.unlinkAll();
+            out.unlink();
         }
     }
     protected <P extends InPort<?>> P addInPort(P p){
@@ -43,8 +43,14 @@ public abstract class Node implements Serializable {
         return outPorts;
     }
 
-
-    public class InPort<T> implements Serializable {
+    public sealed interface Port extends Serializable permits InPort, OutPort {
+        boolean link(Port target);
+        void unlink();
+        default String getName(){
+            return toString();
+        }
+    }
+    public non-sealed class InPort<T> implements Port {
         @Serial
         private static final long serialVersionUID = 1L;
 
@@ -55,6 +61,14 @@ public abstract class Node implements Serializable {
         private T defaultData;
 
         private OutPort<? extends T> prev;
+
+        @Override
+        public boolean link(Port target) {
+            if (!(target instanceof OutPort<?> out)) {
+                return false;
+            }
+            return linkFrom(out);
+        }
 
         public InPort(String name, Class<?>... constraint) {
             this.name = name;
@@ -123,6 +137,7 @@ public abstract class Node implements Serializable {
             return true;
         }
 
+        @Override
         public void unlink() {
             if (prev != null) {
                 prev.removeNext(this);
@@ -138,7 +153,15 @@ public abstract class Node implements Serializable {
     }
 
 
-    public abstract class OutPort<T> implements Serializable {
+    public non-sealed abstract class OutPort<T> implements Port {
+        @Override
+        public boolean link(Port target) {
+            if (!(target instanceof InPort<?> in)) {
+                return false;
+            }
+            return linkTo(in);
+        }
+
         @Serial
         private static final long serialVersionUID = 1L;
 
@@ -182,7 +205,8 @@ public abstract class Node implements Serializable {
             }
         }
 
-        public void unlinkAll() {
+        @Override
+        public void unlink() {
             for (InPort<?> p : Set.copyOf(next)) {
                 p.unlink();
             }

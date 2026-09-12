@@ -17,17 +17,6 @@ public abstract class Filter<T> extends Node implements Serializable {
     protected FilterIn filterIn;
     protected FilterOut filterOut;
 
-    /** 所属源（当此 filter 挂载到某个 Source 的链上时）；未挂载时为 null。 */
-    private Source<?> source;
-
-    /** 挂载到指定源。由 {@link FilterList} 在添加/移除 filter 时维护。 */
-    void setSource(Source<?> source) {
-        this.source = source;
-    }
-
-    public Source<?> getSource() {
-        return source;
-    }
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     protected <P extends InPort<?>> P addInPort(P p) {

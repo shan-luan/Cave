@@ -40,7 +40,7 @@ public class AutoHideTabbedPane extends TabbedPane {
         updateVisibility();
     }
 
-    /** Must be called after the pane's table has been added to its layout. */
+    /** 必须在面板的 table 加入其布局之后调用。 */
     public void refreshVisibility() {
         updateVisibility();
     }

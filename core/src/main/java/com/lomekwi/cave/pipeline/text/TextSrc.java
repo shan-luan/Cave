@@ -149,6 +149,11 @@ public class TextSrc extends Source<TextFrame> {
     }
 
     @Override
+    public long getDefaultSegmentDuration() {
+        return 5 * SECOND;
+    }
+
+    @Override
     public Class<TextFrame> getFrameType() {
         return TextFrame.class;
     }

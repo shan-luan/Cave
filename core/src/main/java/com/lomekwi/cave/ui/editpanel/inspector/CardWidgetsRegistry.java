@@ -2,8 +2,10 @@ package com.lomekwi.cave.ui.editpanel.inspector;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.lomekwi.cave.pipeline.Node;
+import com.lomekwi.cave.pipeline.NodeGraph;
 import com.lomekwi.cave.pipeline.Source;
 import com.lomekwi.cave.pipeline.num.NumFrame;
+import com.lomekwi.cave.ui.node.NodeGraphPortEditor;
 import com.lomekwi.cave.ui.node.NumOutputRow;
 import com.lomekwi.cave.ui.node.NumPortEditor;
 import com.lomekwi.cave.ui.node.TextPortEditor;
@@ -14,14 +16,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Inspector 卡片的 widget 注册表：只维护 类型 → widget 工厂 的映射与按类型匹配。
- * 每个输入 widget 本身就是 Actor（直接持有端口模型，如 {@link NumPortEditor}、
- * {@link TextPortEditor}），输出行亦然（{@link NumOutputRow}）。注册表本身与端口无关，
- * 其他视图类型也可以注册自己的条目；需要支持新的类型时在这里注册一行即可，
- * 无需改动 {@link SourceActor} / {@link FilterActor}。
- * <p>
- * 端口条目的匹配依据是输入端口的约束集合（{@link Node.InPort#getConstraint()}，
- * 交叉类型语义）与输出端口声明的类型，而不是端口的具体实现类。
+ * 输入端口默认值编辑器和输出端口显示行的 widget 注册表
  */
 public final class CardWidgetsRegistry {
     private CardWidgetsRegistry() {
@@ -39,6 +34,7 @@ public final class CardWidgetsRegistry {
     static {
         registerIn(NumFrame.class, NumPortEditor::new);
         registerIn(String.class, TextPortEditor::new);
+        registerIn(NodeGraph.class, NodeGraphPortEditor::new);
         registerOut(NumFrame.class, NumOutputRow::new);
     }
 

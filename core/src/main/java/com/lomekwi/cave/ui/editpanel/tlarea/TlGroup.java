@@ -701,18 +701,14 @@ public class TlGroup extends Group implements Focusable {
     class TimelineRenderer {
         final ShapeDrawer shapeDrawer = App.root.getShapeDrawer();
         private static final float PIXELS_PER_TICK = 200f;
-        private static final Color background = new Color(0.08f, 0.08f, 0.08f, 1f);
-        private static final Color contentArea = new Color(1f,1f,1f, 0.05f);
-        private static final Color trackBand   = new Color(1f,1f,1f, 0.03f);
-        private static final Color tickLine = new Color(1f,1f,1f, 0.06f);
 
         void drawBackground() {
-            shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), background);
+            shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Colors.TIMELINE_BG);
 
             final float startX = absoluteTimeToX(0);
             final float endX = absoluteTimeToX(timeline.getLength());
 
-            shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), contentArea);
+            shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Colors.TIMELINE_OVERLAY);
         }
 
         void drawTicks() {
@@ -721,7 +717,7 @@ public class TlGroup extends Group implements Focusable {
 
             for (long t = start; t < view.startTime + view.durationTime; t += interval) {
                 float x = absoluteTimeToX(t);
-                shapeDrawer.filledRectangle(x, 0, 1, getHeight(), tickLine);
+                shapeDrawer.filledRectangle(x, 0, 1, getHeight(), Colors.TIMELINE_OVERLAY);
             }
         }
 
@@ -730,7 +726,7 @@ public class TlGroup extends Group implements Focusable {
             for (int i = 0; ; i += 2) {
                 final float y = top - i * view.trackHeight;
                 if (y <= -view.trackHeight) break;
-                shapeDrawer.filledRectangle(0, y - view.trackHeight, getWidth(), view.trackHeight, trackBand);
+                shapeDrawer.filledRectangle(0, y - view.trackHeight, getWidth(), view.trackHeight, Colors.TIMELINE_OVERLAY);
             }
         }
 

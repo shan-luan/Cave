@@ -19,7 +19,7 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
  * NumFrame 输入端口编辑 widget：Spinner 行。直接持有端口模型，修改写默认值记 undo，
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
-public final class NumPortEditor extends VisTable {
+public final class NumPortEditor extends VisTable implements PortEditor {
     private final Node.InPort<?> port;
     private final SimpleFloatSpinnerModel model;
     private final Spinner spinner;
@@ -48,6 +48,11 @@ public final class NumPortEditor extends VisTable {
         defaults().left();
         add(new VisLabel(port.getName())).pad(2);
         add(spinner).width(90).pad(2);
+    }
+
+    @Override
+    public Node.InPort<?> getPort() {
+        return port;
     }
 
     @Override

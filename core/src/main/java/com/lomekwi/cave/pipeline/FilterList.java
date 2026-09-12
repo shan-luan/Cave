@@ -96,9 +96,6 @@ public class FilterList<T> extends AbstractSequentialList<Filter<? super T>> imp
         succ.prev = newEntry;
         size++;
 
-        // 挂载到所属源
-        filter.setSource((Source<?>) head);
-
         // 建立新连接 pred.out → filter.in → filter.out → succ.in
         connect(pred, newEntry);
         connect(newEntry, succ);
@@ -117,8 +114,6 @@ public class FilterList<T> extends AbstractSequentialList<Filter<? super T>> imp
         // 重连 pred.out → next.in
         connect(pred, next);
 
-        // 解除挂载
-        ((Filter<? super T>) entry.filter).setSource(null);
         entry.filter = null;
         entry.prev = null;
         entry.next = null;
@@ -195,13 +190,11 @@ public class FilterList<T> extends AbstractSequentialList<Filter<? super T>> imp
         // 替换：断开旧 filter 的连接，接入新 filter
         disconnect(entry.prev, entry);
         disconnect(entry, entry.next);
-        old.setSource(null);
         entry.filter = (Filter<? super Object>) filter;
-        filter.setSource((Source<?>) head);
         connect(entry.prev, entry);
         connect(entry, entry.next);
         old.getFilterIn().unlink();
-        old.getFilterOut().unlinkAll();
+        old.getFilterOut().unlink();
         return old;
     }
 
@@ -210,8 +203,7 @@ public class FilterList<T> extends AbstractSequentialList<Filter<? super T>> imp
         for (Entry x = headEntry.next; x != tailEntry; ) {
             Entry next = x.next;
             x.filter.getFilterIn().unlink();
-            x.filter.getFilterOut().unlinkAll();
-            x.filter.setSource(null);
+            x.filter.getFilterOut().unlink();
             x.filter = null;
             x.prev = null;
             x.next = null;

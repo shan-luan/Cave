@@ -451,7 +451,7 @@ public class UndoManager {
                                 float dRotation,
                                 boolean flipX, boolean flipY) {}
 
-    public record TransformNodeCommand(TransNode node, TransNodeState oldState, TransNodeState newState) implements UndoableCommand {
+    public record TransformNodeCommand(Source<?> source, TransNode node, TransNodeState oldState, TransNodeState newState) implements UndoableCommand {
         @Override
         public void undo() {
             applyState(oldState);
@@ -470,7 +470,6 @@ public class UndoManager {
             node.setDRotation(s.dRotation);
             node.flipX(s.flipX);
             node.flipY(s.flipY);
-            Source<?> source = node.getSource();
             if (source != null) postRefresh(source);
         }
     }

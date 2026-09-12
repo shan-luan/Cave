@@ -20,6 +20,7 @@ public class NodeRegistry {
 
     public NodeRegistry() {
         register(TransNode.class);
+        register(NodeGraphFilter.class);
     }
 
     public void register(Class<? extends Node> nodeClass) {
@@ -65,9 +66,8 @@ public class NodeRegistry {
 
     private static boolean isCompatible(Class<? extends Node> nodeClass, Class<?> frameType) {
         if (!Filter.class.isAssignableFrom(nodeClass)) return true; // 非 Filter 节点始终兼容
-        Class<?> raw = nodeClass;
         @SuppressWarnings("unchecked")
-        Class<? extends Filter<?>> asFilter = (Class<? extends Filter<?>>) raw.asSubclass((Class) Filter.class);
+        Class<? extends Filter<?>> asFilter = (Class<? extends Filter<?>>) nodeClass.asSubclass((Class) Filter.class);
         return targetTypeOf(asFilter).isAssignableFrom(frameType);
     }
 

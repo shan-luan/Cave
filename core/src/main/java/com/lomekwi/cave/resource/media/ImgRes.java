@@ -31,7 +31,6 @@ public class ImgRes extends MedRes implements Previewable, Showable {
 
     public ImgRes(String path) {
         super(path);
-        this.duration = 5L * SECOND;
     }
 
     @Override
@@ -51,7 +50,7 @@ public class ImgRes extends MedRes implements Previewable, Showable {
             unpackRowLength = idr.getUnpackRowLength();
             decoded = true;
         } catch (Exception e) {
-            // Will decode lazily on first get()
+            // 首次 get() 时才惰性解码
         }
     }
 

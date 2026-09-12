@@ -17,8 +17,10 @@ import java.util.Objects;
 /**
  * String 输入端口编辑 widget：VisTextArea 行。直接持有端口模型，修改写默认值并刷新预览。
  */
-public final class TextPortEditor extends VisTable {
+public final class TextPortEditor extends VisTable implements PortEditor {
+    private final Node.InPort<?> port;
     public TextPortEditor(Node.InPort<?> port, Source<?> source) {
+        this.port = port;
         String defaultValue = (String) port.getDefaultData();
         VisTextArea textArea = new VisTextArea(defaultValue == null ? "" : defaultValue);
         // 撑高 prefHeight，否则 X2 皮肤下 linesShowing 为 0，文字不会绘制
@@ -42,5 +44,10 @@ public final class TextPortEditor extends VisTable {
         defaults().left();
         add(new VisLabel(port.getName())).pad(2).left().row();
         add(textArea).growX().pad(2);
+    }
+
+    @Override
+    public Node.InPort<?> getPort() {
+        return port;
     }
 }

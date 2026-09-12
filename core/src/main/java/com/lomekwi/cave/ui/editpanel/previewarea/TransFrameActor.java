@@ -26,6 +26,7 @@ import com.lomekwi.cave.project.Project;
 import com.lomekwi.cave.timeline.Segment;
 import com.lomekwi.cave.timeline.UndoManager;
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent;
+import com.lomekwi.cave.ui.Colors;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.ArrayList;
@@ -141,7 +142,7 @@ public class TransFrameActor extends Actor implements Selectable {
                         final float newRotation = (float) node.getDRotation();
                         final boolean oldFlipX = gizmoFlipX, oldFlipY = gizmoFlipY;
                         final boolean newFlipX = node.flipX(), newFlipY = node.flipY();
-                        p.undoManager.record(new UndoManager.TransformNodeCommand(node,
+                        p.undoManager.record(new UndoManager.TransformNodeCommand(frame.getSource(), node,
                             new UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
                             new UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)));
                         p.projEventBus.post(RefreshRequestEvent.INSTANCE);
@@ -529,7 +530,7 @@ public class TransFrameActor extends Actor implements Selectable {
                 node.flipX(), node.flipY());
             if (!gizmoOldState.equals(newState)) {
                 p.undoManager.record(new UndoManager.TransformNodeCommand(
-                    node, gizmoOldState, newState));
+                    frame.getSource(), node, gizmoOldState, newState));
             }
             p.projEventBus.post(RefreshRequestEvent.INSTANCE);
         }
@@ -745,10 +746,6 @@ public class TransFrameActor extends Actor implements Selectable {
         }
 
         private static final float HANDLE_HIT_RADIUS = 18f;
-        private static final Color GIZMO_COLOR = new Color(1f, 1f, 1f, 0.9f);
-        private static final Color GIZMO_FILL = new Color(0.2f, 0.6f, 1f, 0.9f);
-        private static final Color ROTATE_COLOR = new Color(0.4f, 0.9f, 1f, 0.9f);
-        private static final Color SELECTED_COLOR = new Color(1, 1, 1, 0.8f);
 
         private Handle hoveredHandle;
 
@@ -855,29 +852,29 @@ public class TransFrameActor extends Actor implements Selectable {
             float handleHalf = 6f;
             float rotateRadius = 5f;
 
-            // selection border
+            // 选中边框
             Vector2 bl = localToStageCoordinates(tmp1.set(0, 0));
             Vector2 br = localToStageCoordinates(tmp2.set(w, 0));
             Vector2 tr = localToStageCoordinates(tmp3.set(w, h));
             Vector2 tl = localToStageCoordinates(dragStagePos.set(0, h));
-            sd.line(bl.x, bl.y, br.x, br.y, SELECTED_COLOR, 2f);
-            sd.line(br.x, br.y, tr.x, tr.y, SELECTED_COLOR, 2f);
-            sd.line(tr.x, tr.y, tl.x, tl.y, SELECTED_COLOR, 2f);
-            sd.line(tl.x, tl.y, bl.x, bl.y, SELECTED_COLOR, 2f);
+            sd.line(bl.x, bl.y, br.x, br.y, Colors.FRAME_OUTLINE, 2f);
+            sd.line(br.x, br.y, tr.x, tr.y, Colors.FRAME_OUTLINE, 2f);
+            sd.line(tr.x, tr.y, tl.x, tl.y, Colors.FRAME_OUTLINE, 2f);
+            sd.line(tl.x, tl.y, bl.x, bl.y, Colors.FRAME_OUTLINE, 2f);
 
-            // gizmo lines
+            // gizmo 线条
             Vector2 a = localToStageCoordinates(tmp1.set(0, 0));
             Vector2 b = localToStageCoordinates(tmp2.set(w, 0));
-            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            sd.line(a.x, a.y, b.x, b.y, Colors.FRAME_OUTLINE, lineWidth);
             a = localToStageCoordinates(tmp1.set(w, 0));
             b = localToStageCoordinates(tmp2.set(w, h));
-            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            sd.line(a.x, a.y, b.x, b.y, Colors.FRAME_OUTLINE, lineWidth);
             a = localToStageCoordinates(tmp1.set(w, h));
             b = localToStageCoordinates(tmp2.set(0, h));
-            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            sd.line(a.x, a.y, b.x, b.y, Colors.FRAME_OUTLINE, lineWidth);
             a = localToStageCoordinates(tmp1.set(0, h));
             b = localToStageCoordinates(tmp2.set(0, 0));
-            sd.line(a.x, a.y, b.x, b.y, GIZMO_COLOR, lineWidth);
+            sd.line(a.x, a.y, b.x, b.y, Colors.FRAME_OUTLINE, lineWidth);
             a = localToStageCoordinates(tmp1.set(hw, h));
             Vector2 refUp = localToStageCoordinates(tmp2.set(hw, h + 1f));
             float dirX = refUp.x - a.x;
@@ -886,10 +883,10 @@ public class TransFrameActor extends Actor implements Selectable {
             if (dirLen < 0.0001f) { dirX = 0; dirY = 1; dirLen = 1; }
             float stickX = a.x + dirX / dirLen * ROTATE_OFFSET_LOCAL;
             float stickY = a.y + dirY / dirLen * ROTATE_OFFSET_LOCAL;
-            sd.line(a.x, a.y, stickX, stickY, ROTATE_COLOR, lineWidth);
-            sd.filledCircle(stickX, stickY, rotateRadius, ROTATE_COLOR);
+            sd.line(a.x, a.y, stickX, stickY, Colors.ACCENT, lineWidth);
+            sd.filledCircle(stickX, stickY, rotateRadius, Colors.ACCENT);
 
-            // handles
+            // 控制点
             for (Handle handle : Handle.values()) {
                 if (handle == Handle.ROTATE) continue;
                 float hx = switch (handle) {
@@ -918,11 +915,11 @@ public class TransFrameActor extends Actor implements Selectable {
                 float sx = hp.x;
                 float sy = hp.y;
                 Color fill = (activeHandle == handle || hoveredHandle == handle)
-                    ? GIZMO_COLOR : GIZMO_FILL;
+                    ? Colors.FRAME_OUTLINE : Colors.ACCENT;
                 sd.filledRectangle(sx - handleHalf, sy - handleHalf,
                     handleHalf * 2, handleHalf * 2, fill);
                 sd.rectangle(sx - handleHalf, sy - handleHalf,
-                    handleHalf * 2, handleHalf * 2, GIZMO_COLOR, 1f);
+                    handleHalf * 2, handleHalf * 2, Colors.FRAME_OUTLINE, 1f);
             }
         }
     }

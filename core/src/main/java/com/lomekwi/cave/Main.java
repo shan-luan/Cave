@@ -29,7 +29,7 @@ import com.lomekwi.cave.app.AppAudioOut;
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
 
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/** 各平台共用的 {@link com.badlogic.gdx.ApplicationListener} 实现。 */
 public class Main extends ApplicationAdapter {
     private Root ui;
     private boolean backgrounded;

@@ -1,6 +1,5 @@
 package com.lomekwi.cave.ui.node;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -8,14 +7,19 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 import com.lomekwi.cave.app.App;
+import com.lomekwi.cave.pipeline.NodeGraph;
+import com.lomekwi.cave.ui.Colors;
 import com.lomekwi.cave.ui.Focusable;
 import com.lomekwi.cave.ui.widget.PanZoomCanvas;
 
+//TODO:WIP
 public class NodeEditorView extends VisTable implements Focusable {
+    private final NodeGraph nodeGraph;
     private final PanZoomCanvas panZoom = new PanZoomCanvas(0.1f, 4f, 1000f);
     private final Group canvas = panZoom.getCanvas();
 
-    public NodeEditorView() {
+    public NodeEditorView(NodeGraph nodeGraph) {
+        this.nodeGraph = nodeGraph;
         setFillParent(true);
         add(panZoom).grow();
         setupListener();
@@ -45,15 +49,13 @@ public class NodeEditorView extends VisTable implements Focusable {
         });
     }
 
-    private static final Color BG = new Color(0.15f, 0.15f, 0.15f, 1f);
-    private static final Color GRID = new Color(0.28f, 0.28f, 0.28f, 1f);
     private static final float GRID_SPACING = 50f;
     private static final float MIN_GRID_PIXEL = 8f;
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         var drawer = App.root.getShapeDrawer();
-        drawer.filledRectangle(getX(), getY(), getWidth(), getHeight(), BG);
+        drawer.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.NODE_BG);
         drawGrid(drawer);
         super.draw(batch, parentAlpha);
     }
@@ -70,12 +72,12 @@ public class NodeEditorView extends VisTable implements Focusable {
 
         float startX = (float) Math.ceil((x0 - ox) / spacing) * spacing;
         for (float x = ox + startX; x <= x1; x += spacing) {
-            drawer.line(x, y0, x, y1, GRID, 1);
+            drawer.line(x, y0, x, y1, Colors.NODE_GRID, 1);
         }
 
         float startY = (float) Math.ceil((y0 - oy) / spacing) * spacing;
         for (float y = oy + startY; y <= y1; y += spacing) {
-            drawer.line(x0, y, x1, y, GRID, 1);
+            drawer.line(x0, y, x1, y, Colors.NODE_GRID, 1);
         }
     }
 }

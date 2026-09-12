@@ -72,6 +72,8 @@ public final class FilterActor extends Card {
             }
         });
         for (Node.InPort<?> in : filter.getInPorts()) {
+            // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
+            if (in == filter.getFilterIn()) continue;
             Actor widget = CardWidgetsRegistry.createEditor(in, source);
             if (widget == null) continue; // 未注册该端口类型的 widget，不显示
             add(widget).growX().pad(2).row();

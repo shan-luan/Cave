@@ -17,8 +17,8 @@ public final class Units {
     public static final long DAY = 24 * HOUR;
 
     /**
-     * Nice Scale algorithm: rounds a raw interval value to the nearest "nice" number
-     * (1, 2, or 5 × 10^n), suitable for axis tick spacing.
+     * Nice Scale 算法：把原始区间值舍入到最近的"整齐"数（1、2 或 5 × 10^n），
+     * 适合作为坐标轴刻度间距。
      */
     public static long niceScale(long raw) {
         double mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -29,8 +29,7 @@ public final class Units {
     }
 
     /**
-     * Float version of niceScale: rounds a raw interval to the nearest "nice" number
-     * (1, 2, 5, 10 × 10^n).
+     * niceScale 的浮点版本：把原始区间舍入到最近的"整齐"数（1、2、5、10 × 10^n）。
      */
     public static float niceInterval(float raw) {
         float mag = (float) Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-10f))));

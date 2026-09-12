@@ -47,7 +47,7 @@ public class TlGroupDropTarget extends DragAndDrop.Target {
             try (var h = tlGroup.timeline.record()) {
                 for (Segment seg : segments) {
                     seg.setOrigin(startTime);
-                    long duration = seg.getDuration();
+                    long duration = seg.getSource().getDefaultSegmentDuration();
                     if (duration <= 0) continue;
                     int targetTrack = baseTrack + trackOffset;
                     var range = Range.closedOpen(startTime, startTime + duration);
