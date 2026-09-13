@@ -1,0 +1,70 @@
+package com.lomekwi.cave.ui.editpanel.tlarea
+
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
+
+import com.google.common.collect.Range
+
+import com.lomekwi.cave.app.App
+import com.lomekwi.cave.util.MimeType
+import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.SegmentGroup
+
+import java.io.File
+import java.io.IOException
+import java.util.ArrayList
+import java.util.List
+import java.util.Set
+
+import scala.util.Using
+import scala.jdk.CollectionConverters.*
+
+/** 时间线拖放目标 —— 接收拖入的文件并落地为片段。 */
+class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.Target(tlGroup) {
+
+  override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
+    payload.getObject() match {
+      case file: File =>
+        val mimeType = MimeType.detectMimeType(file)
+        App.mediaFactory.isSupported(mimeType)
+      case _ => false
+    }
+  }
+
+  override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
+    try {
+      val file: File = payload.getObject().asInstanceOf[File]
+      val segments: List[Segment] = tlGroup.project.mediaSegFactory.getAll(file)
+      val startTime: Long = tlGroup.xToAbsoluteTime(x)
+      val baseTrack: Int = tlGroup.yToTrackIndex(y)
+      var trackOffset: Int = 0
+      val added: List[Segment] = new ArrayList[Segment]()
+      Using.resource(tlGroup.timeline.record()) { h =>
+        for (seg <- segments.asScala) {
+          seg.setOrigin(startTime)
+          val duration: Long = seg.getSource().getDefaultSegmentDuration()
+          if (duration > 0) {
+            var targetTrack: Int = baseTrack + trackOffset
+            val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(startTime), java.lang.Long.valueOf(startTime + duration))
+            while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
+              targetTrack += 1
+            }
+            tlGroup.timeline.tryAdd(tlGroup.timeline.getTrack(targetTrack), seg, range)
+            trackOffset = targetTrack - baseTrack + 1
+            added.add(seg)
+          }
+        }
+      }
+      if (added.size() >= 2) {
+        val group = new SegmentGroup()
+        for (seg <- added.asScala) {
+          group.add(seg)
+        }
+      }
+      tlGroup.dirty = true
+    } catch {
+      case e: IOException =>
+        Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage())
+    }
+  }
+}

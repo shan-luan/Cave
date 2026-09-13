@@ -6,6 +6,11 @@ buildscript {
   }
 }
 apply plugin: 'com.android.application'
+apply plugin: 'scala-base'
+
+scala {
+  scalaVersion = "$scala3Version"
+}
 
 
 android {
@@ -74,6 +79,7 @@ dependencies {
   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
   implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
   implementation project(':core')
+  implementation "org.scala-lang:scala3-library_3:$scala3Version"
 
   natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
   natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
@@ -84,6 +90,36 @@ dependencies {
   implementation "org.bytedeco:ffmpeg:$ffmpegVersion:android-x86_64-gpl"
 
   implementation "games.spooky.gdx:gdx-nativefilechooser-android:$gdxNativefilechooserVersion"
+}
+
+// AGP 不认识 Scala 源集，因此独立编译 Scala 源码，再以 runtimeOnly 依赖加入 dex。
+def compileAndroidScala = tasks.register('compileAndroidScala', ScalaCompile) {
+  source = fileTree('src/main/scala')
+  def aarClasses = configurations.debugCompileClasspath.incoming.artifactView {
+    attributes { attribute(Attribute.of('artifactType', String), 'android-classes-jar') }
+  }.files
+  def plainClasspath = configurations.debugCompileClasspath.filter { f -> !f.name.endsWith('.aar') }
+  classpath = files(android.bootClasspath) + aarClasses + plainClasspath
+  destinationDirectory = layout.buildDirectory.dir('scala/classes')
+  scalaClasspath = configurations.scalaToolchainRuntimeClasspath
+  sourceCompatibility = '17'
+  targetCompatibility = '17'
+  scalaCompileOptions.incrementalOptions.analysisFile = layout.buildDirectory.file('scala/analysis')
+  scalaCompileOptions.incrementalOptions.classfileBackupDir = layout.buildDirectory.file('scala/backup')
+  scalaCompileOptions.incrementalOptions.publishedCode = layout.buildDirectory.file('scala/published.jar')
+  analysisMappingFile = layout.buildDirectory.file('scala/analysis-mapping')
+  javaLauncher = project.extensions.getByType(JavaToolchainService).launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+  options.encoding = 'UTF-8'
+}
+
+def androidScalaJar = tasks.register('androidScalaJar', Jar) {
+  from(compileAndroidScala)
+  archiveClassifier = 'scala'
+}
+
+afterEvaluate {
+  dependencies.add('debugRuntimeOnly', files(androidScalaJar))
+  dependencies.add('releaseRuntimeOnly', files(androidScalaJar))
 }
 
 // Called every time gradle gets executed, takes the native dependencies of
