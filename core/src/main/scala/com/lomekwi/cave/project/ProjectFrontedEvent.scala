@@ -1,7 +1,5 @@
 package com.lomekwi.cave.project
 
-class ProjectFrontedEvent private()
+sealed trait ProjectFrontedEvent
 
-object ProjectFrontedEvent {
-  final val INSTANCE: ProjectFrontedEvent = new ProjectFrontedEvent()
-}
+case object ProjectFrontedEvent extends ProjectFrontedEvent

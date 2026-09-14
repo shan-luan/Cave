@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Group
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
@@ -118,21 +117,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   //TODO:减少对象分配开销
   def clearFrames(idx: Int): Unit = {
-    Gdx.app.postRunnable(new Runnable {
-      override def run(): Unit = {
-        // 边界检查
-        if (idx < 0 || idx >= frames.size()) {
-          return
-        }
-        val frame = frames.get(idx)
-        if (frame == null) {
-          return
-        }
-        val actor = PreviewArea.getFrameActor(frame)
-        if (actor == null) {
-          return
-        }
-        // 所有条件满足，执行清理
+    Gdx.app.postRunnable(() => {
+      val inBounds = idx >= 0 && idx < frames.size()
+      val frame = if (inBounds) frames.get(idx) else null
+      val actor = if (frame != null) PreviewArea.getFrameActor(frame) else null
+      if (actor != null) {
         frames.set(idx, null)
         canvas.removeActor(actor)
       }
@@ -183,11 +172,8 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def drawSnapGuides(): Unit = {
     val drawer = App.root.getShapeDrawer()
-    val it = canvas.getChildren.iterator()
-    while (it.hasNext) {
-      val child: Actor = it.next()
-      if (child.isInstanceOf[TransFrameActor]) {
-        val tfa = child.asInstanceOf[TransFrameActor]
+    canvas.getChildren.asScala.foreach {
+      case tfa: TransFrameActor =>
         val lx = tfa.getSnapLineX()
         val ly = tfa.getSnapLineY()
         if (!(java.lang.Float.isNaN(lx) && java.lang.Float.isNaN(ly))) {
@@ -202,7 +188,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
             drawer.line(getX, PreviewArea.guidePos.y, getX + getWidth, PreviewArea.guidePos.y, Colors.SNAP_GUIDE, 2f)
           }
         }
-      }
+      case _ =>
     }
   }
 

@@ -92,7 +92,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
 
 
   override def close(): Unit = {
-    projEventBus.post(ProjectBackgroundedEvent.INSTANCE)
+    projEventBus.post(ProjectBackgroundedEvent)
     App.appEventBus.unregister(this)
     isActive = false
     stopTrackLoops()

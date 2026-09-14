@@ -11,6 +11,8 @@ import com.lomekwi.cave.util.Duplicatable
 import java.io.{ObjectInputStream, Serializable}
 import java.util.Iterator
 
+import scala.jdk.CollectionConverters.*
+
 @SerialVersionUID(1L)
 class Segment(private val source: Source[?]) extends Serializable with java.lang.Iterable[Frame] with Duplicatable[Segment] with Selectable with Copyable with Comparable[Segment] {
   protected[timeline] def sourceAccessor(): Source[?] = {
@@ -155,19 +157,13 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     segment.source.onDuplicate(source)
     segment
   }
-  /**
-   * @author shan_luan_
-   */
   def next(): Segment = {
     val track = requireTrack()
     val range = requireRange()
-    val e = track.getSubRangeMapAsEntrySet(Range.atLeast(range.upperEndpoint()))
-    val it = e.iterator()
-    while (it.hasNext) {
-      val next = it.next()
-      return next.getValue
-    }
-    null
+    track.getSubRangeMapAsEntrySet(Range.atLeast(range.upperEndpoint()))
+      .asScala
+      .collectFirst { case entry => entry.getValue }
+      .orNull
   }
 
   /**
@@ -183,7 +179,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     if (next != null) {
       next.requireRange()
     } else {
-      Range.singleton(java.lang.Long.valueOf(Long.MaxValue))
+      Range.singleton(Long.MaxValue)
     }
   }
   def prevRange(): Range[java.lang.Long] = {
@@ -191,7 +187,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     if (prev != null) {
       prev.requireRange()
     } else {
-      Range.singleton(java.lang.Long.valueOf(0L))
+      Range.singleton(0L)
     }
   }
 

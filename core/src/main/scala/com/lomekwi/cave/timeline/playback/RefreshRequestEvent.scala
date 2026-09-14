@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline.playback
 
-class RefreshRequestEvent private()
+sealed trait RefreshRequestEvent
 
-object RefreshRequestEvent {
-  final val INSTANCE: RefreshRequestEvent = new RefreshRequestEvent()
-}
+case object RefreshRequestEvent extends RefreshRequestEvent

@@ -142,7 +142,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
           p.undoManager.record(new UndoManager.TransformNodeCommand(frame.getSource(), node,
             new UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
             new UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)))
-          p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+          p.projEventBus.post(RefreshRequestEvent)
         }
       }
       if (dragModifier != null && !dragging && !gizmoDragging) {
@@ -516,7 +516,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         p.undoManager.record(new UndoManager.TransformNodeCommand(
           frame.getSource(), node, gizmoOldState, newState))
       }
-      p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+      p.projEventBus.post(RefreshRequestEvent)
     }
     gizmoDragging = false
     gizmoHandle = null
@@ -547,14 +547,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val source = frame.getSource()
     if (source != null) {
       val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
-      val it = filters.iterator()
-      while (it.hasNext) {
-        val f = it.next()
-        f match {
-          case node: TransNode =>
-            applyTransNode(node)
-          case _ =>
-        }
+      filters.asScala.foreach {
+        case node: TransNode => applyTransNode(node)
+        case _ =>
       }
     }
   }
@@ -576,22 +571,12 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val source = frame.getSource()
     if (source != null) {
       val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
-      var i = 0
-      var running = true
-      while (i < filters.size() && running) {
-        val f = filters.get(i)
-        if (f eq dragModifier) {
-          running = false
-        } else {
-          f match {
-            case tf: TransNode =>
-              t.applyLocal(tf.getDx().toFloat, tf.getDy().toFloat,
-                tf.getScaleX().toFloat, tf.getScaleY().toFloat,
-                tf.getDRotation().toFloat, tf.flipX(), tf.flipY())
-            case _ =>
-          }
-          i += 1
-        }
+      filters.asScala.takeWhile(f => !(f eq dragModifier)).foreach {
+        case tf: TransNode =>
+          t.applyLocal(tf.getDx().toFloat, tf.getDy().toFloat,
+            tf.getScaleX().toFloat, tf.getScaleY().toFloat,
+            tf.getDRotation().toFloat, tf.flipX(), tf.flipY())
+        case _ =>
       }
     }
     dragScaleX = t.getScaleX()
@@ -611,14 +596,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val p = getParent
     if (p.isInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]) {
       val g = p.asInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]
-      val it = g.getChildren.iterator()
-      while (it.hasNext) {
-        val child: Actor = it.next()
-        child match {
-          case other: TransFrameActor if child ne this =>
-            siblingBBoxes.add(other.computeCanvasBBox())
-          case _ =>
-        }
+      g.getChildren.asScala.foreach {
+        case other: TransFrameActor if other ne this =>
+          siblingBBoxes.add(other.computeCanvasBBox())
+        case _ =>
       }
     }
     val set = ExportOptionsSet.load()
@@ -1041,17 +1022,10 @@ object TransFrameActor {
 
   private def findOrCreateTransNode(source: Source[?]): TransNode = {
     val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
-    var i = filters.size() - 1
-    while (i >= 0) {
-      val f = filters.get(i)
-      f match {
-        case tf: TransNode => return tf
-        case _ =>
-      }
-      i -= 1
+    filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.getOrElse {
+      val tf = new TransNode(0, 0, 1, 1, 0)
+      source.asInstanceOf[Source[Frame]].attach(tf.asInstanceOf[Filter[? >: Frame]])
+      tf
     }
-    val tf = new TransNode(0, 0, 1, 1, 0)
-    source.asInstanceOf[Source[Frame]].attach(tf.asInstanceOf[Filter[? >: Frame]])
-    tf
   }
 }

@@ -56,7 +56,7 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
         throw new IOException("无法检测文件MIME类型: " + file.getName)
       }
 
-      for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath).asScala) {
+      for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {
         project.resources.put(file, medRes)
         project.projEventBus.post(new MediaCreatedEvent(file, medRes))
       }

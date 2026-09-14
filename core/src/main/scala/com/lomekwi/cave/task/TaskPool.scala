@@ -16,19 +16,17 @@ class TaskPool extends java.lang.Iterable[Task] {
 
   def submit(task: Task): Unit = {
     tasks.add(task)
-    App.workerExecutor.submit(new Runnable {
-      override def run(): Unit = {
-        try {
-          Using.resource(task) { t =>
-            t.run()
-          }
-        } catch {
-          case e: Exception =>
-            // FIXME:ignore
+    App.workerExecutor.execute(() => {
+      try {
+        Using.resource(task) { t =>
+          t.run()
         }
-        tasks.remove(task)
-        Gdx.app.postRunnable(() => App.root.getToastManager().show(i18n("任务") + task.getName() + i18n("已完成")))
+      } catch {
+        case e: Exception =>
+          // FIXME:ignore
       }
+      tasks.remove(task)
+      Gdx.app.postRunnable(() => App.root.getToastManager().show(i18n("任务") + task.getName() + i18n("已完成")))
     })
   }
 

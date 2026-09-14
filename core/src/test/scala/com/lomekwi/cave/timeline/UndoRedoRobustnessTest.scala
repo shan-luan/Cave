@@ -125,7 +125,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(UndoRedoRobustnessTest.SPAN - duration + 1)
-      val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(start), java.lang.Long.valueOf(start + duration))
+      val range: Range[java.lang.Long] = Range.closedOpen(start, start + duration)
       var free = true
       val it = occupied.iterator()
       while (it.hasNext && free) {
@@ -256,7 +256,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     var attempt = 0
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, UndoRedoRobustnessTest.SPAN - duration))
-      val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(start), java.lang.Long.valueOf(start + duration))
+      val range: Range[java.lang.Long] = Range.closedOpen(start, start + duration)
       if (track.isFree(range, Set.of[Segment]())) {
         val seg = new Segment(new TestSource(duration))
         seg.setOrigin(rnd.nextLong(UndoRedoRobustnessTest.SPAN))

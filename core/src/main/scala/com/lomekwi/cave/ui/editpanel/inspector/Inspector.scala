@@ -108,8 +108,7 @@ class Inspector extends VisTable {
     val addBtn = new VisTextButton(i18n("+添加滤镜"))
     val filterMenu = new PopupMenu()
     val compatibleCount = App.nodeRegistry.getCompatibleCount(source)
-    var fi = 0
-    while (fi < compatibleCount) {
+    for (fi <- 0 until compatibleCount) {
       val idx = fi
       val created: Node = App.nodeRegistry.createCompatible(source, idx)
       filterMenu.addItem(new MenuItem(created.getName(), new ChangeListener {
@@ -120,7 +119,6 @@ class Inspector extends VisTable {
           rebuildContent()
         }
       }))
-      fi += 1
     }
     addBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor): Unit = {

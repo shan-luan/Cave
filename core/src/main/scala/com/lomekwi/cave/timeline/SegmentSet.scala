@@ -60,39 +60,27 @@ class SegmentSet extends AbstractCollection[Segment] with Serializable with Sele
   }
 
   override def copy(): Copyable = {
-    var commonGroup: SegmentGroup = null
-    var stopped = false
-    for (seg <- segments.asScala if !stopped) {
-      val g = seg.getGroup()
-      if (g == null) {
-        commonGroup = null
-        stopped = true
-      } else if (commonGroup == null) {
-        commonGroup = g
-      } else if (!g.eq(commonGroup)) {
-        commonGroup = null
-        stopped = true
-      }
-    }
-    if (commonGroup != null) {
-      return commonGroup.copy()
-    }
-    val set = new SegmentSet()
-    val groupCopies: Map[SegmentGroup, SegmentGroup] = new HashMap[SegmentGroup, SegmentGroup]()
-    for (seg <- segments.asScala) {
-      val dup = seg.duplicate()
-      dup.setTrack(seg.getTrack())
-      val g = seg.getGroup()
-      if (g != null) {
-        var copyG = groupCopies.get(g)
-        if (copyG == null) {
-          copyG = new SegmentGroup()
-          groupCopies.put(g, copyG)
+    val groups = segments.asScala.toSeq.map(seg => Option(seg.getGroup()))
+    val commonGroup = groups.headOption.flatten.filter(g => groups.forall(_.contains(g)))
+
+    commonGroup.map(g => g.copy()).getOrElse {
+      val set = new SegmentSet()
+      val groupCopies: Map[SegmentGroup, SegmentGroup] = new HashMap[SegmentGroup, SegmentGroup]()
+      for (seg <- segments.asScala) {
+        val dup = seg.duplicate()
+        dup.setTrack(seg.getTrack())
+        val g = seg.getGroup()
+        if (g != null) {
+          var copyG = groupCopies.get(g)
+          if (copyG == null) {
+            copyG = new SegmentGroup()
+            groupCopies.put(g, copyG)
+          }
+          copyG.add(dup)
         }
-        copyG.add(dup)
+        set.add(dup)
       }
-      set.add(dup)
+      set
     }
-    set
   }
 }

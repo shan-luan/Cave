@@ -1,7 +1,5 @@
 package com.lomekwi.cave.project
 
-class ProjectBackgroundedEvent private()
+sealed trait ProjectBackgroundedEvent
 
-object ProjectBackgroundedEvent {
-  final val INSTANCE: ProjectBackgroundedEvent = new ProjectBackgroundedEvent()
-}
+case object ProjectBackgroundedEvent extends ProjectBackgroundedEvent

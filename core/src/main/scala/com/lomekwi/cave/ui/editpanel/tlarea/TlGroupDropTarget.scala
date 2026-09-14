@@ -45,7 +45,7 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
           val duration: Long = seg.getSource().getDefaultSegmentDuration()
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
-            val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(startTime), java.lang.Long.valueOf(startTime + duration))
+            val range: Range[java.lang.Long] = Range.closedOpen(startTime, startTime + duration)
             while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
               targetTrack += 1
             }

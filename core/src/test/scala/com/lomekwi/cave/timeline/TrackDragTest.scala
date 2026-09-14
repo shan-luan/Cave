@@ -515,6 +515,6 @@ class TrackDragTest extends GdxTestBase {
 
 object TrackDragTest {
   private def rng(lo: Long, hi: Long): Range[java.lang.Long] = {
-    Range.closedOpen(java.lang.Long.valueOf(lo), java.lang.Long.valueOf(hi))
+    Range.closedOpen(lo, hi)
   }
 }

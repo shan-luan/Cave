@@ -5,47 +5,42 @@ import com.lomekwi.cave.util.i18n.I18N.i18n
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.HashMap
-import java.util.Map
 
 object MimeType {
 
-  private final val extensionToMimeType: Map[String, String] = new HashMap[String, String]()
-
-  // 视频格式
-  extensionToMimeType.put("mkv", "video/x-matroska")
-  extensionToMimeType.put("mp4", "video/mp4")
-  extensionToMimeType.put("avi", "video/x-msvideo")
-  extensionToMimeType.put("mov", "video/quicktime")
-  extensionToMimeType.put("wmv", "video/x-ms-wmv")
-  extensionToMimeType.put("flv", "video/x-flv")
-  extensionToMimeType.put("webm", "video/webm")
-  extensionToMimeType.put("m4v", "video/x-m4v")
-  extensionToMimeType.put("mpeg", "video/mpeg")
-  extensionToMimeType.put("mpg", "video/mpeg")
-  extensionToMimeType.put("3gp", "video/3gpp")
-
-  // 图片格式
-  extensionToMimeType.put("png", "image/png")
-  extensionToMimeType.put("jpg", "image/jpeg")
-  extensionToMimeType.put("jpeg", "image/jpeg")
-  extensionToMimeType.put("gif", "image/gif")
-  extensionToMimeType.put("bmp", "image/bmp")
-  extensionToMimeType.put("webp", "image/webp")
-  extensionToMimeType.put("tiff", "image/tiff")
-  extensionToMimeType.put("tif", "image/tiff")
-
-  // 音频格式
-  extensionToMimeType.put("mp3", "audio/mpeg")
-  extensionToMimeType.put("wav", "audio/wav")
-  extensionToMimeType.put("flac", "audio/flac")
-  extensionToMimeType.put("aac", "audio/aac")
-  extensionToMimeType.put("ogg", "audio/ogg")
-  extensionToMimeType.put("wma", "audio/x-ms-wma")
-  extensionToMimeType.put("m4a", "audio/x-m4a")
-
-  // Cave 项目文件
-  extensionToMimeType.put("cave", "application/x-cave-project")
+  private final val extensionToMimeType: Map[String, String] = Map(
+    // 视频格式
+    "mkv" -> "video/x-matroska",
+    "mp4" -> "video/mp4",
+    "avi" -> "video/x-msvideo",
+    "mov" -> "video/quicktime",
+    "wmv" -> "video/x-ms-wmv",
+    "flv" -> "video/x-flv",
+    "webm" -> "video/webm",
+    "m4v" -> "video/x-m4v",
+    "mpeg" -> "video/mpeg",
+    "mpg" -> "video/mpeg",
+    "3gp" -> "video/3gpp",
+    // 图片格式
+    "png" -> "image/png",
+    "jpg" -> "image/jpeg",
+    "jpeg" -> "image/jpeg",
+    "gif" -> "image/gif",
+    "bmp" -> "image/bmp",
+    "webp" -> "image/webp",
+    "tiff" -> "image/tiff",
+    "tif" -> "image/tiff",
+    // 音频格式
+    "mp3" -> "audio/mpeg",
+    "wav" -> "audio/wav",
+    "flac" -> "audio/flac",
+    "aac" -> "audio/aac",
+    "ogg" -> "audio/ogg",
+    "wma" -> "audio/x-ms-wma",
+    "m4a" -> "audio/x-m4a",
+    // Cave 项目文件
+    "cave" -> "application/x-cave-project"
+  )
 
   /**
    * 检测文件的MIME类型，优先使用系统检测，失败时使用扩展名匹配
@@ -75,10 +70,7 @@ object MimeType {
     val lastDotIndex = fileName.lastIndexOf('.')
     if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
       val extension = fileName.substring(lastDotIndex + 1)
-      val mimeType = extensionToMimeType.get(extension)
-      if (mimeType != null) {
-        return mimeType
-      }
+      return extensionToMimeType.getOrElse(extension, null)
     }
 
     null
@@ -90,16 +82,7 @@ object MimeType {
    * @return type/{@code *}形式，如 "video/{@code *}"
    */
   def getTypeWildcard(mimeType: String): String = {
-    if (mimeType == null || mimeType.isEmpty) {
-      throw new IllegalArgumentException(i18n("MIME类型不能为空"))
-    }
-
-    val slashIndex = mimeType.indexOf('/')
-    if (slashIndex == -1) {
-      throw new IllegalArgumentException(i18n("无效的MIME类型格式: ") + mimeType)
-    }
-
-    mimeType.substring(0, slashIndex) + "/*"
+    mimeType.substring(0, slashIndex(mimeType)) + "/*"
   }
 
   /**
@@ -108,16 +91,7 @@ object MimeType {
    * @return {@code *}/subtype形式，如 "{@code *}/mp4"
    */
   def getSubtypeWildcard(mimeType: String): String = {
-    if (mimeType == null || mimeType.isEmpty) {
-      throw new IllegalArgumentException(i18n("MIME类型不能为空"))
-    }
-
-    val slashIndex = mimeType.indexOf('/')
-    if (slashIndex == -1) {
-      throw new IllegalArgumentException(i18n("无效的MIME类型格式: ") + mimeType)
-    }
-
-    "*/" + mimeType.substring(slashIndex + 1)
+    "*/" + mimeType.substring(slashIndex(mimeType) + 1)
   }
 
   /**
@@ -126,5 +100,16 @@ object MimeType {
    */
   def getAllWildcard(): String = {
     "*/*"
+  }
+
+  private def slashIndex(mimeType: String): Int = {
+    if (mimeType == null || mimeType.isEmpty) {
+      throw new IllegalArgumentException(i18n("MIME类型不能为空"))
+    }
+    val index = mimeType.indexOf('/')
+    if (index == -1) {
+      throw new IllegalArgumentException(i18n("无效的MIME类型格式: ") + mimeType)
+    }
+    index
   }
 }

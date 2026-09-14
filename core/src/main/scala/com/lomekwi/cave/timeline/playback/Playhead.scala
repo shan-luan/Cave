@@ -18,7 +18,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
     }
 
     this.playing = playing
-    projEventBus.post(PlayStateChangedEvent.INSTANCE)
+    projEventBus.post(PlayStateChangedEvent)
   }
 
   def isPlaying(): Boolean = playing
@@ -33,7 +33,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
       frozenTime = t
     }
 
-    projEventBus.post(SeekEvent.INSTANCE)
+    projEventBus.post(SeekEvent)
   }
 
   def getTime(): Long = getNanoTime() / 1000

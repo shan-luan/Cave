@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util.{HashSet, Set}
+import java.util.Set
 
 import scala.jdk.CollectionConverters.*
 
@@ -56,12 +56,7 @@ abstract class Filter[T] extends Node with Serializable {
 
     override def getConstraint(): Set[Class[?]] = {
       if (getFilterOut().isLinked()) {
-        val c: Set[Class[?]] = new HashSet[Class[?]]()
-        for (nextIn <- getFilterOut().getNext().asScala) {
-          c.addAll(nextIn.getConstraint())
-        }
-        c.add(Filter.this.getType())
-        c
+        (getFilterOut().getNext().asScala.flatMap(_.getConstraint().asScala) + Filter.this.getType()).asJava
       } else {
         Set.of(Filter.this.getType())
       }

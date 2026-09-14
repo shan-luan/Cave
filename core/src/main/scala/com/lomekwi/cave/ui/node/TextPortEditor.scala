@@ -33,7 +33,7 @@ final class TextPortEditor(port0: Node.InPort[?], source: Source[?]) extends Vis
         strPort.setDefaultData(newVal)
         val p: Project = App.root.getFrontendProject()
         if (p != null) {
-          p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+          p.projEventBus.post(RefreshRequestEvent)
         }
       }
     })

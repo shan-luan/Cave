@@ -93,9 +93,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         return texture
       }
       if (generating.compareAndSet(false, true)) {
-        App.workerExecutor.submit(new Runnable {
-          override def run(): Unit = generate()
-        })
+        App.workerExecutor.execute(() => generate())
       }
       null
     }
@@ -227,9 +225,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
     private def ensureWorker(): Unit = {
       if (workerRunning.compareAndSet(false, true)) {
-        App.workerExecutor.submit(new Runnable {
-          override def run(): Unit = processPendingSlots()
-        })
+        App.workerExecutor.execute(() => processPendingSlots())
       }
     }
 

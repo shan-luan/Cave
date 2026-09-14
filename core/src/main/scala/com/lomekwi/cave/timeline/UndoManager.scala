@@ -24,7 +24,7 @@ class UndoManager(@transient private val project: Project) {
     command.redo()
     push(command)
     if (wasDirty != project.isDirty()) {
-      project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE)
+      project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
@@ -33,7 +33,7 @@ class UndoManager(@transient private val project: Project) {
     project.currentVersion = project.currentVersion + 1
     push(command)
     if (wasDirty != project.isDirty()) {
-      project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE)
+      project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
@@ -72,7 +72,7 @@ class UndoManager(@transient private val project: Project) {
     command.undo()
     redoStack.push(command)
     if (wasDirty != project.isDirty()) {
-      project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE)
+      project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
@@ -84,7 +84,7 @@ class UndoManager(@transient private val project: Project) {
     command.redo()
     undoStack.push(command)
     if (wasDirty != project.isDirty()) {
-      project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE)
+      project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
@@ -182,18 +182,14 @@ object UndoManager {
     override def redo(): Unit = {
       track.remove(originalSeg)
       track.remove(newSeg)
-      track.`override`(originalSeg, Range.closedOpen(originalRange.lowerEndpoint(), java.lang.Long.valueOf(splitTime)))
-      track.`override`(newSeg, Range.closedOpen(java.lang.Long.valueOf(splitTime), originalRange.upperEndpoint()))
+      track.`override`(originalSeg, Range.closedOpen(originalRange.lowerEndpoint(), splitTime))
+      track.`override`(newSeg, Range.closedOpen(splitTime, originalRange.upperEndpoint()))
     }
   }
 
   class CompoundCommand(commands: UndoableCommand*) extends UndoableCommand {
     override def undo(): Unit = {
-      var i = commands.length - 1
-      while (i >= 0) {
-        commands(i).undo()
-        i -= 1
-      }
+      commands.reverseIterator.foreach(cmd => cmd.undo())
     }
 
     override def redo(): Unit = {
@@ -214,13 +210,10 @@ object UndoManager {
     private final val entries: List[MoveSegsCommand.MoveEntry] = new ArrayList[MoveSegsCommand.MoveEntry](entries0)
 
     override def undo(): Unit = {
-      var i = entries.size() - 1
-      while (i >= 0) {
-        val e = entries.get(i)
+      entries.asScala.reverseIterator.foreach { e =>
         e.toTrack.remove(e.segment)
         e.fromTrack.`override`(e.segment, e.oldRange)
         e.segment.offsetOrigin(e.oldRange.lowerEndpoint() - e.newRange.lowerEndpoint())
-        i -= 1
       }
     }
 
@@ -236,18 +229,14 @@ object UndoManager {
       other match {
         case o: MoveSegsCommand =>
           for (ne <- o.entries.asScala) {
-            var found = false
-            var i = 0
-            while (i < entries.size() && !found) {
-              val e = entries.get(i)
-              if (e.segment eq ne.segment) {
-                entries.set(i, MoveSegsCommand.MoveEntry(e.fromTrack, ne.toTrack, e.segment,
-                  e.oldRange, ne.newRange))
-                found = true
-              }
-              i += 1
+            val idx = entries.asScala.indexWhere(e => e.segment eq ne.segment)
+            if (idx < 0) {
+              entries.add(ne)
+            } else {
+              val e = entries.get(idx)
+              entries.set(idx, MoveSegsCommand.MoveEntry(e.fromTrack, ne.toTrack, e.segment,
+                e.oldRange, ne.newRange))
             }
-            if (!found) entries.add(ne)
           }
           true
         case _ =>
@@ -266,12 +255,9 @@ object UndoManager {
     private final val entries: List[ResizeSegsCommand.ResizeEntry] = new ArrayList[ResizeSegsCommand.ResizeEntry](entries0)
 
     override def undo(): Unit = {
-      var i = entries.size() - 1
-      while (i >= 0) {
-        val e = entries.get(i)
+      entries.asScala.reverseIterator.foreach { e =>
         e.track.remove(e.segment)
         e.track.`override`(e.segment, e.oldRange)
-        i -= 1
       }
     }
 
@@ -286,18 +272,14 @@ object UndoManager {
       other match {
         case o: ResizeSegsCommand =>
           for (ne <- o.entries.asScala) {
-            var found = false
-            var i = 0
-            while (i < entries.size() && !found) {
-              val e = entries.get(i)
-              if (e.segment eq ne.segment) {
-                entries.set(i, ResizeSegsCommand.ResizeEntry(e.track, e.segment,
-                  e.oldRange, ne.newRange))
-                found = true
-              }
-              i += 1
+            val idx = entries.asScala.indexWhere(e => e.segment eq ne.segment)
+            if (idx < 0) {
+              entries.add(ne)
+            } else {
+              val e = entries.get(idx)
+              entries.set(idx, ResizeSegsCommand.ResizeEntry(e.track, e.segment,
+                e.oldRange, ne.newRange))
             }
-            if (!found) entries.add(ne)
           }
           true
         case _ =>
@@ -316,12 +298,9 @@ object UndoManager {
     private final val entries: List[RemoveSegsCommand.RemoveEntry] = new ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
 
     override def undo(): Unit = {
-      var i = entries.size() - 1
-      while (i >= 0) {
-        val e = entries.get(i)
+      entries.asScala.reverseIterator.foreach { e =>
         e.track.`override`(e.segment, e.range)
         if (e.group != null) e.group.add(e.segment)
-        i -= 1
       }
     }
 
@@ -336,13 +315,7 @@ object UndoManager {
       other match {
         case o: RemoveSegsCommand =>
           for (ne <- o.entries.asScala) {
-            var exists = false
-            val it = entries.iterator()
-            while (it.hasNext && !exists) {
-              val e = it.next()
-              if (e.segment eq ne.segment) exists = true
-            }
-            if (!exists) entries.add(ne)
+            if (!entries.asScala.exists(e => e.segment eq ne.segment)) entries.add(ne)
           }
           true
         case _ =>
@@ -363,7 +336,7 @@ object UndoManager {
       if (track != null) {
         val timeline: Timeline = track.getTimeline()
         timeline.project.projEventBus.post(new SegmentSelectedEvent(seg, track, 1))
-        timeline.project.projEventBus.post(RefreshRequestEvent.INSTANCE)
+        timeline.project.projEventBus.post(RefreshRequestEvent)
       }
     }
   }

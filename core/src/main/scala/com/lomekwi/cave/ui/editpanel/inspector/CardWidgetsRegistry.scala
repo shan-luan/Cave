@@ -15,6 +15,8 @@ import java.util.List
 import java.util.function.BiFunction
 import java.util.function.Function
 
+import scala.jdk.CollectionConverters.*
+
 /**
  * 输入端口默认值编辑器和输出端口显示行的 widget 注册表
  */
@@ -43,39 +45,27 @@ object CardWidgetsRegistry {
 
   /** 为输入端口创建编辑 widget；没有注册对应类型的返回 null（该端口不显示）。 */
   def createEditor(port: Node.InPort[?], source: Source[?]): Actor = {
-    val it = IN_ENTRIES.iterator()
-    while (it.hasNext) {
-      val entry = it.next()
-      if (accepts(port, entry.`type`)) {
-        return entry.factory.apply(port, source)
-      }
-    }
-    null
+    IN_ENTRIES.asScala
+      .find(entry => accepts(port, entry.`type`))
+      .map(entry => entry.factory.apply(port, source))
+      .orNull
   }
 
   /** 为输出端口创建只读显示行；没有注册对应类型的返回 null（该端口不显示）。 */
   def createOutputRow(port: Node.OutPort[?]): Actor = {
     val `type` = port.getType()
-    if (`type` == null) return null
-    val it = OUT_ENTRIES.iterator()
-    while (it.hasNext) {
-      val entry = it.next()
-      if (entry.`type`.isAssignableFrom(`type`)) {
-        return entry.factory.apply(port)
-      }
+    if (`type` == null) {
+      null
+    } else {
+      OUT_ENTRIES.asScala
+        .find(entry => entry.`type`.isAssignableFrom(`type`))
+        .map(entry => entry.factory.apply(port))
+        .orNull
     }
-    null
   }
 
   /** 端口约束为交叉类型：目标类型必须满足全部约束。 */
   private def accepts(port: Node.InPort[?], `type`: Class[?]): Boolean = {
-    val it = port.getConstraint().iterator()
-    while (it.hasNext) {
-      val c = it.next()
-      if (!c.isAssignableFrom(`type`)) {
-        return false
-      }
-    }
-    true
+    port.getConstraint().asScala.forall(c => c.isAssignableFrom(`type`))
   }
 }

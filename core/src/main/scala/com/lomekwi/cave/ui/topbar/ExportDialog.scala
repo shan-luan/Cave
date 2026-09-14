@@ -227,7 +227,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   }
 
   override def remove(): Boolean = {
-    App.appEventBus.post(ExportPresetsChangedEvent.INSTANCE)
+    App.appEventBus.post(ExportPresetsChangedEvent)
     super.remove()
   }
 }

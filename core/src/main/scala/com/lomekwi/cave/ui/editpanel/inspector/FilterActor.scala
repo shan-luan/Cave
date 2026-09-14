@@ -107,7 +107,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
     val p: Project = App.root.getFrontendProject()
     if (p != null) {
       p.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, index, target))
-      p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+      p.projEventBus.post(RefreshRequestEvent)
     }
     if (rebuildCallback != null) {
       rebuildCallback.run()
@@ -140,7 +140,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
         val pj: Project = App.root.getFrontendProject()
         if (pj != null) {
           pj.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, myIndex, target))
-          pj.projEventBus.post(RefreshRequestEvent.INSTANCE)
+          pj.projEventBus.post(RefreshRequestEvent)
         }
       case _ => return
     }
@@ -153,7 +153,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
     val p: Project = App.root.getFrontendProject()
     if (p != null) {
       p.undoManager.record(new UndoManager.RemoveFilterCommand(source, filter, index))
-      p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+      p.projEventBus.post(RefreshRequestEvent)
     }
     remove()
     if (rebuildCallback != null) rebuildCallback.run()

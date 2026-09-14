@@ -1,7 +1,5 @@
 package com.lomekwi.cave.project
 
-class ProjectDirtyChangedEvent
+sealed trait ProjectDirtyChangedEvent
 
-object ProjectDirtyChangedEvent {
-  final val INSTANCE: ProjectDirtyChangedEvent = new ProjectDirtyChangedEvent()
-}
+case object ProjectDirtyChangedEvent extends ProjectDirtyChangedEvent

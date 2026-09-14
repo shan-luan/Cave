@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline.playback
 
-class SeekEvent private()
+sealed trait SeekEvent
 
-object SeekEvent {
-  final val INSTANCE: SeekEvent = new SeekEvent()
-}
+case object SeekEvent extends SeekEvent

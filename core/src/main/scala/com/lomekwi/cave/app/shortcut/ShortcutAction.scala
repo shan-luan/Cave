@@ -6,6 +6,6 @@ trait ShortcutAction {
   }
 
   def defaultKeys(): Array[Int] = {
-    new Array[Int](0)
+    Array.empty[Int]
   }
 }

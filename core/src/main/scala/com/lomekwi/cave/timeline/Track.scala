@@ -86,47 +86,37 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
       if (isFree(shift(r, s), exclude, ignore)) {
         return s
       }
+      val obstacles = sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet().asScala
+        .collect { case e if !ignorable(exclude, ignore, e) => e.getKey }
       if (forward) {
-        var maxEnd = Long.MinValue
-        var found = false
-        for (e <- sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet().asScala) {
-          if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
-            found = true
-            maxEnd = Math.max(maxEnd, e.getKey.upperEndpoint())
-          }
+        obstacles.map(_.upperEndpoint()).maxOption match {
+          case None => return s
+          case Some(maxEnd) =>
+            val next = maxEnd - lo
+            if (next <= s) return Long.MaxValue
+            s = next
         }
-        if (!found) return s
-        val next = maxEnd - lo
-        if (next <= s) return Long.MaxValue
-        s = next
       } else {
-        var minStart = Long.MaxValue
-        var found = false
-        for (e <- sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet().asScala) {
-          if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
-            found = true
-            minStart = Math.min(minStart, e.getKey.lowerEndpoint())
-          }
+        obstacles.map(_.lowerEndpoint()).minOption match {
+          case None => return s
+          case Some(minStart) =>
+            val next = minStart - hi
+            if (next >= s) return s
+            s = next
         }
-        if (!found) return s
-        val next = minStart - hi
-        if (next >= s) return s
-        s = next
       }
       step += 1
     }
     s
   }
 
+  /** 该条目是否不构成障碍：被 exclude 覆盖，或在 ignore 中。 */
+  private def ignorable(exclude: Range[java.lang.Long], ignore: Collection[Segment], e: Entry[Range[java.lang.Long], Segment]): Boolean = {
+    (exclude != null && e.getKey.isConnected(exclude)) || ignore.contains(e.getValue)
+  }
+
   private def isFree(range: Range[java.lang.Long], exclude: Range[java.lang.Long], ignore: Collection[Segment]): Boolean = this.synchronized {
-    val it = sources.subRangeMap(range).asMapOfRanges().entrySet().iterator()
-    while (it.hasNext) {
-      val e = it.next()
-      if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
-        return false
-      }
-    }
-    true
+    sources.subRangeMap(range).asMapOfRanges().entrySet().asScala.forall(e => ignorable(exclude, ignore, e))
   }
 
   /**
@@ -164,14 +154,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    */
   def isFree(range: Range[java.lang.Long], ignore: Collection[Segment]): Boolean = this.synchronized {
     val m = sources.subRangeMap(range).asMapOfRanges()
-    if (m.isEmpty) return true
-    if (ignore.isEmpty) return false
-    val it = m.entrySet().iterator()
-    while (it.hasNext) {
-      val entry = it.next()
-      if (!ignore.contains(entry.getValue)) return false
-    }
-    true
+    m.isEmpty || (!ignore.isEmpty && m.values().asScala.forall(seg => ignore.contains(seg)))
   }
 
   protected[timeline] def split(time: Long): Boolean = this.synchronized {
@@ -183,8 +166,8 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     if (time <= lo || time >= hi) return false
     val right = s.duplicate()
     sources.remove(r)
-    `override`(s, Range.closedOpen(java.lang.Long.valueOf(lo), java.lang.Long.valueOf(time)))
-    `override`(right, Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(hi)))
+    `override`(s, Range.closedOpen(lo, time))
+    `override`(right, Range.closedOpen(time, hi))
     true
   }
 
@@ -229,7 +212,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
   protected[timeline] def setStart(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Range.closedOpen(java.lang.Long.valueOf(segment.getRange().lowerEndpoint() + deltaTime), segment.getRange().upperEndpoint()))
+    `override`(segment, Range.closedOpen(segment.getRange().lowerEndpoint() + deltaTime, segment.getRange().upperEndpoint()))
   }
 
   /**
@@ -255,7 +238,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
   protected[timeline] def setEnd(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Range.closedOpen(segment.getRange().lowerEndpoint(), java.lang.Long.valueOf(segment.getRange().upperEndpoint() + deltaTime)))
+    `override`(segment, Range.closedOpen(segment.getRange().lowerEndpoint(), segment.getRange().upperEndpoint() + deltaTime))
   }
 
   /**
@@ -306,27 +289,20 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    */
   def get(time: Long, offset: Int, excludeHit: Boolean): Segment = this.synchronized {
     if (offset == 0) {
-      if (excludeHit) {
-        return null
-      } else {
-        return sources.get(time)
-      }
+      if (excludeHit) null else sources.get(time)
     } else if (offset > 0) {
-      val m = sources.subRangeMap(Range.atLeast(java.lang.Long.valueOf(time))).asMapOfRanges()
-      val it = m.entrySet().iterator()
-      while (it.hasNext) {
-        val entry = it.next()
-        if (!(excludeHit && entry.getKey.contains(time))) return entry.getValue
-      }
+      nearest(sources.subRangeMap(Range.atLeast(time)).asMapOfRanges(), time, excludeHit)
     } else {
-      val m = sources.subRangeMap(Range.atMost(java.lang.Long.valueOf(time))).asDescendingMapOfRanges()
-      val it = m.entrySet().iterator()
-      while (it.hasNext) {
-        val entry = it.next()
-        if (!(excludeHit && entry.getKey.contains(time))) return entry.getValue
-      }
+      nearest(sources.subRangeMap(Range.atMost(time)).asDescendingMapOfRanges(), time, excludeHit)
     }
-    null
+  }
+
+  /** 按区间升序（或降序）取第一个没有命中 time 的片段；excludeHit 为 false 时即第一个。 */
+  private def nearest(entries: java.util.Map[Range[java.lang.Long], Segment], time: Long, excludeHit: Boolean): Segment = {
+    entries.entrySet().asScala
+      .find(entry => !(excludeHit && entry.getKey.contains(time)))
+      .map(_.getValue)
+      .orNull
   }
 
   def getLength(): Long = this.synchronized {
@@ -355,18 +331,11 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     o match {
       case other: Track =>
         if (index != other.index) return false
-        val a = sources.asMapOfRanges().entrySet()
-        val b = other.sources.asMapOfRanges().entrySet()
-        if (a.size() != b.size()) return false
-        val ia = a.iterator()
-        val ib = b.iterator()
-        while (ia.hasNext()) {
-          val ea = ia.next()
-          val eb = ib.next()
-          if (!ea.getKey.equals(eb.getKey)) return false
-          if (!Track.segmentEquals(ea.getValue, eb.getValue)) return false
+        val a = sources.asMapOfRanges().entrySet().asScala.toIndexedSeq
+        val b = other.sources.asMapOfRanges().entrySet().asScala.toIndexedSeq
+        a.size == b.size && a.zip(b).forall { (ea, eb) =>
+          ea.getKey.equals(eb.getKey) && Track.segmentEquals(ea.getValue, eb.getValue)
         }
-        true
       case _ => false
     }
   }
@@ -405,7 +374,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     } else {
       var i = 0
       while (i < serializationRanges.length) {
-        val r: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(serializationRanges(i)), java.lang.Long.valueOf(serializationRanges(i + 1)))
+        val r: Range[java.lang.Long] = Range.closedOpen(serializationRanges(i), serializationRanges(i + 1))
         val s = serializationSources.get(i / 2)
         sources.put(r, s)
         s.setRange(r)

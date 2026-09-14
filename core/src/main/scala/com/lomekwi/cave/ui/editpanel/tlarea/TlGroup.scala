@@ -138,8 +138,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
       clearChildren(false)
 
       val visibleRange = view.visibleRange()
-      var i = timeline.getTracks().size() - 1
-      while (i >= 0) {
+      for (i <- timeline.getTracks().asScala.indices.reverse) {
         val track = timeline.getTracks().get(i)
 
         for (entry <- List.copyOf(track.getSubRangeMapAsEntrySet(visibleRange)).asScala) {
@@ -156,7 +155,6 @@ class TlGroup(project0: Project) extends Group with Focusable {
           addActor(actor)
           actor.initMenu()
         }
-        i -= 1
       }
 
       dirty = false
@@ -204,12 +202,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
     val group = segment.getGroup()
     if (group != null) {
       if (addToSelection) {
-        var anySelected = false
-        val it = group.iterator()
-        while (it.hasNext && !anySelected) {
-          val s = it.next()
-          if (selectedSegments.contains(s)) { anySelected = true }
-        }
+        val anySelected = group.asScala.exists(s => selectedSegments.contains(s))
         if (anySelected) {
           for (s <- group.asScala) {
             selectedSegments.remove(s)
@@ -413,14 +406,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   private[tlarea] def groupSelectedSegments(): Unit = {
     if (selectedSegments.size() < 2) return
 
-    var anyInGroup = false
-    val it = selectedSegments.iterator()
-    while (it.hasNext && !anyInGroup) {
-      val seg = it.next()
-      if (seg.getGroup() != null) {
-        anyInGroup = true
-      }
-    }
+    val anyInGroup = selectedSegments.asScala.exists(seg => seg.getGroup() != null)
 
     if (anyInGroup) {
       val savedState: Map[Segment, SegmentGroup] = new HashMap[Segment, SegmentGroup]()
@@ -537,18 +523,18 @@ class TlGroup(project0: Project) extends Group with Focusable {
     if (duration <= 0) return List.of[Segment]()
 
     var track = timeline.getTrack(baseTrack)
-    var range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(time + duration))
+    var range = com.google.common.collect.Range.closedOpen(time, time + duration)
     var trackIndex = baseTrack
     while (!track.isFree(range, Set.of[Segment]())) {
       trackIndex += 1
       track = timeline.getTrack(trackIndex)
-      range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(time + duration))
+      range = com.google.common.collect.Range.closedOpen(time, time + duration)
     }
 
     template.setOrigin(time + template.getOrigin() - template.getRange().lowerEndpoint())
 
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(track, template, Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(time + duration)))
+      timeline.tryAdd(track, template, Range.closedOpen(time, time + duration))
     }
     markTimelineDirty()
     List.of(template)
@@ -572,16 +558,16 @@ class TlGroup(project0: Project) extends Group with Focusable {
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
           val segStart = seg.getRange().lowerEndpoint() + timeOffset
-          var range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration))
+          var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
           while (!track.isFree(range, Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
-            range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration))
+            range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
           }
 
           seg.setOrigin(seg.getOrigin() + timeOffset)
 
-          timeline.tryAdd(track, seg, Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration)))
+          timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration))
           pasted.add(seg)
         }
       }
@@ -609,16 +595,16 @@ class TlGroup(project0: Project) extends Group with Focusable {
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
           val segStart = seg.getRange().lowerEndpoint() + timeOffset
-          var range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration))
+          var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
           while (!track.isFree(range, Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
-            range = com.google.common.collect.Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration))
+            range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
           }
 
           seg.setOrigin(seg.getOrigin() + timeOffset)
 
-          timeline.tryAdd(track, seg, Range.closedOpen(java.lang.Long.valueOf(segStart), java.lang.Long.valueOf(segStart + duration)))
+          timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration))
           pasted.add(seg)
         }
       }
@@ -759,7 +745,7 @@ object TlGroup {
     }
 
     private[tlarea] def visibleRange(): Range[java.lang.Long] = {
-      Range.closedOpen(java.lang.Long.valueOf(startTime), java.lang.Long.valueOf(startTime + durationTime))
+      Range.closedOpen(startTime, startTime + durationTime)
     }
 
     private[tlarea] def zoom(amountY: Float, anchorXRatio: Float): Boolean = {

@@ -80,20 +80,7 @@ object Node {
 
     def canLinkFrom(p: Node.OutPort[?]): Boolean = {
       val outType = p.getType()
-
-      if (outType == null) {
-        return true
-      }
-
-      val it = getConstraint().iterator()
-      while (it.hasNext) {
-        val c = it.next()
-        if (!c.isAssignableFrom(outType)) {
-          return false
-        }
-      }
-
-      true
+      outType == null || getConstraint().asScala.forall(c => c.isAssignableFrom(outType))
     }
 
     def linkFrom(p: Node.OutPort[?]): Boolean = {

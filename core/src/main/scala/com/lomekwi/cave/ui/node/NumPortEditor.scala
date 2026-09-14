@@ -33,7 +33,7 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
       val p: Project = App.root.getFrontendProject()
       if (p != null) {
         p.undoManager.record(new UndoManager.NumPortValueCommand(port, source, oldVal, newVal))
-        p.projEventBus.post(RefreshRequestEvent.INSTANCE)
+        p.projEventBus.post(RefreshRequestEvent)
       }
       if (defaultData != null) defaultData.setVal(newVal)
     }

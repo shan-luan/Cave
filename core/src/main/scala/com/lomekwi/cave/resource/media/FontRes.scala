@@ -12,16 +12,20 @@ import java.io.Serializable
 @SerialVersionUID(1L)
 class FontRes(private val path: String) extends Resource with Serializable {
   @transient private var generator: FreeTypeFontGenerator = null
-  @transient private var fontCache: IntMap[BitmapFont] = null
+  @transient private lazy val fontCache: IntMap[BitmapFont] = new IntMap[BitmapFont]()
 
   def getFont(size: Int): BitmapFont = {
-    if (fontCache == null) {
-      fontCache = new IntMap[BitmapFont]()
+    Option(fontCache.get(size)).getOrElse {
+      val param = new FreeTypeFontGenerator.FreeTypeFontParameter()
+      param.size = size
+      param.incremental = true
+      val font = requireGenerator().generateFont(param)
+      fontCache.put(size, font)
+      font
     }
-    val cached = fontCache.get(size)
-    if (cached != null) {
-      return cached
-    }
+  }
+
+  private def requireGenerator(): FreeTypeFontGenerator = {
     if (generator == null) {
       var handle = Gdx.files.internal(path)
       if (!handle.exists()) {
@@ -29,12 +33,7 @@ class FontRes(private val path: String) extends Resource with Serializable {
       }
       generator = new FreeTypeFontGenerator(handle)
     }
-    val param = new FreeTypeFontGenerator.FreeTypeFontParameter()
-    param.size = size
-    param.incremental = true
-    val font = generator.generateFont(param)
-    fontCache.put(size, font)
-    font
+    generator
   }
 
   def getPath(): String = {
@@ -42,13 +41,11 @@ class FontRes(private val path: String) extends Resource with Serializable {
   }
 
   override def close(): Unit = {
-    if (fontCache != null) {
-      val fontIt = fontCache.values().iterator()
-      while (fontIt.hasNext) {
-        fontIt.next().dispose()
-      }
-      fontCache.clear()
+    val fontIt = fontCache.values().iterator()
+    while (fontIt.hasNext) {
+      fontIt.next().dispose()
     }
+    fontCache.clear()
     if (generator != null) {
       generator.dispose()
       generator = null

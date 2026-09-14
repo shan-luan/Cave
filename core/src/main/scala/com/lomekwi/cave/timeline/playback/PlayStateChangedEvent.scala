@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline.playback
 
-class PlayStateChangedEvent private()
+sealed trait PlayStateChangedEvent
 
-object PlayStateChangedEvent {
-  final val INSTANCE: PlayStateChangedEvent = new PlayStateChangedEvent()
-}
+case object PlayStateChangedEvent extends PlayStateChangedEvent

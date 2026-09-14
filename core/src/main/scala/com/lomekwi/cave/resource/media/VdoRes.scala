@@ -123,22 +123,15 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         ensureWorker()
       }
 
-      var i = idx
-      while (i >= 0) {
-        val t = cache.get(i)
-        if (t != null) {
-          return t
-        }
-        i -= 1
-      }
-      null
+      (0 to idx).reverseIterator
+        .map(i => cache.get(i))
+        .find(t => t != null)
+        .orNull
     }
 
     private def ensureWorker(): Unit = {
       if (workerRunning.compareAndSet(false, true)) {
-        App.workerExecutor.submit(new Runnable {
-          override def run(): Unit = processPendingSlots()
-        })
+        App.workerExecutor.execute(() => processPendingSlots())
       }
     }
 

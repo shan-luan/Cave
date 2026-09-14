@@ -34,7 +34,7 @@ object Projects {
       os.write(data)
     }
     project.savePath = target.file().toPath()
-    project.projEventBus.post(ProjectDirtyChangedEvent.INSTANCE)
+    project.projEventBus.post(ProjectDirtyChangedEvent)
   }
   def save(project: Project): Unit = {
     if (project.savePath == null) {

@@ -285,13 +285,11 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     dragOrigStarts = new Array[Long](n)
     dragOrigDurations = new Array[Long](n)
     dragOrigTracks = new Array[Track](n)
-    var i = 0
-    while (i < n) {
+    for (i <- 0 until n) {
       val sr = dragMembers.get(i).getRange()
       dragOrigStarts(i) = sr.lowerEndpoint()
       dragOrigDurations(i) = sr.upperEndpoint() - sr.lowerEndpoint()
       dragOrigTracks(i) = dragMembers.get(i).getTrack()
-      i += 1
     }
   }
 

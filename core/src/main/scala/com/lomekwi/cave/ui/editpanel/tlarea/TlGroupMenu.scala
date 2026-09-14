@@ -80,7 +80,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     val duration: Long = seg.getSource().getDefaultSegmentDuration()
 
     var targetTrack: Int = 0
-    val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(time + duration))
+    val range: Range[java.lang.Long] = Range.closedOpen(time, time + duration)
     while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
       targetTrack += 1
     }
@@ -110,7 +110,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
           val duration: Long = seg.getSource().getDefaultSegmentDuration()
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
-            val range: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(time), java.lang.Long.valueOf(time + duration))
+            val range: Range[java.lang.Long] = Range.closedOpen(time, time + duration)
             while (!timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
               targetTrack += 1
             }

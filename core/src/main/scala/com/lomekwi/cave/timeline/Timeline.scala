@@ -223,13 +223,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     if (target < 0) return false
     var refIdx = segments.iterator().next().getTrack().index
     for (s <- segments.asScala) refIdx = Math.min(refIdx, s.getTrack().index)
-    val it = segments.iterator()
-    while (it.hasNext) {
-      val s = it.next()
+    segments.asScala.forall { s =>
       val ti = s.getTrack().index + (target - refIdx)
-      if (ti < tracks.size() && !tracks.get(ti).isFree(s.getRange(), segments)) return false
+      ti >= tracks.size() || tracks.get(ti).isFree(s.getRange(), segments)
     }
-    true
   }
   /** 在 [time±threshold] 内扫描所有轨道片段，返回最近的起点/终点（无则原值）；ignore 不参与。 */
   def snapTime(time: Long, threshold: Long, ignore: Collection[Segment]): Long = {
@@ -238,7 +235,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val searchStart: Long = Math.max(0, time - threshold)
     val searchEnd: Long = time + threshold
     if (searchEnd <= searchStart) return time
-    val searchRange: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(searchStart), java.lang.Long.valueOf(searchEnd))
+    val searchRange: Range[java.lang.Long] = Range.closedOpen(searchStart, searchEnd)
     for (track <- tracks.asScala) {
       for (entry <- track.getSubRangeMapAsEntrySet(searchRange).asScala) {
         if (!ignore.contains(entry.getValue)) {
@@ -316,15 +313,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   override def toString(): String = {
-    val sb = new StringBuilder()
-    sb.append("Timeline:")
-    var i = 0
-    while (i < tracks.size()) {
-      sb.append(System.lineSeparator())
-      sb.append("track#").append(i).append(":").append(tracks.get(i))
-      i += 1
-    }
-    sb.toString()
+    val body = tracks.asScala.zipWithIndex
+      .map((track, i) => System.lineSeparator() + "track#" + i + ":" + track)
+      .mkString
+    "Timeline:" + body
   }
   def getLength(): Long = {
     if (lengthChanged) {
@@ -350,14 +342,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     o match {
       case other: Timeline =>
         val max = Math.max(tracks.size(), other.tracks.size())
-        var i = 0
-        while (i < max) {
+        (0 until max).forall { i =>
           val a = if (i < tracks.size()) tracks.get(i) else null
           val b = if (i < other.tracks.size()) other.tracks.get(i) else null
-          if (!Timeline.trackEquals(a, b)) return false
-          i += 1
+          Timeline.trackEquals(a, b)
         }
-        true
       case _ => false
     }
   }

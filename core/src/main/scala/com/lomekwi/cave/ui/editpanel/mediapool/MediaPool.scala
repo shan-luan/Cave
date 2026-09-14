@@ -56,31 +56,25 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   }
 
   private def findShowable(file: File): Showable = {
-    val it = resources.get(file).iterator()
-    while (it.hasNext) {
-      val r = it.next()
-      if (r.isInstanceOf[Showable]) return r.asInstanceOf[Showable]
-    }
-    null
+    resources.get(file).asScala.collectFirst { case showable: Showable => showable }.orNull
   }
 
   @Subscribe
   def onMediaCreated(event: MediaCreatedEvent): Unit = {
     val file = event.file
-    val it = getChildren.iterator()
-    while (it.hasNext) {
-      val actor = it.next()
-      actor match {
-        case item: MediaPoolItem if item.getFile().equals(file) =>
-          return
-        case _ =>
-      }
+    val alreadyListed = getChildren.asScala.exists {
+      case item: MediaPoolItem => item.getFile().equals(file)
+      case _ => false
     }
-    val pv: Showable = if (event.medRes.isInstanceOf[Showable])
-      event.medRes.asInstanceOf[Showable] else null
-    val item = new MediaPoolItem(file, pv)
-    addActor(item)
-    registerDragSource(item)
+    if (!alreadyListed) {
+      val pv: Showable = event.medRes match {
+        case showable: Showable => showable
+        case _ => null
+      }
+      val item = new MediaPoolItem(file, pv)
+      addActor(item)
+      registerDragSource(item)
+    }
   }
 
   private def registerDragSource(item: MediaPoolItem): Unit = {

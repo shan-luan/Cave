@@ -3,27 +3,22 @@ package com.lomekwi.cave.resource.media
 import com.lomekwi.cave.util.MimeType
 import org.bytedeco.javacv.FFmpegFrameGrabber
 
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.List
-import java.util.Map
-import java.util.function.Function
+import scala.collection.mutable
 
 class MediaFactory {
   import MediaFactory.*
 
-  private final val map: Map[String, Function[String, MedRes]] = new HashMap[String, Function[String, MedRes]]()
-
-  map.put("video/*", (path: String) => new VdoRes(path))
-  map.put("audio/*", (path: String) => new AudRes(path))
-  map.put("image/*", (path: String) => new ImgRes(path))
+  private val constructors: mutable.Map[String, String => MedRes] = mutable.Map(
+    "video/*" -> (path => new VdoRes(path)),
+    "audio/*" -> (path => new AudRes(path)),
+    "image/*" -> (path => new ImgRes(path))
+  )
 
   def create(mimeType: String, path: String): MedRes = {
-    val constructor = findConstructor(mimeType)
-    if (constructor == null) {
+    val constructor = findConstructor(mimeType).getOrElse {
       throw new IllegalArgumentException("Unsupported mime type: " + mimeType)
     }
-    constructor.apply(path)
+    constructor(path)
   }
 
   /**
@@ -31,46 +26,33 @@ class MediaFactory {
    * 视频文件如果包含音频流，会额外创建 AudRes。
    */
   def createAll(mimeType: String, path: String): List[MedRes] = {
-    val results: List[MedRes] = new ArrayList[MedRes]()
-
     val typeWildcard = MimeType.getTypeWildcard(mimeType)
-    val constructor = findConstructor(mimeType)
-
-    if (constructor == null) {
+    val constructor = findConstructor(mimeType).getOrElse {
       throw new IllegalArgumentException("Unsupported mime type: " + mimeType)
     }
 
-    // 主资源
-    results.add(constructor.apply(path))
-
     // 视频文件如果包含音频流，额外创建 AudRes
     if (typeWildcard.equals("video/*") && hasAudioStream(path)) {
-      results.add(new AudRes(path))
+      List(constructor(path), new AudRes(path))
+    } else {
+      List(constructor(path))
     }
-
-    results
   }
 
-  private def findConstructor(mimeType: String): Function[String, MedRes] = {
-    val constructor = map.get(mimeType)
-    if (constructor != null) {
-      return constructor
-    }
-
-    val typeWildcard = MimeType.getTypeWildcard(mimeType)
-    map.get(typeWildcard)
+  private def findConstructor(mimeType: String): Option[String => MedRes] = {
+    constructors.get(mimeType).orElse(constructors.get(MimeType.getTypeWildcard(mimeType)))
   }
+
   def isSupported(mimeType: String): Boolean = {
-    if (mimeType == null) {
-      return false
-    }
-    findConstructor(mimeType) != null
+    mimeType != null && findConstructor(mimeType).isDefined
   }
-  def register(mimeType: String, constructor: Function[String, MedRes]): Unit = {
-    map.put(mimeType, constructor)
+
+  def register(mimeType: String, constructor: String => MedRes): Unit = {
+    constructors.put(mimeType, constructor)
   }
+
   def unregister(mimeType: String): Unit = {
-    map.remove(mimeType)
+    constructors.remove(mimeType)
   }
 }
 
@@ -86,9 +68,7 @@ object MediaFactory {
     } catch {
       case _: Exception => false
     } finally {
-      if (g != null) {
-        g.close()
-      }
+      g.close()
     }
   }
 }

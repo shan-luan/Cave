@@ -1,8 +1,5 @@
 package com.lomekwi.cave.ui.tabs.app
 
-class TabSwitchedEvent private () {
-}
+sealed trait TabSwitchedEvent
 
-object TabSwitchedEvent {
-  final val INSTANCE: TabSwitchedEvent = new TabSwitchedEvent()
-}
+case object TabSwitchedEvent extends TabSwitchedEvent

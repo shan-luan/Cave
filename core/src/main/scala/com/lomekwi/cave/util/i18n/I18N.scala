@@ -9,12 +9,6 @@ object I18N {
   }
   @Deprecated
   def i18n(keys: String*): Array[String] = {
-    val result = keys.toArray
-    var i = 0
-    while (i < result.length) {
-      result(i) = i18n(result(i))
-      i += 1
-    }
-    result
+    keys.map(i18n).toArray
   }
 }

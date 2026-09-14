@@ -211,7 +211,7 @@ class TopBar extends MenuBar {
 
   def performNew(): Unit = {
     try {
-      App.appEventBus.post(new ProjectLoadedEvent(Projects.create()))
+      App.appEventBus.post(ProjectLoadedEvent(Projects.create()))
       App.root.getToastManager().show(i18n("项目已新建"), toastTimeOut)
     } catch {
       case e: Exception =>
@@ -236,7 +236,7 @@ class TopBar extends MenuBar {
               App.root.getToastManager().show(i18n("请选择 .cave 项目文件"), toastTimeOut)
               return
             }
-            App.appEventBus.post(new ProjectLoadedEvent(Projects.open(file)))
+            App.appEventBus.post(ProjectLoadedEvent(Projects.open(file)))
             App.root.getToastManager().show(i18n("项目已打开"), toastTimeOut)
           } catch {
             case e @ (_: IOException | _: ClassNotFoundException) =>
