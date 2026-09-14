@@ -37,9 +37,9 @@ abstract class MedRes(private val path: String) extends Resource with Serializab
     .expireAfterAccess(DECODER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     .removalListener(new RemovalListener[Integer, DecRes[?]] {
       override def onRemoval(notification: RemovalNotification[Integer, DecRes[?]]): Unit = {
-        val dec = notification.getValue()
+        val dec = notification.getValue
         if (dec != null) {
-          try { dec.close() } catch { case ignored: Exception => () }
+          try { dec.close() } catch { case _: Exception => () }
         }
       }
     })
@@ -104,9 +104,9 @@ abstract class MedRes(private val path: String) extends Resource with Serializab
       .expireAfterAccess(DECODER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       .removalListener(new RemovalListener[Integer, DecRes[?]] {
         override def onRemoval(notification: RemovalNotification[Integer, DecRes[?]]): Unit = {
-          val dec = notification.getValue()
+          val dec = notification.getValue
           if (dec != null) {
-            try { dec.close() } catch { case ignored: Exception => () }
+            try { dec.close() } catch { case _: Exception => () }
           }
         }
       })

@@ -49,7 +49,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
     if (project.getSavePath() == null) {
       val conf = new NativeFileChooserConfiguration()
       conf.title = i18n("选择保存位置...")
-      if (Gdx.app.getType() == Application.ApplicationType.Android) {
+      if (Gdx.app.getType == Application.ApplicationType.Android) {
         conf.mimeFilter = "*/*"
       }
       conf.intent = NativeFileChooserIntent.SAVE

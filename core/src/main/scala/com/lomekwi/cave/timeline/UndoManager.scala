@@ -44,7 +44,7 @@ class UndoManager(@transient private val project: Project) {
         case _: UndoManager.MergeableCommand =>
           val top = undoStack.peek()
           top match {
-            case topMc: UndoManager.MergeableCommand if top.getClass() == command.getClass() =>
+            case topMc: UndoManager.MergeableCommand if top.getClass == command.getClass =>
               if (topMc.merge(command)) {
                 redoStack.clear()
                 if (undoStack.size() > UndoManager.MAX_UNDO) {

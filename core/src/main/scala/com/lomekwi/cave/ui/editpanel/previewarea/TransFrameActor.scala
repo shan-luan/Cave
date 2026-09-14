@@ -14,7 +14,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.lomekwi.cave.app.selection.Selectable
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.task.ExportOptions
 import com.lomekwi.cave.task.ExportOptionsSet
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Frame
@@ -89,18 +88,18 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       val source = frame.getSource()
       if (source == null) return false
 
-      val handle = gizmo.hitHandle(event.getStageX(), event.getStageY())
+      val handle = gizmo.hitHandle(event.getStageX, event.getStageY)
       if (handle != null && selected) {
-        startGizmoDrag(source, handle, event.getStageX(), event.getStageY())
+        startGizmoDrag(source, handle, event.getStageX, event.getStageY)
         return true
       }
 
       dragModifier = TransFrameActor.findOrCreateTransNode(source)
       startNodeDx = dragModifier.getDx().toFloat
       startNodeDy = dragModifier.getDy().toFloat
-      val p = getParent()
-      startCanvasX = (event.getStageX() - p.getX()) / p.getScaleX()
-      startCanvasY = (event.getStageY() - p.getY()) / p.getScaleY()
+      val p = getParent
+      startCanvasX = (event.getStageX - p.getX) / p.getScaleX
+      startCanvasY = (event.getStageY - p.getY) / p.getScaleY
       computeDragContext()
       captureSnapData()
       dragging = false
@@ -109,12 +108,12 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       if (gizmoDragging) {
-        updateGizmoDrag(event.getStageX(), event.getStageY())
+        updateGizmoDrag(event.getStageX, event.getStageY)
         return
       }
       if (dragModifier == null) return
       dragging = true
-      updateDrag(event.getStageX(), event.getStageY())
+      updateDrag(event.getStageX, event.getStageY)
     }
 
     override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
@@ -167,7 +166,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     override def enter(event: InputEvent, x: Float, y: Float, pointer: Int, fromActor: Actor): Unit = {
-      gizmo.updateCursor(event.getStageX(), event.getStageY())
+      gizmo.updateCursor(event.getStageX, event.getStageY)
     }
 
     override def exit(event: InputEvent, x: Float, y: Float, pointer: Int, toActor: Actor): Unit = {
@@ -178,7 +177,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     override def mouseMoved(event: InputEvent, x: Float, y: Float): Boolean = {
-      gizmo.updateCursor(event.getStageX(), event.getStageY())
+      gizmo.updateCursor(event.getStageX, event.getStageY)
       false
     }
   })
@@ -192,7 +191,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     super.draw(batch, parentAlpha)
     transformable.render(batch)
     if (selected) {
-      TransFrameActor.tmpMatrix.set(batch.getTransformMatrix())
+      TransFrameActor.tmpMatrix.set(batch.getTransformMatrix)
       batch.setTransformMatrix(TransFrameActor.IDENTITY)
       gizmo.draw(gizmoHandle)
       batch.setTransformMatrix(TransFrameActor.tmpMatrix)
@@ -215,9 +214,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     setScaleX(if (transform.isFlipX()) -1f else 1f)
     setScaleY(if (transform.isFlipY()) -1f else 1f)
 
-    if (dragModifier == null || getParent() == null || getStage() == null) return
-    TransFrameActor.dragStagePos.set(Gdx.input.getX().toFloat, Gdx.input.getY().toFloat)
-    getStage().screenToStageCoordinates(TransFrameActor.dragStagePos)
+    if (dragModifier == null || getParent == null || getStage == null) return
+    TransFrameActor.dragStagePos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+    getStage.screenToStageCoordinates(TransFrameActor.dragStagePos)
     if (gizmoDragging) {
       updateGizmoDrag(TransFrameActor.dragStagePos.x, TransFrameActor.dragStagePos.y)
     } else if (dragging) {
@@ -226,7 +225,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
-    if (!touchable || !isTouchable()) return null
+    if (!touchable || !isTouchable) return null
     if (insidePreviewHitRegion(x, y)) this else null
   }
 
@@ -235,15 +234,15 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
    * 仅处理交集内的事件，避免 TransFrameActor 抢夺预览区域之外的事件。
    */
   private def insidePreviewHitRegion(x: Float, y: Float): Boolean = {
-    val w = getWidth()
-    val h = getHeight()
+    val w = getWidth
+    val h = getHeight
 
     var handleOff: Float = 0
     if (selected) {
       handleOff = TransFrameActor.ROTATE_OFFSET_LOCAL
-      val p = getParent()
+      val p = getParent
       if (p != null) {
-        val ps = Math.min(Math.abs(p.getScaleX()), Math.abs(p.getScaleY()))
+        val ps = Math.min(Math.abs(p.getScaleX), Math.abs(p.getScaleY))
         if (ps > 0.0001f) handleOff /= ps
       }
     }
@@ -254,8 +253,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val extTop = h + handleOff
     if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false
 
-    val parent = getParent()
-    val grand = if (parent != null) parent.getParent() else null
+    val parent = getParent
+    val grand = if (parent != null) parent.getParent else null
     if (!grand.isInstanceOf[PreviewArea]) return true
     val preview = grand.asInstanceOf[PreviewArea]
 
@@ -273,7 +272,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       Math.max(Math.max(TransFrameActor.hitCorner1.y, TransFrameActor.hitCorner2.y), Math.max(TransFrameActor.hitCorner3.y, TransFrameActor.hitCorner4.y)) - Math.min(Math.min(TransFrameActor.hitCorner1.y, TransFrameActor.hitCorner2.y), Math.min(TransFrameActor.hitCorner3.y, TransFrameActor.hitCorner4.y)))
 
     TransFrameActor.hitCorner1.set(0f, 0f)
-    TransFrameActor.hitCorner2.set(preview.getWidth(), preview.getHeight())
+    TransFrameActor.hitCorner2.set(preview.getWidth, preview.getHeight)
     preview.localToStageCoordinates(TransFrameActor.hitCorner1)
     preview.localToStageCoordinates(TransFrameActor.hitCorner2)
     TransFrameActor.previewBounds.set(Math.min(TransFrameActor.hitCorner1.x, TransFrameActor.hitCorner2.x),
@@ -294,20 +293,20 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   private def localToParent(lx: Float, ly: Float, out: Vector2): Unit = {
-    val ox = getOriginX()
-    val oy = getOriginY()
-    val rad = Math.toRadians(getRotation().toDouble).toFloat
+    val ox = getOriginX
+    val oy = getOriginY
+    val rad = Math.toRadians(getRotation.toDouble).toFloat
     val cos = Math.cos(rad.toDouble).toFloat
     val sin = Math.sin(rad.toDouble).toFloat
-    val sx = getScaleX()
-    val sy = getScaleY()
+    val sx = getScaleX
+    val sy = getScaleY
 
     val dx = lx - ox
     val dy = ly - oy
     val rx = dx * cos * sx - dy * sin * sy
     val ry = dx * sin * sx + dy * cos * sy
-    out.x = getX() + ox + rx
-    out.y = getY() + oy + ry
+    out.x = getX + ox + rx
+    out.y = getY + oy + ry
   }
 
   private def clampToAnchor(value: Float, anchor: Float, handle: Gizmo.Handle, isX: Boolean): Float = {
@@ -329,8 +328,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     gizmoDragging = true
 
     dragModifier = TransFrameActor.findOrCreateTransNode(source)
-    gizmoStartW = getWidth()
-    gizmoStartH = getHeight()
+    gizmoStartW = getWidth
+    gizmoStartH = getHeight
     gizmoStartDx = dragModifier.getDx().toFloat
     gizmoStartDy = dragModifier.getDy().toFloat
     gizmoStartScaleX = dragModifier.getScaleX().toFloat
@@ -346,29 +345,29 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
     handle match {
       case Gizmo.Handle.NW =>
-        gizmoAnchorLocalX = getWidth()
+        gizmoAnchorLocalX = getWidth
         gizmoAnchorLocalY = 0f
       case Gizmo.Handle.N =>
-        gizmoAnchorLocalX = getWidth() / 2f
+        gizmoAnchorLocalX = getWidth / 2f
         gizmoAnchorLocalY = 0f
       case Gizmo.Handle.NE =>
         gizmoAnchorLocalX = 0f
         gizmoAnchorLocalY = 0f
       case Gizmo.Handle.E =>
         gizmoAnchorLocalX = 0f
-        gizmoAnchorLocalY = getHeight() / 2f
+        gizmoAnchorLocalY = getHeight / 2f
       case Gizmo.Handle.SE =>
         gizmoAnchorLocalX = 0f
-        gizmoAnchorLocalY = getHeight()
+        gizmoAnchorLocalY = getHeight
       case Gizmo.Handle.S =>
-        gizmoAnchorLocalX = getWidth() / 2f
-        gizmoAnchorLocalY = getHeight()
+        gizmoAnchorLocalX = getWidth / 2f
+        gizmoAnchorLocalY = getHeight
       case Gizmo.Handle.SW =>
-        gizmoAnchorLocalX = getWidth()
-        gizmoAnchorLocalY = getHeight()
+        gizmoAnchorLocalX = getWidth
+        gizmoAnchorLocalY = getHeight
       case Gizmo.Handle.W =>
-        gizmoAnchorLocalX = getWidth()
-        gizmoAnchorLocalY = getHeight() / 2f
+        gizmoAnchorLocalX = getWidth
+        gizmoAnchorLocalY = getHeight / 2f
       case Gizmo.Handle.ROTATE =>
     }
 
@@ -379,15 +378,15 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     gizmoAnchorStageY = TransFrameActor.tmp1.y
 
     // 总变换（含 dragModifier 自身的旋转/翻转）
-    val totalRad = Math.toRadians(getRotation().toDouble).toFloat
+    val totalRad = Math.toRadians(getRotation.toDouble).toFloat
     gizmoCos = Math.cos(totalRad.toDouble).toFloat
     gizmoSin = Math.sin(totalRad.toDouble).toFloat
-    gizmoFlipX = getScaleX() < 0
-    gizmoFlipY = getScaleY() < 0
+    gizmoFlipX = getScaleX < 0
+    gizmoFlipY = getScaleY < 0
 
     if (handle == Gizmo.Handle.ROTATE) {
       val centerStagePos = TransFrameActor.tmp1
-      centerStagePos.set(getWidth() / 2f, getHeight() / 2f)
+      centerStagePos.set(getWidth / 2f, getHeight / 2f)
       localToStageCoordinates(centerStagePos)
       gizmoStartAngle = Math.toDegrees(Math.atan2((stageY - centerStagePos.y).toDouble, (stageX - centerStagePos.x).toDouble)).toFloat
     }
@@ -400,9 +399,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     // stage 坐标取差后换算为画布本地 delta（canvas 仅平移+均匀缩放）
-    val p = getParent()
-    val canvasDeltaX = if (p != null) (stageX - gizmoAnchorStageX) / p.getScaleX() else stageX - gizmoAnchorStageX
-    val canvasDeltaY = if (p != null) (stageY - gizmoAnchorStageY) / p.getScaleY() else stageY - gizmoAnchorStageY
+    val p = getParent
+    val canvasDeltaX = if (p != null) (stageX - gizmoAnchorStageX) / p.getScaleX else stageX - gizmoAnchorStageX
+    val canvasDeltaY = if (p != null) (stageY - gizmoAnchorStageY) / p.getScaleY else stageY - gizmoAnchorStageY
 
     // 画布空间 → 本地空间（用含 dragModifier 的总变换）
     var dLocalX = canvasDeltaX * gizmoCos + canvasDeltaY * gizmoSin
@@ -487,7 +486,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   protected def updateRotateDrag(stageX: Float, stageY: Float): Unit = {
     val centerStagePos = TransFrameActor.tmp1
-    centerStagePos.set(getWidth() / 2f, getHeight() / 2f)
+    centerStagePos.set(getWidth / 2f, getHeight / 2f)
     localToStageCoordinates(centerStagePos)
     val currentAngle = Math.toDegrees(Math.atan2((stageY - centerStagePos.y).toDouble, (stageX - centerStagePos.x).toDouble)).toFloat
     var delta = currentAngle - gizmoStartAngle
@@ -526,9 +525,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   private def updateDrag(stageX: Float, stageY: Float): Unit = {
-    val parent = getParent()
-    val canvasX = (stageX - parent.getX()) / parent.getScaleX()
-    val canvasY = (stageY - parent.getY()) / parent.getScaleY()
+    val parent = getParent
+    val canvasX = (stageX - parent.getX) / parent.getScaleX
+    val canvasY = (stageY - parent.getY) / parent.getScaleY
     var dx = canvasX - startCanvasX
     var dy = canvasY - startCanvasY
     computeSnapAdjustment(dx, dy)
@@ -609,10 +608,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private def captureSnapData(): Unit = {
     myStartBBox = computeCanvasBBox()
     siblingBBoxes = new ArrayList[Array[Float]]()
-    val p = getParent()
+    val p = getParent
     if (p.isInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]) {
       val g = p.asInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]
-      val it = g.getChildren().iterator()
+      val it = g.getChildren.iterator()
       while (it.hasNext) {
         val child: Actor = it.next()
         child match {
@@ -635,8 +634,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   private def computeCanvasBBox(): Array[Float] = {
-    val w = getWidth()
-    val h = getHeight()
+    val w = getWidth
+    val h = getHeight
     localToParent(0f, 0f, TransFrameActor.tmp1)
     localToParent(w, 0f, TransFrameActor.tmp2)
     var l = Math.min(TransFrameActor.tmp1.x, TransFrameActor.tmp2.x)
@@ -661,8 +660,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     snapLineX = Float.NaN
     snapLineY = Float.NaN
     if (myStartBBox == null || siblingBBoxes == null) return
-    val p = getParent()
-    val threshold = if (p != null) TransFrameActor.SNAP_THRESHOLD_SCREEN / p.getScaleX() else TransFrameActor.SNAP_THRESHOLD_SCREEN
+    val p = getParent
+    val threshold = if (p != null) TransFrameActor.SNAP_THRESHOLD_SCREEN / p.getScaleX else TransFrameActor.SNAP_THRESHOLD_SCREEN
 
     val pl = myStartBBox(0) + dx
     val pr = myStartBBox(1) + dx
@@ -770,7 +769,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       gizmoDragging = false
       gizmoHandle = null
       gizmo.hoveredHandle = null
-      if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+      if (Gdx.app.getType == Application.ApplicationType.Desktop) {
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow)
       }
     }
@@ -780,8 +779,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     private[TransFrameActor] var hoveredHandle: Gizmo.Handle = null
 
     private[TransFrameActor] def hitHandle(stageX: Float, stageY: Float): Gizmo.Handle = {
-      val w = getWidth()
-      val h = getHeight()
+      val w = getWidth
+      val h = getHeight
       if (w <= 0 || h <= 0) return null
       val hw = w / 2f
       val hh = h / 2f
@@ -839,7 +838,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     private[TransFrameActor] def setCursor(handle: Gizmo.Handle): Unit = {
-      if (Gdx.app.getType() != Application.ApplicationType.Desktop) return
+      if (Gdx.app.getType != Application.ApplicationType.Desktop) return
       if (handle == null) {
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow)
         return
@@ -849,8 +848,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return
       }
       // 光标由锚点→手柄的屏幕方向决定，旋转/翻转后仍与视觉一致
-      val w = getWidth()
-      val h = getHeight()
+      val w = getWidth
+      val h = getHeight
       var hx: Float = 0f
       var hy: Float = 0f
       var ax: Float = 0f
@@ -922,8 +921,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     private[TransFrameActor] def draw(activeHandle: Gizmo.Handle): Unit = {
-      val w = getWidth()
-      val h = getHeight()
+      val w = getWidth
+      val h = getHeight
       if (w <= 0 || h <= 0) return
       val hw = w / 2f
       val hh = h / 2f

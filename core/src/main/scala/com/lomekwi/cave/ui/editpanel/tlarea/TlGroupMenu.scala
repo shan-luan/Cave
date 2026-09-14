@@ -53,7 +53,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
     conf.title = "选择媒体文件"
     conf.intent = NativeFileChooserIntent.OPEN
-    if (Gdx.app.getType() == Application.ApplicationType.Android) {
+    if (Gdx.app.getType == Application.ApplicationType.Android) {
       conf.mimeFilter = "*/*"
     } else {
       conf.nameFilter = (dir: File, name: String) => {
@@ -97,7 +97,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     val project: Project = tlGroup.getProject()
     try {
       val segments: List[Segment] = project.mediaSegFactory.getAll(file)
-      if (segments.isEmpty()) return
+      if (segments.isEmpty) return
 
       val baseTrack: Int = 0
       var trackOffset: Int = 0
@@ -132,7 +132,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
       tlGroup.markTimelineDirty()
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlGroupMenu", "添加媒体片段失败: " + e.getMessage())
+        Gdx.app.error("TlGroupMenu", "添加媒体片段失败: " + e.getMessage)
     }
   }
 }

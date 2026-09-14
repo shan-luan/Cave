@@ -22,7 +22,7 @@ class EditPanel(private[editpanel] val project: Project) {
     tlTabs = new EditTabbedPane()
     tlTabs.add(new TimelineTab(tlMain))
     tl = new VisTable()
-    tl.add(tlTabs.getTable()).fillX().top().row()
+    tl.add(tlTabs.getTable).fillX().top().row()
     tl.add(tlTabs.getContentHost()).grow()
     tlTabs.refreshVisibility()
     res = new Container[MediaPool](new MediaPool(project.resources, project.projEventBus))
@@ -33,7 +33,7 @@ class EditPanel(private[editpanel] val project: Project) {
   }
 
   def getTlGroup(): TlGroup = {
-    tlMain.getActor()
+    tlMain.getActor
   }
 
   def getTlTabs(): EditTabbedPane = {
@@ -42,6 +42,6 @@ class EditPanel(private[editpanel] val project: Project) {
 
   def dispose(): Unit = {
     previewArea.dispose()
-    tlMain.getActor().dispose()
+    tlMain.getActor.dispose()
   }
 }

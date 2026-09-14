@@ -53,7 +53,7 @@ class ExportOptionsSet extends Json.Serializable {
       e = e.next
     }
     currentIndex = jsonData.getInt("currentIndex", 0)
-    if (presets.isEmpty()) presets.add(new ExportOptions())
+    if (presets.isEmpty) presets.add(new ExportOptions())
     if (currentIndex >= presets.size()) currentIndex = presets.size() - 1
   }
 }
@@ -65,7 +65,7 @@ object ExportOptionsSet {
   def load(): ExportOptionsSet = {
     val prefs: Preferences = Gdx.app.getPreferences(PREFS_NAME)
     val json: String = prefs.getString(KEY, null)
-    if (json == null || json.isEmpty()) {
+    if (json == null || json.isEmpty) {
       return new ExportOptionsSet()
     }
     new Json().fromJson(classOf[ExportOptionsSet], json)

@@ -37,7 +37,7 @@ class ShortcutManager {
   def isActive(action: ShortcutAction): Boolean = {
     val keys = actionToKeys.get(action)
 
-    if (keys.isEmpty()) return false
+    if (keys.isEmpty) return false
 
     for (key <- keys.asScala) {
       if (!Gdx.input.isKeyPressed(key)) {
@@ -52,7 +52,7 @@ class ShortcutManager {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
     for (action <- registeredActions.asScala) {
       val v: String = prefs.getString(action.toString(), null)
-      if (v != null && !v.isEmpty()) {
+      if (v != null && !v.isEmpty) {
         val keys: Array[Int] = Arrays.stream(v.split(","))
           .mapToInt((s: String) => Integer.parseInt(s))
           .toArray()
@@ -66,7 +66,7 @@ class ShortcutManager {
     prefs.clear()
     for (action <- registeredActions.asScala) {
       val keys: Collection[Integer] = actionToKeys.get(action)
-      if (!keys.isEmpty()) {
+      if (!keys.isEmpty) {
         val v: String = keys.stream().map((i: Integer) => String.valueOf(i)).collect(Collectors.joining(","))
         prefs.putString(action.toString(), v)
       }

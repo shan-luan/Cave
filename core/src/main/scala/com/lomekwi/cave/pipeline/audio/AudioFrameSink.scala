@@ -39,7 +39,7 @@ class AudioFrameSink {
     try {
       f.get(200, TimeUnit.MILLISECONDS)
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         f.cancel(true)
     }
   }
@@ -62,7 +62,7 @@ object AudioFrameSink {
         try {
           f = frames.poll(AudioFrameMixer.POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
         } catch {
-          case e: InterruptedException =>
+          case _: InterruptedException =>
             return
         }
         if (f != null) {
@@ -74,14 +74,14 @@ object AudioFrameSink {
               j += 1
             }
             f.track.getWorker().getSinkPhaser().arriveAndDeregister()
-            if (stopped || Thread.currentThread().isInterrupted()) {
+            if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {
               f = frames.poll()
               continueLoop = f != null
             }
           }
-          if (stopped || Thread.currentThread().isInterrupted()) {
+          if (stopped || Thread.currentThread().isInterrupted) {
             return
           }
           clamp(output)

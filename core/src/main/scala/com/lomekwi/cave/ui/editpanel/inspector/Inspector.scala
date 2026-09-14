@@ -13,7 +13,6 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.SegmentSet
 import com.lomekwi.cave.timeline.SegmentSetSelectedEvent
@@ -125,7 +124,7 @@ class Inspector extends VisTable {
     }
     addBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor): Unit = {
-        filterMenu.showMenu(getStage(), addBtn)
+        filterMenu.showMenu(getStage, addBtn)
       }
     })
     content.add(addBtn).pad(4).left()

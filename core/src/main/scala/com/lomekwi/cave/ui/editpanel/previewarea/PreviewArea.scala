@@ -18,7 +18,6 @@ import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.SegmentSelectedEvent
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.task.ExportOptions
 import com.lomekwi.cave.task.ExportOptionsSet
 import com.lomekwi.cave.task.ExportPresetsChangedEvent
 import com.lomekwi.cave.ui.Colors
@@ -52,19 +51,19 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   setupDragListener()
 
   private def recalcScale(): Unit = {
-    val vr: Float = if (refViewportArea > 0) Math.sqrt(getWidth().toDouble * getHeight() / refViewportArea).toFloat else 1f
+    val vr: Float = if (refViewportArea > 0) Math.sqrt(getWidth.toDouble * getHeight / refViewportArea).toFloat else 1f
     panZoom.setBaseScale(vr)
   }
 
   private def setupDragListener(): Unit = {
     addListener(new ClickListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-        if (x < 0 || x > getWidth() || y < 0 || y > getHeight()) return false
+        if (x < 0 || x > getWidth || y < 0 || y > getHeight) return false
         super.touchDown(event, x, y, pointer, button)
       }
 
       override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
-        if (event.getTarget().isInstanceOf[TransFrameActor]) return
+        if (event.getTarget.isInstanceOf[TransFrameActor]) return
         val editPanel = App.root.getFrontendEditPanel()
         if (editPanel != null) {
           val tlGroup = editPanel.getTlGroup()
@@ -73,7 +72,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
       }
 
       override def scrolled(event: InputEvent, x: Float, y: Float, amountX: Float, amountY: Float): Boolean = {
-        panZoom.zoomAt(event.getStageX(), event.getStageY(), amountY)
+        panZoom.zoomAt(event.getStageX, event.getStageY, amountY)
         true
       }
     })
@@ -106,7 +105,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   private def setFrame(frame: Frame): Unit = {
-    var idx: Int = frame.track.index
+    val idx: Int = frame.track.index
     while (idx >= frames.size()) {
       frames.add(null)
     }
@@ -166,7 +165,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     for (frame <- frames.asScala) {
       if (!(frame == null || frame.isClosed())) {
         val actor = PreviewArea.getFrameActor(frame)
-        if (actor != null && (actor.getParent() eq canvas)) {
+        if (actor != null && (actor.getParent eq canvas)) {
           actor.setZIndex(i)
           i += 1
         }
@@ -175,7 +174,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.BLACK)
+    App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Color.BLACK)
     drawAxes()
     drawPresetOutlines()
     super.draw(batch, parentAlpha)
@@ -184,7 +183,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def drawSnapGuides(): Unit = {
     val drawer = App.root.getShapeDrawer()
-    val it = canvas.getChildren().iterator()
+    val it = canvas.getChildren.iterator()
     while (it.hasNext) {
       val child: Actor = it.next()
       if (child.isInstanceOf[TransFrameActor]) {
@@ -195,12 +194,12 @@ class PreviewArea(project0: Project) extends Group with Focusable {
           if (!java.lang.Float.isNaN(lx)) {
             PreviewArea.guidePos.set(lx, 0f)
             canvas.localToParentCoordinates(PreviewArea.guidePos)
-            drawer.line(PreviewArea.guidePos.x, getY(), PreviewArea.guidePos.x, getY() + getHeight(), Colors.SNAP_GUIDE, 2f)
+            drawer.line(PreviewArea.guidePos.x, getY, PreviewArea.guidePos.x, getY + getHeight, Colors.SNAP_GUIDE, 2f)
           }
           if (!java.lang.Float.isNaN(ly)) {
             PreviewArea.guidePos.set(0f, ly)
             canvas.localToParentCoordinates(PreviewArea.guidePos)
-            drawer.line(getX(), PreviewArea.guidePos.y, getX() + getWidth(), PreviewArea.guidePos.y, Colors.SNAP_GUIDE, 2f)
+            drawer.line(getX, PreviewArea.guidePos.y, getX + getWidth, PreviewArea.guidePos.y, Colors.SNAP_GUIDE, 2f)
           }
         }
       }
@@ -215,9 +214,9 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   private def drawPresetOutlines(): Unit = {
     if (exportOpts == null) exportOpts = ExportOptionsSet.load()
     val drawer = App.root.getShapeDrawer()
-    val ox = getX() + canvas.getX()
-    val oy = getY() + canvas.getY()
-    val s = canvas.getScaleX()
+    val ox = getX + canvas.getX
+    val oy = getY + canvas.getY
+    val s = canvas.getScaleX
     for (opts <- exportOpts.presets.asScala) {
       if (!(opts.width <= 0 || opts.height <= 0)) {
         drawer.rectangle(ox, oy, opts.width * s, opts.height * s, Colors.PREVIEW_GUIDE, 1f)
@@ -227,38 +226,38 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def drawAxes(): Unit = {
     val drawer = App.root.getShapeDrawer()
-    val ox = getX() + canvas.getX()
-    val oy = getY() + canvas.getY()
-    val x0 = getX()
-    val x1 = getX() + getWidth()
-    val y0 = getY()
-    val y1 = getY() + getHeight()
+    val ox = getX + canvas.getX
+    val oy = getY + canvas.getY
+    val x0 = getX
+    val x1 = getX + getWidth
+    val y0 = getY
+    val y1 = getY + getHeight
 
     drawer.line(x0, oy, x1, oy, Colors.PREVIEW_GUIDE)
     drawer.line(ox, y0, ox, y1, Colors.PREVIEW_GUIDE)
 
     val tickHalf = 4f
-    val interval = Units.niceInterval(PreviewArea.TICK_PIXEL_TARGET / canvas.getScaleX())
+    val interval = Units.niceInterval(PreviewArea.TICK_PIXEL_TARGET / canvas.getScaleX)
 
-    var startV = (x0 - ox) / canvas.getScaleX()
-    var endV = (x1 - ox) / canvas.getScaleX()
+    var startV = (x0 - ox) / canvas.getScaleX
+    var endV = (x1 - ox) / canvas.getScaleX
     var first = Math.ceil((startV / interval).toDouble) * interval
     var v = first
     while (v <= endV) {
       if (!(Math.abs(v) < interval * 0.01f)) {
-        val sx = ox + v.toFloat * canvas.getScaleX()
+        val sx = ox + v.toFloat * canvas.getScaleX
         drawer.line(sx, oy - tickHalf, sx, oy + tickHalf, Colors.PREVIEW_GUIDE)
       }
       v += interval
     }
 
-    startV = (y0 - oy) / canvas.getScaleX()
-    endV = (y1 - oy) / canvas.getScaleX()
+    startV = (y0 - oy) / canvas.getScaleX
+    endV = (y1 - oy) / canvas.getScaleX
     first = Math.ceil((startV / interval).toDouble) * interval
     v = first
     while (v <= endV) {
       if (!(Math.abs(v) < interval * 0.01f)) {
-        val sy = oy + v.toFloat * canvas.getScaleX()
+        val sy = oy + v.toFloat * canvas.getScaleX
         drawer.line(ox - tickHalf, sy, ox + tickHalf, sy, Colors.PREVIEW_GUIDE)
       }
       v += interval
@@ -266,15 +265,15 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   override def sizeChanged(): Unit = {
-    panZoom.setSize(getWidth(), getHeight())
+    panZoom.setSize(getWidth, getHeight)
     if (lastWidth > 0 && lastHeight > 0) {
       if (refViewportArea < 0) {
         refViewportArea = lastWidth * lastHeight
       }
       recalcScale()
     }
-    lastWidth = getWidth()
-    lastHeight = getHeight()
+    lastWidth = getWidth
+    lastHeight = getHeight
   }
 
   def resetView(): Unit = {

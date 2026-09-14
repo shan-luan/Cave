@@ -117,7 +117,7 @@ class ShortcutKeysTable extends EntryTable {
     recordingAction = action
     recordingButton = btn
     btn.setText(i18n("按下新快捷键..."))
-    val current = Gdx.input.getInputProcessor()
+    val current = Gdx.input.getInputProcessor
     if (current.isInstanceOf[InputMultiplexer]) {
       current.asInstanceOf[InputMultiplexer].addProcessor(0, recordingProcessor)
     }
@@ -126,7 +126,7 @@ class ShortcutKeysTable extends EntryTable {
   private def stopRecording(): Unit = {
     recordingAction = null
     recordingButton = null
-    val current = Gdx.input.getInputProcessor()
+    val current = Gdx.input.getInputProcessor
     if (current.isInstanceOf[InputMultiplexer]) {
       current.asInstanceOf[InputMultiplexer].removeProcessor(recordingProcessor)
     }
@@ -139,7 +139,7 @@ class ShortcutKeysTable extends EntryTable {
 
   private def keyDisplay(action: ShortcutAction): String = {
     val keys: Collection[Integer] = App.shortcutManager.getKeys(action)
-    if (keys.isEmpty()) return i18n("未设置")
+    if (keys.isEmpty) return i18n("未设置")
     val list: List[Integer] = new ArrayList[Integer](keys)
     list.sort((a: Integer, b: Integer) => {
       val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1

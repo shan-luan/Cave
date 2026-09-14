@@ -30,10 +30,10 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
     this.transform = transform
   }
   override def getBaseWidth(): Float = {
-    texture.getWidth().toFloat
+    texture.getWidth.toFloat
   }
   override def getBaseHeight(): Float = {
-    texture.getHeight().toFloat
+    texture.getHeight.toFloat
   }
   def getPixels(): ByteBuffer = {
     pixels
@@ -75,8 +75,8 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
         0,
         0,
         0,
-        texture.getWidth(),
-        texture.getHeight(),
+        texture.getWidth,
+        texture.getHeight,
         GL20.GL_RGBA,
         GL20.GL_UNSIGNED_BYTE,
         pixels
@@ -86,7 +86,7 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
   }
   override def close(): Unit = {
     super.close()
-    if (actor != null && actor.getParent() == null) {
+    if (actor != null && actor.getParent == null) {
       Gdx.app.postRunnable(() => close())
     } else {
       texture.dispose()
@@ -99,13 +99,13 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
 
   override def render(batch: Batch): Unit = {
     upload()
-    var t = getTransform()
-    var baseW = getBaseWidth()
-    var baseH = getBaseHeight()
-    var scaleX = if (t.isFlipX()) -1f else 1f
-    var scaleY = if (t.isFlipY()) -1f else 1f
-    var w = baseW * t.getScaleX()
-    var h = baseH * t.getScaleY()
+    val t = getTransform()
+    val baseW = getBaseWidth()
+    val baseH = getBaseHeight()
+    val scaleX = if (t.isFlipX()) -1f else 1f
+    val scaleY = if (t.isFlipY()) -1f else 1f
+    val w = baseW * t.getScaleX()
+    val h = baseH * t.getScaleY()
     batch.draw(getTexture(), t.getX(), t.getY(), w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation(), 0, 0, baseW.toInt, baseH.toInt, false, false)
   }
 }

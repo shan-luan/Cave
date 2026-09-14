@@ -6,11 +6,11 @@ import com.badlogic.gdx.{Gdx, Input}
 import com.badlogic.gdx.graphics.{Color, Cursor}
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent, Stage}
+import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.google.common.collect.Range
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.timeline.{Segment, SegmentGroup, SegmentSelectedEvent, SegmentSet, SegmentSetSelectedEvent, Timeline, Track, UndoManager}
+import com.lomekwi.cave.timeline.{Segment, SegmentGroup, SegmentSelectedEvent, SegmentSet, SegmentSetSelectedEvent, Timeline, UndoManager}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.playback.Playhead
 
@@ -80,8 +80,8 @@ class TlGroup(project0: Project) extends Group with Focusable {
       }
 
       override def drag(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-        view.scrollHorizontal(-getDeltaX(), getWidth())
-        view.trackYShift = Math.max(0, view.trackYShift + getDeltaY())
+        view.scrollHorizontal(-getDeltaX, getWidth)
+        view.trackYShift = Math.max(0, view.trackYShift + getDeltaY)
         dirty = true
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize)
       }
@@ -96,15 +96,15 @@ class TlGroup(project0: Project) extends Group with Focusable {
   override def act(delta: Float): Unit = {
     super.act(delta)
 
-    if (getStage() != null) {
-      pointer.set(Gdx.input.getX(), Gdx.input.getY())
-      getStage().screenToStageCoordinates(pointer)
+    if (getStage != null) {
+      pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(pointer)
       stageToLocalCoordinates(pointer)
 
       var acted = false
 
-      if (!App.root.isTextInputFocused() && (getStage().getKeyboardFocus() eq this)) {
-        val timePerPixel: Float = view.durationTime.toFloat / getWidth()
+      if (!App.root.isTextInputFocused() && (getStage.getKeyboardFocus eq this)) {
+        val timePerPixel: Float = view.durationTime.toFloat / getWidth
 
         if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) {
           view.startTime += (TlGroup.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong
@@ -143,11 +143,11 @@ class TlGroup(project0: Project) extends Group with Focusable {
         val track = timeline.getTracks().get(i)
 
         for (entry <- List.copyOf(track.getSubRangeMapAsEntrySet(visibleRange)).asScala) {
-          val actor = entry.getValue().getActor()
+          val actor = entry.getValue.getActor()
           val r = actor.getSegment().getRange()
           actor.setPosition(
             absoluteTimeToX(r.lowerEndpoint()),
-            getHeight() + view.trackYShift - (i + 1) * view.trackHeight
+            getHeight + view.trackYShift - (i + 1) * view.trackHeight
           )
           actor.setSize(
             absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
@@ -172,7 +172,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
     renderer.drawPlayhead()
     if (snapIndicatorTime >= 0) {
       val x = absoluteTimeToX(snapIndicatorTime)
-      renderer.shapeDrawer.line(x, 0, x, getHeight(), Colors.SNAP_GUIDE, 2)
+      renderer.shapeDrawer.line(x, 0, x, getHeight, Colors.SNAP_GUIDE, 2)
     }
     if (marqueeActive) {
       val x = Math.min(marqueeStartX, marqueeEndX)
@@ -189,11 +189,11 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private[tlarea] def absoluteTimeToX(time: Long): Float = {
-    view.timeToX(time, getWidth())
+    view.timeToX(time, getWidth)
   }
 
   private[tlarea] def xToAbsoluteTime(x: Float): Long = {
-    view.xToTime(x, getWidth())
+    view.xToTime(x, getWidth)
   }
 
   private[tlarea] def seekPlayheadAtX(x: Float): Unit = {
@@ -338,10 +338,10 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
   /** 快捷键分割入口：按当前鼠标位置定位分割点。 */
   private[tlarea] def splitAtCursor(): Unit = {
-    val stage = getStage()
+    val stage = getStage
     if (stage == null) return
     val local = stageToLocalCoordinates(
-      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())))
+      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
     val trackIndex = yToTrackIndex(local.y)
     val time = xToAbsoluteTime(local.x)
     val track = timeline.getTrack(trackIndex)
@@ -383,10 +383,10 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private def deleteAtCursor(): Unit = {
-    val stage = getStage()
+    val stage = getStage
     if (stage == null) return
     val local = stageToLocalCoordinates(
-      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())))
+      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
     val trackIndex = yToTrackIndex(local.y)
     val track = timeline.getTrack(trackIndex)
     val segment = track.get(xToAbsoluteTime(local.x))
@@ -398,7 +398,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private[tlarea] def deleteSelected(): Unit = {
-    if (selectedSegments.isEmpty()) {
+    if (selectedSegments.isEmpty) {
       deleteAtCursor()
       return
     }
@@ -454,11 +454,11 @@ class TlGroup(project0: Project) extends Group with Focusable {
       project.undoManager.record(new UndoManager.UndoableCommand {
         override def undo(): Unit = {
           for (e <- dissolvedMembers.entrySet().asScala) {
-            e.getKey().addAll(e.getValue())
+            e.getKey.addAll(e.getValue)
           }
           for (e <- savedState.entrySet().asScala) {
-            val seg = e.getKey()
-            val g = e.getValue()
+            val seg = e.getKey
+            val g = e.getValue
             if (g != null && !g.contains(seg)) {
               g.add(seg)
             }
@@ -474,7 +474,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
             }
           }
           for (e <- dissolvedMembers.entrySet().asScala) {
-            val g = e.getKey()
+            val g = e.getKey
             if (g.size() < 2) {
               for (s <- new HashSet[Segment](g).asScala) {
                 g.remove(s)
@@ -509,10 +509,10 @@ class TlGroup(project0: Project) extends Group with Focusable {
     val clip = App.copyManager.getClipboard()
     if (clip == null) return
 
-    val s = getStage()
+    val s = getStage
     if (s == null) return
     val local = stageToLocalCoordinates(
-      s.screenToStageCoordinates(pointer.set(Gdx.input.getX(), Gdx.input.getY())))
+      s.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
 
     val baseTime = Math.max(xToAbsoluteTime(local.x), 0)
     val baseTrack = Math.max(yToTrackIndex(local.y), 0)
@@ -525,7 +525,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
       case _ => pasted = List.of[Segment]()
     }
 
-    if (!pasted.isEmpty()) {
+    if (!pasted.isEmpty) {
       selectSegments(pasted)
     }
 
@@ -629,17 +629,13 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private[tlarea] def yToTrackIndex(y: Float): Int = {
-    val top = getHeight() + view.trackYShift
+    val top = getHeight + view.trackYShift
     val distance = top - y
     Math.max(0f, Math.floor(distance / view.trackHeight)).toInt
   }
 
   private[tlarea] def trackIndexToTopY(index: Int): Float = {
-    getHeight() + view.trackYShift - index * view.trackHeight
-  }
-
-  private def trackIndexToBottomY(index: Int): Float = {
-    trackIndexToTopY(index) - view.trackHeight
+    getHeight + view.trackYShift - index * view.trackHeight
   }
 
   def getProject(): Project = {
@@ -662,28 +658,28 @@ class TlGroup(project0: Project) extends Group with Focusable {
     private[tlarea] final val shapeDrawer: ShapeDrawer = App.root.getShapeDrawer()
 
     private[tlarea] def drawBackground(): Unit = {
-      shapeDrawer.filledRectangle(0, 0, getWidth(), getHeight(), Colors.TIMELINE_BG)
+      shapeDrawer.filledRectangle(0, 0, getWidth, getHeight, Colors.TIMELINE_BG)
 
       val startX = absoluteTimeToX(0)
       val endX = absoluteTimeToX(timeline.getLength())
 
-      shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight(), Colors.TIMELINE_OVERLAY)
+      shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight, Colors.TIMELINE_OVERLAY)
     }
 
     private[tlarea] def drawTicks(): Unit = {
-      val interval = niceScale((view.durationTime * TimelineRenderer.PIXELS_PER_TICK / getWidth()).toLong)
+      val interval = niceScale((view.durationTime * TimelineRenderer.PIXELS_PER_TICK / getWidth).toLong)
       val start = (view.startTime / interval) * interval
 
       var t = start
       while (t < view.startTime + view.durationTime) {
         val x = absoluteTimeToX(t)
-        shapeDrawer.filledRectangle(x, 0, 1, getHeight(), Colors.TIMELINE_OVERLAY)
+        shapeDrawer.filledRectangle(x, 0, 1, getHeight, Colors.TIMELINE_OVERLAY)
         t += interval
       }
     }
 
     private[tlarea] def drawTrackBands(): Unit = {
-      val top = getHeight() + view.trackYShift
+      val top = getHeight + view.trackYShift
       var i = 0
       var done = false
       while (!done) {
@@ -691,7 +687,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
         if (y <= -view.trackHeight) {
           done = true
         } else {
-          shapeDrawer.filledRectangle(0, y - view.trackHeight, getWidth(), view.trackHeight, Colors.TIMELINE_OVERLAY)
+          shapeDrawer.filledRectangle(0, y - view.trackHeight, getWidth, view.trackHeight, Colors.TIMELINE_OVERLAY)
           i += 2
         }
       }
@@ -701,13 +697,13 @@ class TlGroup(project0: Project) extends Group with Focusable {
       val x = absoluteTimeToX(playhead.getTime())
 
       shapeDrawer.filledTriangle(
-        x - 10, getHeight(),
-        x + 10, getHeight(),
-        x, getHeight() - 20,
+        x - 10, getHeight,
+        x + 10, getHeight,
+        x, getHeight - 20,
         Color.RED
       )
 
-      shapeDrawer.line(x, 0, x, getHeight(), Color.RED, 3)
+      shapeDrawer.line(x, 0, x, getHeight, Color.RED, 3)
     }
   }
 

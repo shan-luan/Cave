@@ -8,7 +8,7 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
 import com.lomekwi.cave.util.Duplicatable
 
-import java.io.{IOException, ObjectInputStream, Serializable}
+import java.io.{ObjectInputStream, Serializable}
 import java.util.Iterator
 
 @SerialVersionUID(1L)
@@ -165,7 +165,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     val it = e.iterator()
     while (it.hasNext) {
       val next = it.next()
-      return next.getValue()
+      return next.getValue
     }
     null
   }

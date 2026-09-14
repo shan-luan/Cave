@@ -9,7 +9,7 @@ import com.lomekwi.cave.timeline.TestSource
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
-import org.junit.Assert.{assertEquals, assertTrue}
+import org.junit.Assert.assertEquals
 
 import org.junit.Before
 import org.junit.Test
@@ -64,11 +64,11 @@ class TlGroupDragSimTest extends GdxTestBase {
   }
 
   private def absX(time: Long): Float = {
-    view.timeToX(time, tl.getWidth())
+    view.timeToX(time, tl.getWidth)
   }
 
   private def trackTopY(index: Int): Float = {
-    tl.getHeight() + view.trackYShift - (index + 1) * view.trackHeight
+    tl.getHeight + view.trackYShift - (index + 1) * view.trackHeight
   }
 
   /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
@@ -100,16 +100,16 @@ class TlGroupDragSimTest extends GdxTestBase {
     s.setOrigin(5_000_000L)
     val actor = place(t0, s, 0, 1000_000L)
 
-    val firstX = actor.getWidth() / 2
+    val firstX = actor.getWidth / 2
     val firstY = view.trackHeight / 2
     actor.dragSide = DragSide.MIDDLE
     actor.initDrag(firstX, firstY)
 
-    val mouseLocalX = actor.getX() + firstX + 100f // 右移 100px
-    val mouseLocalY = actor.getY() + firstY
+    val mouseLocalX = actor.getX + firstX + 100f // 右移 100px
+    val mouseLocalY = actor.getY + firstY
 
     // 事件驱动一次：应恰好移动 100_000µs
-    actor.dragTo(mouseLocalX - actor.getX(), mouseLocalY - actor.getY())
+    actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
     assertEquals(Range.closedOpen(java.lang.Long.valueOf(100_000L), java.lang.Long.valueOf(1000_000L + 100_000L)), s.getRange())
 
     // 鼠标不动，多帧重建（纯投影）：模型与 origin 必须稳定
@@ -140,15 +140,15 @@ class TlGroupDragSimTest extends GdxTestBase {
     val s = newSeg(1000_000L)
     val actor = place(t0, s, 0, 1000_000L)
 
-    val firstX = actor.getWidth() / 2
+    val firstX = actor.getWidth / 2
     val firstY = view.trackHeight / 2
     actor.dragSide = DragSide.MIDDLE
     actor.initDrag(firstX, firstY)
 
     // 目标的 yToTrackIndex(targetY + trackHeight/2) == 2
     val mouseLocalY = 200f
-    val mouseLocalX = actor.getX() + firstX
-    actor.dragTo(mouseLocalX - actor.getX(), mouseLocalY - actor.getY())
+    val mouseLocalX = actor.getX + firstX
+    actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
 
     // 应恰好落到轨道 2，而不是越跳越远
     assertEquals(2, s.getTrack().index)
@@ -199,9 +199,9 @@ class TlGroupDragSimTest extends GdxTestBase {
     val actor = place(t0, s, 0, 1000_000L)
 
     actor.dragSide = DragSide.BEHIND
-    actor.initDrag(actor.getWidth(), view.trackHeight / 2)
+    actor.initDrag(actor.getWidth, view.trackHeight / 2)
 
-    val newWidth = actor.getWidth() + 60f // 终点右移 60px=60ms
+    val newWidth = actor.getWidth + 60f // 终点右移 60px=60ms
     actor.dragTo(newWidth, view.trackHeight / 2)
     assertEquals(Range.closedOpen(java.lang.Long.valueOf(0L), java.lang.Long.valueOf(1000_000L + 60_000L)), s.getRange())
     assertEquals(5_000_000L, s.getOrigin())
@@ -226,7 +226,7 @@ object TlGroupDragSimTest {
   private final val DURATION_US: Long = 2_000_000L
 
   private def setField(target: Object, name: String, value: Any): Unit = {
-    val f: Field = target.getClass().getDeclaredField(name)
+    val f: Field = target.getClass.getDeclaredField(name)
     f.setAccessible(true)
     f.set(target, value.asInstanceOf[AnyRef])
   }

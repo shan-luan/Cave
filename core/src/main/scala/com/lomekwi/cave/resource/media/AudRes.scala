@@ -102,7 +102,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
     private def generate(): Unit = {
       val dec = newDecoder()
-      val frame = new AudFrame(44100, 2, null)
+      val frame = new AudFrame(44100, null)
       val peaks = new Array[Float](W)
       try {
         dec.start()
@@ -156,7 +156,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         try {
           dec.close()
         } catch {
-          case ignored: Exception => ()
+          case _: Exception => ()
         }
       }
     }
@@ -187,8 +187,8 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     @transient private var queued: Array[Boolean] = null
     @transient @volatile var dirty: Boolean = false
 
-    @transient private var batchSlots: Array[Int] = new Array[Int](BATCH_SIZE)
-    @transient private var batchPeaks: Array[Float] = new Array[Float](BATCH_SIZE)
+    @transient private val batchSlots: Array[Int] = new Array[Int](BATCH_SIZE)
+    @transient private val batchPeaks: Array[Float] = new Array[Float](BATCH_SIZE)
     @transient private var batchCount: Int = 0
 
     @transient private final val workerRunning: AtomicBoolean = new AtomicBoolean(false)
@@ -248,7 +248,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         if (!dec.isInitialized()) {
           dec.start()
         }
-        val frame = new AudFrame(44100, 2, null)
+        val frame = new AudFrame(44100, null)
         val slots = new Array[Int](BATCH_SIZE)
 
         var running = true
@@ -292,7 +292,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
                   }
                 }
               } catch {
-                case ignored: Exception => ()
+                case _: Exception => ()
               }
             }
           }
@@ -303,7 +303,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
           Gdx.app.error("AudRes", "Waveform worker failed for " + getPath(), e)
       } finally {
         workerRunning.set(false)
-        if (!pendingSlots.isEmpty()) {
+        if (!pendingSlots.isEmpty) {
           ensureWorker()
         }
       }
@@ -333,7 +333,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         try {
           cachedDec.close()
         } catch {
-          case ignored: Exception => ()
+          case _: Exception => ()
         }
         cachedDec = null
       }

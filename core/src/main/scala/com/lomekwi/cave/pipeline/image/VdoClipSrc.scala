@@ -79,7 +79,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
       try {
         cd.await()
       } catch {
-        case e: InterruptedException =>
+        case _: InterruptedException =>
           Thread.currentThread().interrupt()
           return null
       }

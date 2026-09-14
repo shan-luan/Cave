@@ -16,7 +16,6 @@ import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
 class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
@@ -177,8 +176,8 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
               if (f != null && f.image != null && f.image(0).isInstanceOf[ByteBuffer]) {
                 val buf = f.image(0).asInstanceOf[ByteBuffer]
                 buf.rewind()
-                fullPixmap.getPixels().clear()
-                fullPixmap.getPixels().put(buf)
+                fullPixmap.getPixels.clear()
+                fullPixmap.getPixels.put(buf)
 
                 val small = new Pixmap(thumbW, THUMB_HEIGHT, Pixmap.Format.RGBA8888)
                 small.drawPixmap(fullPixmap,
@@ -192,7 +191,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
                 }
               }
             } catch {
-              case ignored: Exception => ()
+              case _: Exception => ()
             }
           }
         }
@@ -202,7 +201,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
           Gdx.app.error("VdoRes", "Thumbnail worker failed for " + getPath(), e)
       } finally {
         workerRunning.set(false)
-        if (!pendingSlots.isEmpty()) {
+        if (!pendingSlots.isEmpty) {
           ensureWorker()
         }
       }
@@ -235,7 +234,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         try {
           cachedDec.close()
         } catch {
-          case ignored: Exception => ()
+          case _: Exception => ()
         }
         cachedDec = null
       }

@@ -7,15 +7,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.Colors
 import com.lomekwi.cave.ui.Focusable
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import space.earlygrey.shapedrawer.ShapeDrawer
 
 //TODO:WIP
-class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
-  private final val nodeGraph: NodeGraph = nodeGraph0
+class NodeEditorView extends VisTable with Focusable {
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
   private final val canvas: Group = panZoom.getCanvas()
 
@@ -39,7 +37,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
       }
 
       override def scrolled(event: InputEvent, x: Float, y: Float, amountX: Float, amountY: Float): Boolean = {
-        panZoom.zoomAt(event.getStageX(), event.getStageY(), amountY)
+        panZoom.zoomAt(event.getStageX, event.getStageY, amountY)
         true
       }
     })
@@ -47,22 +45,22 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     val drawer = App.root.getShapeDrawer()
-    drawer.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.NODE_BG)
+    drawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.NODE_BG)
     drawGrid(drawer)
     super.draw(batch, parentAlpha)
   }
 
   private def drawGrid(drawer: ShapeDrawer): Unit = {
-    val ox = getX() + canvas.getX()
-    val oy = getY() + canvas.getY()
-    val s = canvas.getScaleX()
+    val ox = getX + canvas.getX
+    val oy = getY + canvas.getY
+    val s = canvas.getScaleX
     val spacing = NodeEditorView.GRID_SPACING * s
     if (spacing < NodeEditorView.MIN_GRID_PIXEL) return
 
-    val x0 = getX()
-    val x1 = getX() + getWidth()
-    val y0 = getY()
-    val y1 = getY() + getHeight()
+    val x0 = getX
+    val x1 = getX + getWidth
+    val y0 = getY
+    val y1 = getY + getHeight
 
     val startX = Math.ceil(((x0 - ox) / spacing).toDouble).toFloat * spacing
     var x = ox + startX

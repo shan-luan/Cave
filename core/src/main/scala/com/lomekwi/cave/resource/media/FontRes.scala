@@ -8,7 +8,6 @@ import com.lomekwi.cave.resource.Resource
 
 import java.io.Serializable
 
-import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
 class FontRes(private val path: String) extends Resource with Serializable {

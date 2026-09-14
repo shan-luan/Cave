@@ -27,11 +27,11 @@ class EditTabbedPane extends AutoHideTabbedPane {
     contentHost.fill()
     addListener(new TabbedPaneListener {
       override def switchedTab(tab: Tab): Unit = {
-        contentHost.setActor(if (tab == null) null else tab.getContentTable())
+        contentHost.setActor(if (tab == null) null else tab.getContentTable)
       }
 
       override def removedTab(tab: Tab): Unit = {
-        if (getTabs().size == 0) contentHost.setActor(null)
+        if (getTabs.size == 0) contentHost.setActor(null)
       }
 
       override def removedAllTabs(): Unit = {
@@ -47,7 +47,7 @@ class EditTabbedPane extends AutoHideTabbedPane {
   //TODO:WIP
   /** 打开绑定到指定节点图的编辑器标签页；已为同一个节点图打开过则直接切换过去。 */
   def openNodeEditor(nodeGraph: NodeGraph): Unit = {
-    val it = getTabs().iterator()
+    val it = getTabs.iterator()
     while (it.hasNext) {
       val tab = it.next()
       tab match {

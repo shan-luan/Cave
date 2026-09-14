@@ -15,7 +15,7 @@ import com.kotcrab.vis.ui.VisUI
 import com.lomekwi.cave.app.App
 
 class TlRuler(private final val tlGroup: TlGroup) extends Widget {
-  private final val font: BitmapFont = VisUI.getSkin().getFont("default-font")
+  private final val font: BitmapFont = VisUI.getSkin.getFont("default-font")
   private final val sb: java.lang.StringBuilder = new java.lang.StringBuilder(8)
 
 
@@ -36,10 +36,10 @@ class TlRuler(private final val tlGroup: TlGroup) extends Widget {
   override def act(delta: Float): Unit = {
     super.act(delta)
     if (App.shortcutManager.isActive(TlGroup.Actions.SEEK)) {
-      val pointer: Vector2 = new Vector2(Gdx.input.getX(), Gdx.input.getY())
-      getStage().screenToStageCoordinates(pointer)
+      val pointer: Vector2 = new Vector2(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(pointer)
       stageToLocalCoordinates(pointer)
-      if (pointer.x >= 0 && pointer.x <= getWidth() && pointer.y >= 0 && pointer.y <= getHeight()) {
+      if (pointer.x >= 0 && pointer.x <= getWidth && pointer.y >= 0 && pointer.y <= getHeight) {
         tlGroup.seekPlayheadAtX(pointer.x)
       }
     }
@@ -51,18 +51,18 @@ class TlRuler(private final val tlGroup: TlGroup) extends Widget {
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
-    App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Color.DARK_GRAY)
+    App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Color.DARK_GRAY)
 
-    val interval: Long = niceScale((tlGroup.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth()).toLong)
+    val interval: Long = niceScale((tlGroup.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth).toLong)
     val start: Long = (tlGroup.view.startTime / interval) * interval
 
     var t = start
     while (t < tlGroup.view.startTime + tlGroup.view.durationTime) {
-      val x: Float = tlGroup.absoluteTimeToX(t) + getX()
-      App.root.getShapeDrawer().filledRectangle(x, getY(), 1, getHeight(), Color.WHITE)
+      val x: Float = tlGroup.absoluteTimeToX(t) + getX
+      App.root.getShapeDrawer().filledRectangle(x, getY, 1, getHeight, Color.WHITE)
       formatTime(t, interval)
       font.setColor(Color.WHITE)
-      font.draw(batch, sb, x + 2, getY() + getHeight() - 2)
+      font.draw(batch, sb, x + 2, getY + getHeight - 2)
       t += interval
     }
   }

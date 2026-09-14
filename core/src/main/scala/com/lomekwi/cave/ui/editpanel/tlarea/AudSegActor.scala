@@ -27,7 +27,7 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
     if (segDuration <= 0) return
 
     val step: Long = wf.bucketDuration
-    val pxPerUs: Float = getWidth() / segDuration.toFloat
+    val pxPerUs: Float = getWidth / segDuration.toFloat
     val gridOrigin: Long = (segLocalStart / step) * step
     val absVisibleStart: Long = segLocalStart + (visibleStartX / pxPerUs).toLong
     val absVisibleEnd: Long = segLocalStart + (visibleEndX / pxPerUs).toLong
@@ -53,7 +53,7 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
     val endBucket: Float = startBucket + segDuration.toFloat / bucketUs
 
     val shader: ShaderProgram = AudSegActor.getWaveShader()
-    if (!shader.isCompiled()) return
+    if (!shader.isCompiled) return
 
     batch.setShader(shader)
     shader.setUniformf("u_texWidth", wf.texWidth.toFloat)
@@ -64,7 +64,7 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
     shader.setUniformf("u_color",
       Colors.ACCENT.r, Colors.ACCENT.g, Colors.ACCENT.b, Colors.ACCENT.a * parentAlpha)
 
-    batch.draw(waveTex, getX(), getY(), getWidth(), getHeight())
+    batch.draw(waveTex, getX, getY, getWidth, getHeight)
     batch.setShader(null)
   }
 }
@@ -75,8 +75,8 @@ object AudSegActor {
   private def getWaveShader(): ShaderProgram = {
     if (waveShader == null) {
       waveShader = new ShaderProgram(VERT, FRAG)
-      if (!waveShader.isCompiled()) {
-        Gdx.app.error("AudSegActor", "Wave shader failed:\n" + waveShader.getLog())
+      if (!waveShader.isCompiled) {
+        Gdx.app.error("AudSegActor", "Wave shader failed:\n" + waveShader.getLog)
       }
     }
     waveShader

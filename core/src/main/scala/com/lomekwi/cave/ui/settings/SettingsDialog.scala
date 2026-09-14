@@ -10,7 +10,7 @@ class SettingsDialog extends VisDialog(i18n("设置")) {
   {
     addCloseButton()
 
-    getContentTable().add(new SettingsTable()).grow()
+    getContentTable.add(new SettingsTable()).grow()
 
     show(App.root.getStage())
     setSize(800, 600)

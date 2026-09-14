@@ -28,14 +28,14 @@ class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getImageWidth()
+    grabber.getImageWidth
   }
 
   def getHeight(): Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getImageHeight()
+    grabber.getImageHeight
   }
 
   override def getLengthPerFrame(): Long = {
@@ -75,11 +75,11 @@ class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
   }
 
   override def getCodecName(): String = {
-    grabber.getVideoCodecName()
+    grabber.getVideoCodecName
   }
 
   override def getCodec(): Int = {
-    grabber.getVideoCodec()
+    grabber.getVideoCodec
   }
 
   def getCachedPixels(): ByteBuffer = {

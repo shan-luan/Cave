@@ -62,16 +62,16 @@ object MimeType {
     // 首先尝试使用系统检测
     try {
       val systemMimeType = Files.probeContentType(path)
-      if (systemMimeType != null && !systemMimeType.isEmpty()) {
+      if (systemMimeType != null && !systemMimeType.isEmpty) {
         return systemMimeType
       }
     } catch {
-      case e: Exception =>
+      case _: Exception =>
       // 系统检测失败，继续使用扩展名检测
     }
 
     // 使用文件扩展名进行匹配
-    val fileName = file.getName().toLowerCase()
+    val fileName = file.getName.toLowerCase()
     val lastDotIndex = fileName.lastIndexOf('.')
     if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
       val extension = fileName.substring(lastDotIndex + 1)
@@ -90,7 +90,7 @@ object MimeType {
    * @return type/{@code *}形式，如 "video/{@code *}"
    */
   def getTypeWildcard(mimeType: String): String = {
-    if (mimeType == null || mimeType.isEmpty()) {
+    if (mimeType == null || mimeType.isEmpty) {
       throw new IllegalArgumentException(i18n("MIME类型不能为空"))
     }
 
@@ -108,7 +108,7 @@ object MimeType {
    * @return {@code *}/subtype形式，如 "{@code *}/mp4"
    */
   def getSubtypeWildcard(mimeType: String): String = {
-    if (mimeType == null || mimeType.isEmpty()) {
+    if (mimeType == null || mimeType.isEmpty) {
       throw new IllegalArgumentException(i18n("MIME类型不能为空"))
     }
 

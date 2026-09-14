@@ -19,7 +19,7 @@ object Units {
    * 适合作为坐标轴刻度间距。
    */
   def niceScale(raw: Long): Long = {
-    val mag = Math.pow(10, Math.floor(Math.log10(raw)))
+    val mag = Math.pow(10, Math.floor(Math.log10(raw.toDouble)))
     val r = raw / mag
     if (r < 2) {
       mag.toLong

@@ -132,7 +132,7 @@ class TopBar extends MenuBar {
 
           override def act(delta: Float): Unit = {
             super.act(delta)
-            val content: Table = getContentTable()
+            val content: Table = getContentTable
 
             current.clear()
             for (task <- App.taskPool.asScala) {
@@ -149,13 +149,13 @@ class TopBar extends MenuBar {
                 content.add(row).growX()
                 content.row()
               }
-              row.getUserObject().asInstanceOf[VisProgressBar].setValue(task.getProgress())
+              row.getUserObject.asInstanceOf[VisProgressBar].setValue(task.getProgress())
             }
 
             rows.entrySet().removeIf((entry: Map.Entry[Task, VisTable]) => {
-              if (!current.contains(entry.getKey())) {
+              if (!current.contains(entry.getKey)) {
                 dirty = true
-                content.removeActor(entry.getValue())
+                content.removeActor(entry.getValue)
                 true
               } else {
                 false
@@ -186,10 +186,10 @@ class TopBar extends MenuBar {
       .withItem(new MenuItem(i18n("关于"), new ChangeListenerX(() => {
         val about: VisDialog = new VisDialog(i18n("关于"))
         about.addCloseButton()
-        val ct = about.getContentTable()
-        ct.add(new Label(i18n("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件"), about.getSkin())).left()
+        val ct = about.getContentTable
+        ct.add(new Label(i18n("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件"), about.getSkin)).left()
         ct.row()
-        ct.add(new Label(i18n("由shan_luan_开发.此软件以AGPLv3分发并不提供任何保修."), about.getSkin())).left()
+        ct.add(new Label(i18n("由shan_luan_开发.此软件以AGPLv3分发并不提供任何保修."), about.getSkin)).left()
         ct.row()
         ct.add(new LinkLabel("Github", "https://github.com/shan-luan/Cave")).left()
         ct.row()
@@ -201,9 +201,9 @@ class TopBar extends MenuBar {
   }
   def applyCustomShortcuts(): Unit = {
     for (e <- actionItems.entrySet().asScala) {
-      val keys = App.shortcutManager.getKeys(e.getKey())
+      val keys = App.shortcutManager.getKeys(e.getKey)
       val arr: Array[Int] = keys.stream().mapToInt((i: Integer) => i.intValue()).toArray()
-      e.getValue().setShortcut(arr*)
+      e.getValue.setShortcut(arr*)
     }
   }
 
@@ -223,7 +223,7 @@ class TopBar extends MenuBar {
     try {
       val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
       conf.title = i18n("选择项目...")
-      if (Gdx.app.getType() == Application.ApplicationType.Android) {
+      if (Gdx.app.getType == Application.ApplicationType.Android) {
         conf.mimeFilter = "*/*"
       } else {
         conf.nameFilter = (dir: File, name: String) => hasProjectExtension(name)
@@ -259,7 +259,7 @@ class TopBar extends MenuBar {
       if (App.root.getFrontendProject().getSavePath() == null) {
         val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
         conf.title = i18n("选择保存位置...")
-        if (Gdx.app.getType() == Application.ApplicationType.Android) {
+        if (Gdx.app.getType == Application.ApplicationType.Android) {
           conf.mimeFilter = "*/*"
         }
         conf.intent = NativeFileChooserIntent.SAVE
@@ -294,7 +294,7 @@ class TopBar extends MenuBar {
 
       val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
       conf.title = i18n("选择保存位置...")
-      if (Gdx.app.getType() == Application.ApplicationType.Android) {
+      if (Gdx.app.getType == Application.ApplicationType.Android) {
         conf.mimeFilter = "*/*"
       }
       conf.intent = NativeFileChooserIntent.SAVE

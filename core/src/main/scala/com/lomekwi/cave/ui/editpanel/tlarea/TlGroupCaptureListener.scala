@@ -81,7 +81,7 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
 
         val timeRange: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(segStartTime), java.lang.Long.valueOf(segEndTime))
         for (entry <- track.getSubRangeMapAsEntrySet(timeRange).asScala) {
-          val seg: Segment = entry.getValue()
+          val seg: Segment = entry.getValue
           val segLeft: Float = tlGroup.absoluteTimeToX(seg.getRange().lowerEndpoint())
           val segRight: Float = tlGroup.absoluteTimeToX(seg.getRange().upperEndpoint())
 
@@ -97,7 +97,7 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
       i += 1
     }
 
-    if (!toSelect.isEmpty()) {
+    if (!toSelect.isEmpty) {
       tlGroup.clearSelection()
       for (seg <- toSelect.asScala) {
         tlGroup.selectedSegments.add(seg)

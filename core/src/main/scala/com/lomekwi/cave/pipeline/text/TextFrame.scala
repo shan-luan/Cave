@@ -73,15 +73,15 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
       layoutVersion = version
     }
     if (font == null || text == null || glyphsMissing) return
-    var t = getTransform()
-    var scaleX = if (t.isFlipX()) -1f else 1f
-    var scaleY = if (t.isFlipY()) -1f else 1f
-    var w = cachedWidth
-    var h = cachedHeight
+    val t = getTransform()
+    val scaleX = if (t.isFlipX()) -1f else 1f
+    val scaleY = if (t.isFlipY()) -1f else 1f
+    val w = cachedWidth
+    val h = cachedHeight
 
-    var saved = new Matrix4(batch.getTransformMatrix())
-    var sx = scaleX * t.getScaleX()
-    var sy = scaleY * t.getScaleY()
+    val saved = new Matrix4(batch.getTransformMatrix)
+    val sx = scaleX * t.getScaleX()
+    val sy = scaleY * t.getScaleY()
     tmpMatrix.set(saved)
     tmpMatrix.translate(t.getX() + w * sx / 2, t.getY() + h * sy / 2, 0)
     tmpMatrix.rotate(0, 0, 1, t.getRotation())
@@ -91,15 +91,15 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
     try {
       font.draw(batch, layout, -w / 2, -cachedCenterY)
     } catch {
-      case e: NullPointerException =>
+      case _: NullPointerException =>
         glyphsMissing = true
     }
     batch.setTransformMatrix(saved)
   }
 
   private def rebuildLayout(): Unit = {
-    var t = text
-    var f = font
+    val t = text
+    val f = font
     if (f == null || t == null) {
       glyphsMissing = true
       cachedWidth = 0
@@ -109,9 +109,9 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
     }
     var i = 0
     while (i < t.length()) {
-      var c = t.charAt(i)
+      val c = t.charAt(i)
       if (!(c == ' ' || c == '\n' || c == '\r' || c == '\t')) {
-        if (f.getData().getGlyph(c) == null) {
+        if (f.getData.getGlyph(c) == null) {
           glyphsMissing = true
           cachedWidth = 0
           cachedHeight = 0
@@ -130,18 +130,18 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
     var maxTop = -Float.MaxValue
     for (run <- layout.runs.asScala) {
       for (glyph <- run.glyphs.asScala) {
-        var bottom = run.y + glyph.yoffset
-        var top = bottom + glyph.height
+        val bottom = run.y + glyph.yoffset
+        val top = bottom + glyph.height
         if (bottom < minBottom) minBottom = bottom
         if (top > maxTop) maxTop = top
       }
     }
     if (minBottom > maxTop) {
       cachedHeight = layout.height
-      cachedCenterY = font.getAscent()
+      cachedCenterY = font.getAscent
     } else {
       cachedHeight = maxTop - minBottom
-      cachedCenterY = font.getAscent() + (maxTop + minBottom) / 2f
+      cachedCenterY = font.getAscent + (maxTop + minBottom) / 2f
     }
   }
 }

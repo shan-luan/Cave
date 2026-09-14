@@ -39,7 +39,7 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   override def create(): Unit = {
     App.audioOut = new AppAudioOut()
     Gdx.app.setLogLevel(Application.LOG_DEBUG)
-    ui = new Root(this)
+    ui = new Root()
     ui.create()
   }
 

@@ -72,13 +72,13 @@ abstract class DecRes[F <: Frame] protected (protected val source: MedRes) exten
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    Math.max(grabber.getLengthInTime(), 0)
+    Math.max(grabber.getLengthInTime, 0)
   }
   def getTimestamp(): Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getTimestamp()
+    grabber.getTimestamp
   }
   def getCodecName(): String
 

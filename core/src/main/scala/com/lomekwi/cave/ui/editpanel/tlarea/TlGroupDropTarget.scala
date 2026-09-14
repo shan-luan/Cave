@@ -23,7 +23,7 @@ import scala.jdk.CollectionConverters.*
 class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.Target(tlGroup) {
 
   override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
-    payload.getObject() match {
+    payload.getObject match {
       case file: File =>
         val mimeType = MimeType.detectMimeType(file)
         App.mediaFactory.isSupported(mimeType)
@@ -33,7 +33,7 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
 
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
-      val file: File = payload.getObject().asInstanceOf[File]
+      val file: File = payload.getObject.asInstanceOf[File]
       val segments: List[Segment] = tlGroup.project.mediaSegFactory.getAll(file)
       val startTime: Long = tlGroup.xToAbsoluteTime(x)
       val baseTrack: Int = tlGroup.yToTrackIndex(y)
@@ -64,7 +64,7 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
       tlGroup.dirty = true
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage())
+        Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage)
     }
   }
 }

@@ -33,7 +33,7 @@ class SegmentSet extends AbstractCollection[Segment] with Serializable with Sele
   }
 
   override def isEmpty(): Boolean = {
-    segments.isEmpty()
+    segments.isEmpty
   }
 
   override def iterator(): Iterator[Segment] = {

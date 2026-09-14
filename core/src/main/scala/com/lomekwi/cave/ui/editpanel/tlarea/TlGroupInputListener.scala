@@ -18,7 +18,7 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
       tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
       return true
     }
-    if (button == Input.Buttons.RIGHT && event.getTarget().eq(event.getListenerActor())) {
+    if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
       tlGroup.tlGroupMenu.setContext(Math.max(tlGroup.xToAbsoluteTime(x), 0))
       return true
     }
@@ -26,8 +26,8 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
   }
 
   override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
-    if (button == Input.Buttons.RIGHT && event.getTarget().eq(event.getListenerActor())) {
-      tlGroup.tlGroupMenu.showMenu(tlGroup.getStage(), event.getStageX(), event.getStageY())
+    if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
+      tlGroup.tlGroupMenu.showMenu(tlGroup.getStage, event.getStageX, event.getStageY)
     }
   }
 
@@ -46,10 +46,10 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
       tlGroup.view.scrollVertical(amountY * 10)
 
     } else if (ip.isKeyPressed(SHIFT_LEFT)) {
-      tlGroup.view.scrollHorizontal(amountY * 30, tlGroup.getWidth())
+      tlGroup.view.scrollHorizontal(amountY * 30, tlGroup.getWidth)
 
     } else {
-      if (!tlGroup.view.zoom(amountY, x / tlGroup.getWidth())) return true
+      if (!tlGroup.view.zoom(amountY, x / tlGroup.getWidth)) return true
     }
 
     tlGroup.dirty = true

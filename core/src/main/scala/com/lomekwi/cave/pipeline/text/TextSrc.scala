@@ -115,7 +115,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
       try {
         cd.await()
       } catch {
-        case e: InterruptedException =>
+        case _: InterruptedException =>
           Thread.currentThread().interrupt()
           return null
       }

@@ -9,7 +9,6 @@ import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.MediaSegFactory
 import com.lomekwi.cave.timeline.Timeline
-import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.Playhead
 import com.lomekwi.cave.app.App
@@ -18,12 +17,10 @@ import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
 
 import java.io.File
-import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.Serializable
 import java.nio.file.Path
 import java.util.UUID
-import java.util.concurrent.Future
 
 import scala.jdk.CollectionConverters.*
 
@@ -58,7 +55,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
     }
 
     for (track <- timeline.getTracks().asScala) {
-      if (track.getWorker().getFuture() == null || track.getWorker().getFuture().isDone()) {
+      if (track.getWorker().getFuture() == null || track.getWorker().getFuture().isDone) {
         val future = App.workerExecutor.submit(track.getWorker())
         track.getWorker().setFuture(future)
       }

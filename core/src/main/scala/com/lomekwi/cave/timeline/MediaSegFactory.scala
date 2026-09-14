@@ -10,7 +10,6 @@ import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.resource.media.MediaCreatedEvent
-import com.lomekwi.cave.resource.media.MedRes
 import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.util.MimeType
@@ -51,13 +50,13 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
   def getAll(file: File): List[Segment] = {
     var existing: Collection[Resource] = project.resources.get(file)
 
-    if (existing.isEmpty()) {
+    if (existing.isEmpty) {
       val mimeType = MimeType.detectMimeType(file)
       if (mimeType == null) {
-        throw new IOException("无法检测文件MIME类型: " + file.getName())
+        throw new IOException("无法检测文件MIME类型: " + file.getName)
       }
 
-      for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath()).asScala) {
+      for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath).asScala) {
         project.resources.put(file, medRes)
         project.projEventBus.post(new MediaCreatedEvent(file, medRes))
       }
@@ -66,7 +65,7 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
 
     val segments: List[Segment] = new ArrayList[Segment]()
     for (resource <- existing.asScala) {
-      segments.add(new Segment(applyUnchecked(map.get(resource.getClass()), resource)))
+      segments.add(new Segment(applyUnchecked(map.get(resource.getClass), resource)))
     }
     segments
   }

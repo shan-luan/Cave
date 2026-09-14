@@ -20,7 +20,7 @@ class TopTabbedPane extends AutoHideTabbedPane {
           currentProjectTab.getProject().playhead.setPlaying(false)
         }
 
-        App.root.getMajorArea().setActor(tab.getContentTable())
+        App.root.getMajorArea().setActor(tab.getContentTable)
 
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
           currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent.INSTANCE)

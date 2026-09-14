@@ -26,7 +26,7 @@ final class TextPortEditor(port0: Node.InPort[?], source: Source[?]) extends Vis
     textArea.setPrefRows(3f)
     textArea.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
-        val newVal: String = textArea.getText()
+        val newVal: String = textArea.getText
         val oldVal: String = port.getDefaultData().asInstanceOf[String]
         if (Objects.equals(oldVal, newVal)) return
         val strPort: Node.InPort[String] = port.asInstanceOf[Node.InPort[String]]

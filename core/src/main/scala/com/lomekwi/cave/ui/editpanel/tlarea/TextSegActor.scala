@@ -13,10 +13,10 @@ class TextSegActor(segment: Segment) extends SegActor(segment) {
     if (text != null && text.indexOf('\n') >= 0) {
       text = text.substring(0, text.indexOf('\n'))
     }
-    if (text != null && !text.isEmpty()) {
-      val font = VisUI.getSkin().getFont("default-font")
-      val textY: Float = getY() + getHeight() / 2f + font.getCapHeight() / 2f
-      font.draw(batch, text, getX() + visibleStartX + 4, textY)
+    if (text != null && !text.isEmpty) {
+      val font = VisUI.getSkin.getFont("default-font")
+      val textY: Float = getY + getHeight / 2f + font.getCapHeight / 2f
+      font.draw(batch, text, getX + visibleStartX + 4, textY)
     }
   }
 }

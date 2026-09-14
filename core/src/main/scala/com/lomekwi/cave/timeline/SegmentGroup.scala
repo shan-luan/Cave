@@ -41,7 +41,7 @@ class SegmentGroup extends AbstractCollection[Segment] with Serializable with Se
   }
 
   override def isEmpty(): Boolean = {
-    segments.isEmpty()
+    segments.isEmpty
   }
 
   override def iterator(): Iterator[Segment] = {

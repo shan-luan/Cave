@@ -42,7 +42,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
       unpackRowLength = idr.getUnpackRowLength()
       decoded = true
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         // 首次 get() 时才惰性解码
     }
   }

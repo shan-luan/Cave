@@ -11,7 +11,6 @@ import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
@@ -40,10 +39,10 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       // 按住标题栏区域即可拖动重排
-      if (button == 0 && y >= getHeight() - getPadTop()) {
+      if (button == 0 && y >= getHeight - getPadTop) {
         dragging = true
-        dragStageY = event.getStageY()
-        dragWindowY = getY()
+        dragStageY = event.getStageY
+        dragWindowY = getY
         event.cancel()
         return true
       }
@@ -53,7 +52,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       if (!dragging) return
       event.cancel()
-      setY(dragWindowY + (event.getStageY() - dragStageY))
+      setY(dragWindowY + (event.getStageY - dragStageY))
     }
 
     override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
@@ -79,8 +78,8 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   /** 标题栏加上/下移动按钮，用于交换相邻 filter 的顺序。 */
   private def addMoveButton(up: Boolean): Unit = {
     val style = new VisImageButton.VisImageButtonStyle(
-      VisUI.getSkin().get("close-window", classOf[VisImageButton.VisImageButtonStyle]))
-    style.imageUp = VisUI.getSkin().getDrawable(if (up) "select-up" else "select-down")
+      VisUI.getSkin.get("close-window", classOf[VisImageButton.VisImageButtonStyle]))
+    style.imageUp = VisUI.getSkin.getDrawable(if (up) "select-up" else "select-down")
     val button = new VisImageButton(style)
     getTitleTable().add(button)
     button.addListener(new ChangeListener {
@@ -118,18 +117,18 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   /** 拖拽结束后，根据卡片在列表中的位置计算目标索引并重排。 */
   private def doReorder(): Unit = {
     if (source == null) return
-    val p = getParent()
+    val p = getParent
     p match {
       case content: VisTable =>
         val filters = source.getFilters().asInstanceOf[List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
         if (myIndex < 0) return
 
-        val myCenterY = getY() + getHeight() / 2
+        val myCenterY = getY + getHeight / 2
         var target = 0
-        for (child <- content.getChildren().asScala) {
+        for (child <- content.getChildren.asScala) {
           if (child.isInstanceOf[FilterActor] && child != this) {
-            if (child.getY() + child.getHeight() / 2 > myCenterY) target += 1
+            if (child.getY + child.getHeight / 2 > myCenterY) target += 1
           }
         }
 

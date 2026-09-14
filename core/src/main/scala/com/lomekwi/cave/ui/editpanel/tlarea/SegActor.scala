@@ -42,7 +42,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       hovered = true
       if (x < edgeWidth) {
         setCursor(Cursor.SystemCursor.HorizontalResize)
-      } else if (x > getWidth() - edgeWidth) {
+      } else if (x > getWidth - edgeWidth) {
         setCursor(Cursor.SystemCursor.HorizontalResize)
       } else {
         setCursor(Cursor.SystemCursor.AllResize)
@@ -74,7 +74,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     }
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      val parent = getParent()
+      val parent = getParent
       if (parent == null || !parent.isInstanceOf[TlGroup]) {
         return false
       }
@@ -82,7 +82,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       if (button == Input.Buttons.LEFT) {
         if (x < edgeWidth) {
           dragSide = DragSide.FRONT
-        } else if (x > getWidth() - edgeWidth) {
+        } else if (x > getWidth - edgeWidth) {
           dragSide = DragSide.BEHIND
         } else {
           dragSide = DragSide.MIDDLE
@@ -96,7 +96,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
         initDrag(x, y)
         true
       } else {
-        getMenu().setContext(SegActor.this, parent.asInstanceOf[TlGroup].xToAbsoluteTime(getX() + x))
+        getMenu().setContext(SegActor.this, parent.asInstanceOf[TlGroup].xToAbsoluteTime(getX + x))
         false
       }
     }
@@ -113,14 +113,14 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   })
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    ScissorStack.calculateScissors(App.root.getStage().getCamera(), batch.getTransformMatrix(), bounds, scissors)
+    ScissorStack.calculateScissors(App.root.getStage().getCamera, batch.getTransformMatrix, bounds, scissors)
     if (ScissorStack.pushScissors(scissors)) {
       var visibleStartX: Float = 0
-      var visibleEndX: Float = getWidth()
-      if (getParent() != null) {
-        val parentW: Float = getParent().getWidth()
-        visibleStartX = Math.max(0f, -getX())
-        visibleEndX = Math.min(getWidth(), parentW - getX())
+      var visibleEndX: Float = getWidth
+      if (getParent != null) {
+        val parentW: Float = getParent.getWidth
+        visibleStartX = Math.max(0f, -getX)
+        visibleEndX = Math.min(getWidth, parentW - getX)
       }
       drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
       drawBorder()
@@ -131,17 +131,17 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
-    App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT)
+    App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
   }
 
   protected def drawBorder(): Unit = {
     val s = getSegment().isSelected()
-    App.root.getShapeDrawer().rectangle(getX(), getY(), getWidth(), getHeight(), if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
+    App.root.getShapeDrawer().rectangle(getX, getY, getWidth, getHeight, if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
   }
 
   private def drawSelectionOverlay(): Unit = {
     if (hovered) {
-      App.root.getShapeDrawer().filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.SEGMENT_HOVER)
+      App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Colors.SEGMENT_HOVER)
     }
   }
 
@@ -180,19 +180,19 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     dragSide match {
       case DragSide.FRONT =>
         // target = 鼠标 stage x（diffToActorX 与 getX() 相消）
-        var target: Float = getX() + diffToActorX
+        var target: Float = getX + diffToActorX
         target = Math.max(target, tl.absoluteTimeToX(0))
         handleFrontResize(snapResizeTime(Math.max(tl.xToAbsoluteTime(target), 0)))
       case DragSide.BEHIND =>
-        val upper: Float = getX() + diffToActorX
+        val upper: Float = getX + diffToActorX
         val rawUpper: Long = Math.max(tl.xToAbsoluteTime(upper), 0)
         handleBehindResize(snapResizeTime(rawUpper))
       case DragSide.MIDDLE =>
         // deltaX/deltaY 为相对按下点的累计位移，同帧多次 mouse move 不会重复累加
         val deltaX: Float = diffToActorX - firstX
         val deltaY: Float = diffToActorY - firstY
-        val targetX: Float = getX() + deltaX
-        val targetY: Float = getY() + deltaY
+        val targetX: Float = getX + deltaX
+        val targetY: Float = getY + deltaY
 
         val duration: Long = segment.getRange().upperEndpoint() - segment.getRange().lowerEndpoint()
         var target: Long = tl.xToAbsoluteTime(targetX)
@@ -211,7 +211,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   // 吸附点由 Timeline.snapTime 获取，这里只做阈值换算、忽略集与指示线。
 
   private def snapThreshold(): Long = {
-    Math.max(1, (SegActor.SNAP_THRESHOLD_PX / tl.getWidth() * tl.view.durationTime).toLong)
+    Math.max(1, (SegActor.SNAP_THRESHOLD_PX / tl.getWidth * tl.view.durationTime).toLong)
   }
 
   private def snapDisabled(): Boolean = {
@@ -353,12 +353,12 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   private def setCursor(cursor: Cursor.SystemCursor): Unit = {
-    if (Gdx.app.getType() != Application.ApplicationType.Desktop) return
+    if (Gdx.app.getType != Application.ApplicationType.Desktop) return
     Gdx.graphics.setSystemCursor(cursor)
   }
 
   def getMenu(): SegMenu = {
-    getParent() match {
+    getParent match {
       case g: TlGroup => g.segMenu
       case _ => null
     }
@@ -368,18 +368,18 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     if (!menuInitialized) {
       val menu: SegMenu = getMenu()
       if (menu != null) {
-        addListener(menu.getDefaultInputListener())
+        addListener(menu.getDefaultInputListener)
         menuInitialized = true
       }
     }
   }
 
   override protected def positionChanged(): Unit = {
-    bounds.set(getX(), getY(), getWidth(), getHeight())
+    bounds.set(getX, getY, getWidth, getHeight)
   }
 
   override protected def sizeChanged(): Unit = {
-    bounds.set(getX(), getY(), getWidth(), getHeight())
+    bounds.set(getX, getY, getWidth, getHeight)
   }
 }
 

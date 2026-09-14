@@ -3,7 +3,7 @@ package com.lomekwi.cave.timeline
 import com.google.common.collect.Range
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.Assert.{assertEquals, assertFalse, assertNotSame, assertSame, assertTrue}
+import org.junit.Assert.{assertEquals, assertNotSame, assertSame, assertTrue}
 import org.junit.Before
 import org.junit.Test
 
@@ -508,7 +508,7 @@ class TrackDragTest extends GdxTestBase {
 
   private def countOn(track: Track): Int = {
     var c = 0
-    for (ignored <- track.asScala) c += 1
+    for (_ <- track.asScala) c += 1
     return c
   }
 }

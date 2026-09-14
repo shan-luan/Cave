@@ -81,7 +81,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
       try {
         cd.await()
       } catch {
-        case e: InterruptedException =>
+        case _: InterruptedException =>
           Thread.currentThread().interrupt()
           return null
       }

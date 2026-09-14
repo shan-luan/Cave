@@ -22,13 +22,13 @@ class Card(title: String) extends VisTable {
   private var drawTitleTable: Boolean = false
 
   {
-    val style = VisUI.getSkin().get(classOf[Window.WindowStyle])
+    val style = VisUI.getSkin.get(classOf[Window.WindowStyle])
     setBackground(style.background)
     setClip(true)
 
     titleLabel = new Label(title, new Label.LabelStyle(style.titleFont, style.titleFontColor))
     titleLabel.setEllipsis(true)
-    titleLabel.setAlignment(VisUI.getDefaultTitleAlign())
+    titleLabel.setAlignment(VisUI.getDefaultTitleAlign)
 
     titleTable = new Table {
       override def draw(batch: Batch, parentAlpha: Float): Unit = {
@@ -41,18 +41,18 @@ class Card(title: String) extends VisTable {
 
   override protected def drawBackground(batch: Batch, parentAlpha: Float, x: Float, y: Float): Unit = {
     super.drawBackground(batch, parentAlpha, x, y)
-    titleTable.getColor().a = getColor().a
-    val padTop = getPadTop()
-    val padLeft = getPadLeft()
-    titleTable.setSize(getWidth() - padLeft - getPadRight(), padTop)
-    titleTable.setPosition(padLeft, getHeight() - padTop)
+    titleTable.getColor.a = getColor.a
+    val padTop = getPadTop
+    val padLeft = getPadLeft
+    titleTable.setSize(getWidth - padLeft - getPadRight, padTop)
+    titleTable.setPosition(padLeft, getHeight - padTop)
     drawTitleTable = true
     titleTable.draw(batch, parentAlpha)
     drawTitleTable = false
   }
 
   override def getPrefWidth(): Float = {
-    Math.max(super.getPrefWidth(), titleTable.getPrefWidth() + getPadLeft() + getPadRight())
+    Math.max(super.getPrefWidth, titleTable.getPrefWidth + getPadLeft + getPadRight)
   }
 
   def getTitleLabel(): Label = {
@@ -65,7 +65,7 @@ class Card(title: String) extends VisTable {
 
   def addCloseButton(): Unit = {
     val closeButton = new VisImageButton("close-window")
-    titleTable.add(closeButton).padRight(-getPadRight() + 0.7f)
+    titleTable.add(closeButton).padRight(-getPadRight + 0.7f)
     closeButton.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         close()
@@ -77,8 +77,8 @@ class Card(title: String) extends VisTable {
         true
       }
     })
-    if (titleLabel.getLabelAlign() == Align.center && titleTable.getChildren().size == 2) {
-      titleTable.getCell(titleLabel).padLeft(closeButton.getWidth() * 2)
+    if (titleLabel.getLabelAlign == Align.center && titleTable.getChildren.size == 2) {
+      titleTable.getCell(titleLabel).padLeft(closeButton.getWidth * 2)
     }
   }
 

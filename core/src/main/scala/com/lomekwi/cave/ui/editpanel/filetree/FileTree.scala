@@ -11,7 +11,7 @@ import com.lomekwi.cave.util.i18n.I18N.i18n
 class FileTree private () extends VisTree[FileTreeNode, File]() {
   {
     val rootFile = new File(System.getProperty("user.home"))
-    Gdx.app.debug("FileTree", i18n("创建文件树，根目录: ") + rootFile.getAbsolutePath())
+    Gdx.app.debug("FileTree", i18n("创建文件树，根目录: ") + rootFile.getAbsolutePath)
     val rootNode = new FileTreeNode(rootFile)
 
     add(rootNode)

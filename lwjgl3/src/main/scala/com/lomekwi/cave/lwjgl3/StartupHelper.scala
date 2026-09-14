@@ -93,7 +93,7 @@ object StartupHelper {
         }
 
         // Checks if we are already on the main thread, such as from running via Construo.
-        val objc_msgSend: Long = ObjCRuntime.getLibrary().getFunctionAddress("objc_msgSend");
+        val objc_msgSend: Long = ObjCRuntime.getLibrary.getFunctionAddress("objc_msgSend");
         val NSThread: Long      = objc_getClass("NSThread");
         val currentThread: Long = invokePPP(NSThread, sel_getUid("currentThread"), objc_msgSend);
         val isMainThread: Boolean = invokePPZ(currentThread, sel_getUid("isMainThread"), objc_msgSend);
@@ -131,14 +131,14 @@ object StartupHelper {
         jvmArgs.add(javaExecPath);
         jvmArgs.add("-XstartOnFirstThread");
         jvmArgs.add("-D" + JVM_RESTARTED_ARG + "=true");
-        jvmArgs.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
+        jvmArgs.addAll(ManagementFactory.getRuntimeMXBean.getInputArguments);
         jvmArgs.add("-cp");
         jvmArgs.add(System.getProperty("java.class.path"));
         var mainClass: String = System.getenv("JAVA_MAIN_CLASS_" + pid);
         if (mainClass == null) {
-            val trace: Array[StackTraceElement] = Thread.currentThread().getStackTrace();
+            val trace: Array[StackTraceElement] = Thread.currentThread().getStackTrace;
             if (trace.length > 0) {
-                mainClass = trace(trace.length - 1).getClassName();
+                mainClass = trace(trace.length - 1).getClassName;
             } else {
                 System.err.println("The main class could not be determined.");
                 return false;
@@ -154,7 +154,7 @@ object StartupHelper {
                 val process: Process = (new ProcessBuilder(jvmArgs))
                         .redirectErrorStream(true).start();
                 val processOutput: BufferedReader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream()));
+                        new InputStreamReader(process.getInputStream));
                 var line: String = null;
 
                 while ({ line = processOutput.readLine(); line != null }) {

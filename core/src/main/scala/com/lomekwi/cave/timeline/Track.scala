@@ -5,11 +5,11 @@ import com.google.common.eventbus.Subscribe
 import com.google.common.primitives.Longs
 import com.lomekwi.cave.pipeline.{Frame, GapFrame}
 import com.badlogic.gdx.Gdx
-import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, Playhead, RefreshRequestEvent, SeekEvent}
+import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
 
 import com.lomekwi.cave.util.Ranges.shift
 
-import java.io.{IOException, ObjectInputStream, ObjectOutputStream, Serializable}
+import java.io.{ObjectInputStream, ObjectOutputStream, Serializable}
 import java.util.{ArrayList, Collection, Collections, Iterator, List, Objects, Set}
 import java.util.concurrent.{Future, Phaser}
 import java.util.concurrent.locks.LockSupport
@@ -35,7 +35,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
 
   protected[timeline] def isEmpty(): Boolean = this.synchronized {
-    sources.asMapOfRanges().isEmpty()
+    sources.asMapOfRanges().isEmpty
   }
 
   /**
@@ -44,7 +44,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    * 返回能放下该区间的最近偏移（调用方可把目标区间偏移这么多后再试）。此语义专用于放置/粘贴。
    */
   protected[timeline] def tryAdd(segment: Segment, r: Range[java.lang.Long]): Long = this.synchronized {
-    var shift = getShift(r)
+    val shift = getShift(r)
     if (shift == 0) {
       `override`(segment, r)
     }
@@ -90,9 +90,9 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
         var maxEnd = Long.MinValue
         var found = false
         for (e <- sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet().asScala) {
-          if (!(exclude != null && e.getKey().isConnected(exclude)) && !ignore.contains(e.getValue())) {
+          if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
             found = true
-            maxEnd = Math.max(maxEnd, e.getKey().upperEndpoint())
+            maxEnd = Math.max(maxEnd, e.getKey.upperEndpoint())
           }
         }
         if (!found) return s
@@ -103,9 +103,9 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
         var minStart = Long.MaxValue
         var found = false
         for (e <- sources.subRangeMap(shift(r, s)).asMapOfRanges().entrySet().asScala) {
-          if (!(exclude != null && e.getKey().isConnected(exclude)) && !ignore.contains(e.getValue())) {
+          if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
             found = true
-            minStart = Math.min(minStart, e.getKey().lowerEndpoint())
+            minStart = Math.min(minStart, e.getKey.lowerEndpoint())
           }
         }
         if (!found) return s
@@ -122,7 +122,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     val it = sources.subRangeMap(range).asMapOfRanges().entrySet().iterator()
     while (it.hasNext) {
       val e = it.next()
-      if (!(exclude != null && e.getKey().isConnected(exclude)) && !ignore.contains(e.getValue())) {
+      if (!(exclude != null && e.getKey.isConnected(exclude)) && !ignore.contains(e.getValue)) {
         return false
       }
     }
@@ -164,12 +164,12 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    */
   def isFree(range: Range[java.lang.Long], ignore: Collection[Segment]): Boolean = this.synchronized {
     val m = sources.subRangeMap(range).asMapOfRanges()
-    if (m.isEmpty()) return true
-    if (ignore.isEmpty()) return false
+    if (m.isEmpty) return true
+    if (ignore.isEmpty) return false
     val it = m.entrySet().iterator()
     while (it.hasNext) {
       val entry = it.next()
-      if (!ignore.contains(entry.getValue())) return false
+      if (!ignore.contains(entry.getValue)) return false
     }
     true
   }
@@ -316,14 +316,14 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
       val it = m.entrySet().iterator()
       while (it.hasNext) {
         val entry = it.next()
-        if (!(excludeHit && entry.getKey().contains(time))) return entry.getValue()
+        if (!(excludeHit && entry.getKey.contains(time))) return entry.getValue
       }
     } else {
       val m = sources.subRangeMap(Range.atMost(java.lang.Long.valueOf(time))).asDescendingMapOfRanges()
       val it = m.entrySet().iterator()
       while (it.hasNext) {
         val entry = it.next()
-        if (!(excludeHit && entry.getKey().contains(time))) return entry.getValue()
+        if (!(excludeHit && entry.getKey.contains(time))) return entry.getValue
       }
     }
     null
@@ -331,7 +331,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
 
   def getLength(): Long = this.synchronized {
     if (lengthChanged) {
-      if (sources.asMapOfRanges().isEmpty()) {
+      if (sources.asMapOfRanges().isEmpty) {
         length = 0
       } else {
         length = sources.span().upperEndpoint()
@@ -363,8 +363,8 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
         while (ia.hasNext()) {
           val ea = ia.next()
           val eb = ib.next()
-          if (!ea.getKey().equals(eb.getKey())) return false
-          if (!Track.segmentEquals(ea.getValue(), eb.getValue())) return false
+          if (!ea.getKey.equals(eb.getKey)) return false
+          if (!Track.segmentEquals(ea.getValue, eb.getValue)) return false
         }
         true
       case _ => false
@@ -459,7 +459,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
       Gdx.app.log("Track" + index, "轨道线程启动: " + Track.this)
       try {
         val p = timeline.project.playhead
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!Thread.currentThread().isInterrupted) {
           var t: Long = p.getTime()
           if (!p.isPlaying()) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
@@ -492,7 +492,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
               Gdx.app.debug("Track" + index, "找到片段: " + s)
               s.sync(t)
               val end: Long = r.upperEndpoint()
-              while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted()) {
+              while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
                 t = timeline.project.playhead.getTime()
                 val frame = s.get(t)
                 if (!updateNeeded && frame != null) {
@@ -501,7 +501,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
                   try {
                     sinkPhaser.awaitAdvanceInterruptibly(phase)
                   } catch {
-                    case ie: InterruptedException =>
+                    case _: InterruptedException =>
                       Thread.currentThread().interrupt()
                   }
                 }
@@ -561,7 +561,7 @@ object Track {
     if (a.eq(b)) return true
     val sa = a.getSource()
     val sb = b.getSource()
-    sa.getClass() == sb.getClass()
+    sa.getClass == sb.getClass
       && sa.getDuration() == sb.getDuration()
       && a.getOrigin() == b.getOrigin()
       && Objects.equals(a.getRange(), b.getRange())

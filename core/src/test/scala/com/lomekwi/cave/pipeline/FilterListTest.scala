@@ -1,12 +1,12 @@
 package com.lomekwi.cave.pipeline
 
-import org.junit.Assert.{assertEquals, assertFalse, assertNull, assertSame, assertTrue}
+import org.junit.Assert.{assertEquals, assertFalse, assertNull, assertSame}
 import org.junit.Test
 
 import com.lomekwi.cave.pipeline.num.NumFrame
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.util.{Iterator, List, Set}
+import java.util.List
 
 import scala.util.Using
 
@@ -238,7 +238,7 @@ object FilterListTest {
   /** 可复用帧：以 val 为内容。 */
   private[pipeline] final class Numable(private[pipeline] var `val`: Double) extends Frame(null)
 
-  private[pipeline] final class NumSrc(private var base: Double) extends Source[Numable] {
+  private[pipeline] final class NumSrc(private val base: Double) extends Source[Numable] {
     override protected def generate(time: Long, track: com.lomekwi.cave.timeline.Track): Numable = {
       return new Numable(base)
     }

@@ -82,9 +82,9 @@ object MediaFactory {
     val g = new FFmpegFrameGrabber(path)
     try {
       g.start()
-      g.getAudioChannels() > 0
+      g.getAudioChannels > 0
     } catch {
-      case e: Exception => false
+      case _: Exception => false
     } finally {
       if (g != null) {
         g.close()

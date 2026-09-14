@@ -58,9 +58,9 @@ object NodeRegistry {
       node
     } catch {
       case e: NoSuchMethodException =>
-        throw new IllegalArgumentException(nodeClass.getName() + " 缺少无参构造器", e)
+        throw new IllegalArgumentException(nodeClass.getName + " 缺少无参构造器", e)
       case e @ (_: InvocationTargetException | _: InstantiationException | _: IllegalAccessException) =>
-        throw new RuntimeException("创建节点 " + nodeClass.getName() + " 失败", e)
+        throw new RuntimeException("创建节点 " + nodeClass.getName + " 失败", e)
     }
   }
 
@@ -71,7 +71,7 @@ object NodeRegistry {
   }
 
   private def targetTypeOf(filterClass: Class[? <: Filter[?]]): Class[?] = {
-    val superclass: Type = filterClass.getGenericSuperclass()
+    val superclass: Type = filterClass.getGenericSuperclass
     superclass match {
       case pt: ParameterizedType =>
         val arg: Type = pt.getActualTypeArguments()(0)
@@ -81,6 +81,6 @@ object NodeRegistry {
         }
       case _ =>
     }
-    throw new IllegalArgumentException("无法从 " + filterClass.getName() + " 推断目标类型")
+    throw new IllegalArgumentException("无法从 " + filterClass.getName + " 推断目标类型")
   }
 }

@@ -7,7 +7,7 @@ import com.lomekwi.cave.util.Duplicatable
 
 import com.lomekwi.cave.util.Ranges.shift
 
-import java.io.{IOException, ObjectInputStream, Serializable}
+import java.io.{ObjectInputStream, Serializable}
 import java.util.{ArrayList, Collection, HashMap, HashSet, Iterator, List, Map, Set}
 
 import scala.jdk.CollectionConverters.*
@@ -56,7 +56,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
         entries.add(new RemoveSegsCommand.RemoveEntry(track, s, range, s.getGroup()))
       }
     }
-    if (!entries.isEmpty()) {
+    if (!entries.isEmpty) {
       push(new RemoveSegsCommand(entries))
     }
   }
@@ -91,11 +91,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
   /** 各轨道 probe 后取限制最严者，把 deltaTime 同向截断并应用。@return 实际应用的偏移量，0 表示未移动。 */
   private def applyPerTrack(segments: Collection[Segment], deltaTime: Long, end: Boolean): Long = {
-    if (deltaTime == 0 || segments.isEmpty()) return 0
+    if (deltaTime == 0 || segments.isEmpty) return 0
     val forward = deltaTime > 0
     val tracks: Set[Track] = new HashSet[Track]()
     for (s <- segments.asScala) if (s.getTrack() != null) tracks.add(s.getTrack())
-    if (tracks.isEmpty()) return 0
+    if (tracks.isEmpty) return 0
 
     val bound: Long = tracks.stream()
       .mapToLong((track: Track) => if (end) track.probeSetEnd(segments, forward)
@@ -122,18 +122,18 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
         entries.add(new ResizeSegsCommand.ResizeEntry(track, s, old, r))
       }
     }
-    if (!entries.isEmpty()) {
+    if (!entries.isEmpty) {
       push(new ResizeSegsCommand(entries))
     }
     applied
   }
   /** 仅按时间平移片段（轨道不变）。deltaTime 截断到最大可用量后应用：整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
   def moveTime(segments: Collection[Segment], deltaTime: Long): Long = {
-    if (deltaTime == 0 || segments.isEmpty()) return 0
+    if (deltaTime == 0 || segments.isEmpty) return 0
     val forward = deltaTime > 0
     val tracks: Set[Track] = new HashSet[Track]()
     for (s <- segments.asScala) if (s.getTrack() != null) tracks.add(s.getTrack())
-    if (tracks.isEmpty()) return 0
+    if (tracks.isEmpty) return 0
 
     val bound: Long = tracks.stream()
       .mapToLong((tr: Track) => tr.probeMove(segments, forward))
@@ -188,7 +188,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     for (s <- segments.asScala) {
       getTrack(s.getTrack().index + applied).`override`(s, s.getRange())
     }
-    if (!entries.isEmpty()) {
+    if (!entries.isEmpty) {
       push(new MoveSegsCommand(entries))
     }
     applied
@@ -201,7 +201,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 反向受 0 限制，找不到时返回 0（保持原位）。
    */
   private def findPlaceableTrack(segments: Collection[Segment], deltaTrack: Int): Int = {
-    if (deltaTrack == 0 || segments.isEmpty()) return 0
+    if (deltaTrack == 0 || segments.isEmpty) return 0
     val minIdx = segments.stream().mapToInt((s: Segment) => s.getTrack().index).min().orElseThrow()
     val step = if (deltaTrack > 0) 1 else -1
     val span = Math.abs(deltaTrack)
@@ -241,8 +241,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val searchRange: Range[java.lang.Long] = Range.closedOpen(java.lang.Long.valueOf(searchStart), java.lang.Long.valueOf(searchEnd))
     for (track <- tracks.asScala) {
       for (entry <- track.getSubRangeMapAsEntrySet(searchRange).asScala) {
-        if (!ignore.contains(entry.getValue())) {
-          val r = entry.getKey()
+        if (!ignore.contains(entry.getValue)) {
+          val r = entry.getKey
           var dist = Math.abs(r.lowerEndpoint() - time)
           if (dist < bestDist) {
             best = r.lowerEndpoint()
@@ -280,7 +280,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   def submit(): Unit = {
     if (!recording) return
     recording = false
-    if (recorded.isEmpty()) return
+    if (recorded.isEmpty) return
     if (recorded.size() == 1) {
       project.undoManager.record(recorded.get(0))
     } else {
@@ -293,9 +293,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   private def push(command: UndoableCommand): Unit = {
     if (!recording) return
     // 与 recording 栈中最近命令合并
-    if (!recorded.isEmpty() && command.isInstanceOf[MergeableCommand]) {
+    if (!recorded.isEmpty && command.isInstanceOf[MergeableCommand]) {
       val last = recorded.get(recorded.size() - 1)
-      if (last.getClass() == command.getClass()) {
+      if (last.getClass == command.getClass) {
         val lm = last.asInstanceOf[MergeableCommand]
         if (lm.merge(command)) return
       }

@@ -21,14 +21,14 @@ class ImgSegActor(segment: Segment) extends SegActor(segment) {
     val segLocalEnd: Long = range.upperEndpoint() - seg.getOrigin()
     val segDuration: Long = segLocalEnd - segLocalStart
 
-    sd.filledRectangle(getX(), getY(), getWidth(), getHeight(), Colors.ACCENT_LIGHT)
+    sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (segDuration > 0) {
       val res: ImgRes = seg.getSource().asInstanceOf[ImgSrc].getImgRes()
 
-      val pxPerUs: Float = getWidth() / segDuration.toFloat
+      val pxPerUs: Float = getWidth / segDuration.toFloat
       val aspect: Float = res.getWidth().toFloat / res.getHeight()
-      val thumbDisplayW: Float = getHeight() * aspect
+      val thumbDisplayW: Float = getHeight * aspect
 
       var rawStep: Long = (thumbDisplayW / pxPerUs).toLong
       if (rawStep <= 0) rawStep = 1
@@ -47,10 +47,10 @@ class ImgSegActor(segment: Segment) extends SegActor(segment) {
       while (t < lastT) {
         val tex: Texture = res.getPreview(t)
         if (tex != null) {
-          val x: Float = getX() + (t - segLocalStart) * pxPerUs
+          val x: Float = getX + (t - segLocalStart) * pxPerUs
 
           if (x + thumbDisplayW > lastRightEdge) {
-            batch.draw(tex, x, getY(), thumbDisplayW, getHeight())
+            batch.draw(tex, x, getY, thumbDisplayW, getHeight)
             lastRightEdge = x + thumbDisplayW
           }
         }

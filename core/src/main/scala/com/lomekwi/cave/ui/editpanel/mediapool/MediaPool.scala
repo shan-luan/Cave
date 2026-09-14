@@ -1,6 +1,5 @@
 package com.lomekwi.cave.ui.editpanel.mediapool
 
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 import com.badlogic.gdx.graphics.Texture
@@ -8,9 +7,7 @@ import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import com.kotcrab.vis.ui.layout.FlowGroup
 import com.kotcrab.vis.ui.widget.VisImage
-import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
-import com.google.common.collect.Multimap
 import com.google.common.collect.Multimap
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.media.MediaCreatedEvent
@@ -34,13 +31,13 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
 
     dnd.addTarget(new DragAndDrop.Target(this) {
       override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
-        payload.getObject().isInstanceOf[File]
+        payload.getObject.isInstanceOf[File]
       }
 
       override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
-        if (source.getActor().isDescendantOf(MediaPool.this)) return
+        if (source.getActor.isDescendantOf(MediaPool.this)) return
 
-        val file = payload.getObject().asInstanceOf[File]
+        val file = payload.getObject.asInstanceOf[File]
         if (!resources.containsKey(file)) {
           val item = new MediaPoolItem(file, findShowable(file))
           addActor(item)
@@ -70,7 +67,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   @Subscribe
   def onMediaCreated(event: MediaCreatedEvent): Unit = {
     val file = event.file
-    val it = getChildren().iterator()
+    val it = getChildren.iterator()
     while (it.hasNext) {
       val actor = it.next()
       actor match {
@@ -103,7 +100,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
 
     image.setScaling(com.badlogic.gdx.utils.Scaling.fit)
     add(image).size(128, 72).pad(4).row()
-    add(new EllipsisLabel(file.getName(), 10)).padBottom(4)
+    add(new EllipsisLabel(file.getName, 10)).padBottom(4)
 
     if (previewable != null) {
       requested = true

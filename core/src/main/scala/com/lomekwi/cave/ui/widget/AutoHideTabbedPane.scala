@@ -40,40 +40,40 @@ class AutoHideTabbedPane extends TabbedPane {
   }
 
   private def updateVisibility(): Unit = {
-    val table: Table = getTable()
-    val parent: Table = if (table.getParent().isInstanceOf[Table]) table.getParent().asInstanceOf[Table] else null
+    val table: Table = getTable
+    val parent: Table = if (table.getParent.isInstanceOf[Table]) table.getParent.asInstanceOf[Table] else null
     if (parent == null) return
 
     val cell: Cell[?] = parent.getCell(table)
     if (cell == null) return
 
-    val show: Boolean = getTabs().size > 1
+    val show: Boolean = getTabs.size > 1
     if (show == visible) return
     visible = show
 
     table.clearActions()
     if (show) {
       table.setVisible(true)
-      animateCellHeight(table, cell, cell.getPrefHeight(), table.getPrefHeight())
+      animateCellHeight(table, cell, cell.getPrefHeight, table.getPrefHeight)
     } else {
-      animateCellHeight(table, cell, table.getHeight(), 0)
+      animateCellHeight(table, cell, table.getHeight, 0)
     }
   }
 
   private def animateCellHeight(table: Table, cell: Cell[?], startHeight: Float, endHeight: Float): Unit = {
     val show: Boolean = endHeight != 0
-    val startAlpha: Float = if (show) 0 else table.getColor().a
-    if (show) table.getColor().a = 0
+    val startAlpha: Float = if (show) 0 else table.getColor.a
+    if (show) table.getColor.a = 0
 
     table.addAction(new TemporalAction(AutoHideTabbedPane.ANIMATION_DURATION, Interpolation.smooth) {
       override protected def update(percent: Float): Unit = {
         cell.height(startHeight + (endHeight - startHeight) * percent)
-        table.getColor().a = startAlpha + ((if (show) 1 else 0) - startAlpha) * percent
+        table.getColor.a = startAlpha + ((if (show) 1 else 0) - startAlpha) * percent
         table.invalidateHierarchy()
       }
 
       override protected def end(): Unit = {
-        table.getColor().a = 1
+        table.getColor.a = 1
         if (show) {
           cell.height(Value.prefHeight)
         } else {

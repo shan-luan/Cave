@@ -144,14 +144,14 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getAudioCodecName()
+    grabber.getAudioCodecName
   }
 
   override def getCodec(): Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getAudioCodec()
+    grabber.getAudioCodec
   }
 
   override def getLengthPerFrame(): Long = {

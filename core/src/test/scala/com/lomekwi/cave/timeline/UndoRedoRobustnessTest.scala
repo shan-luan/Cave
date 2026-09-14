@@ -148,7 +148,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       for (seg <- track.asScala) {
         if (rnd.nextFloat() < 0.35f) {
           var group: SegmentGroup = null
-          if (!groups.isEmpty() && rnd.nextFloat() < 0.5f) {
+          if (!groups.isEmpty && rnd.nextFloat() < 0.5f) {
             group = groups.get(rnd.nextInt(groups.size()))
           } else {
             group = new SegmentGroup()
@@ -195,7 +195,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def moveOp(rnd: Random, placed: List[Segment]): Unit = {
-    if (placed.isEmpty()) return
+    if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     var minIdx = Integer.MAX_VALUE
     for (m <- members.asScala) {
@@ -212,7 +212,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def frontResizeOp(rnd: Random, placed: List[Segment]): Unit = {
-    if (placed.isEmpty()) return
+    if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(UndoRedoRobustnessTest.MAX_DURATION) - UndoRedoRobustnessTest.MAX_DURATION / 2
     Using.resource(timeline.record()) { h =>
@@ -221,7 +221,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def behindResizeOp(rnd: Random, placed: List[Segment]): Unit = {
-    if (placed.isEmpty()) return
+    if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(UndoRedoRobustnessTest.MAX_DURATION) - UndoRedoRobustnessTest.MAX_DURATION / 2
     Using.resource(timeline.record()) { h =>
@@ -230,7 +230,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def splitOp(rnd: Random, placed: List[Segment]): Unit = {
-    if (placed.isEmpty()) return
+    if (placed.isEmpty) return
     val s = placed.get(rnd.nextInt(placed.size()))
     val r = s.getRange()
     val lo: Long = r.lowerEndpoint()
@@ -243,7 +243,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def removeOp(rnd: Random, placed: List[Segment]): Unit = {
-    if (placed.isEmpty()) return
+    if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     Using.resource(timeline.record()) { h =>
       timeline.remove(members)
@@ -271,7 +271,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
 
   private def forceChange(rnd: Random): Unit = {
     val placed = placedSegments()
-    if (placed.isEmpty()) {
+    if (placed.isEmpty) {
       addOp(rnd) // 全空时补一个片段；仍失败则放弃这一步
       return
     }

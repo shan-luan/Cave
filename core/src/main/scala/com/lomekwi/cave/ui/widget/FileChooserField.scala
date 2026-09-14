@@ -39,7 +39,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
     conf.nameFilter = (dir, name) => true
     App.fileChooser.chooseFile(conf, new NativeFileChooserCallback {
       override def onFileChosen(file: FileHandle): Unit = {
-        pathField.setText(file.file().getAbsolutePath())
+        pathField.setText(file.file().getAbsolutePath)
       }
 
       override def onCancellation(): Unit = {}
@@ -52,7 +52,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
 
   /** 获取当前路径文本（已 trim）。 */
   def getPath(): String = {
-    pathField.getText().trim()
+    pathField.getText.trim()
   }
 
   /** 设置路径文本。 */

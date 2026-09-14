@@ -25,7 +25,7 @@ class TransNode extends Filter[Transformable] {
 
   private final val out: FilterOut = addOutPort(new FilterOut("输出") {
     override def getData(): Transformable = {
-      var frame: Transformable = getFilterIn().getData()
+      val frame: Transformable = getFilterIn().getData()
       if (frame != null) {
         var t: Transform = frame.getTransform()
         if (t == null) {

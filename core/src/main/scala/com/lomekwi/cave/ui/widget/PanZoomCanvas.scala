@@ -44,8 +44,8 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
       }
 
       override def drag(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-        xOffset += getDeltaX()
-        yOffset += getDeltaY()
+        xOffset += getDeltaX
+        yOffset += getDeltaY
         updateCanvas()
       }
 
@@ -63,8 +63,8 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
     val hit = super.hit(x, y, touchable)
     if (hit != null) return hit
-    if (touchable && (getTouchable() ne Touchable.enabled)) return null
-    if (x >= 0 && x < getWidth() && y >= 0 && y < getHeight()) this else null
+    if (touchable && (getTouchable ne Touchable.enabled)) return null
+    if (x >= 0 && x < getWidth && y >= 0 && y < getHeight) this else null
   }
 
   def getScale(): Float = {
@@ -129,8 +129,8 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
   }
 
   override def act(delta: Float): Unit = {
-    val stage = getStage()
-    if (stage != null && getParent() != null && (stage.getKeyboardFocus() eq getParent())) {
+    val stage = getStage
+    if (stage != null && getParent != null && (stage.getKeyboardFocus eq getParent)) {
       val speed = moveSpeed * delta / getScale()
       if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed
       if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed

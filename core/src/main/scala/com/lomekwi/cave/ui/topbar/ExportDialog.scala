@@ -38,7 +38,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   {
     presetSet = ExportOptionsSet.load()
 
-    val content: Table = getContentTable()
+    val content: Table = getContentTable
 
     val form: VisTable = new VisTable()
 
@@ -179,16 +179,16 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   }
 
   private def presetLabelText(): String = {
-    (presetSet.currentIndex + 1) + "/" + presetSet.presets.size()
+    s"${presetSet.currentIndex + 1}/${presetSet.presets.size()}"
   }
 
   private def collectOptions(): ExportOptions = {
     new ExportOptions(
       fileChooserField.getPath(),
-      widthModel.getValue(),
-      heightModel.getValue(),
-      fpsModel.getValue(),
-      (bitrateModel.getValue() * MEGA).toInt
+      widthModel.getValue,
+      heightModel.getValue,
+      fpsModel.getValue,
+      (bitrateModel.getValue * MEGA).toInt
     )
   }
 
@@ -206,15 +206,15 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
 
   private def startExport(): Unit = {
     val path: String = fileChooserField.getPath()
-    if (path.isEmpty()) {
+    if (path.isEmpty) {
       App.root.getToastManager().show(i18n("请选择输出文件"), 2f)
       return
     }
 
-    val width: Int = widthModel.getValue()
-    val height: Int = heightModel.getValue()
-    val fps: Double = fpsModel.getValue().toDouble
-    val bitrate: Int = (bitrateModel.getValue() * MEGA).toInt
+    val width: Int = widthModel.getValue
+    val height: Int = heightModel.getValue
+    val fps: Double = fpsModel.getValue.toDouble
+    val bitrate: Int = (bitrateModel.getValue * MEGA).toInt
 
     val task = new VideoExportTask(
       project.timeline.duplicate(),
@@ -222,7 +222,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
       width, height, fps, bitrate
     )
     App.taskPool.submit(task)
-    App.root.getToastManager().show(i18n("开始导出：") + new java.io.File(path).getName(), 2f)
+    App.root.getToastManager().show(i18n("开始导出：") + new java.io.File(path).getName, 2f)
     fadeOut()
   }
 

@@ -37,7 +37,6 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane
-import com.lomekwi.cave.Main
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
@@ -48,7 +47,7 @@ import com.lomekwi.cave.app.App
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-class Root(private val main: Main) extends ApplicationListener {
+class Root extends ApplicationListener {
   private var stage: Stage = null
 
   private var toastManager: ToastManager = null
@@ -146,7 +145,7 @@ class Root(private val main: Main) extends ApplicationListener {
     stage.addCaptureListener(new InputListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
         if (button != Input.Buttons.LEFT) return false
-        var target: Actor = event.getTarget()
+        var target: Actor = event.getTarget
         while (target != null) {
           if (target.isInstanceOf[Focusable]) {
             val focusTarget: Actor = target
@@ -156,7 +155,7 @@ class Root(private val main: Main) extends ApplicationListener {
             })
             return false
           }
-          target = target.getParent()
+          target = target.getParent
         }
         return false
       }
@@ -170,7 +169,7 @@ class Root(private val main: Main) extends ApplicationListener {
     white.setColor(Color.WHITE)
     white.fill()
     val region: TextureRegion = new TextureRegion(new Texture(white))
-    this.shapeDrawer = new ShapeDrawer(stage.getBatch(), region)
+    this.shapeDrawer = new ShapeDrawer(stage.getBatch, region)
     white.dispose()
 
     // 初始化UI组件
@@ -180,10 +179,10 @@ class Root(private val main: Main) extends ApplicationListener {
 
     topBar = new TopBar()
     mainLayout.top()
-    mainLayout.add(topBar.getTable()).fillX().top().row()
+    mainLayout.add(topBar.getTable).fillX().top().row()
 
     tabbedPane = new TopTabbedPane()
-    mainLayout.add(tabbedPane.getTable()).fillX().top().row()
+    mainLayout.add(tabbedPane.getTable).fillX().top().row()
     tabbedPane.refreshVisibility()
     majorArea = new Container[Table] {
       override def getMinHeight(): Float = {
@@ -215,7 +214,7 @@ class Root(private val main: Main) extends ApplicationListener {
 
   override def render(): Unit = {
     ScreenUtils.clear(Color.BLACK)
-    stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f))
+    stage.act(Math.min(Gdx.graphics.getDeltaTime, 1 / 30f))
     stage.draw()
   }
 
@@ -225,7 +224,7 @@ class Root(private val main: Main) extends ApplicationListener {
 
   override def resize(width: Int, height: Int): Unit = {
     if (stage != null) {
-      stage.getViewport().update(width, height, true)
+      stage.getViewport.update(width, height, true)
       toastManager.resize()
     }
   }
@@ -241,7 +240,7 @@ class Root(private val main: Main) extends ApplicationListener {
 
   def isTextInputFocused(): Boolean = {
     if (stage == null) return false
-    val focus = stage.getKeyboardFocus()
+    val focus = stage.getKeyboardFocus
     return focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
   }
 
@@ -255,7 +254,7 @@ class Root(private val main: Main) extends ApplicationListener {
     tabbedPane
   }
   private def injectChineseFont(scale: VisUI.SkinScale): Skin = {
-    val skin: Skin = new Skin(scale.getSkinFile())
+    val skin: Skin = new Skin(scale.getSkinFile)
 
     generator = new FreeTypeFontGenerator(Gdx.files.internal("font/noto.otf"))
 
@@ -288,16 +287,16 @@ class Root(private val main: Main) extends ApplicationListener {
   }
 
   def getFrontendProject(): Project = {
-    if (tabbedPane.getActiveTab().isInstanceOf[ProjectTab]) {
-      return tabbedPane.getActiveTab().asInstanceOf[ProjectTab].getProject()
+    if (tabbedPane.getActiveTab.isInstanceOf[ProjectTab]) {
+      return tabbedPane.getActiveTab.asInstanceOf[ProjectTab].getProject()
     } else {
       return null
     }
   }
 
   def getFrontendEditPanel(): EditPanel = {
-    if (tabbedPane.getActiveTab().isInstanceOf[ProjectTab]) {
-      return tabbedPane.getActiveTab().asInstanceOf[ProjectTab].getEditPanel()
+    if (tabbedPane.getActiveTab.isInstanceOf[ProjectTab]) {
+      return tabbedPane.getActiveTab.asInstanceOf[ProjectTab].getEditPanel()
     } else {
       return null
     }

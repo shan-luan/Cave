@@ -12,7 +12,7 @@ class TimelineTab(tlMain: Container[TlGroup]) extends Tab(false, false) {
   private final val content: Table = new VisTable()
 
   {
-    content.add(new TlRuler(tlMain.getActor())).growX().row()
+    content.add(new TlRuler(tlMain.getActor)).growX().row()
     content.add(tlMain).grow()
   }
 

@@ -32,7 +32,7 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
   override protected def generate(time: Long, track: Track): AudFrame = {
 
     if (frame == null || (frame.track ne track)) {
-      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, 2, track, this)
+      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track, this)
     }
 
     try {

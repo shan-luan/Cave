@@ -20,7 +20,6 @@ import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
 import org.bytedeco.javacv.FFmpegFrameRecorder
-import org.bytedeco.javacv.FrameRecorder
 
 import java.io.File
 import java.nio.FloatBuffer
@@ -45,7 +44,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   recorder = new FFmpegFrameRecorder(outputFile, width, height)
   {
     var i = 0
-    for (ignored <- timeline.asScala) {
+    for (_ <- timeline.asScala) {
       i += 1
     }
     frames = new AtomicReferenceArray[Frame](i)
@@ -55,7 +54,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   batch = new SpriteBatch()
   frameLen = (SECOND / fps).toLong
   cvFrame = new org.bytedeco.javacv.Frame(width, height, org.bytedeco.javacv.Frame.DEPTH_UBYTE, 4)
-  projMatrix = new Matrix4().setToOrtho(0, fb.getWidth(), fb.getHeight(), 0, 0, 1)
+  projMatrix = new Matrix4().setToOrtho(0, fb.getWidth.toFloat, fb.getHeight.toFloat, 0, 0, 1)
 
   override def getProgress(): Float = {
     t.toFloat / timeline.getLength()
@@ -169,14 +168,14 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
     }
     batch.end()
 
-    Gdx.gl.glReadPixels(0, 0, fb.getWidth(), fb.getHeight(), GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, cvFrame.image(0))
+    Gdx.gl.glReadPixels(0, 0, fb.getWidth, fb.getHeight, GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, cvFrame.image(0))
 
     fb.end()
     cvFrame.timestamp = t
     try {
       queue.put(cvFrame)
     } catch {
-      case e: InterruptedException =>
+      case _: InterruptedException =>
         // ignore
     }
   }

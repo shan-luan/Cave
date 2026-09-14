@@ -3,7 +3,6 @@ package com.lomekwi.cave.resource.decoder
 import com.lomekwi.cave.util.Units.SECOND
 import com.lomekwi.cave.util.i18n.I18N.i18n
 
-import org.bytedeco.ffmpeg.global.avcodec.*
 
 import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.pipeline.image.ImgFrame
@@ -32,42 +31,42 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getImageWidth()
+    grabber.getImageWidth
   }
 
   def getHeight(): Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getImageHeight()
+    grabber.getImageHeight
   }
 
   def getLengthInVideoFrames(): Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getLengthInVideoFrames()
+    grabber.getLengthInVideoFrames
   }
 
   override def getCodecName(): String = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getVideoCodecName()
+    grabber.getVideoCodecName
   }
 
   override def getCodec(): Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getVideoCodec()
+    grabber.getVideoCodec
   }
 
   override def getLengthPerFrame(): Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    Math.round(SECOND / grabber.getFrameRate())
+    Math.round(SECOND / grabber.getFrameRate)
   }
 
   override protected def configure(): Unit = {
