@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.google.common.collect.Range
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
@@ -120,7 +119,7 @@ object UndoManager {
 
   // ──────────────── 单片段命令（保留向后兼容） ────────────────
 
-  case class AddSegCommand(track: Track, segment: Segment, range: Range[java.lang.Long]) extends UndoableCommand {
+  case class AddSegCommand(track: Track, segment: Segment, range: Interval) extends UndoableCommand {
     override def undo(): Unit = {
       track.remove(segment)
     }
@@ -130,8 +129,8 @@ object UndoManager {
     }
   }
 
-  case class RemoveSegCommand(track: Track, segment: Segment, range: Range[java.lang.Long], group: SegmentGroup) extends UndoableCommand {
-    def this(track: Track, segment: Segment, range: Range[java.lang.Long]) = {
+  case class RemoveSegCommand(track: Track, segment: Segment, range: Interval, group: SegmentGroup) extends UndoableCommand {
+    def this(track: Track, segment: Segment, range: Interval) = {
       this(track, segment, range, null)
     }
 
@@ -146,7 +145,7 @@ object UndoManager {
     }
   }
 
-  case class ResizeSegCommand(track: Track, segment: Segment, oldRange: Range[java.lang.Long], newRange: Range[java.lang.Long]) extends UndoableCommand {
+  case class ResizeSegCommand(track: Track, segment: Segment, oldRange: Interval, newRange: Interval) extends UndoableCommand {
     override def undo(): Unit = {
       track.remove(segment)
       track.`override`(segment, oldRange)
@@ -158,21 +157,21 @@ object UndoManager {
     }
   }
 
-  case class MoveSegCommand(fromTrack: Track, toTrack: Track, segment: Segment, oldRange: Range[java.lang.Long], newRange: Range[java.lang.Long]) extends UndoableCommand {
+  case class MoveSegCommand(fromTrack: Track, toTrack: Track, segment: Segment, oldRange: Interval, newRange: Interval) extends UndoableCommand {
     override def undo(): Unit = {
       toTrack.remove(segment)
       fromTrack.`override`(segment, oldRange)
-      segment.offsetOrigin(oldRange.lowerEndpoint() - newRange.lowerEndpoint())
+      segment.offsetOrigin(oldRange.lo - newRange.lo)
     }
 
     override def redo(): Unit = {
       fromTrack.remove(segment)
       toTrack.`override`(segment, newRange)
-      segment.offsetOrigin(newRange.lowerEndpoint() - oldRange.lowerEndpoint())
+      segment.offsetOrigin(newRange.lo - oldRange.lo)
     }
   }
 
-  case class SplitSegCommand(track: Track, originalSeg: Segment, originalRange: Range[java.lang.Long], newSeg: Segment, splitTime: Long) extends UndoableCommand {
+  case class SplitSegCommand(track: Track, originalSeg: Segment, originalRange: Interval, newSeg: Segment, splitTime: Long) extends UndoableCommand {
     override def undo(): Unit = {
       track.remove(originalSeg)
       track.remove(newSeg)
@@ -182,8 +181,8 @@ object UndoManager {
     override def redo(): Unit = {
       track.remove(originalSeg)
       track.remove(newSeg)
-      track.`override`(originalSeg, Range.closedOpen(originalRange.lowerEndpoint(), splitTime))
-      track.`override`(newSeg, Range.closedOpen(splitTime, originalRange.upperEndpoint()))
+      track.`override`(originalSeg, Interval(originalRange.lo, splitTime))
+      track.`override`(newSeg, Interval(splitTime, originalRange.hi))
     }
   }
 
@@ -213,7 +212,7 @@ object UndoManager {
       entries.asScala.reverseIterator.foreach { e =>
         e.toTrack.remove(e.segment)
         e.fromTrack.`override`(e.segment, e.oldRange)
-        e.segment.offsetOrigin(e.oldRange.lowerEndpoint() - e.newRange.lowerEndpoint())
+        e.segment.offsetOrigin(e.oldRange.lo - e.newRange.lo)
       }
     }
 
@@ -221,7 +220,7 @@ object UndoManager {
       for (e <- entries.asScala) {
         e.fromTrack.remove(e.segment)
         e.toTrack.`override`(e.segment, e.newRange)
-        e.segment.offsetOrigin(e.newRange.lowerEndpoint() - e.oldRange.lowerEndpoint())
+        e.segment.offsetOrigin(e.newRange.lo - e.oldRange.lo)
       }
     }
 
@@ -247,7 +246,7 @@ object UndoManager {
 
   object MoveSegsCommand {
     case class MoveEntry(fromTrack: Track, toTrack: Track, segment: Segment,
-                         oldRange: Range[java.lang.Long], newRange: Range[java.lang.Long])
+                         oldRange: Interval, newRange: Interval)
   }
 
   /** 批量调整片段区间命令。合并时：同 segment 保留旧区间、更新新区间；新 segment 直接追加。 */
@@ -290,7 +289,7 @@ object UndoManager {
 
   object ResizeSegsCommand {
     case class ResizeEntry(track: Track, segment: Segment,
-                           oldRange: Range[java.lang.Long], newRange: Range[java.lang.Long])
+                           oldRange: Interval, newRange: Interval)
   }
 
   /** 批量删除片段命令。合并时直接追加新条目（去重）。 */
@@ -325,7 +324,7 @@ object UndoManager {
   }
 
   object RemoveSegsCommand {
-    case class RemoveEntry(track: Track, segment: Segment, range: Range[java.lang.Long],
+    case class RemoveEntry(track: Track, segment: Segment, range: Interval,
                            group: SegmentGroup)
   }
 

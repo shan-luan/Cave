@@ -4,10 +4,8 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
-import com.google.common.collect.Range
-
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Interval, Segment}
 import com.lomekwi.cave.timeline.SegmentSelectedEvent
 import com.lomekwi.cave.timeline.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
@@ -79,11 +77,10 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
           segEndTime = t
         }
 
-        val timeRange: Range[java.lang.Long] = Range.closedOpen(segStartTime, segEndTime)
-        for (entry <- track.getSubRangeMapAsEntrySet(timeRange).asScala) {
-          val seg: Segment = entry.getValue
-          val segLeft: Float = tlGroup.absoluteTimeToX(seg.getRange().lowerEndpoint())
-          val segRight: Float = tlGroup.absoluteTimeToX(seg.getRange().upperEndpoint())
+        val timeRange: Interval = Interval(segStartTime, segEndTime)
+        for (seg <- track.getIntersectingSegments(timeRange).asScala) {
+          val segLeft: Float = tlGroup.absoluteTimeToX(seg.getRange().lo)
+          val segRight: Float = tlGroup.absoluteTimeToX(seg.getRange().hi)
 
           if (segRight > minX && segLeft < maxX) {
             if (seg.getGroup() != null) {

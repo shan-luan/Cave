@@ -3,13 +3,12 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
-import com.google.common.collect.Range
 import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.text.TextSrc
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Interval, Segment}
 import com.lomekwi.cave.timeline.SegmentGroup
 import com.lomekwi.cave.timeline.SegmentSet
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
@@ -80,7 +79,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     val duration: Long = seg.getSource().getDefaultSegmentDuration()
 
     var targetTrack: Int = 0
-    val range: Range[java.lang.Long] = Range.closedOpen(time, time + duration)
+    val range: Interval = Interval(time, time + duration)
     while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
       targetTrack += 1
     }
@@ -110,7 +109,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
           val duration: Long = seg.getSource().getDefaultSegmentDuration()
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
-            val range: Range[java.lang.Long] = Range.closedOpen(time, time + duration)
+            val range: Interval = Interval(time, time + duration)
             while (!timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
               targetTrack += 1
             }

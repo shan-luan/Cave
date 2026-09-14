@@ -1,11 +1,8 @@
 package com.lomekwi.cave.timeline
 
-import com.google.common.collect.Range
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager.{AddSegCommand, CompoundCommand, MergeableCommand, MoveSegsCommand, RemoveSegCommand, RemoveSegsCommand, ResizeSegsCommand, SplitSegCommand, UndoableCommand}
 import com.lomekwi.cave.util.Duplicatable
-
-import com.lomekwi.cave.util.Ranges.shift
 
 import java.io.{ObjectInputStream, Serializable}
 import java.util.{ArrayList, Collection, HashMap, HashSet, Iterator, List, Map, Set}
@@ -29,14 +26,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     recorded = new ArrayList[UndoableCommand]()
   }
 
-  def tryAdd(track: Track, segment: Segment, range: Range[java.lang.Long]): Long = {
+  def tryAdd(track: Track, segment: Segment, range: Interval): Long = {
     val shift = track.tryAdd(segment, range)
     if (shift == 0) {
       push(new AddSegCommand(track, segment, range))
     }
     shift
   }
-  protected[timeline] def `override`(track: Track, segment: Segment, range: Range[java.lang.Long]): Unit = {
+  protected[timeline] def `override`(track: Track, segment: Segment, range: Interval): Unit = {
     track.`override`(segment, range)
     push(new AddSegCommand(track, segment, range))
   }
@@ -65,8 +62,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val s = track.get(time)
     if (s == null) return
     val r = s.getRange()
-    val lo: Long = r.lowerEndpoint()
-    val hi: Long = r.upperEndpoint()
+    val lo: Long = r.lo
+    val hi: Long = r.hi
     if (time <= lo || time >= hi) return
     if (track.split(time)) {
       val right = track.get(time)
@@ -107,7 +104,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     if (applied == 0) return 0
 
     // 捕获旧区间 → 修改 → 记录
-    val before: Map[Segment, Range[java.lang.Long]] = new HashMap[Segment, Range[java.lang.Long]]()
+    val before: Map[Segment, Interval] = new HashMap[Segment, Interval]()
     for (s <- segments.asScala) before.put(s, s.getRange())
     for (track <- tracks.asScala) {
       if (end) track.setEnd(segments, applied)
@@ -147,7 +144,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val entries: List[MoveSegsCommand.MoveEntry] = new ArrayList[MoveSegsCommand.MoveEntry](segments.size())
     for (s <- segments.asScala) {
       val r = s.getRange()
-      entries.add(new MoveSegsCommand.MoveEntry(s.getTrack(), s.getTrack(), s, r, shift(r, applied)))
+      entries.add(new MoveSegsCommand.MoveEntry(s.getTrack(), s.getTrack(), s, r, r.shift(applied)))
     }
     for (s <- segments.asScala) {
       val t = s.getTrack()
@@ -155,7 +152,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
     for (s <- segments.asScala) {
       val tr = s.getTrack()
-      tr.`override`(s, shift(s.getRange(), applied))
+      tr.`override`(s, s.getRange().shift(applied))
       s.offsetOrigin(applied)
     }
     push(new MoveSegsCommand(entries))
@@ -235,19 +232,19 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val searchStart: Long = Math.max(0, time - threshold)
     val searchEnd: Long = time + threshold
     if (searchEnd <= searchStart) return time
-    val searchRange: Range[java.lang.Long] = Range.closedOpen(searchStart, searchEnd)
+    val searchRange: Interval = Interval(searchStart, searchEnd)
     for (track <- tracks.asScala) {
-      for (entry <- track.getSubRangeMapAsEntrySet(searchRange).asScala) {
-        if (!ignore.contains(entry.getValue)) {
-          val r = entry.getKey
-          var dist = Math.abs(r.lowerEndpoint() - time)
+      for (seg <- track.getIntersectingSegments(searchRange).asScala) {
+        if (!ignore.contains(seg)) {
+          val r = seg.getRange()
+          var dist = Math.abs(r.lo - time)
           if (dist < bestDist) {
-            best = r.lowerEndpoint()
+            best = r.lo
             bestDist = dist
           }
-          dist = Math.abs(r.upperEndpoint() - time)
+          dist = Math.abs(r.hi - time)
           if (dist < bestDist) {
-            best = r.upperEndpoint()
+            best = r.hi
             bestDist = dist
           }
         }

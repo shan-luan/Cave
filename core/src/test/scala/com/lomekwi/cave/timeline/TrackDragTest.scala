@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.google.common.collect.Range
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.Assert.{assertEquals, assertNotSame, assertSame, assertTrue}
@@ -514,7 +513,7 @@ class TrackDragTest extends GdxTestBase {
 }
 
 object TrackDragTest {
-  private def rng(lo: Long, hi: Long): Range[java.lang.Long] = {
-    Range.closedOpen(lo, hi)
+  private def rng(lo: Long, hi: Long): Interval = {
+    Interval(lo, hi)
   }
 }

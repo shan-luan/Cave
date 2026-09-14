@@ -21,8 +21,8 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
 
     val seg: Segment = getSegment()
     val range = seg.getRange()
-    val segLocalStart: Long = range.lowerEndpoint() - seg.getOrigin()
-    val segLocalEnd: Long = range.upperEndpoint() - seg.getOrigin()
+    val segLocalStart: Long = range.lo - seg.getOrigin()
+    val segLocalEnd: Long = range.hi - seg.getOrigin()
     val segDuration: Long = segLocalEnd - segLocalStart
     if (segDuration <= 0) return
 

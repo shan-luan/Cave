@@ -3,11 +3,9 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 
-import com.google.common.collect.Range
-
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.util.MimeType
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Interval, Segment}
 import com.lomekwi.cave.timeline.SegmentGroup
 
 import java.io.File
@@ -45,7 +43,7 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
           val duration: Long = seg.getSource().getDefaultSegmentDuration()
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
-            val range: Range[java.lang.Long] = Range.closedOpen(startTime, startTime + duration)
+            val range: Interval = Interval(startTime, startTime + duration)
             while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
               targetTrack += 1
             }

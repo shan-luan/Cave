@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.google.common.collect.Range
 import com.lomekwi.cave.app.copy.Copyable
 import com.lomekwi.cave.app.selection.Selectable
 import com.lomekwi.cave.pipeline.Frame
@@ -23,7 +22,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   }
   @transient private var track: Track = null
   @transient private var actor: SegActor = null
-  @transient private var range: Range[java.lang.Long] = null
+  @transient private var range: Interval = null
   @transient private var selected: Boolean = false
   private var group: SegmentGroup = null
   def isSelected(): Boolean = {
@@ -88,7 +87,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     track
   }
 
-  def getRange(): Range[java.lang.Long] = {
+  def getRange(): Interval = {
     range
   }
   /**获取拉伸时在时间轴上合法的最小起点*/
@@ -118,9 +117,9 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
 
   private def rangeStart(): Long = {
     val range = this.range
-    if (range == null) Long.MaxValue else range.lowerEndpoint()
+    if (range == null) Long.MaxValue else range.lo
   }
-  protected[timeline] def setRange(range: Range[java.lang.Long]): Unit = {
+  protected[timeline] def setRange(range: Interval): Unit = {
     if (range.equals(this.range)) return
     this.range = range
   }
@@ -134,9 +133,9 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     new IteratorImpl()
   }
   class IteratorImpl extends Iterator[Frame] {
-    private var time: Long = requireRange().lowerEndpoint() % source.getLengthPerExportFrame()
+    private var time: Long = requireRange().lo % source.getLengthPerExportFrame()
     override def hasNext(): Boolean = {
-      time <= requireRange().upperEndpoint()
+      time <= requireRange().hi
     }
     override def next(): Frame = {
       val f = java.util.Objects.requireNonNull(get(time), "Segment frame is unavailable")
@@ -160,9 +159,9 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   def next(): Segment = {
     val track = requireTrack()
     val range = requireRange()
-    track.getSubRangeMapAsEntrySet(Range.atLeast(range.upperEndpoint()))
+    track.getIntersectingSegments(Interval(range.hi, Long.MaxValue))
       .asScala
-      .collectFirst { case entry => entry.getValue }
+      .headOption
       .orNull
   }
 
@@ -172,22 +171,22 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   def prev(): Segment = {
     val track = requireTrack()
     val range = requireRange()
-    track.get(range.lowerEndpoint(), -1, true)
+    track.get(range.lo, -1, true)
   }
-  def nextRange(): Range[java.lang.Long] = {
+  def nextRange(): Option[Interval] = {
     val next = this.next()
     if (next != null) {
-      next.requireRange()
+      Some(next.requireRange())
     } else {
-      Range.singleton(Long.MaxValue)
+      None
     }
   }
-  def prevRange(): Range[java.lang.Long] = {
+  def prevRange(): Option[Interval] = {
     val prev = this.prev()
     if (prev != null) {
-      prev.requireRange()
+      Some(prev.requireRange())
     } else {
-      Range.singleton(0L)
+      None
     }
   }
 
@@ -195,7 +194,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     java.util.Objects.requireNonNull(track, "Segment is not attached to a track")
   }
 
-  private def requireRange(): Range[java.lang.Long] = {
+  private def requireRange(): Interval = {
     java.util.Objects.requireNonNull(range, "Segment has no timeline range")
   }
 }

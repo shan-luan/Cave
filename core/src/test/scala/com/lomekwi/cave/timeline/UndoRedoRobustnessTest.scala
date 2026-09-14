@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.google.common.collect.Range
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.Assert.{assertEquals, assertTrue}
@@ -99,10 +98,10 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   // ---------------------------------------------------------------------
 
   private def createRandomSegments(rnd: Random): Unit = {
-    val occupied: List[List[Range[java.lang.Long]]] = new ArrayList[List[Range[java.lang.Long]]]()
+    val occupied: List[List[Interval]] = new ArrayList[List[Interval]]()
     var i = 0
     while (i < TRACK_COUNT) {
-      occupied.add(new ArrayList[Range[java.lang.Long]]())
+      occupied.add(new ArrayList[Interval]())
       i += 1
     }
     i = 0
@@ -121,11 +120,11 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def pickFreeRange(rnd: Random, occupied: List[Range[java.lang.Long]], duration: Long): Range[java.lang.Long] = {
+  private def pickFreeRange(rnd: Random, occupied: List[Interval], duration: Long): Interval = {
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(UndoRedoRobustnessTest.SPAN - duration + 1)
-      val range: Range[java.lang.Long] = Range.closedOpen(start, start + duration)
+      val range: Interval = Interval(start, start + duration)
       var free = true
       val it = occupied.iterator()
       while (it.hasNext && free) {
@@ -233,8 +232,8 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     if (placed.isEmpty) return
     val s = placed.get(rnd.nextInt(placed.size()))
     val r = s.getRange()
-    val lo: Long = r.lowerEndpoint()
-    val hi: Long = r.upperEndpoint()
+    val lo: Long = r.lo
+    val hi: Long = r.hi
     if (hi - lo < 2) return
     val time = lo + 1 + rnd.nextLong(hi - lo - 1)
     Using.resource(timeline.record()) { h =>
@@ -256,7 +255,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     var attempt = 0
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, UndoRedoRobustnessTest.SPAN - duration))
-      val range: Range[java.lang.Long] = Range.closedOpen(start, start + duration)
+      val range: Interval = Interval(start, start + duration)
       if (track.isFree(range, Set.of[Segment]())) {
         val seg = new Segment(new TestSource(duration))
         seg.setOrigin(rnd.nextLong(UndoRedoRobustnessTest.SPAN))

@@ -163,8 +163,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   /** 按下时调用：快照参与拖拽的成员并开始录制 undo。 */
   private[tlarea] def initDrag(diffToActorX: Float, diffToActorY: Float): Unit = {
     val r = segment.getRange()
-    dragOldStart = r.lowerEndpoint()
-    dragOldDuration = r.upperEndpoint() - dragOldStart
+    dragOldStart = r.lo
+    dragOldDuration = r.hi - dragOldStart
     firstX = diffToActorX
     firstY = diffToActorY
     tl.timeline.record()
@@ -194,7 +194,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
         val targetX: Float = getX + deltaX
         val targetY: Float = getY + deltaY
 
-        val duration: Long = segment.getRange().upperEndpoint() - segment.getRange().lowerEndpoint()
+        val duration: Long = segment.getRange().hi - segment.getRange().lo
         var target: Long = tl.xToAbsoluteTime(targetX)
         if (target < 0) target = 0
         target = snapMoveTarget(target, duration)
@@ -287,8 +287,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     dragOrigTracks = new Array[Track](n)
     for (i <- 0 until n) {
       val sr = dragMembers.get(i).getRange()
-      dragOrigStarts(i) = sr.lowerEndpoint()
-      dragOrigDurations(i) = sr.upperEndpoint() - sr.lowerEndpoint()
+      dragOrigStarts(i) = sr.lo
+      dragOrigDurations(i) = sr.hi - sr.lo
       dragOrigTracks(i) = dragMembers.get(i).getTrack()
     }
   }
@@ -305,7 +305,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     val minIdx: Int = members.stream().mapToInt((m: Segment) => m.getTrack().index).min().orElseThrow()
     if (minIdx + trackDelta < 0) return
 
-    val currentStart0: Long = members.get(0).getRange().lowerEndpoint()
+    val currentStart0: Long = members.get(0).getRange().lo
     tl.timeline.moveTime(members, target - currentStart0)
 
     if (trackDelta != 0) {
@@ -324,7 +324,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     }
 
     val members: List[Segment] = List.copyOf(dragMembers)
-    val currentStart0: Long = members.get(0).getRange().lowerEndpoint()
+    val currentStart0: Long = members.get(0).getRange().lo
 
     // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/前邻/起点下界）后应用；
     // applied 为 0 等价于没动。
@@ -343,7 +343,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     }
 
     val members: List[Segment] = List.copyOf(dragMembers)
-    val currentEnd0: Long = members.get(0).getRange().upperEndpoint()
+    val currentEnd0: Long = members.get(0).getRange().hi
 
     // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/后邻/源长度上界）后应用；
     // applied 为 0 等价于没动。

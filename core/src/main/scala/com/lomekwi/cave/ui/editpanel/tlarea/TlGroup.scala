@@ -8,9 +8,8 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
-import com.google.common.collect.Range
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.timeline.{Segment, SegmentGroup, SegmentSelectedEvent, SegmentSet, SegmentSetSelectedEvent, Timeline, UndoManager}
+import com.lomekwi.cave.timeline.{Interval, Segment, SegmentGroup, SegmentSelectedEvent, SegmentSet, SegmentSetSelectedEvent, Timeline, UndoManager}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.playback.Playhead
 
@@ -132,7 +131,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
       if (acted) dirty = true
     }
 
-    // dirty 时按模型 RangeMap 重建 UI；所有 Actor（含拖拽中）都是模型的纯投影：
+    // dirty 时按模型重建 UI；所有 Actor（含拖拽中）都是模型的纯投影：
     // 拖拽只改模型并置 dirty，不做手动摆位，拖拽目标只依赖鼠标轨迹与按下锚点。
     if (dirty) {
       clearChildren(false)
@@ -141,15 +140,15 @@ class TlGroup(project0: Project) extends Group with Focusable {
       for (i <- timeline.getTracks().asScala.indices.reverse) {
         val track = timeline.getTracks().get(i)
 
-        for (entry <- List.copyOf(track.getSubRangeMapAsEntrySet(visibleRange)).asScala) {
-          val actor = entry.getValue.getActor()
-          val r = actor.getSegment().getRange()
+        for (seg <- track.getIntersectingSegments(visibleRange).asScala) {
+          val actor = seg.getActor()
+          val r = seg.getRange()
           actor.setPosition(
-            absoluteTimeToX(r.lowerEndpoint()),
+            absoluteTimeToX(r.lo),
             getHeight + view.trackYShift - (i + 1) * view.trackHeight
           )
           actor.setSize(
-            absoluteTimeToX(r.upperEndpoint()) - absoluteTimeToX(r.lowerEndpoint()),
+            absoluteTimeToX(r.hi) - absoluteTimeToX(r.lo),
             view.trackHeight
           )
           addActor(actor)
@@ -353,8 +352,8 @@ class TlGroup(project0: Project) extends Group with Focusable {
     Using.resource(timeline.record()) { h =>
       for (member <- segments.asScala) {
         val range = member.getRange()
-        val start: Long = range.lowerEndpoint()
-        val end: Long = range.upperEndpoint()
+        val start: Long = range.lo
+        val end: Long = range.hi
         if (time > start && time < end) {
           val track = member.getTrack()
           timeline.split(track, time)
@@ -519,22 +518,22 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private def pasteSegment(template: Segment, time: Long, baseTrack: Int): List[Segment] = {
-    val duration = template.getRange().upperEndpoint() - template.getRange().lowerEndpoint()
+    val duration = template.getRange().hi - template.getRange().lo
     if (duration <= 0) return List.of[Segment]()
 
     var track = timeline.getTrack(baseTrack)
-    var range = com.google.common.collect.Range.closedOpen(time, time + duration)
+    var range = Interval(time, time + duration)
     var trackIndex = baseTrack
     while (!track.isFree(range, Set.of[Segment]())) {
       trackIndex += 1
       track = timeline.getTrack(trackIndex)
-      range = com.google.common.collect.Range.closedOpen(time, time + duration)
+      range = Interval(time, time + duration)
     }
 
-    template.setOrigin(time + template.getOrigin() - template.getRange().lowerEndpoint())
+    template.setOrigin(time + template.getOrigin() - template.getRange().lo)
 
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(track, template, Range.closedOpen(time, time + duration))
+      timeline.tryAdd(track, template, Interval(time, time + duration))
     }
     markTimelineDirty()
     List.of(template)
@@ -547,27 +546,27 @@ class TlGroup(project0: Project) extends Group with Focusable {
     sorted.sort(java.util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack().index))
 
     val minTrack = sorted.get(0).getTrack().index
-    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lowerEndpoint()).min().orElse(baseTime)
+    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lo).min().orElse(baseTime)
     val timeOffset = baseTime - minStart
 
     Using.resource(timeline.record()) { h =>
       for (seg <- sorted.asScala) {
-        val duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint()
+        val duration = seg.getRange().hi - seg.getRange().lo
         if (duration > 0) {
           val trackOffset = seg.getTrack().index - minTrack
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
-          val segStart = seg.getRange().lowerEndpoint() + timeOffset
-          var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
+          val segStart = seg.getRange().lo + timeOffset
+          var range = Interval(segStart, segStart + duration)
           while (!track.isFree(range, Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
-            range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
+            range = Interval(segStart, segStart + duration)
           }
 
           seg.setOrigin(seg.getOrigin() + timeOffset)
 
-          timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration))
+          timeline.tryAdd(track, seg, Interval(segStart, segStart + duration))
           pasted.add(seg)
         }
       }
@@ -584,27 +583,27 @@ class TlGroup(project0: Project) extends Group with Focusable {
     sorted.sort(java.util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack().index))
 
     val minTrack = sorted.get(0).getTrack().index
-    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lowerEndpoint()).min().orElse(baseTime)
+    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lo).min().orElse(baseTime)
     val timeOffset = baseTime - minStart
 
     Using.resource(timeline.record()) { h =>
       for (seg <- sorted.asScala) {
-        val duration = seg.getRange().upperEndpoint() - seg.getRange().lowerEndpoint()
+        val duration = seg.getRange().hi - seg.getRange().lo
         if (duration > 0) {
           val trackOffset = seg.getTrack().index - minTrack
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
-          val segStart = seg.getRange().lowerEndpoint() + timeOffset
-          var range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
+          val segStart = seg.getRange().lo + timeOffset
+          var range = Interval(segStart, segStart + duration)
           while (!track.isFree(range, Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
-            range = com.google.common.collect.Range.closedOpen(segStart, segStart + duration)
+            range = Interval(segStart, segStart + duration)
           }
 
           seg.setOrigin(seg.getOrigin() + timeOffset)
 
-          timeline.tryAdd(track, seg, Range.closedOpen(segStart, segStart + duration))
+          timeline.tryAdd(track, seg, Interval(segStart, segStart + duration))
           pasted.add(seg)
         }
       }
@@ -744,8 +743,8 @@ object TlGroup {
       startTime + ((x / width) * durationTime).toLong
     }
 
-    private[tlarea] def visibleRange(): Range[java.lang.Long] = {
-      Range.closedOpen(startTime, startTime + durationTime)
+    private[tlarea] def visibleRange(): Interval = {
+      Interval(startTime, startTime + durationTime)
     }
 
     private[tlarea] def zoom(amountY: Float, anchorXRatio: Float): Boolean = {
