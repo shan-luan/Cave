@@ -6,7 +6,7 @@ import com.lomekwi.cave.pipeline.{Frame, GapFrame}
 import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
 
-import java.io.{ObjectInputStream, ObjectOutputStream, Serializable}
+import java.io.Serializable
 import java.util
 import java.util.{Collections, Objects}
 import java.util.concurrent.{Future, Phaser}
@@ -18,18 +18,28 @@ import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
 class Track(@transient private var timeline: Timeline, final val index: Int) extends Serializable with java.lang.Iterable[Segment] {
-  @transient private var sources: mutable.TreeMap[Interval, Segment] = mutable.TreeMap.empty
+  private var sources: mutable.TreeMap[Interval, Segment] = mutable.TreeMap.empty
 
   private var length: Long = 0L
   private var lengthChanged: Boolean = true
-  private var serializationRanges: Array[Long] = uninitialized
-  private var serializationSources: util.List[Segment] = uninitialized
   @transient private var worker: TrackWorker = uninitialized
 
   worker = new TrackWorker()
 
   private[timeline] def setTimeline(timeline: Timeline): Unit = {
     this.timeline = timeline
+    rebindSegments()
+  }
+
+  /**
+   * 反序列化后把片段与所属轨道、区间重新关联：
+   * 片段自身的 track/range 是 @transient，区间只随本轨道的映射表被还原。
+   */
+  private def rebindSegments(): Unit = {
+    for ((r, s) <- sources) {
+      s.setRange(r)
+      s.setTrack(this)
+    }
   }
 
   protected[timeline] def isEmpty: Boolean = this.synchronized {
@@ -382,41 +392,6 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     lengthChanged = true
     if (worker != null) {
       worker.onTrackChanged()
-    }
-  }
-
-  private def writeObject(oos: ObjectOutputStream): Unit = {
-    serializationRanges = new Array[Long](sources.size * 2)
-    serializationSources = new util.ArrayList[Segment](sources.size)
-    var i = 0
-    for ((r, s) <- sources) {
-      serializationRanges(i) = r.lo
-      serializationRanges(i + 1) = r.hi
-      serializationSources.add(s)
-      i += 2
-    }
-    oos.defaultWriteObject()
-    serializationRanges = null
-    serializationSources = null
-  }
-
-  private def readObject(ois: ObjectInputStream): Unit = {
-    ois.defaultReadObject()
-    sources = mutable.TreeMap.empty
-    if (serializationRanges == null || serializationSources == null) {
-      Gdx.app.error("Track", "Track 序列化数据为 null")
-    } else {
-      var i = 0
-      while (i < serializationRanges.length) {
-        val r: Interval = Interval(serializationRanges(i), serializationRanges(i + 1))
-        val s = serializationSources.get(i / 2)
-        sources.put(r, s)
-        s.setRange(r)
-        s.setTrack(this)
-        i += 2
-      }
-      serializationRanges = null
-      serializationSources = null
     }
   }
 
