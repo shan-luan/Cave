@@ -15,16 +15,17 @@ import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.util.MimeType
 
 import java.io.{File, IOException, ObjectInputStream, Serializable}
-import java.util.{ArrayList, Collection, HashMap, List, Map}
+import java.util
 import java.util.function.Function
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
 class MediaSegFactory(@transient private var project: Project) extends Serializable {
-  @transient private var map: Map[Class[? <: Resource], Function[? <: Resource, Source[?]]] = null
+  @transient private var map: util.Map[Class[? <: Resource], Function[? <: Resource, Source[?]]] = uninitialized
 
-  this.map = new HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
+  this.map = new util.HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
   initDefaultMappings()
 
   def setProject(project: Project): Unit = {
@@ -47,8 +48,8 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
    * 获取文件对应的所有片段。
    * 对于同时包含视频和音频流的文件，可能返回多个 Segment。
    */
-  def getAll(file: File): List[Segment] = {
-    var existing: Collection[Resource] = project.resources.get(file)
+  def getAll(file: File): util.List[Segment] = {
+    var existing: util.Collection[Resource] = project.resources.get(file)
 
     if (existing.isEmpty) {
       val mimeType = MimeType.detectMimeType(file)
@@ -58,12 +59,12 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
 
       for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {
         project.resources.put(file, medRes)
-        project.projEventBus.post(new MediaCreatedEvent(file, medRes))
+        project.projEventBus.post(MediaCreatedEvent(file, medRes))
       }
       existing = project.resources.get(file)
     }
 
-    val segments: List[Segment] = new ArrayList[Segment]()
+    val segments: util.List[Segment] = new util.ArrayList[Segment]()
     for (resource <- existing.asScala) {
       segments.add(new Segment(applyUnchecked(map.get(resource.getClass), resource)))
     }
@@ -82,7 +83,7 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
 
   private def readObject(ois: ObjectInputStream): Unit = {
     ois.defaultReadObject()
-    this.map = new HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
+    this.map = new util.HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
     initDefaultMappings()
   }
 }

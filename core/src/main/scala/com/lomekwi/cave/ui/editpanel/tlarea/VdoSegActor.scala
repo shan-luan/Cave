@@ -14,20 +14,20 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 class VdoSegActor(segment: Segment) extends SegActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
-    val sd: ShapeDrawer = App.root.getShapeDrawer()
-    val seg: Segment = getSegment()
-    val range = seg.getRange()
-    val segLocalStart: Long = range.lo - seg.getOrigin()
-    val segLocalEnd: Long = range.hi - seg.getOrigin()
+    val sd: ShapeDrawer = App.root.getShapeDrawer
+    val seg: Segment = getSegment
+    val range = seg.getRange
+    val segLocalStart: Long = range.lo - seg.getOrigin
+    val segLocalEnd: Long = range.hi - seg.getOrigin
     val segDuration: Long = segLocalEnd - segLocalStart
 
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (segDuration > 0) {
-      val res: VdoRes = seg.getSource().asInstanceOf[VdoClipSrc].getVdoRes()
+      val res: VdoRes = seg.getSource.asInstanceOf[VdoClipSrc].getVdoRes
 
       val pxPerUs: Float = getWidth / segDuration.toFloat
-      val aspect: Float = res.getWidth().toFloat / res.getHeight()
+      val aspect: Float = res.getWidth.toFloat / res.getHeight
       val thumbDisplayW: Float = getHeight * aspect
 
       var rawStep: Long = (thumbDisplayW / pxPerUs).toLong

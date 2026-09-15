@@ -5,14 +5,15 @@ import com.badlogic.gdx.Preferences
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Multimap
 
-import java.util.{Arrays, Collection, Collections, LinkedHashSet, Set}
+import java.util
+import java.util.{Collections}
 import java.util.stream.Collectors
 
 import scala.jdk.CollectionConverters.*
 
 class ShortcutManager {
   private final val actionToKeys: Multimap[ShortcutAction, Integer] = ArrayListMultimap.create[ShortcutAction, Integer]()
-  private final val registeredActions: Set[ShortcutAction] = new LinkedHashSet[ShortcutAction]()
+  private final val registeredActions: util.Set[ShortcutAction] = new util.LinkedHashSet[ShortcutAction]()
 
   def register(action: ShortcutAction, keyCode: Int*): Unit = {
     actionToKeys.removeAll(action)
@@ -26,11 +27,11 @@ class ShortcutManager {
     register(action, action.defaultKeys()*)
   }
 
-  def getKeys(action: ShortcutAction): Collection[Integer] = {
+  def getKeys(action: ShortcutAction): util.Collection[Integer] = {
     actionToKeys.get(action)
   }
 
-  def getAllActions(): Set[ShortcutAction] = {
+  def getAllActions: util.Set[ShortcutAction] = {
     Collections.unmodifiableSet(registeredActions)
   }
 
@@ -51,11 +52,11 @@ class ShortcutManager {
   def load(): Unit = {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
     for (action <- registeredActions.asScala) {
-      val v: String = prefs.getString(action.toString(), null)
+      val v: String = prefs.getString(action.toString, null)
       if (v != null && !v.isEmpty) {
-        val keys: Array[Int] = Arrays.stream(v.split(","))
+        val keys: Array[Int] = util.Arrays.stream(v.split(","))
           .mapToInt((s: String) => Integer.parseInt(s))
-          .toArray()
+          .toArray
         register(action, keys*)
       }
     }
@@ -65,10 +66,10 @@ class ShortcutManager {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
     prefs.clear()
     for (action <- registeredActions.asScala) {
-      val keys: Collection[Integer] = actionToKeys.get(action)
+      val keys: util.Collection[Integer] = actionToKeys.get(action)
       if (!keys.isEmpty) {
         val v: String = keys.stream().map((i: Integer) => String.valueOf(i)).collect(Collectors.joining(","))
-        prefs.putString(action.toString(), v)
+        prefs.putString(action.toString, v)
       }
     }
     prefs.flush()

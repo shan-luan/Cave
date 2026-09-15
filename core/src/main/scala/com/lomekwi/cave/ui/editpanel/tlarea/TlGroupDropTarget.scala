@@ -10,9 +10,7 @@ import com.lomekwi.cave.timeline.SegmentGroup
 
 import java.io.File
 import java.io.IOException
-import java.util.ArrayList
-import java.util.List
-import java.util.Set
+import java.util
 
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
@@ -32,19 +30,19 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: List[Segment] = tlGroup.project.mediaSegFactory.getAll(file)
+      val segments: util.List[Segment] = tlGroup.project.mediaSegFactory.getAll(file)
       val startTime: Long = tlGroup.xToAbsoluteTime(x)
       val baseTrack: Int = tlGroup.yToTrackIndex(y)
       var trackOffset: Int = 0
-      val added: List[Segment] = new ArrayList[Segment]()
+      val added: util.List[Segment] = new util.ArrayList[Segment]()
       Using.resource(tlGroup.timeline.record()) { h =>
         for (seg <- segments.asScala) {
           seg.setOrigin(startTime)
-          val duration: Long = seg.getSource().getDefaultSegmentDuration()
+          val duration: Long = seg.getSource.getDefaultSegmentDuration
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
             val range: Interval = Interval(startTime, startTime + duration)
-            while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
+            while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
               targetTrack += 1
             }
             tlGroup.timeline.tryAdd(tlGroup.timeline.getTrack(targetTrack), seg, range)

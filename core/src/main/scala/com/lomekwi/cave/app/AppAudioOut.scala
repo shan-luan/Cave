@@ -6,7 +6,7 @@ import com.badlogic.gdx.audio.AudioDevice
 class AppAudioOut {
   private final val audioDevice: AudioDevice = Gdx.audio.newAudioDevice(AppAudioOut.SAMPLE_RATE, false)
 
-  def getAudioDevice(): AudioDevice = {
+  def getAudioDevice: AudioDevice = {
     audioDevice
   }
 

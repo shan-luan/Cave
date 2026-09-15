@@ -2,7 +2,7 @@ package com.lomekwi.cave.app.shortcut
 
 trait ShortcutAction {
   def displayName(): String = {
-    toString()
+    toString
   }
 
   def defaultKeys(): Array[Int] = {

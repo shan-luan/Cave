@@ -11,20 +11,20 @@ class NodeGraphFilter extends Filter[Object] {
   addInPort(new FilterIn())
   addInPort(new Node.InPort[NodeGraph]("节点图", innerNodes, classOf[NodeGraph]))
   addOutPort(new FilterOut {
-    override def getData(): Object = {
+    override def getData: Object = {
       innerSink.get()
     }
   })
 
-  def getInnerNodes(): NodeGraph = {
+  def getInnerNodes: NodeGraph = {
     innerNodes
   }
 
-  override def getName(): String = {
+  override def getName: String = {
     "节点图"
   }
 
-  override def getType(): Class[Object] = {
+  override def getType: Class[Object] = {
     classOf[Object]
   }
 }

@@ -15,15 +15,17 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 
-import java.util.*
+import java.util
+import java.util.Collections
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 class ShortcutKeysTable extends EntryTable {
 
   private final val listTable: VisTable = new VisTable()
-  private var recordingAction: ShortcutAction = null
-  private var recordingButton: VisTextButton = null
+  private var recordingAction: ShortcutAction = uninitialized
+  private var recordingButton: VisTextButton = uninitialized
 
   private final val recordingProcessor: InputProcessor = new InputProcessor {
     override def keyDown(keycode: Int): Boolean = {
@@ -34,7 +36,7 @@ class ShortcutKeysTable extends EntryTable {
       }
       if (ShortcutKeysTable.isModifier(keycode)) return true
 
-      val keys: List[Integer] = new ArrayList[Integer]()
+      val keys: util.List[Integer] = new util.ArrayList[Integer]()
       if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
         keys.add(Input.Keys.CONTROL_LEFT)
       if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))
@@ -76,7 +78,7 @@ class ShortcutKeysTable extends EntryTable {
     listTable.top().left()
     listTable.add(header).fillX().row()
 
-    for (action <- App.shortcutManager.getAllActions().asScala) {
+    for (action <- App.shortcutManager.getAllActions.asScala) {
       val row = new VisTable()
       row.add(new VisLabel(action.displayName())).pad(5).width(200)
 
@@ -117,18 +119,18 @@ class ShortcutKeysTable extends EntryTable {
     recordingAction = action
     recordingButton = btn
     btn.setText(i18n("按下新快捷键..."))
-    val current = Gdx.input.getInputProcessor
-    if (current.isInstanceOf[InputMultiplexer]) {
-      current.asInstanceOf[InputMultiplexer].addProcessor(0, recordingProcessor)
+    Gdx.input.getInputProcessor match {
+      case m: InputMultiplexer => m.addProcessor(0, recordingProcessor)
+      case _ =>
     }
   }
 
   private def stopRecording(): Unit = {
     recordingAction = null
     recordingButton = null
-    val current = Gdx.input.getInputProcessor
-    if (current.isInstanceOf[InputMultiplexer]) {
-      current.asInstanceOf[InputMultiplexer].removeProcessor(recordingProcessor)
+    Gdx.input.getInputProcessor match {
+      case m: InputMultiplexer => m.removeProcessor(recordingProcessor)
+      case _ =>
     }
   }
 
@@ -138,9 +140,9 @@ class ShortcutKeysTable extends EntryTable {
   }
 
   private def keyDisplay(action: ShortcutAction): String = {
-    val keys: Collection[Integer] = App.shortcutManager.getKeys(action)
+    val keys: util.Collection[Integer] = App.shortcutManager.getKeys(action)
     if (keys.isEmpty) return i18n("未设置")
-    val list: List[Integer] = new ArrayList[Integer](keys)
+    val list: util.List[Integer] = new util.ArrayList[Integer](keys)
     list.sort((a: Integer, b: Integer) => {
       val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1
       val bMod = if (ShortcutKeysTable.isModifier(b)) 0 else 1
@@ -151,10 +153,10 @@ class ShortcutKeysTable extends EntryTable {
       if (sb.length() > 0) sb.append(" + ")
       sb.append(ShortcutKeysTable.keyName(k))
     }
-    sb.toString()
+    sb.toString
   }
 
-  override def getName(): String = {
+  override def getName: String = {
     i18n("快捷键")
   }
 }
@@ -162,13 +164,13 @@ class ShortcutKeysTable extends EntryTable {
 object ShortcutKeysTable {
 
   private def hasCustomKeys(action: ShortcutAction): Boolean = {
-    val current: Collection[Integer] = App.shortcutManager.getKeys(action)
+    val current: util.Collection[Integer] = App.shortcutManager.getKeys(action)
     val defaults = action.defaultKeys()
     if (current.size() != defaults.length) return true
-    val curSorted: List[Integer] = new ArrayList[Integer](current)
+    val curSorted: util.List[Integer] = new util.ArrayList[Integer](current)
     Collections.sort(curSorted)
     val defSorted = defaults.clone()
-    Arrays.sort(defSorted)
+    util.Arrays.sort(defSorted)
     var i = 0
     val it = curSorted.iterator()
     while (it.hasNext) {

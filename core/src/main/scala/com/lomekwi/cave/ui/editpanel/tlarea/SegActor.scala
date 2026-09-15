@@ -11,13 +11,14 @@ import com.lomekwi.cave.timeline.{Segment, SegmentGroup, Track}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.Colors
 
-import java.util.{ArrayList, HashSet, List, Set}
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
 abstract class SegActor(private val segment: Segment) extends Actor {
-  private[tlarea] var tl: TlGroup = null
+  private[tlarea] var tl: TlGroup = uninitialized
   private[tlarea] var dragSide: DragSide = DragSide.NONE
 
   // 拖拽状态 //////////////////////////
@@ -25,10 +26,10 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   private[tlarea] var firstY: Float = Float.NaN
   private var dragOldStart: Long = 0L
   private var dragOldDuration: Long = 0L
-  private var dragMembers: List[Segment] = null
-  private var dragOrigStarts: Array[Long] = null
-  private var dragOrigDurations: Array[Long] = null
-  private var dragOrigTracks: Array[Track] = null
+  private var dragMembers: util.List[Segment] = uninitialized
+  private var dragOrigStarts: Array[Long] = uninitialized
+  private var dragOrigDurations: Array[Long] = uninitialized
+  private var dragOrigTracks: Array[Track] = uninitialized
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -47,11 +48,11 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       } else {
         setCursor(Cursor.SystemCursor.AllResize)
       }
-      val group: SegmentGroup = segment.getGroup()
+      val group: SegmentGroup = segment.getGroup
       if (group != null) {
         for (s <- group.asScala) {
           if (s != segment) {
-            s.getActor().setHovered(true)
+            s.getActor.setHovered(true)
           }
         }
       }
@@ -63,11 +64,11 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       if (dragSide == DragSide.NONE) {
         setCursor(Cursor.SystemCursor.Arrow)
       }
-      val group: SegmentGroup = segment.getGroup()
+      val group: SegmentGroup = segment.getGroup
       if (group != null) {
         for (s <- group.asScala) {
           if (s != segment) {
-            s.getActor().setHovered(false)
+            s.getActor.setHovered(false)
           }
         }
       }
@@ -96,7 +97,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
         initDrag(x, y)
         true
       } else {
-        getMenu().setContext(SegActor.this, parent.asInstanceOf[TlGroup].xToAbsoluteTime(getX + x))
+        getMenu.setContext(SegActor.this, parent.asInstanceOf[TlGroup].xToAbsoluteTime(getX + x))
         false
       }
     }
@@ -113,7 +114,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   })
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    ScissorStack.calculateScissors(App.root.getStage().getCamera, batch.getTransformMatrix, bounds, scissors)
+    ScissorStack.calculateScissors(App.root.getStage.getCamera, batch.getTransformMatrix, bounds, scissors)
     if (ScissorStack.pushScissors(scissors)) {
       var visibleStartX: Float = 0
       var visibleEndX: Float = getWidth
@@ -131,29 +132,29 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
-    App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
+    App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
   }
 
-  protected def drawBorder(): Unit = {
-    val s = getSegment().isSelected()
-    App.root.getShapeDrawer().rectangle(getX, getY, getWidth, getHeight, if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
+  private def drawBorder(): Unit = {
+    val s = getSegment.isSelected
+    App.root.getShapeDrawer.rectangle(getX, getY, getWidth, getHeight, if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
   }
 
   private def drawSelectionOverlay(): Unit = {
     if (hovered) {
-      App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Colors.SEGMENT_HOVER)
+      App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.SEGMENT_HOVER)
     }
   }
 
-  def setHovered(hovered: Boolean): Unit = {
+  private def setHovered(hovered: Boolean): Unit = {
     this.hovered = hovered
   }
 
-  def getSegment(): Segment = {
+  def getSegment: Segment = {
     segment
   }
 
-  def getDragSide(): DragSide = {
+  def getDragSide: DragSide = {
     dragSide
   }
 
@@ -162,7 +163,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
 
   /** 按下时调用：快照参与拖拽的成员并开始录制 undo。 */
   private[tlarea] def initDrag(diffToActorX: Float, diffToActorY: Float): Unit = {
-    val r = segment.getRange()
+    val r = segment.getRange
     dragOldStart = r.lo
     dragOldDuration = r.hi - dragOldStart
     firstX = diffToActorX
@@ -194,7 +195,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
         val targetX: Float = getX + deltaX
         val targetY: Float = getY + deltaY
 
-        val duration: Long = segment.getRange().hi - segment.getRange().lo
+        val duration: Long = segment.getRange.hi - segment.getRange.lo
         var target: Long = tl.xToAbsoluteTime(targetX)
         if (target < 0) target = 0
         target = snapMoveTarget(target, duration)
@@ -221,8 +222,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   /** 裁切吸附：忽略 drag 成员与同轨道片段，返回吸附后的时间并设置指示线。 */
   private def snapResizeTime(rawTime: Long): Long = {
     if (snapDisabled()) return rawTime
-    val ignore: Set[Segment] = new HashSet[Segment](dragMembers)
-    for (s <- segment.getTrack().asScala) ignore.add(s)
+    val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
+    for (s <- segment.getTrack.asScala) ignore.add(s)
     val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
     if (snapped != rawTime) tl.snapIndicatorTime = snapped
     snapped
@@ -231,7 +232,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   /** 整体移动吸附：起点与终点各求吸附点，取更近者。 */
   private def snapMoveTarget(target: Long, duration: Long): Long = {
     if (snapDisabled()) return target
-    val ignore: Set[Segment] = new HashSet[Segment](dragMembers)
+    val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
     val segEnd: Long = target + duration
     val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
     var snappedEnd: Long = tl.timeline.snapTime(segEnd, snapThreshold(), ignore) - duration
@@ -271,13 +272,13 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   private def initDragMembers(): Unit = {
     val selected = tl.selectedSegments
     if (selected.size() > 1 && selected.contains(segment)) {
-      dragMembers = new ArrayList[Segment](selected.size())
+      dragMembers = new util.ArrayList[Segment](selected.size())
       dragMembers.add(segment)
       for (s <- selected.asScala) {
         if (s != segment) dragMembers.add(s)
       }
     } else {
-      dragMembers = new ArrayList[Segment](1)
+      dragMembers = new util.ArrayList[Segment](1)
       dragMembers.add(segment)
     }
 
@@ -286,10 +287,10 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     dragOrigDurations = new Array[Long](n)
     dragOrigTracks = new Array[Track](n)
     for (i <- 0 until n) {
-      val sr = dragMembers.get(i).getRange()
+      val sr = dragMembers.get(i).getRange
       dragOrigStarts(i) = sr.lo
       dragOrigDurations(i) = sr.hi - sr.lo
-      dragOrigTracks(i) = dragMembers.get(i).getTrack()
+      dragOrigTracks(i) = dragMembers.get(i).getTrack
     }
   }
 
@@ -298,14 +299,14 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   // 模型内部会把 delta 同向截断到最大可用偏移量（撞上障碍即贴合）后应用，
   // 因此每次 mouse move 一次调用即可，无需按修正量重试。
   private def handleMiddleDrag(target: Long, newTrack: Track): Unit = {
-    val members: List[Segment] = List.copyOf(dragMembers)
+    val members: util.List[Segment] = util.List.copyOf(dragMembers)
 
-    val trackDelta: Int = newTrack.index - members.get(0).getTrack().index
+    val trackDelta: Int = newTrack.index - members.get(0).getTrack.index
 
-    val minIdx: Int = members.stream().mapToInt((m: Segment) => m.getTrack().index).min().orElseThrow()
+    val minIdx: Int = members.stream().mapToInt((m: Segment) => m.getTrack.index).min().orElseThrow()
     if (minIdx + trackDelta < 0) return
 
-    val currentStart0: Long = members.get(0).getRange().lo
+    val currentStart0: Long = members.get(0).getRange.lo
     tl.timeline.moveTime(members, target - currentStart0)
 
     if (trackDelta != 0) {
@@ -323,8 +324,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       i += 1
     }
 
-    val members: List[Segment] = List.copyOf(dragMembers)
-    val currentStart0: Long = members.get(0).getRange().lo
+    val members: util.List[Segment] = util.List.copyOf(dragMembers)
+    val currentStart0: Long = members.get(0).getRange.lo
 
     // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/前邻/起点下界）后应用；
     // applied 为 0 等价于没动。
@@ -342,8 +343,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       i += 1
     }
 
-    val members: List[Segment] = List.copyOf(dragMembers)
-    val currentEnd0: Long = members.get(0).getRange().hi
+    val members: util.List[Segment] = util.List.copyOf(dragMembers)
+    val currentEnd0: Long = members.get(0).getRange.hi
 
     // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/后邻/源长度上界）后应用；
     // applied 为 0 等价于没动。
@@ -355,7 +356,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     Gdx.graphics.setSystemCursor(cursor)
   }
 
-  def getMenu(): SegMenu = {
+  private def getMenu: SegMenu = {
     getParent match {
       case g: TlGroup => g.segMenu
       case _ => null
@@ -364,7 +365,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
 
   private[tlarea] def initMenu(): Unit = {
     if (!menuInitialized) {
-      val menu: SegMenu = getMenu()
+      val menu: SegMenu = getMenu
       if (menu != null) {
         addListener(menu.getDefaultInputListener)
         menuInitialized = true

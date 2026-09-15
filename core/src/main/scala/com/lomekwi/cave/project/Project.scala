@@ -22,19 +22,20 @@ import java.io.Serializable
 import java.nio.file.Path
 import java.util.UUID
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(2L)
-class Project protected[project] () extends Serializable with AutoCloseable {
-  @transient protected[project] var savePath: Path = null
-  var timeline: Timeline = null
-  @transient var playhead: Playhead = null
+class Project protected[project] extends Serializable with AutoCloseable {
+  @transient protected[project] var savePath: Path = uninitialized
+  var timeline: Timeline = uninitialized
+  @transient var playhead: Playhead = uninitialized
   final val resources: Multimap[File, Resource] = ArrayListMultimap.create[File, Resource]()
   final val mediaSegFactory: MediaSegFactory = new MediaSegFactory(this)
-  @transient var projEventBus: EventBus = null
-  @transient var undoManager: UndoManager = null
-  var name: String = null
-  final val uuid: UUID = UUID.randomUUID()
+  @transient var projEventBus: EventBus = uninitialized
+  @transient var undoManager: UndoManager = uninitialized
+  var name: String = uninitialized
+  private final val uuid: UUID = UUID.randomUUID()
   var savedVersion: Long = 0
   @transient var currentVersion: Long = 0
 
@@ -42,7 +43,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
 
   App.appEventBus.register(this)
   name = i18n("未命名")
-  projEventBus = new EventBus(uuid.toString())
+  projEventBus = new EventBus(uuid.toString)
   undoManager = new UndoManager(this)
   projEventBus.register(new AudioFrameSink())
   projEventBus.register(this)
@@ -54,10 +55,10 @@ class Project protected[project] () extends Serializable with AutoCloseable {
       return
     }
 
-    for (track <- timeline.getTracks().asScala) {
-      if (track.getWorker().getFuture() == null || track.getWorker().getFuture().isDone) {
-        val future = App.workerExecutor.submit(track.getWorker())
-        track.getWorker().setFuture(future)
+    for (track <- timeline.getTracks.asScala) {
+      if (track.getWorker.getFuture == null || track.getWorker.getFuture.isDone) {
+        val future = App.workerExecutor.submit(track.getWorker)
+        track.getWorker.setFuture(future)
       }
     }
   }
@@ -81,11 +82,11 @@ class Project protected[project] () extends Serializable with AutoCloseable {
   }
 
   private def stopTrackLoops(): Unit = {
-    for (track <- timeline.getTracks().asScala) {
-      val future = track.getWorker().getFuture()
+    for (track <- timeline.getTracks.asScala) {
+      val future = track.getWorker.getFuture
       if (future != null) {
         future.cancel(true)
-        track.getWorker().setFuture(null)
+        track.getWorker.setFuture(null)
       }
     }
   }
@@ -111,7 +112,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
     currentVersion = savedVersion
     mediaSegFactory.setProject(this)
     App.appEventBus.register(this)
-    projEventBus = new EventBus(uuid.toString())
+    projEventBus = new EventBus(uuid.toString)
     projEventBus.register(new AudioFrameSink())
     projEventBus.register(this)
     playhead = new Playhead(projEventBus)
@@ -119,7 +120,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
     isActive = false
   }
 
-  def getSavePath(): Path = {
+  def getSavePath: Path = {
     savePath
   }
 
@@ -128,7 +129,7 @@ class Project protected[project] () extends Serializable with AutoCloseable {
     out.defaultWriteObject()
   }
 
-  def isDirty(): Boolean = {
+  def isDirty: Boolean = {
     currentVersion != savedVersion
   }
 }

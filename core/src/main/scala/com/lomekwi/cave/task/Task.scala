@@ -6,11 +6,11 @@ trait Task extends Runnable with AutoCloseable {
   /**
    * [0,1]
    */
-  def getProgress(): Float
-  def getName(): String = {
-    toString()
+  def getProgress: Float
+  def getName: String = {
+    toString
   }
-  def getPool(): TaskPool = {
+  def getPool: TaskPool = {
     App.taskPool
   }
 }

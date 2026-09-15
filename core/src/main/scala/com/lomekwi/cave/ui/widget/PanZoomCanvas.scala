@@ -56,7 +56,7 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     })
   }
 
-  def getCanvas(): Group = {
+  def getCanvas: Group = {
     canvas
   }
 
@@ -67,15 +67,15 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     if (x >= 0 && x < getWidth && y >= 0 && y < getHeight) this else null
   }
 
-  def getScale(): Float = {
+  private def getScale: Float = {
     zoom * baseScale
   }
 
-  def getZoom(): Float = {
+  def getZoom: Float = {
     zoom
   }
 
-  def setZoom(zoom: Float): Unit = {
+  private def setZoom(zoom: Float): Unit = {
     this.zoom = Math.max(minZoom, Math.min(maxZoom, zoom))
     updateCanvas()
   }
@@ -91,11 +91,11 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     updateCanvas()
   }
 
-  def getXOffset(): Float = {
+  def getXOffset: Float = {
     xOffset
   }
 
-  def getYOffset(): Float = {
+  def getYOffset: Float = {
     yOffset
   }
 
@@ -104,9 +104,9 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
    */
   def zoomAt(stageX: Float, stageY: Float, amountY: Float): Unit = {
     val zoomFactor = 1.1f
-    val oldScale = getScale()
+    val oldScale = getScale
     setZoom((zoom * Math.pow(zoomFactor, -amountY)).toFloat)
-    val newScale = getScale()
+    val newScale = getScale
     if (newScale == oldScale) return
 
     screenPos.set(stageX, stageY)
@@ -125,13 +125,13 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
 
   private def updateCanvas(): Unit = {
     canvas.setPosition(xOffset, yOffset)
-    canvas.setScale(getScale())
+    canvas.setScale(getScale)
   }
 
   override def act(delta: Float): Unit = {
     val stage = getStage
     if (stage != null && getParent != null && (stage.getKeyboardFocus eq getParent)) {
-      val speed = moveSpeed * delta / getScale()
+      val speed = moveSpeed * delta / getScale
       if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed
       if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed
       if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed

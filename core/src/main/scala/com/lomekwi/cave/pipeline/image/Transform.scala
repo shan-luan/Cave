@@ -38,15 +38,15 @@ class Transform(x: Float, y: Float, rotation: Float) {
     flipY = false
   }
 
-  def getX(): Float = {
+  def getX: Float = {
     matrix.`val`(Matrix4.M03)
   }
 
-  def getY(): Float = {
+  def getY: Float = {
     matrix.`val`(Matrix4.M13)
   }
 
-  def getRotation(): Float = {
+  def getRotation: Float = {
     val a = matrix.`val`(Matrix4.M00)
     val b = matrix.`val`(Matrix4.M01)
     val c = matrix.`val`(Matrix4.M10)
@@ -54,19 +54,19 @@ class Transform(x: Float, y: Float, rotation: Float) {
     Math.toDegrees(Math.atan2(c - b, a + d)).toFloat
   }
 
-  def getScaleX(): Float = {
+  def getScaleX: Float = {
     val a = matrix.`val`(Matrix4.M00)
     val c = matrix.`val`(Matrix4.M10)
     Math.sqrt(a * a + c * c).toFloat
   }
 
-  def getScaleY(): Float = {
+  def getScaleY: Float = {
     val b = matrix.`val`(Matrix4.M01)
     val d = matrix.`val`(Matrix4.M11)
     Math.sqrt(b * b + d * d).toFloat
   }
 
-  def getRotationRadians(): Float = {
+  def getRotationRadians: Float = {
     val a = matrix.`val`(Matrix4.M00)
     val b = matrix.`val`(Matrix4.M01)
     val c = matrix.`val`(Matrix4.M10)
@@ -74,15 +74,15 @@ class Transform(x: Float, y: Float, rotation: Float) {
     Math.atan2(c - b, a + d).toFloat
   }
 
-  def getMatrix(): Matrix4 = {
+  def getMatrix: Matrix4 = {
     matrix
   }
 
-  def isFlipX(): Boolean = {
+  def isFlipX: Boolean = {
     flipX
   }
 
-  def isFlipY(): Boolean = {
+  def isFlipY: Boolean = {
     flipY
   }
 }

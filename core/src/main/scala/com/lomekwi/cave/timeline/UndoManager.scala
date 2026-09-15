@@ -9,29 +9,29 @@ import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 
-import java.util.{ArrayDeque, ArrayList, Deque, List}
 
 import scala.jdk.CollectionConverters.*
+import java.util
 
 class UndoManager(@transient private val project: Project) {
-  private final val undoStack: Deque[UndoManager.UndoableCommand] = new ArrayDeque[UndoManager.UndoableCommand]()
-  private final val redoStack: Deque[UndoManager.UndoableCommand] = new ArrayDeque[UndoManager.UndoableCommand]()
+  private final val undoStack: util.Deque[UndoManager.UndoableCommand] = new util.ArrayDeque[UndoManager.UndoableCommand]()
+  private final val redoStack: util.Deque[UndoManager.UndoableCommand] = new util.ArrayDeque[UndoManager.UndoableCommand]()
 
   def execute(command: UndoManager.UndoableCommand): Unit = {
-    val wasDirty = project.isDirty()
+    val wasDirty = project.isDirty
     project.currentVersion = project.currentVersion + 1
     command.redo()
     push(command)
-    if (wasDirty != project.isDirty()) {
+    if (wasDirty != project.isDirty) {
       project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
   def record(command: UndoManager.UndoableCommand): Unit = {
-    val wasDirty = project.isDirty()
+    val wasDirty = project.isDirty
     project.currentVersion = project.currentVersion + 1
     push(command)
-    if (wasDirty != project.isDirty()) {
+    if (wasDirty != project.isDirty) {
       project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
@@ -65,31 +65,31 @@ class UndoManager(@transient private val project: Project) {
 
   def undo(): Unit = {
     if (undoStack.isEmpty) return
-    val wasDirty = project.isDirty()
+    val wasDirty = project.isDirty
     project.currentVersion = project.currentVersion - 1
     val command = undoStack.pop()
     command.undo()
     redoStack.push(command)
-    if (wasDirty != project.isDirty()) {
+    if (wasDirty != project.isDirty) {
       project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
   def redo(): Unit = {
     if (redoStack.isEmpty) return
-    val wasDirty = project.isDirty()
+    val wasDirty = project.isDirty
     project.currentVersion = project.currentVersion + 1
     val command = redoStack.pop()
     command.redo()
     undoStack.push(command)
-    if (wasDirty != project.isDirty()) {
+    if (wasDirty != project.isDirty) {
       project.projEventBus.post(ProjectDirtyChangedEvent)
     }
   }
 
-  def canUndo(): Boolean = !undoStack.isEmpty
+  def canUndo: Boolean = !undoStack.isEmpty
 
-  def canRedo(): Boolean = !redoStack.isEmpty
+  def canRedo: Boolean = !redoStack.isEmpty
 
   def clear(): Unit = {
     undoStack.clear()
@@ -198,15 +198,15 @@ object UndoManager {
     }
   }
 
-  private def filterList(source: Source[?]): List[Filter[?]] = {
-    source.getFilters().asInstanceOf[List[Filter[?]]]
+  private def filterList(source: Source[?]): util.List[Filter[?]] = {
+    source.getFilters.asInstanceOf[util.List[Filter[?]]]
   }
 
   // ──────────────── 批量命令（可合并） ────────────────
 
   /** 批量移动片段命令。合并时：同 segment 保留旧起点、更新终点；新 segment 直接追加。 */
-  final class MoveSegsCommand(entries0: List[MoveSegsCommand.MoveEntry]) extends MergeableCommand {
-    private final val entries: List[MoveSegsCommand.MoveEntry] = new ArrayList[MoveSegsCommand.MoveEntry](entries0)
+  final class MoveSegsCommand(entries0: util.List[MoveSegsCommand.MoveEntry]) extends MergeableCommand {
+    private final val entries: util.List[MoveSegsCommand.MoveEntry] = new util.ArrayList[MoveSegsCommand.MoveEntry](entries0)
 
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
@@ -250,8 +250,8 @@ object UndoManager {
   }
 
   /** 批量调整片段区间命令。合并时：同 segment 保留旧区间、更新新区间；新 segment 直接追加。 */
-  final class ResizeSegsCommand(entries0: List[ResizeSegsCommand.ResizeEntry]) extends MergeableCommand {
-    private final val entries: List[ResizeSegsCommand.ResizeEntry] = new ArrayList[ResizeSegsCommand.ResizeEntry](entries0)
+  final class ResizeSegsCommand(entries0: util.List[ResizeSegsCommand.ResizeEntry]) extends MergeableCommand {
+    private final val entries: util.List[ResizeSegsCommand.ResizeEntry] = new util.ArrayList[ResizeSegsCommand.ResizeEntry](entries0)
 
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
@@ -293,8 +293,8 @@ object UndoManager {
   }
 
   /** 批量删除片段命令。合并时直接追加新条目（去重）。 */
-  final class RemoveSegsCommand(entries0: List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
-    private final val entries: List[RemoveSegsCommand.RemoveEntry] = new ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
+  final class RemoveSegsCommand(entries0: util.List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
+    private final val entries: util.List[RemoveSegsCommand.RemoveEntry] = new util.ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
 
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
@@ -328,13 +328,13 @@ object UndoManager {
                            group: SegmentGroup)
   }
 
-  def postRefresh(source: Source[?]): Unit = {
-    val seg: Segment = source.getSegment()
+  private def postRefresh(source: Source[?]): Unit = {
+    val seg: Segment = source.getSegment
     if (seg != null) {
-      val track: Track = seg.getTrack()
+      val track: Track = seg.getTrack
       if (track != null) {
-        val timeline: Timeline = track.getTimeline()
-        timeline.project.projEventBus.post(new SegmentSelectedEvent(seg, track, 1))
+        val timeline: Timeline = track.getTimeline
+        timeline.project.projEventBus.post(SegmentSelectedEvent(seg, track, 1))
         timeline.project.projEventBus.post(RefreshRequestEvent)
       }
     }
@@ -389,9 +389,9 @@ object UndoManager {
     }
 
     private def setValue(v: Double): Unit = {
-      val `def`: NumFrame = port.getDefaultData().asInstanceOf[NumFrame]
+      val `def`: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
       if (`def` != null) `def`.setVal(v)
-      else port.getData().asInstanceOf[NumFrame].setVal(v)
+      else port.getData.asInstanceOf[NumFrame].setVal(v)
       // 通知所属源刷新：命令创建时端口所属节点为 Source，或挂载在 Source 链上的 Filter
       if (source != null) postRefresh(source)
     }

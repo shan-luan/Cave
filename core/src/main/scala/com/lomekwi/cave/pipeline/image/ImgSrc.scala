@@ -16,39 +16,40 @@ import com.lomekwi.cave.ui.editpanel.tlarea.ImgSegActor
 import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
 
 import java.util.concurrent.CountDownLatch
+import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
-  @transient private var texture: Texture = null
-  @transient private var actor: TransFrameActor = null
+  @transient private var texture: Texture = uninitialized
+  @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[NumFrame]("宽度", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(imgRes.getWidth().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(imgRes.getWidth.toDouble)
       `val`
     }
   })
   addOutPort(new Node.OutPort[NumFrame]("高度", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(imgRes.getHeight().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(imgRes.getHeight.toDouble)
       `val`
     }
   })
   addOutPort(new Node.OutPort[NumFrame]("时长", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(getDuration().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(getDuration.toDouble)
       `val`
     }
   })
 
-  def getImgRes(): ImgRes = {
+  def getImgRes: ImgRes = {
     imgRes
   }
 
@@ -64,7 +65,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
     if (!initialized) {
       Gdx.app.postRunnable(() => {
         if (texture == null) {
-          texture = new Texture(imgRes.getWidth(), imgRes.getHeight(), Pixmap.Format.RGBA8888)
+          texture = new Texture(imgRes.getWidth, imgRes.getHeight, Pixmap.Format.RGBA8888)
         }
         frame = new ImgFrame(track, this)
         frame.setTexture(texture)
@@ -93,27 +94,27 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
         e.printStackTrace()
         frame.setPixels(null)
     }
-    frame.getTransform().reset(0, 0)
+    frame.getTransform.reset(0, 0)
     frame
   }
 
-  override def getLengthPerExportFrame(): Long = {
-    imgRes.getFrameLength()
+  override def getLengthPerExportFrame: Long = {
+    imgRes.getFrameLength
   }
 
-  override def getDuration(): Long = {
+  override def getDuration: Long = {
     Long.MaxValue
   }
 
-  override def getDefaultSegmentDuration(): Long = {
+  override def getDefaultSegmentDuration: Long = {
     5 * SECOND
   }
 
-  override def getFrameType(): Class[ImgFrame] = {
+  override def getFrameType: Class[ImgFrame] = {
     classOf[ImgFrame]
   }
 
-  override def getDisplayName(): String = {
+  override def getDisplayName: String = {
     "\u56fe\u7247\u6e90"
   }
 

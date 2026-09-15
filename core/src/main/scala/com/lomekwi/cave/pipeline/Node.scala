@@ -1,8 +1,9 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util.{ArrayList, HashSet, List, Set}
+import java.util
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -10,8 +11,8 @@ import scala.jdk.CollectionConverters.*
  */
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
-  private final val inPorts: List[Node.InPort[?]] = new ArrayList[Node.InPort[?]]()
-  private final val outPorts: List[Node.OutPort[?]] = new ArrayList[Node.OutPort[?]]()
+  private final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
+  private final val outPorts: util.List[Node.OutPort[?]] = new util.ArrayList[Node.OutPort[?]]()
 
   protected def remove(): Unit = {
     for (in <- inPorts.asScala) {
@@ -30,26 +31,26 @@ abstract class Node extends Serializable {
     outPorts.add(p)
     p
   }
-  def getName(): String
+  def getName: String
 
-  def getInPorts(): List[Node.InPort[?]] = inPorts
-  def getOutPorts(): List[Node.OutPort[?]] = outPorts
+  def getInPorts: util.List[Node.InPort[?]] = inPorts
+  def getOutPorts: util.List[Node.OutPort[?]] = outPorts
 }
 
 object Node {
   sealed trait Port extends Serializable {
     def link(target: Port): Boolean
     def unlink(): Unit
-    def getName(): String = toString
+    def getName: String = toString
   }
 
   @SerialVersionUID(1L)
   class InPort[T](name: String, constraint: Class[?]*) extends Port {
-    private final val constraintSet: Set[Class[?]] = Set.of(constraint*)
+    private final val constraintSet: util.Set[Class[?]] = util.Set.of(constraint*)
 
     private var defaultData: T = null.asInstanceOf[T]
 
-    private var prev: Node.OutPort[? <: T] = null
+    private var prev: Node.OutPort[? <: T] = uninitialized
 
     override def link(target: Port): Boolean = target match {
       case out: Node.OutPort[?] => this.asInstanceOf[Node.InPort[Any]].linkFrom(out.asInstanceOf[Node.OutPort[Any]])
@@ -61,26 +62,26 @@ object Node {
       this.defaultData = defaultValue
     }
 
-    def getPrev(): Node.OutPort[? <: T] = prev
+    def getPrev: Node.OutPort[? <: T] = prev
 
     private def setPrev(prev: Node.OutPort[? <: T]): Unit = {
       this.prev = prev
     }
 
-    def getData(): T = if (prev == null) getDefaultData() else prev.getData()
+    def getData: T = if (prev == null) getDefaultData else prev.getData
 
-    def getDefaultData(): T = defaultData
+    def getDefaultData: T = defaultData
 
     def setDefaultData(data: T): Unit = defaultData = data
 
     /**
      * @return 可以连接到此输入端口的输出端口所需要满足的全部约束.即交叉类型(&).
      */
-    def getConstraint(): Set[Class[?]] = constraintSet
+    def getConstraint: util.Set[Class[?]] = constraintSet
 
     def canLinkFrom(p: Node.OutPort[?]): Boolean = {
-      val outType = p.getType()
-      outType == null || getConstraint().asScala.forall(c => c.isAssignableFrom(outType))
+      val outType = p.getType
+      outType == null || getConstraint.asScala.forall(c => c.isAssignableFrom(outType))
     }
 
     def linkFrom(p: Node.OutPort[?]): Boolean = {
@@ -102,8 +103,8 @@ object Node {
         prev = null
       }
     }
-    def isLinked(): Boolean = prev != null
-    override def getName(): String = name
+    def isLinked: Boolean = prev != null
+    override def getName: String = name
   }
 
 
@@ -114,15 +115,15 @@ object Node {
       case _ => false
     }
 
-    protected final val next: Set[Node.InPort[? >: T]] = new HashSet[Node.InPort[? >: T]]()
+    protected final val next: util.Set[Node.InPort[? >: T]] = new util.HashSet[Node.InPort[? >: T]]()
 
-    def getData(): T
+    def getData: T
 
-    def getType(): Class[? <: T] = portType
+    def getType: Class[? <: T] = portType
 
     def canLinkTo(p: Node.InPort[?]): Boolean = p.canLinkFrom(this)
 
-    def linkTo(p: Node.InPort[?]): Boolean = p.asInstanceOf[Node.InPort[Any]].linkFrom(this.asInstanceOf[Node.OutPort[Any]])
+    private def linkTo(p: Node.InPort[?]): Boolean = p.asInstanceOf[Node.InPort[Any]].linkFrom(this.asInstanceOf[Node.OutPort[Any]])
 
     private[Node] def addNext(p: Node.InPort[?]): Unit = {
       next.add(p.asInstanceOf[Node.InPort[? >: T]])
@@ -139,16 +140,16 @@ object Node {
     }
 
     override def unlink(): Unit = {
-      for (p <- Set.copyOf(next).asScala) {
+      for (p <- util.Set.copyOf(next).asScala) {
         p.unlink()
       }
 
       next.clear()
     }
 
-    def isLinked(): Boolean = !next.isEmpty
+    def isLinked: Boolean = !next.isEmpty
 
-    def getNext(): Set[Node.InPort[? >: T]] = next
-    override def getName(): String = name
+    def getNext: util.Set[Node.InPort[? >: T]] = next
+    override def getName: String = name
   }
 }

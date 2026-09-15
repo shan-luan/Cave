@@ -13,17 +13,18 @@ import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.editpanel.inspector.Inspector
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree
+import scala.compiletime.uninitialized
 
-class EditPanelFrame private () extends VisTable {
-  private var mediaPoolAndFileTreeSplitPane: VisSplitPane = null
-  private var previewAndTimelineSplitPane: VisSplitPane = null
-  private var previewAndDetailSplitPane: VisSplitPane = null
-  private var detailPanel: Inspector = null
-  private var editPanel: EditPanel = null
+class EditPanelFrame private extends VisTable {
+  private var mediaPoolAndFileTreeSplitPane: VisSplitPane = uninitialized
+  private var previewAndTimelineSplitPane: VisSplitPane = uninitialized
+  private var previewAndDetailSplitPane: VisSplitPane = uninitialized
+  private var detailPanel: Inspector = uninitialized
+  private var editPanel: EditPanel = uninitialized
 
   {
     val treePanel = new VisTable()
-    treePanel.add(FileTree.getINSTANCE()).grow().row()
+    treePanel.add(FileTree.getINSTANCE).grow().row()
     val addDirBtn = new VisTextButton("+")
     addDirBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
@@ -31,10 +32,10 @@ class EditPanelFrame private () extends VisTable {
         chooser.setSelectionMode(FileChooser.SelectionMode.DIRECTORIES)
         chooser.setListener(new SingleFileChooserListener {
           override protected def selected(file: FileHandle): Unit = {
-            FileTree.getINSTANCE().addRootDirectory(file.file())
+            FileTree.getINSTANCE.addRootDirectory(file.file())
           }
         })
-        App.root.getStage().addActor(chooser)
+        App.root.getStage.addActor(chooser)
       }
     })
     treePanel.add(addDirBtn).fillX()
@@ -62,28 +63,28 @@ class EditPanelFrame private () extends VisTable {
     this
   }
 
-  def getDetailPanel(): Inspector = {
+  def getDetailPanel: Inspector = {
     detailPanel
   }
 
-  override def getMinHeight(): Float = {
+  override def getMinHeight: Float = {
     0
   }
-  override def getMinWidth(): Float = {
+  override def getMinWidth: Float = {
     0
   }
-  override def getPrefHeight(): Float = {
+  override def getPrefHeight: Float = {
     0
   }
-  override def getPrefWidth(): Float = {
+  override def getPrefWidth: Float = {
     0
   }
 }
 
 object EditPanelFrame {
-  private var INSTANCE: EditPanelFrame = null
+  private var INSTANCE: EditPanelFrame = uninitialized
 
-  def getINSTANCE(): EditPanelFrame = {
+  def getINSTANCE: EditPanelFrame = {
     if (INSTANCE == null) {
       INSTANCE = new EditPanelFrame()
     }

@@ -11,12 +11,12 @@ import java.io.ObjectOutputStream
 import scala.util.Using
 
 object Projects {
-  final val PROJECT_EXTENSION = ".cave"
+  private final val PROJECT_EXTENSION = ".cave"
 
   def open(fileHandle: FileHandle): Project = {
     val ois = new ObjectInputStream(fileHandle.read())
     val p = ois.readObject().asInstanceOf[Project]
-    p.savePath = fileHandle.file().toPath()
+    p.savePath = fileHandle.file.toPath
     p
   }
   def create(): Project = {
@@ -29,18 +29,18 @@ object Projects {
     Using.resource(new ObjectOutputStream(baos)) { oos =>
       oos.writeObject(project)
     }
-    val data = baos.toByteArray()
+    val data = baos.toByteArray
     Using.resource(target.write(false)) { os =>
       os.write(data)
     }
-    project.savePath = target.file().toPath()
+    project.savePath = target.file.toPath
     project.projEventBus.post(ProjectDirtyChangedEvent)
   }
   def save(project: Project): Unit = {
     if (project.savePath == null) {
       throw new FileNotFoundException()
     }
-    save(project, new FileHandle(project.savePath.toFile()))
+    save(project, new FileHandle(project.savePath.toFile))
   }
 
   def hasProjectExtension(name: String): Boolean = {

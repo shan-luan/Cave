@@ -1,8 +1,9 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util.Set
+import java.util
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -13,8 +14,8 @@ import scala.jdk.CollectionConverters.*
 @SerialVersionUID(1L)
 abstract class Filter[T] extends Node with Serializable {
 
-  protected var filterIn: FilterIn = null
-  protected var filterOut: FilterOut = null
+  private var filterIn: FilterIn = uninitialized
+  private var filterOut: FilterOut = uninitialized
 
   override protected def addInPort[P <: Node.InPort[?]](p: P): P = {
     val port = super.addInPort(p)
@@ -41,28 +42,28 @@ abstract class Filter[T] extends Node with Serializable {
     }
     port
   }
-  def getType(): Class[T]
-  def getFilterIn(): FilterIn = {
+  def getType: Class[T]
+  def getFilterIn: FilterIn = {
     filterIn
   }
-  def getFilterOut(): FilterOut = {
+  def getFilterOut: FilterOut = {
     filterOut
   }
 
-  class FilterIn(name: String) extends Node.InPort[T](name, Filter.this.getType()) {
+  class FilterIn(name: String) extends Node.InPort[T](name, Filter.this.getType) {
     def this() = {
       this("输入")
     }
 
-    override def getConstraint(): Set[Class[?]] = {
-      if (getFilterOut().isLinked()) {
-        (getFilterOut().getNext().asScala.flatMap(_.getConstraint().asScala) + Filter.this.getType()).asJava
+    override def getConstraint: util.Set[Class[?]] = {
+      if (getFilterOut.isLinked) {
+        (getFilterOut.getNext.asScala.flatMap(_.getConstraint.asScala).union(Set(Filter.this.getType))).asJava
       } else {
-        Set.of(Filter.this.getType())
+        util.Set.of(Filter.this.getType)
       }
     }
   }
-  abstract class FilterOut(name: String) extends Node.OutPort[T](name, Filter.this.getType()) {
+  abstract class FilterOut(name: String) extends Node.OutPort[T](name, Filter.this.getType) {
     protected def this() = {
       this("输出")
     }
@@ -70,9 +71,9 @@ abstract class Filter[T] extends Node with Serializable {
     /**
      * @return 输入已连接时返回上游实际类型,否则返回 null 表示类型未知.
      */
-    override def getType(): Class[? <: T] = {
-      if (getFilterIn().isLinked()) {
-        getFilterIn().getPrev().getType()
+    override def getType: Class[? <: T] = {
+      if (getFilterIn.isLinked) {
+        getFilterIn.getPrev.getType
       } else {
         null
       }

@@ -9,16 +9,16 @@ import com.lomekwi.cave.ui.widget.AutoHideTabbedPane
 
 class EditTabbedPane extends AutoHideTabbedPane {
   private final val contentHost: Container[Table] = new Container[Table] {
-    override def getMinHeight(): Float = {
+    override def getMinHeight: Float = {
       0
     }
-    override def getMinWidth(): Float = {
+    override def getMinWidth: Float = {
       0
     }
-    override def getPrefHeight(): Float = {
+    override def getPrefHeight: Float = {
       0
     }
-    override def getPrefWidth(): Float = {
+    override def getPrefWidth: Float = {
       0
     }
   }
@@ -40,7 +40,7 @@ class EditTabbedPane extends AutoHideTabbedPane {
     })
   }
 
-  def getContentHost(): Container[Table] = {
+  def getContentHost: Container[Table] = {
     contentHost
   }
 
@@ -51,7 +51,7 @@ class EditTabbedPane extends AutoHideTabbedPane {
     while (it.hasNext) {
       val tab = it.next()
       tab match {
-        case editor: NodeEditorTab if editor.getNodeGraph() eq nodeGraph =>
+        case editor: NodeEditorTab if editor.getNodeGraph eq nodeGraph =>
           switchTab(editor)
           return
         case _ =>

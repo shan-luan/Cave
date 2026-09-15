@@ -19,16 +19,16 @@ import com.lomekwi.cave.timeline.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.SegmentSelectedEvent
 
-import java.util.ArrayList
-import java.util.List
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import java.util
 
 
 class Inspector extends VisTable {
   private final val content: VisTable = new VisTable()
-  private var currentSeg: Segment = null
-  private var currentSegSet: SegmentSet = null
+  private var currentSeg: Segment = uninitialized
+  private var currentSegSet: SegmentSet = uninitialized
 
   {
     val scrollPane = new VisScrollPane(content)
@@ -53,7 +53,7 @@ class Inspector extends VisTable {
     }
   }
 
-  def rebuildContent(): Unit = {
+  private def rebuildContent(): Unit = {
     if (currentSegSet != null) {
       showMultiInfo(currentSegSet)
     } else if (currentSeg != null) {
@@ -75,7 +75,7 @@ class Inspector extends VisTable {
     content.clear()
     content.setFillParent(false)
     content.top()
-    val segs: List[Segment] = new ArrayList[Segment](set)
+    val segs: util.List[Segment] = new util.ArrayList[Segment](set)
     segs.sort(null)
     var first = true
     for (seg <- segs.asScala) {
@@ -98,9 +98,9 @@ class Inspector extends VisTable {
   }
 
   private def appendSegmentInfo(seg: Segment): Unit = {
-    val source = seg.getSource()
+    val source = seg.getSource
     content.add(new SourceActor(source)).growX().pad(4).row()
-    for (filter <- source.getFilters().asScala) {
+    for (filter <- source.getFilters.asScala) {
       val actor = new FilterActor(source, filter)
       actor.setRebuildCallback(() => rebuildContent())
       content.add(actor).growX().pad(4).row()
@@ -111,13 +111,11 @@ class Inspector extends VisTable {
     for (fi <- 0 until compatibleCount) {
       val idx = fi
       val created: Node = App.nodeRegistry.createCompatible(source, idx)
-      filterMenu.addItem(new MenuItem(created.getName(), new ChangeListener {
-        override def changed(event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor): Unit = {
-          source.getFilters().asInstanceOf[List[Filter[?]]].add(created.asInstanceOf[Filter[?]])
-          val p = App.root.getFrontendProject()
-          if (p != null) p.undoManager.record(new UndoManager.AddFilterCommand(source, created.asInstanceOf[Filter[?]]))
-          rebuildContent()
-        }
+      filterMenu.addItem(new MenuItem(created.getName, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
+        source.getFilters.asInstanceOf[util.List[Filter[?]]].add(created.asInstanceOf[Filter[?]])
+        val p = App.root.getFrontendProject
+        if (p != null) p.undoManager.record(UndoManager.AddFilterCommand(source, created.asInstanceOf[Filter[?]]))
+        rebuildContent()
       }))
     }
     addBtn.addListener(new ChangeListener {

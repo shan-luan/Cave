@@ -1,17 +1,15 @@
 package com.lomekwi.cave.resource.decoder
 
 import com.lomekwi.cave.util.Units.SECOND
-
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_FLT
-
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.resource.media.AudRes
-
 import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Frame
 
 import java.nio.FloatBuffer
-import java.util.Arrays
+import java.util
+import scala.annotation.tailrec
 
 class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
   import AudDecRes.*
@@ -28,6 +26,7 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
     seek(time, 0)        //由于鬼知道什么的原因，有时候即使传参的时间合法也会在底层触发一个非法参数的跳跃（比如目标负数时间），所以加个保险。
   }
 
+  @tailrec
   private def seek(time: Long, retry: Int): Unit = {
     bufLen = 0
     try {
@@ -61,7 +60,7 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
     }
 
     var written = 0
-    Arrays.fill(output, 0f)
+    util.Arrays.fill(output, 0f)
 
     // 先使用缓冲区中遗留的采样点，没有则轻量同步到目标时间
     if (bufLen > 0) {
@@ -83,7 +82,7 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
           frame.setSamples(null)
           return
         }
-        if (f.timestamp + getLengthPerFrame() >= time) {
+        if (f.timestamp + getLengthPerFrame >= time) {
           val sb = f.samples(0).asInstanceOf[FloatBuffer]
           val remaining = sb.remaining()
           if (remaining <= FRAME_SIZE) {
@@ -140,21 +139,21 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
     grabber.setSampleFormat(AV_SAMPLE_FMT_FLT)
   }
 
-  override def getCodecName(): String = {
+  override def getCodecName: String = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getAudioCodecName
   }
 
-  override def getCodec(): Int = {
+  override def getCodec: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getAudioCodec
   }
 
-  override def getLengthPerFrame(): Long = {
+  override def getLengthPerFrame: Long = {
     FRAME_SIZE / 2 * SECOND / 44100
   }
 }

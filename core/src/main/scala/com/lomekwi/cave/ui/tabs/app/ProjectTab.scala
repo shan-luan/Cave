@@ -24,29 +24,29 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
   private final val project: Project = project0
   project.projEventBus.register(this)
 
-  override def getTabTitle(): String = {
+  override def getTabTitle: String = {
     project.name
   }
-  override def getContentTable(): Table = {
-    EditPanelFrame.getINSTANCE().`with`(editPanel)
+  override def getContentTable: Table = {
+    EditPanelFrame.getINSTANCE.`with`(editPanel)
   }
 
-  def getEditPanel(): EditPanel = {
+  def getEditPanel: EditPanel = {
     editPanel
   }
 
-  def getProject(): Project = {
+  def getProject: Project = {
     project
   }
 
   @Subscribe
   def onProjectDirtyChanged(event: ProjectDirtyChangedEvent): Unit = {
-    setDirty(project.isDirty())
+    setDirty(project.isDirty)
   }
 
   //FIXME：当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
   override def save(): Boolean = {
-    if (project.getSavePath() == null) {
+    if (project.getSavePath == null) {
       val conf = new NativeFileChooserConfiguration()
       conf.title = i18n("选择保存位置...")
       if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -68,16 +68,16 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
           Gdx.app.error("ProjectTab", "保存项目失败", exception)
         }
       })
-      return true
+      true
     }
     try {
       Projects.save(project)
       setDirty(false)
-      return true
+      true
     } catch {
       case e: IOException =>
         Gdx.app.error("ProjectTab", "保存项目失败", e)
-        return false
+        false
     }
   }
 

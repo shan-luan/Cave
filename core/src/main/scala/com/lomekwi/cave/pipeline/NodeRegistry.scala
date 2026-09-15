@@ -4,7 +4,7 @@ import com.lomekwi.cave.pipeline.image.TransNode
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}
-import java.util.{ArrayList, List}
+import java.util
 
 import scala.jdk.CollectionConverters.*
 
@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters.*
  * {@code isAssignableFrom} 源帧类型；非 Filter 的普通节点视为始终兼容。</p>
  */
 class NodeRegistry {
-  private final val entries: List[Class[? <: Node]] = new ArrayList[Class[? <: Node]]()
+  private final val entries: util.List[Class[? <: Node]] = new util.ArrayList[Class[? <: Node]]()
 
   register(classOf[TransNode])
   register(classOf[NodeGraphFilter])
@@ -25,7 +25,7 @@ class NodeRegistry {
   }
 
   def getCompatibleCount(source: Source[?]): Int = {
-    val frameType: Class[?] = source.getFrameType()
+    val frameType: Class[?] = source.getFrameType
     var count = 0
     for (nodeClass <- entries.asScala) {
       if (NodeRegistry.isCompatible(nodeClass, frameType)) count += 1
@@ -38,7 +38,7 @@ class NodeRegistry {
    * 目前没有消费方，Inspector 只会把结果加入 filter 链。
    */
   def createCompatible(source: Source[?], index: Int): Node = {
-    val frameType: Class[?] = source.getFrameType()
+    val frameType: Class[?] = source.getFrameType
     var count = 0
     for (nodeClass <- entries.asScala) {
       if (NodeRegistry.isCompatible(nodeClass, frameType)) {

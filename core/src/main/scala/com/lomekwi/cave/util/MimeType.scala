@@ -52,7 +52,7 @@ object MimeType {
       return null
     }
 
-    val path: Path = file.toPath()
+    val path: Path = file.toPath
 
     // 首先尝试使用系统检测
     try {
@@ -98,7 +98,7 @@ object MimeType {
    * 获取{@code *}/{@code *}通配MIME类型
    * @return "{@code *}/{@code *}"
    */
-  def getAllWildcard(): String = {
+  def getAllWildcard: String = {
     "*/*"
   }
 

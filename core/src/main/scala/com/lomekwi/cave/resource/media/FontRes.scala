@@ -7,11 +7,12 @@ import com.badlogic.gdx.utils.IntMap
 import com.lomekwi.cave.resource.Resource
 
 import java.io.Serializable
+import scala.compiletime.uninitialized
 
 
 @SerialVersionUID(1L)
 class FontRes(private val path: String) extends Resource with Serializable {
-  @transient private var generator: FreeTypeFontGenerator = null
+  @transient private var generator: FreeTypeFontGenerator = uninitialized
   @transient private lazy val fontCache: IntMap[BitmapFont] = new IntMap[BitmapFont]()
 
   def getFont(size: Int): BitmapFont = {
@@ -36,7 +37,7 @@ class FontRes(private val path: String) extends Resource with Serializable {
     generator
   }
 
-  def getPath(): String = {
+  def getPath: String = {
     path
   }
 

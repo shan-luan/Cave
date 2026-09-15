@@ -18,16 +18,17 @@ import com.lomekwi.cave.app.App
 
 import java.io.File
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 
 class MediaPool(private val resources: Multimap[File, Resource], eventBus: EventBus) extends FlowGroup(false) {
-  private var dnd: DragAndDrop = null
+  private var dnd: DragAndDrop = uninitialized
 
   {
     setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled)
 
-    dnd = App.root.getDragAndDrop()
+    dnd = App.root.getDragAndDrop
 
     dnd.addTarget(new DragAndDrop.Target(this) {
       override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
@@ -63,7 +64,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   def onMediaCreated(event: MediaCreatedEvent): Unit = {
     val file = event.file
     val alreadyListed = getChildren.asScala.exists {
-      case item: MediaPoolItem => item.getFile().equals(file)
+      case item: MediaPoolItem => item.getFile.equals(file)
       case _ => false
     }
     if (!alreadyListed) {
@@ -81,14 +82,14 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
     dnd.addSource(new DragAndDrop.Source(item) {
       override def dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload = {
         val payload = new DragAndDrop.Payload()
-        payload.setObject(item.getFile())
-        payload.setDragActor(new MediaPoolItem(item.getFile(), item.previewable))
+        payload.setObject(item.getFile)
+        payload.setDragActor(new MediaPoolItem(item.getFile, item.previewable))
         payload
       }
     })
   }
 
-  class MediaPoolItem(private val file: File, private[mediapool] val previewable: Showable) extends VisTable() {
+  private class MediaPoolItem(private val file: File, private[mediapool] val previewable: Showable) extends VisTable() {
     private final val image: VisImage = new VisImage(new Texture("libgdx.png"))
     private var requested: Boolean = false
 
@@ -103,7 +104,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
     override def act(delta: Float): Unit = {
       super.act(delta)
       if (requested) {
-        val tex = previewable.getPreview()
+        val tex = previewable.getPreview
         if (tex != null) {
           image.setDrawable(null.asInstanceOf[com.badlogic.gdx.scenes.scene2d.utils.Drawable])
           image.setDrawable(new com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable(tex))
@@ -112,16 +113,16 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       }
     }
 
-    def getFile(): File = {
+    def getFile: File = {
       file
     }
   }
 
-  override def getMinWidth(): Float = {
+  override def getMinWidth: Float = {
     0
   }
 
-  override def getMinHeight(): Float = {
+  override def getMinHeight: Float = {
     0
   }
 }

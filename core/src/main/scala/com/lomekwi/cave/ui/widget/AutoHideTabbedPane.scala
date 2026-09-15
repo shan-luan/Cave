@@ -41,7 +41,10 @@ class AutoHideTabbedPane extends TabbedPane {
 
   private def updateVisibility(): Unit = {
     val table: Table = getTable
-    val parent: Table = if (table.getParent.isInstanceOf[Table]) table.getParent.asInstanceOf[Table] else null
+    val parent: Table = table.getParent match {
+      case t: Table => t
+      case _ => null
+    }
     if (parent == null) return
 
     val cell: Cell[?] = parent.getCell(table)

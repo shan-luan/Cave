@@ -12,10 +12,11 @@ import com.lomekwi.cave.ui.Root
 import games.spooky.gdx.nativefilechooser.NativeFileChooser
 
 import java.util.concurrent.{ExecutorService, Executors}
+import scala.compiletime.uninitialized
 
 object App {
-  var fileChooser: NativeFileChooser = null
-  var audioOut: AppAudioOut = null
+  var fileChooser: NativeFileChooser = uninitialized
+  var audioOut: AppAudioOut = uninitialized
   final val appEventBus = new EventBus()
   final val workerExecutor: ExecutorService = Executors.newCachedThreadPool((r: Runnable) => {
     val thread = new Thread(r)
@@ -23,7 +24,7 @@ object App {
     thread
   })
   final val taskPool = new TaskPool()
-  var root: Root = null
+  var root: Root = uninitialized
   final val shortcutManager = new ShortcutManager()
   final val copyManager = new CopyManager()
   final val mediaFactory = new MediaFactory()

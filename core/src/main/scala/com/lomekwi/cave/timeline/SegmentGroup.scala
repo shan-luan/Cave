@@ -4,7 +4,8 @@ import com.lomekwi.cave.app.copy.Copyable
 import com.lomekwi.cave.app.selection.Selectable
 
 import java.io.Serializable
-import java.util.{AbstractCollection, Collections, Iterator, LinkedHashSet, Set}
+import java.util
+import java.util.{Collections}
 
 import scala.jdk.CollectionConverters.*
 
@@ -12,8 +13,8 @@ import scala.jdk.CollectionConverters.*
  * 一组被同时操作（选择/拖动/分割）的片段，实现 {@link Collection}{@code <Segment>}，
  */
 @SerialVersionUID(1L)
-class SegmentGroup extends AbstractCollection[Segment] with Serializable with Selectable with Copyable {
-  private final val segments: Set[Segment] = new LinkedHashSet[Segment]()
+class SegmentGroup extends util.AbstractCollection[Segment] with Serializable with Selectable with Copyable {
+  private final val segments: util.Set[Segment] = new util.LinkedHashSet[Segment]()
   @transient private var selected: Boolean = false
 
   override def add(segment: Segment): Boolean = {
@@ -40,11 +41,11 @@ class SegmentGroup extends AbstractCollection[Segment] with Serializable with Se
     segments.contains(o)
   }
 
-  override def isEmpty(): Boolean = {
+  override def isEmpty: Boolean = {
     segments.isEmpty
   }
 
-  override def iterator(): Iterator[Segment] = {
+  override def iterator(): util.Iterator[Segment] = {
     segments.iterator()
   }
 
@@ -52,11 +53,11 @@ class SegmentGroup extends AbstractCollection[Segment] with Serializable with Se
     segments.size()
   }
 
-  def getSegments(): Set[Segment] = {
+  def getSegments: util.Set[Segment] = {
     Collections.unmodifiableSet(segments)
   }
 
-  override def isSelected(): Boolean = {
+  override def isSelected: Boolean = {
     selected
   }
 
@@ -71,7 +72,7 @@ class SegmentGroup extends AbstractCollection[Segment] with Serializable with Se
     val newGroup = new SegmentGroup()
     for (seg <- segments.asScala) {
       val dup = seg.duplicate()
-      dup.setTrack(seg.getTrack())
+      dup.setTrack(seg.getTrack)
       newGroup.add(dup)
     }
     newGroup

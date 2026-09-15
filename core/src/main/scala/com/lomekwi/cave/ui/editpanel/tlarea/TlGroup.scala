@@ -16,14 +16,15 @@ import com.lomekwi.cave.timeline.playback.Playhead
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.{Colors, Focusable}
 
-import java.util.{ArrayList, Collection, HashMap, HashSet, List, Map, Set}
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 
+import scala.compiletime.uninitialized
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
 
 import com.badlogic.gdx.Input.Keys.*
+import java.util
 
 class TlGroup(project0: Project) extends Group with Focusable {
 
@@ -31,9 +32,9 @@ class TlGroup(project0: Project) extends Group with Focusable {
   final val segMenu: SegMenu = new SegMenu(this)
   final val tlGroupMenu: TlGroupMenu = new TlGroupMenu(this)
 
-  private[tlarea] var timeline: Timeline = null
-  private[tlarea] var playhead: Playhead = null
-  private[tlarea] var project: Project = null
+  private[tlarea] var timeline: Timeline = uninitialized
+  private[tlarea] var playhead: Playhead = uninitialized
+  private[tlarea] var project: Project = uninitialized
 
   private[tlarea] final val view: TlGroup.ViewState = new TlGroup.ViewState()
 
@@ -58,7 +59,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   project.projEventBus.register(this)
 
   this.view.startTime = 0
-  this.view.durationTime = Math.max(project.timeline.getLength(), 30 * SECOND)
+  this.view.durationTime = Math.max(project.timeline.getLength, 30 * SECOND)
   this.view.trackHeight = 80
 
   addDefaultListeners()
@@ -66,7 +67,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   private def addDefaultListeners(): Unit = {
     addListener(new TlGroupInputListener(this))
     addCaptureListener(new TlGroupCaptureListener(this))
-    App.root.getDragAndDrop().addTarget(new TlGroupDropTarget(this))
+    App.root.getDragAndDrop.addTarget(new TlGroupDropTarget(this))
     addListener(new DragListener {
       setButton(Input.Buttons.MIDDLE)
 
@@ -102,7 +103,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
       var acted = false
 
-      if (!App.root.isTextInputFocused() && (getStage.getKeyboardFocus eq this)) {
+      if (!App.root.isTextInputFocused && (getStage.getKeyboardFocus eq this)) {
         val timePerPixel: Float = view.durationTime.toFloat / getWidth
 
         if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) {
@@ -137,12 +138,12 @@ class TlGroup(project0: Project) extends Group with Focusable {
       clearChildren(false)
 
       val visibleRange = view.visibleRange()
-      for (i <- timeline.getTracks().asScala.indices.reverse) {
-        val track = timeline.getTracks().get(i)
+      for (i <- timeline.getTracks.asScala.indices.reverse) {
+        val track = timeline.getTracks.get(i)
 
         for (seg <- track.getIntersectingSegments(visibleRange).asScala) {
-          val actor = seg.getActor()
-          val r = seg.getRange()
+          val actor = seg.getActor
+          val r = seg.getRange
           actor.setPosition(
             absoluteTimeToX(r.lo),
             getHeight + view.trackYShift - (i + 1) * view.trackHeight
@@ -198,7 +199,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   def selectSegment(segment: Segment, addToSelection: Boolean): Unit = {
-    val group = segment.getGroup()
+    val group = segment.getGroup
     if (group != null) {
       if (addToSelection) {
         val anySelected = group.asScala.exists(s => selectedSegments.contains(s))
@@ -222,19 +223,19 @@ class TlGroup(project0: Project) extends Group with Focusable {
       }
       val count = selectedSegments.size()
       if (count == 0) {
-        val e = new SegmentSelectedEvent(null, null, 0)
+        val e = SegmentSelectedEvent(null, null, 0)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
       } else if (count == 1) {
         val remaining = selectedSegments.iterator().next()
-        val e = new SegmentSelectedEvent(remaining, remaining.getTrack(), 1)
+        val e = SegmentSelectedEvent(remaining, remaining.getTrack, 1)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
       } else {
-        val e = new SegmentSelectedEvent(null, null, count)
+        val e = SegmentSelectedEvent(null, null, count)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
-        val ge = new SegmentSetSelectedEvent(selectedSegments, count)
+        val ge = SegmentSetSelectedEvent(selectedSegments, count)
         project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       }
@@ -248,19 +249,19 @@ class TlGroup(project0: Project) extends Group with Focusable {
       segment.setSelected(false)
       val count = selectedSegments.size()
       if (count == 0) {
-        val e = new SegmentSelectedEvent(null, null, 0)
+        val e = SegmentSelectedEvent(null, null, 0)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
       } else if (count == 1) {
         val remaining = selectedSegments.iterator().next()
-        val e = new SegmentSelectedEvent(remaining, remaining.getTrack(), 1)
+        val e = SegmentSelectedEvent(remaining, remaining.getTrack, 1)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
       } else {
-        val e = new SegmentSelectedEvent(null, null, count)
+        val e = SegmentSelectedEvent(null, null, count)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
-        val ge = new SegmentSetSelectedEvent(selectedSegments, count)
+        val ge = SegmentSetSelectedEvent(selectedSegments, count)
         project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       }
@@ -269,14 +270,14 @@ class TlGroup(project0: Project) extends Group with Focusable {
       segment.setSelected(true)
       val count = selectedSegments.size()
       if (count >= 2) {
-        val e = new SegmentSelectedEvent(null, null, count)
+        val e = SegmentSelectedEvent(null, null, count)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
-        val ge = new SegmentSetSelectedEvent(selectedSegments, count)
+        val ge = SegmentSetSelectedEvent(selectedSegments, count)
         project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       } else {
-        val e = new SegmentSelectedEvent(segment, segment.getTrack(), 1)
+        val e = SegmentSelectedEvent(segment, segment.getTrack, 1)
         project.projEventBus.post(e)
         App.appEventBus.post(e)
       }
@@ -286,12 +287,12 @@ class TlGroup(project0: Project) extends Group with Focusable {
   def clearSelection(): Unit = {
     selectedSegments.setSelected(false)
     selectedSegments.clear()
-    val e = new SegmentSelectedEvent(null, null, 0)
+    val e = SegmentSelectedEvent(null, null, 0)
     project.projEventBus.post(e)
     App.appEventBus.post(e)
   }
 
-  def selectSegments(segments: Collection[Segment]): Unit = {
+  private def selectSegments(segments: util.Collection[Segment]): Unit = {
     clearSelection()
     for (seg <- segments.asScala) {
       selectedSegments.add(seg)
@@ -300,14 +301,14 @@ class TlGroup(project0: Project) extends Group with Focusable {
     val count = selectedSegments.size()
     if (count == 1) {
       val seg = selectedSegments.iterator().next()
-      val e = new SegmentSelectedEvent(seg, seg.getTrack(), 1)
+      val e = SegmentSelectedEvent(seg, seg.getTrack, 1)
       project.projEventBus.post(e)
       App.appEventBus.post(e)
     } else if (count >= 2) {
-      val e = new SegmentSelectedEvent(null, null, count)
+      val e = SegmentSelectedEvent(null, null, count)
       project.projEventBus.post(e)
       App.appEventBus.post(e)
-      val ge = new SegmentSetSelectedEvent(selectedSegments, count)
+      val ge = SegmentSetSelectedEvent(selectedSegments, count)
       project.projEventBus.post(ge)
       App.appEventBus.post(ge)
     }
@@ -315,7 +316,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
   private[tlarea] def removeSeg(segActor: SegActor): Unit = {
     removeActor(segActor)
-    val segment = segActor.getSegment()
+    val segment = segActor.getSegment
     Using.resource(timeline.record()) { h =>
       timeline.remove(segment)
     }
@@ -324,7 +325,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
   /** 右键菜单“分割”入口。 */
   private[tlarea] def split(segActor: SegActor, time: Long): Unit = {
-    splitSegment(segActor.getSegment(), time)
+    splitSegment(segActor.getSegment, time)
     dirty = true
   }
 
@@ -344,18 +345,18 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private def splitSegment(segment: Segment, time: Long): Unit = {
-    val group = segment.getGroup()
-    val segments: List[Segment] = if (group != null) List.copyOf(group) else List.of(segment)
-    val beforeSegments: List[Segment] = new ArrayList[Segment]()
-    val afterSegments: List[Segment] = new ArrayList[Segment]()
+    val group = segment.getGroup
+    val segments: util.List[Segment] = if (group != null) util.List.copyOf(group) else util.List.of(segment)
+    val beforeSegments: util.List[Segment] = new util.ArrayList[Segment]()
+    val afterSegments: util.List[Segment] = new util.ArrayList[Segment]()
     var splitAny = false
     Using.resource(timeline.record()) { h =>
       for (member <- segments.asScala) {
-        val range = member.getRange()
+        val range = member.getRange
         val start: Long = range.lo
         val end: Long = range.hi
         if (time > start && time < end) {
-          val track = member.getTrack()
+          val track = member.getTrack
           timeline.split(track, time)
           beforeSegments.add(member)
           afterSegments.add(track.get(time))
@@ -394,7 +395,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
       deleteAtCursor()
       return
     }
-    val segments: List[Segment] = List.copyOf(selectedSegments)
+    val segments: util.List[Segment] = util.List.copyOf(selectedSegments)
     clearSelection()
     Using.resource(timeline.record()) { h =>
       timeline.remove(segments)
@@ -405,32 +406,32 @@ class TlGroup(project0: Project) extends Group with Focusable {
   private[tlarea] def groupSelectedSegments(): Unit = {
     if (selectedSegments.size() < 2) return
 
-    val anyInGroup = selectedSegments.asScala.exists(seg => seg.getGroup() != null)
+    val anyInGroup = selectedSegments.asScala.exists(seg => seg.getGroup != null)
 
     if (anyInGroup) {
-      val savedState: Map[Segment, SegmentGroup] = new HashMap[Segment, SegmentGroup]()
-      val affectedGroups: Set[SegmentGroup] = new HashSet[SegmentGroup]()
+      val savedState: util.Map[Segment, SegmentGroup] = new util.HashMap[Segment, SegmentGroup]()
+      val affectedGroups: util.Set[SegmentGroup] = new util.HashSet[SegmentGroup]()
       for (seg <- selectedSegments.asScala) {
-        val g = seg.getGroup()
+        val g = seg.getGroup
         if (g != null) {
           savedState.put(seg, g)
           affectedGroups.add(g)
         }
       }
-      val dissolvedMembers: Map[SegmentGroup, Set[Segment]] = new HashMap[SegmentGroup, Set[Segment]]()
+      val dissolvedMembers: util.Map[SegmentGroup, util.Set[Segment]] = new util.HashMap[SegmentGroup, util.Set[Segment]]()
       for (g <- affectedGroups.asScala) {
-        dissolvedMembers.put(g, new HashSet[Segment](g))
+        dissolvedMembers.put(g, new util.HashSet[Segment](g))
       }
 
       for (seg <- selectedSegments.asScala) {
-        val g = seg.getGroup()
+        val g = seg.getGroup
         if (g != null) {
           g.remove(seg)
         }
       }
       for (g <- affectedGroups.asScala) {
         if (g.size() < 2) {
-          for (s <- new HashSet[Segment](g).asScala) {
+          for (s <- new util.HashSet[Segment](g).asScala) {
             g.remove(s)
           }
         }
@@ -453,7 +454,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
         override def redo(): Unit = {
           for (seg <- savedState.keySet().asScala) {
-            val g = seg.getGroup()
+            val g = seg.getGroup
             if (g != null) {
               g.remove(seg)
             }
@@ -461,7 +462,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
           for (e <- dissolvedMembers.entrySet().asScala) {
             val g = e.getKey
             if (g.size() < 2) {
-              for (s <- new HashSet[Segment](g).asScala) {
+              for (s <- new util.HashSet[Segment](g).asScala) {
                 g.remove(s)
               }
             }
@@ -471,7 +472,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
       })
     } else {
       val group = new SegmentGroup()
-      val segs: List[Segment] = new ArrayList[Segment](selectedSegments)
+      val segs: util.List[Segment] = new util.ArrayList[Segment](selectedSegments)
       group.addAll(segs)
 
       project.undoManager.record(new UndoManager.UndoableCommand {
@@ -491,7 +492,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 //FIXME:跨项目粘贴
   private[tlarea] def performPaste(): Unit = {
-    val clip = App.copyManager.getClipboard()
+    val clip = App.copyManager.getClipboard
     if (clip == null) return
 
     val s = getStage
@@ -502,12 +503,12 @@ class TlGroup(project0: Project) extends Group with Focusable {
     val baseTime = Math.max(xToAbsoluteTime(local.x), 0)
     val baseTrack = Math.max(yToTrackIndex(local.y), 0)
 
-    var pasted: List[Segment] = null
+    var pasted: util.List[Segment] = null
     clip match {
       case templateGroup: SegmentGroup => pasted = pasteGroup(templateGroup, baseTime, baseTrack)
       case templateSet: SegmentSet => pasted = pasteSet(templateSet, baseTime, baseTrack)
       case template: Segment => pasted = pasteSegment(template, baseTime, baseTrack)
-      case _ => pasted = List.of[Segment]()
+      case _ => pasted = util.List.of[Segment]()
     }
 
     if (!pasted.isEmpty) {
@@ -517,54 +518,54 @@ class TlGroup(project0: Project) extends Group with Focusable {
     App.copyManager.refreshClipboard()
   }
 
-  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): List[Segment] = {
-    val duration = template.getRange().hi - template.getRange().lo
-    if (duration <= 0) return List.of[Segment]()
+  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): util.List[Segment] = {
+    val duration = template.getRange.hi - template.getRange.lo
+    if (duration <= 0) return util.List.of[Segment]()
 
     var track = timeline.getTrack(baseTrack)
     var range = Interval(time, time + duration)
     var trackIndex = baseTrack
-    while (!track.isFree(range, Set.of[Segment]())) {
+    while (!track.isFree(range, util.Set.of[Segment]())) {
       trackIndex += 1
       track = timeline.getTrack(trackIndex)
       range = Interval(time, time + duration)
     }
 
-    template.setOrigin(time + template.getOrigin() - template.getRange().lo)
+    template.setOrigin(time + template.getOrigin - template.getRange.lo)
 
     Using.resource(timeline.record()) { h =>
       timeline.tryAdd(track, template, Interval(time, time + duration))
     }
     markTimelineDirty()
-    List.of(template)
+    util.List.of(template)
   }
 
-  private def pasteGroup(template: SegmentGroup, baseTime: Long, baseTrack: Int): List[Segment] = {
-    val pasted = new ArrayList[Segment]()
+  private def pasteGroup(template: SegmentGroup, baseTime: Long, baseTrack: Int): util.List[Segment] = {
+    val pasted = new util.ArrayList[Segment]()
 
-    val sorted = new ArrayList[Segment](template)
-    sorted.sort(java.util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack().index))
+    val sorted = new util.ArrayList[Segment](template)
+    sorted.sort(util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack.index))
 
-    val minTrack = sorted.get(0).getTrack().index
-    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lo).min().orElse(baseTime)
+    val minTrack = sorted.get(0).getTrack.index
+    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange.lo).min().orElse(baseTime)
     val timeOffset = baseTime - minStart
 
     Using.resource(timeline.record()) { h =>
       for (seg <- sorted.asScala) {
-        val duration = seg.getRange().hi - seg.getRange().lo
+        val duration = seg.getRange.hi - seg.getRange.lo
         if (duration > 0) {
-          val trackOffset = seg.getTrack().index - minTrack
+          val trackOffset = seg.getTrack.index - minTrack
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
-          val segStart = seg.getRange().lo + timeOffset
+          val segStart = seg.getRange.lo + timeOffset
           var range = Interval(segStart, segStart + duration)
-          while (!track.isFree(range, Set.of[Segment]())) {
+          while (!track.isFree(range, util.Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
             range = Interval(segStart, segStart + duration)
           }
 
-          seg.setOrigin(seg.getOrigin() + timeOffset)
+          seg.setOrigin(seg.getOrigin + timeOffset)
 
           timeline.tryAdd(track, seg, Interval(segStart, segStart + duration))
           pasted.add(seg)
@@ -576,32 +577,32 @@ class TlGroup(project0: Project) extends Group with Focusable {
     pasted
   }
 
-  private def pasteSet(template: SegmentSet, baseTime: Long, baseTrack: Int): List[Segment] = {
-    val pasted = new ArrayList[Segment]()
+  private def pasteSet(template: SegmentSet, baseTime: Long, baseTrack: Int): util.List[Segment] = {
+    val pasted = new util.ArrayList[Segment]()
 
-    val sorted = new ArrayList[Segment](template)
-    sorted.sort(java.util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack().index))
+    val sorted = new util.ArrayList[Segment](template)
+    sorted.sort(util.Comparator.comparingInt[Segment]((s: Segment) => s.getTrack.index))
 
-    val minTrack = sorted.get(0).getTrack().index
-    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange().lo).min().orElse(baseTime)
+    val minTrack = sorted.get(0).getTrack.index
+    val minStart = sorted.stream().mapToLong((s: Segment) => s.getRange.lo).min().orElse(baseTime)
     val timeOffset = baseTime - minStart
 
     Using.resource(timeline.record()) { h =>
       for (seg <- sorted.asScala) {
-        val duration = seg.getRange().hi - seg.getRange().lo
+        val duration = seg.getRange.hi - seg.getRange.lo
         if (duration > 0) {
-          val trackOffset = seg.getTrack().index - minTrack
+          val trackOffset = seg.getTrack.index - minTrack
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
-          val segStart = seg.getRange().lo + timeOffset
+          val segStart = seg.getRange.lo + timeOffset
           var range = Interval(segStart, segStart + duration)
-          while (!track.isFree(range, Set.of[Segment]())) {
+          while (!track.isFree(range, util.Set.of[Segment]())) {
             ti += 1
             track = timeline.getTrack(ti)
             range = Interval(segStart, segStart + duration)
           }
 
-          seg.setOrigin(seg.getOrigin() + timeOffset)
+          seg.setOrigin(seg.getOrigin + timeOffset)
 
           timeline.tryAdd(track, seg, Interval(segStart, segStart + duration))
           pasted.add(seg)
@@ -623,11 +624,11 @@ class TlGroup(project0: Project) extends Group with Focusable {
     getHeight + view.trackYShift - index * view.trackHeight
   }
 
-  def getProject(): Project = {
+  def getProject: Project = {
     project
   }
 
-  def getTimeline(): Timeline = {
+  def getTimeline: Timeline = {
     timeline
   }
 
@@ -640,13 +641,13 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 
   private[tlarea] class TimelineRenderer {
-    private[tlarea] final val shapeDrawer: ShapeDrawer = App.root.getShapeDrawer()
+    private[tlarea] final val shapeDrawer: ShapeDrawer = App.root.getShapeDrawer
 
     private[tlarea] def drawBackground(): Unit = {
       shapeDrawer.filledRectangle(0, 0, getWidth, getHeight, Colors.TIMELINE_BG)
 
       val startX = absoluteTimeToX(0)
-      val endX = absoluteTimeToX(timeline.getLength())
+      val endX = absoluteTimeToX(timeline.getLength)
 
       shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight, Colors.TIMELINE_OVERLAY)
     }
@@ -679,7 +680,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
     }
 
     private[tlarea] def drawPlayhead(): Unit = {
-      val x = absoluteTimeToX(playhead.getTime())
+      val x = absoluteTimeToX(playhead.getTime)
 
       shapeDrawer.filledTriangle(
         x - 10, getHeight,
@@ -701,7 +702,7 @@ object TlGroup {
   private final val KEY_HORIZONTAL_SPEED: Float = 1200f
   private final val KEY_VERTICAL_SPEED: Float = 1200f
 
-  private def regroup(members: Collection[Segment]): SegmentGroup = {
+  private def regroup(members: util.Collection[Segment]): SegmentGroup = {
     val group = new SegmentGroup()
     group.addAll(members)
     group

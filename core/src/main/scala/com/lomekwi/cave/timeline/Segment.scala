@@ -8,8 +8,9 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.{ObjectInputStream, Serializable}
-import java.util.Iterator
+import java.util
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
@@ -17,21 +18,21 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   protected[timeline] def sourceAccessor(): Source[?] = {
     source
   }
-  def getSource(): Source[?] = {
+  def getSource: Source[?] = {
     source
   }
-  @transient private var track: Track = null
-  @transient private var actor: SegActor = null
-  @transient private var range: Interval = null
+  @transient private var track: Track = uninitialized
+  @transient private var actor: SegActor = uninitialized
+  @transient private var range: Interval = uninitialized
   @transient private var selected: Boolean = false
-  private var group: SegmentGroup = null
-  def isSelected(): Boolean = {
+  private var group: SegmentGroup = uninitialized
+  def isSelected: Boolean = {
     selected
   }
   def setSelected(selected: Boolean): Unit = {
     this.selected = selected
   }
-  def getGroup(): SegmentGroup = {
+  def getGroup: SegmentGroup = {
     group
   }
   def setGroup(group: SegmentGroup): Unit = {
@@ -41,7 +42,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
    * 源的0秒在时间轴中的位置
    */
   @volatile private var origin: Long = 0L
-  def getOrigin(): Long = {
+  def getOrigin: Long = {
     origin
   }
   def setOrigin(origin: Long): Unit = {
@@ -73,30 +74,30 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   def sync(time: Long): Unit = {
     source.sync(toLocalTime(time), track)
   }
-  def getActor(): SegActor = {
-    java.util.Objects.requireNonNull(actor, "Segment actor is not initialized")
+  def getActor: SegActor = {
+    util.Objects.requireNonNull(actor, "Segment actor is not initialized")
   }
-  def toLocalTime(time: Long): Long = {
+  private def toLocalTime(time: Long): Long = {
     time - origin
   }
   /** 该片段对应的媒体源总时长（微秒） */
-  def getDuration(): Long = {
-    source.getDuration()
+  def getDuration: Long = {
+    source.getDuration
   }
-  def getTrack(): Track = {
+  def getTrack: Track = {
     track
   }
 
-  def getRange(): Interval = {
+  def getRange: Interval = {
     range
   }
   /**获取拉伸时在时间轴上合法的最小起点*/
-  def getMinStart(): Long = {
+  def getMinStart: Long = {
     Math.max(0, origin)
   }
   /**获取拉伸时在时间轴上合法的最大终点*/
-  def getMaxEnd(): Long = {
-    val duration = source.getDuration()
+  def getMaxEnd: Long = {
+    val duration = source.getDuration
     if (duration == Long.MaxValue) return Long.MaxValue
     origin + duration
   }
@@ -129,17 +130,17 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     source.setSegment(this)
     actor = source.createSegActor(this)
   }
-  override def iterator(): Iterator[Frame] = {
+  override def iterator(): util.Iterator[Frame] = {
     new IteratorImpl()
   }
-  class IteratorImpl extends Iterator[Frame] {
-    private var time: Long = requireRange().lo % source.getLengthPerExportFrame()
-    override def hasNext(): Boolean = {
+  class IteratorImpl extends util.Iterator[Frame] {
+    private var time: Long = requireRange().lo % source.getLengthPerExportFrame
+    override def hasNext: Boolean = {
       time <= requireRange().hi
     }
     override def next(): Frame = {
-      val f = java.util.Objects.requireNonNull(get(time), "Segment frame is unavailable")
-      time += source.getLengthPerExportFrame()
+      val f = util.Objects.requireNonNull(get(time), "Segment frame is unavailable")
+      time += source.getLengthPerExportFrame
       f
     }
   }
@@ -191,10 +192,10 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   }
 
   private def requireTrack(): Track = {
-    java.util.Objects.requireNonNull(track, "Segment is not attached to a track")
+    util.Objects.requireNonNull(track, "Segment is not attached to a track")
   }
 
   private def requireRange(): Interval = {
-    java.util.Objects.requireNonNull(range, "Segment has no timeline range")
+    util.Objects.requireNonNull(range, "Segment has no timeline range")
   }
 }

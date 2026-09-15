@@ -28,18 +28,18 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-import java.util.ArrayList
-import java.util.List
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import java.util
 
 class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectable {
-  private var frame: Frame = null
-  private var transformable: Transformable = null
+  private var frame: Frame = uninitialized
+  private var transformable: Transformable = uninitialized
 
   private var selected: Boolean = false
 
-  private var dragModifier: TransNode = null
+  private var dragModifier: TransNode = uninitialized
   private var dragging: Boolean = false
   private var startCanvasX: Float = 0
   private var startCanvasY: Float = 0
@@ -52,29 +52,29 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private var dragFlipX: Boolean = false
   private var dragFlipY: Boolean = false
 
-  protected var gizmoDragging: Boolean = false
-  protected var gizmoHandle: Gizmo.Handle = null
-  protected final val gizmo: Gizmo = new Gizmo()
-  protected var gizmoStartW: Float = 0
-  protected var gizmoStartH: Float = 0
-  protected var gizmoStartDx: Float = 0
-  protected var gizmoStartDy: Float = 0
-  protected var gizmoStartScaleX: Float = 0
-  protected var gizmoStartScaleY: Float = 0
-  protected var gizmoStartRotation: Float = 0
-  protected var gizmoStartAngle: Float = 0
-  protected var gizmoAnchorLocalX: Float = 0
-  protected var gizmoAnchorLocalY: Float = 0
-  protected var gizmoAnchorStageX: Float = 0
-  protected var gizmoAnchorStageY: Float = 0
-  protected var gizmoCos: Float = 0
-  protected var gizmoSin: Float = 0
-  protected var gizmoFlipX: Boolean = false
-  protected var gizmoFlipY: Boolean = false
-  protected var gizmoOldState: UndoManager.TransNodeState = null
+  private var gizmoDragging: Boolean = false
+  private var gizmoHandle: Gizmo.Handle = uninitialized
+  private final val gizmo: Gizmo = new Gizmo()
+  private var gizmoStartW: Float = 0
+  private var gizmoStartH: Float = 0
+  private var gizmoStartDx: Float = 0
+  private var gizmoStartDy: Float = 0
+  private var gizmoStartScaleX: Float = 0
+  private var gizmoStartScaleY: Float = 0
+  private var gizmoStartRotation: Float = 0
+  private var gizmoStartAngle: Float = 0
+  private var gizmoAnchorLocalX: Float = 0
+  private var gizmoAnchorLocalY: Float = 0
+  private var gizmoAnchorStageX: Float = 0
+  private var gizmoAnchorStageY: Float = 0
+  private var gizmoCos: Float = 0
+  private var gizmoSin: Float = 0
+  private var gizmoFlipX: Boolean = false
+  private var gizmoFlipY: Boolean = false
+  private var gizmoOldState: UndoManager.TransNodeState = uninitialized
 
-  private var myStartBBox: Array[Float] = null
-  private var siblingBBoxes: List[Array[Float]] = null
+  private var myStartBBox: Array[Float] = uninitialized
+  private var siblingBBoxes: util.List[Array[Float]] = uninitialized
 
   /** 移动吸附时的提示线位置（画布坐标），NaN 表示无吸附 */
   private var snapLineX: Float = Float.NaN
@@ -85,7 +85,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       if (button != 0 || pointer != 0) return false
-      val source = frame.getSource()
+      val source = frame.getSource
       if (source == null) return false
 
       val handle = gizmo.hitHandle(event.getStageX, event.getStageY)
@@ -95,8 +95,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       }
 
       dragModifier = TransFrameActor.findOrCreateTransNode(source)
-      startNodeDx = dragModifier.getDx().toFloat
-      startNodeDy = dragModifier.getDy().toFloat
+      startNodeDx = dragModifier.getDx.toFloat
+      startNodeDy = dragModifier.getDy.toFloat
       val p = getParent
       startCanvasX = (event.getStageX - p.getX) / p.getScaleX
       startCanvasY = (event.getStageY - p.getY) / p.getScaleY
@@ -122,36 +122,36 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return
       }
       if (dragModifier != null && dragging) {
-        val p: Project = App.root.getFrontendProject()
+        val p: Project = App.root.getFrontendProject
         if (p != null) {
           val node: TransNode = dragModifier
           val oldDx: Float = startNodeDx
           val oldDy: Float = startNodeDy
-          val newDx: Float = node.getDx().toFloat
-          val newDy: Float = node.getDy().toFloat
-          val oldScaleX: Float = node.getScaleX().toFloat
-          val oldScaleY: Float = node.getScaleY().toFloat
+          val newDx: Float = node.getDx.toFloat
+          val newDy: Float = node.getDy.toFloat
+          val oldScaleX: Float = node.getScaleX.toFloat
+          val oldScaleY: Float = node.getScaleY.toFloat
           val newScaleX: Float = gizmoStartScaleX
           val newScaleY: Float = gizmoStartScaleY
           val oldRotation: Float = gizmoStartRotation
-          val newRotation: Float = node.getDRotation().toFloat
+          val newRotation: Float = node.getDRotation.toFloat
           val oldFlipX: Boolean = gizmoFlipX
           val oldFlipY: Boolean = gizmoFlipY
           val newFlipX: Boolean = node.flipX()
           val newFlipY: Boolean = node.flipY()
-          p.undoManager.record(new UndoManager.TransformNodeCommand(frame.getSource(), node,
-            new UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
-            new UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)))
+          p.undoManager.record(UndoManager.TransformNodeCommand(frame.getSource, node,
+            UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
+            UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)))
           p.projEventBus.post(RefreshRequestEvent)
         }
       }
       if (dragModifier != null && !dragging && !gizmoDragging) {
-        val segment: Segment = if (frame.getSource() != null) frame.getSource().getSegment() else null
-        if (segment != null && segment.getTrack() != null) {
-          val editPanel = App.root.getFrontendEditPanel()
+        val segment: Segment = if (frame.getSource != null) frame.getSource.getSegment else null
+        if (segment != null && segment.getTrack != null) {
+          val editPanel = App.root.getFrontendEditPanel
           if (editPanel != null) {
             val addToSelection = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-            editPanel.getTlGroup().selectSegment(segment, addToSelection)
+            editPanel.getTlGroup.selectSegment(segment, addToSelection)
           }
         }
       }
@@ -201,18 +201,18 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   override def act(delta: Float): Unit = {
     super.act(delta)
 
-    val transform = transformable.getTransform()
-    val scaleX = transform.getScaleX()
-    val scaleY = transform.getScaleY()
-    val w = transformable.getBaseWidth() * scaleX
-    val h = transformable.getBaseHeight() * scaleY
+    val transform = transformable.getTransform
+    val scaleX = transform.getScaleX
+    val scaleY = transform.getScaleY
+    val w = transformable.getBaseWidth * scaleX
+    val h = transformable.getBaseHeight * scaleY
 
-    setPosition(transform.getX(), transform.getY())
+    setPosition(transform.getX, transform.getY)
     setSize(w, h)
     setOrigin(w / 2, h / 2)
-    setRotation(transform.getRotation())
-    setScaleX(if (transform.isFlipX()) -1f else 1f)
-    setScaleY(if (transform.isFlipY()) -1f else 1f)
+    setRotation(transform.getRotation)
+    setScaleX(if (transform.isFlipX) -1f else 1f)
+    setScaleY(if (transform.isFlipY) -1f else 1f)
 
     if (dragModifier == null || getParent == null || getStage == null) return
     TransFrameActor.dragStagePos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
@@ -323,19 +323,19 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  protected def startGizmoDrag(source: Source[?], handle: Gizmo.Handle, stageX: Float, stageY: Float): Unit = {
+  private def startGizmoDrag(source: Source[?], handle: Gizmo.Handle, stageX: Float, stageY: Float): Unit = {
     gizmoHandle = handle
     gizmoDragging = true
 
     dragModifier = TransFrameActor.findOrCreateTransNode(source)
     gizmoStartW = getWidth
     gizmoStartH = getHeight
-    gizmoStartDx = dragModifier.getDx().toFloat
-    gizmoStartDy = dragModifier.getDy().toFloat
-    gizmoStartScaleX = dragModifier.getScaleX().toFloat
-    gizmoStartScaleY = dragModifier.getScaleY().toFloat
-    gizmoStartRotation = dragModifier.getDRotation().toFloat
-    gizmoOldState = new UndoManager.TransNodeState(
+    gizmoStartDx = dragModifier.getDx.toFloat
+    gizmoStartDy = dragModifier.getDy.toFloat
+    gizmoStartScaleX = dragModifier.getScaleX.toFloat
+    gizmoStartScaleY = dragModifier.getScaleY.toFloat
+    gizmoStartRotation = dragModifier.getDRotation.toFloat
+    gizmoOldState = UndoManager.TransNodeState(
       gizmoStartDx, gizmoStartDy,
       gizmoStartScaleX, gizmoStartScaleY,
       gizmoStartRotation,
@@ -392,7 +392,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  protected def updateGizmoDrag(stageX: Float, stageY: Float): Unit = {
+  private def updateGizmoDrag(stageX: Float, stageY: Float): Unit = {
     if (gizmoHandle == Gizmo.Handle.ROTATE) {
       updateRotateDrag(stageX, stageY)
       return
@@ -484,7 +484,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     applyModifiers()
   }
 
-  protected def updateRotateDrag(stageX: Float, stageY: Float): Unit = {
+  private def updateRotateDrag(stageX: Float, stageY: Float): Unit = {
     val centerStagePos = TransFrameActor.tmp1
     centerStagePos.set(getWidth / 2f, getHeight / 2f)
     localToStageCoordinates(centerStagePos)
@@ -503,18 +503,18 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     applyModifiers()
   }
 
-  protected def finishGizmoDrag(): Unit = {
-    val p: Project = App.root.getFrontendProject()
+  private def finishGizmoDrag(): Unit = {
+    val p: Project = App.root.getFrontendProject
     if (p != null && dragModifier != null && gizmoOldState != null) {
       val node: TransNode = dragModifier
-      val newState = new UndoManager.TransNodeState(
-        node.getDx().toFloat, node.getDy().toFloat,
-        node.getScaleX().toFloat, node.getScaleY().toFloat,
-        node.getDRotation().toFloat,
+      val newState = UndoManager.TransNodeState(
+        node.getDx.toFloat, node.getDy.toFloat,
+        node.getScaleX.toFloat, node.getScaleY.toFloat,
+        node.getDRotation.toFloat,
         node.flipX(), node.flipY())
       if (!gizmoOldState.equals(newState)) {
-        p.undoManager.record(new UndoManager.TransformNodeCommand(
-          frame.getSource(), node, gizmoOldState, newState))
+        p.undoManager.record(UndoManager.TransformNodeCommand(
+          frame.getSource, node, gizmoOldState, newState))
       }
       p.projEventBus.post(RefreshRequestEvent)
     }
@@ -544,9 +544,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def applyModifiers(): Unit = {
     transformable.reset()
-    val source = frame.getSource()
+    val source = frame.getSource
     if (source != null) {
-      val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
+      val filters: util.List[Filter[?]] = source.getFilters.asInstanceOf[util.List[Filter[?]]]
       filters.asScala.foreach {
         case node: TransNode => applyTransNode(node)
         case _ =>
@@ -556,51 +556,51 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def applyTransNode(node: TransNode): Unit = {
     val target = transformable
-    var t = target.getTransform()
+    var t = target.getTransform
     if (t == null) {
       t = new Transform()
       target.setTransform(t)
     }
-    t.applyLocal(node.getDx().toFloat, node.getDy().toFloat,
-      node.getScaleX().toFloat, node.getScaleY().toFloat,
-      node.getDRotation().toFloat, node.flipX(), node.flipY())
+    t.applyLocal(node.getDx.toFloat, node.getDy.toFloat,
+      node.getScaleX.toFloat, node.getScaleY.toFloat,
+      node.getDRotation.toFloat, node.flipX(), node.flipY())
   }
 
   private def computeDragContext(): Unit = {
     val t = new Transform(0, 0, 0)
-    val source = frame.getSource()
+    val source = frame.getSource
     if (source != null) {
-      val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
+      val filters: util.List[Filter[?]] = source.getFilters.asInstanceOf[util.List[Filter[?]]]
       filters.asScala.takeWhile(f => !(f eq dragModifier)).foreach {
         case tf: TransNode =>
-          t.applyLocal(tf.getDx().toFloat, tf.getDy().toFloat,
-            tf.getScaleX().toFloat, tf.getScaleY().toFloat,
-            tf.getDRotation().toFloat, tf.flipX(), tf.flipY())
+          t.applyLocal(tf.getDx.toFloat, tf.getDy.toFloat,
+            tf.getScaleX.toFloat, tf.getScaleY.toFloat,
+            tf.getDRotation.toFloat, tf.flipX(), tf.flipY())
         case _ =>
       }
     }
-    dragScaleX = t.getScaleX()
-    dragScaleY = t.getScaleY()
+    dragScaleX = t.getScaleX
+    dragScaleY = t.getScaleY
     if (dragScaleX < 0.0001f) dragScaleX = 1f
     if (dragScaleY < 0.0001f) dragScaleY = 1f
-    dragFlipX = t.isFlipX()
-    dragFlipY = t.isFlipY()
-    val rotRad = t.getRotationRadians()
+    dragFlipX = t.isFlipX
+    dragFlipY = t.isFlipY
+    val rotRad = t.getRotationRadians
     dragCos = Math.cos(rotRad.toDouble).toFloat
     dragSin = Math.sin(rotRad.toDouble).toFloat
   }
 
   private def captureSnapData(): Unit = {
     myStartBBox = computeCanvasBBox()
-    siblingBBoxes = new ArrayList[Array[Float]]()
-    val p = getParent
-    if (p.isInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]) {
-      val g = p.asInstanceOf[com.badlogic.gdx.scenes.scene2d.Group]
-      g.getChildren.asScala.foreach {
-        case other: TransFrameActor if other ne this =>
-          siblingBBoxes.add(other.computeCanvasBBox())
-        case _ =>
-      }
+    siblingBBoxes = new util.ArrayList[Array[Float]]()
+    getParent match {
+      case g: com.badlogic.gdx.scenes.scene2d.Group =>
+        g.getChildren.asScala.foreach {
+          case other: TransFrameActor if other ne this =>
+            siblingBBoxes.add(other.computeCanvasBBox())
+          case _ =>
+        }
+      case _ =>
     }
     val set = ExportOptionsSet.load()
     for (opts <- set.presets.asScala) {
@@ -732,15 +732,15 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  override def isSelected(): Boolean = {
+  override def isSelected: Boolean = {
     selected
   }
 
-  def getSnapLineX(): Float = {
+  def getSnapLineX: Float = {
     snapLineX
   }
 
-  def getSnapLineY(): Float = {
+  def getSnapLineY: Float = {
     snapLineY
   }
 
@@ -757,7 +757,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   protected class Gizmo {
-    private[TransFrameActor] var hoveredHandle: Gizmo.Handle = null
+    private[TransFrameActor] var hoveredHandle: Gizmo.Handle = uninitialized
 
     private[TransFrameActor] def hitHandle(stageX: Float, stageY: Float): Gizmo.Handle = {
       val w = getWidth
@@ -907,7 +907,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       if (w <= 0 || h <= 0) return
       val hw = w / 2f
       val hh = h / 2f
-      val sd: ShapeDrawer = App.root.getShapeDrawer()
+      val sd: ShapeDrawer = App.root.getShapeDrawer
       val lineWidth = 2f
       val handleHalf = 6f
       val rotateRadius = 5f
@@ -1021,7 +1021,7 @@ object TransFrameActor {
   private final val snapAdjust: Vector2 = new Vector2()
 
   private def findOrCreateTransNode(source: Source[?]): TransNode = {
-    val filters: List[Filter[?]] = source.getFilters().asInstanceOf[List[Filter[?]]]
+    val filters: util.List[Filter[?]] = source.getFilters.asInstanceOf[util.List[Filter[?]]]
     filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.getOrElse {
       val tf = new TransNode(0, 0, 1, 1, 0)
       source.asInstanceOf[Source[Frame]].attach(tf.asInstanceOf[Filter[? >: Frame]])

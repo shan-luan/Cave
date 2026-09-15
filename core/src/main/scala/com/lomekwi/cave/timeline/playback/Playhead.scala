@@ -9,7 +9,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
   @volatile private var playing: Boolean = false
 
   def setPlaying(playing: Boolean): Unit = {
-    if (playing == isPlaying()) return
+    if (playing == isPlaying) return
 
     if (playing) {
       anchor = System.nanoTime() - frozenTime
@@ -21,13 +21,13 @@ class Playhead(@transient private val projEventBus: EventBus) {
     projEventBus.post(PlayStateChangedEvent)
   }
 
-  def isPlaying(): Boolean = playing
+  def isPlaying: Boolean = playing
 
   def seek(time: Long): Unit = {
     var t = time
     t *= 1000
 
-    if (isPlaying()) {
+    if (isPlaying) {
       anchor = System.nanoTime() - t
     } else {
       frozenTime = t
@@ -36,10 +36,10 @@ class Playhead(@transient private val projEventBus: EventBus) {
     projEventBus.post(SeekEvent)
   }
 
-  def getTime(): Long = getNanoTime() / 1000
+  def getTime: Long = getNanoTime / 1000
 
-  private def getNanoTime(): Long = {
-    if (isPlaying()) {
+  private def getNanoTime: Long = {
+    if (isPlaying) {
       System.nanoTime() - anchor
     } else {
       frozenTime

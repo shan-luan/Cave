@@ -8,21 +8,22 @@ import com.lomekwi.cave.pipeline.audio.AudClipSrc
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
+import scala.compiletime.uninitialized
 
 class AudSegActor(segment: Segment) extends SegActor(segment) {
 
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
 
-    val res: AudRes = getSegment().getSource().asInstanceOf[AudClipSrc].getAudRes()
+    val res: AudRes = getSegment.getSource.asInstanceOf[AudClipSrc].getAudRes
     val wf: res.Waveformer = res.waveformer()
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return
 
-    val seg: Segment = getSegment()
-    val range = seg.getRange()
-    val segLocalStart: Long = range.lo - seg.getOrigin()
-    val segLocalEnd: Long = range.hi - seg.getOrigin()
+    val seg: Segment = getSegment
+    val range = seg.getRange
+    val segLocalStart: Long = range.lo - seg.getOrigin
+    val segLocalEnd: Long = range.hi - seg.getOrigin
     val segDuration: Long = segLocalEnd - segLocalStart
     if (segDuration <= 0) return
 
@@ -52,7 +53,7 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
     val startBucket: Float = segLocalStart.toFloat / bucketUs
     val endBucket: Float = startBucket + segDuration.toFloat / bucketUs
 
-    val shader: ShaderProgram = AudSegActor.getWaveShader()
+    val shader: ShaderProgram = AudSegActor.getWaveShader
     if (!shader.isCompiled) return
 
     batch.setShader(shader)
@@ -70,9 +71,9 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
 }
 
 object AudSegActor {
-  private var waveShader: ShaderProgram = null
+  private var waveShader: ShaderProgram = uninitialized
 
-  private def getWaveShader(): ShaderProgram = {
+  private def getWaveShader: ShaderProgram = {
     if (waveShader == null) {
       waveShader = new ShaderProgram(VERT, FRAG)
       if (!waveShader.isCompiled) {

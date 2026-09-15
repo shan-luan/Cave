@@ -17,16 +17,17 @@ import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.widget.Card
 
-import java.util.List
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import java.util
 
 /**
  * 过滤器节点卡：显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 {@link CardWidgetsRegistry} 维护。
  */
-final class FilterActor(private val source: Source[?], private val filter: Filter[?]) extends Card(filter.getName()) {
-  private var rebuildCallback: Runnable = null
+final class FilterActor(private val source: Source[?], private val filter: Filter[?]) extends Card(filter.getName) {
+  private var rebuildCallback: Runnable = uninitialized
   private var dragging: Boolean = false
   private var dragStageY: Float = 0
   private var dragWindowY: Float = 0
@@ -64,9 +65,9 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
       }
     }
   })
-  for (in <- filter.getInPorts().asScala) {
+  for (in <- filter.getInPorts.asScala) {
     // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
-    if (in != filter.getFilterIn()) {
+    if (in != filter.getFilterIn) {
       val widget = CardWidgetsRegistry.createEditor(in, source)
       // 未注册该端口类型的 widget，不显示
       if (widget != null) {
@@ -81,7 +82,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
       VisUI.getSkin.get("close-window", classOf[VisImageButton.VisImageButtonStyle]))
     style.imageUp = VisUI.getSkin.getDrawable(if (up) "select-up" else "select-down")
     val button = new VisImageButton(style)
-    getTitleTable().add(button)
+    getTitleTable.add(button)
     button.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         move(up)
@@ -90,23 +91,23 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
     button.addListener(new ClickListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
         event.cancel()
-        return true
+        true
       }
     })
   }
 
   private def move(up: Boolean): Unit = {
     if (source == null) return
-    val filters = source.getFilters().asInstanceOf[List[Filter[?]]]
+    val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
     val index = filters.indexOf(filter)
     if (index < 0) return
     val target = if (up) index - 1 else index + 1
     if (target < 0 || target >= filters.size()) return
     filters.remove(index)
     filters.add(target, filter)
-    val p: Project = App.root.getFrontendProject()
+    val p: Project = App.root.getFrontendProject
     if (p != null) {
-      p.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, index, target))
+      p.undoManager.record(UndoManager.ReorderFilterCommand(source, filter, index, target))
       p.projEventBus.post(RefreshRequestEvent)
     }
     if (rebuildCallback != null) {
@@ -120,7 +121,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
     val p = getParent
     p match {
       case content: VisTable =>
-        val filters = source.getFilters().asInstanceOf[List[Filter[?]]]
+        val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
         if (myIndex < 0) return
 
@@ -137,22 +138,22 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
         filters.remove(myIndex)
         filters.add(target, filter)
 
-        val pj: Project = App.root.getFrontendProject()
+        val pj: Project = App.root.getFrontendProject
         if (pj != null) {
-          pj.undoManager.record(new UndoManager.ReorderFilterCommand(source, filter, myIndex, target))
+          pj.undoManager.record(UndoManager.ReorderFilterCommand(source, filter, myIndex, target))
           pj.projEventBus.post(RefreshRequestEvent)
         }
-      case _ => return
+      case _ =>
     }
   }
 
   override def close(): Unit = {
-    val index = source.getFilters().indexOf(filter)
+    val index = source.getFilters.indexOf(filter)
     if (index < 0) return
-    source.getFilters().remove(filter)
-    val p: Project = App.root.getFrontendProject()
+    source.getFilters.remove(filter)
+    val p: Project = App.root.getFrontendProject
     if (p != null) {
-      p.undoManager.record(new UndoManager.RemoveFilterCommand(source, filter, index))
+      p.undoManager.record(UndoManager.RemoveFilterCommand(source, filter, index))
       p.projEventBus.post(RefreshRequestEvent)
     }
     remove()

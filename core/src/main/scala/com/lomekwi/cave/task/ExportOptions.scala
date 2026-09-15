@@ -3,12 +3,13 @@ package com.lomekwi.cave.task
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
 import com.lomekwi.cave.util.Units
+import scala.compiletime.uninitialized
 
 /**
  * 导出参数数据模型，使用 libGDX {@link Json} 序列化。
  */
 class ExportOptions extends Json.Serializable {
-  var outputPath: String = null
+  var outputPath: String = uninitialized
   var width: Int = 0
   var height: Int = 0
   var fps: Double = 0
@@ -32,11 +33,11 @@ class ExportOptions extends Json.Serializable {
   }
 
   /** bitrate Mbps 的便捷 getter/setter（存为 bps） */
-  def getBitrateMbps(): Double = {
+  def getBitrateMbps: Double = {
     bitrate / Units.MEGA.toDouble
   }
 
-  def setBitrateMbps(mbps: Double): Unit = {
+  private def setBitrateMbps(mbps: Double): Unit = {
     this.bitrate = (mbps * Units.MEGA).toInt
   }
 
@@ -45,7 +46,7 @@ class ExportOptions extends Json.Serializable {
     json.writeValue("width", width)
     json.writeValue("height", height)
     json.writeValue("fps", fps)
-    json.writeValue("bitrateMbps", getBitrateMbps())
+    json.writeValue("bitrateMbps", getBitrateMbps)
   }
 
   override def read(json: Json, jsonData: JsonValue): Unit = {

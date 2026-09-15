@@ -49,8 +49,8 @@ class TrackDragTest extends GdxTestBase {
     timeline.`override`(t0, s, TrackDragTest.rng(0, 100))
 
     assertSame(s, t0.get(50))
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
-    assertSame(t0, s.getTrack())
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
+    assertSame(t0, s.getTrack)
   }
 
   @Test
@@ -75,7 +75,7 @@ class TrackDragTest extends GdxTestBase {
 
     timeline.remove(s)
     assertTrue(t0.get(50) == null)
-    assertTrue(t0.isEmpty())
+    assertTrue(t0.isEmpty)
   }
 
   @Test
@@ -87,7 +87,34 @@ class TrackDragTest extends GdxTestBase {
     timeline.`override`(t0, b, TrackDragTest.rng(500, 600))
 
     timeline.remove(List.of(a, b))
-    assertTrue(t0.isEmpty())
+    assertTrue(t0.isEmpty)
+  }
+
+  @Test
+  def removeInvalidatesTrackLength(): Unit = {
+    val t0: Track = timeline.getTrack(0)
+    val a: Segment = newSeg(100)
+    val b: Segment = newSeg(100)
+    timeline.`override`(t0, a, TrackDragTest.rng(0, 100))
+    timeline.`override`(t0, b, TrackDragTest.rng(500, 600))
+    assertEquals(600, t0.getLength)
+
+    timeline.remove(b)
+    assertEquals(100, t0.getLength)
+  }
+
+  @Test
+  def timelineLengthFollowsEdits(): Unit = {
+    val t0: Track = timeline.getTrack(0)
+    val s: Segment = newSeg(100)
+    timeline.`override`(t0, s, TrackDragTest.rng(0, 100))
+    assertEquals(100, timeline.getLength)
+
+    timeline.moveTime(List.of(s), 900)
+    assertEquals(1000, timeline.getLength)
+
+    timeline.remove(s)
+    assertEquals(0, timeline.getLength)
   }
 
   // ---------------------------------------------------------------------
@@ -104,9 +131,9 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(List.of(s), 200)
 
     assertEquals(200, applied)
-    assertEquals(TrackDragTest.rng(200, 300), s.getRange())
-    assertSame(t0, s.getTrack())
-    assertEquals(1200, s.getOrigin())
+    assertEquals(TrackDragTest.rng(200, 300), s.getRange)
+    assertSame(t0, s.getTrack)
+    assertEquals(1200, s.getOrigin)
   }
 
   @Test
@@ -120,9 +147,9 @@ class TrackDragTest extends GdxTestBase {
 
     // 返回实际落位的轨道偏移
     assertEquals(1, applied)
-    assertSame(t1, s.getTrack())
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
-    assertTrue(t0.isEmpty())
+    assertSame(t1, s.getTrack)
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
+    assertTrue(t0.isEmpty)
     assertSame(s, t1.get(50))
   }
 
@@ -138,10 +165,10 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(List.of(a, b), 1000)
 
     assertEquals(1000, applied)
-    assertEquals(TrackDragTest.rng(1000, 1100), a.getRange())
-    assertEquals(TrackDragTest.rng(1500, 1600), b.getRange())
-    assertSame(t0, a.getTrack())
-    assertSame(t1, b.getTrack())
+    assertEquals(TrackDragTest.rng(1000, 1100), a.getRange)
+    assertEquals(TrackDragTest.rng(1500, 1600), b.getRange)
+    assertSame(t0, a.getTrack)
+    assertSame(t1, b.getTrack)
   }
 
   @Test
@@ -157,8 +184,8 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(List.of(a, b), -200)
 
     assertEquals(-50, applied)
-    assertEquals(TrackDragTest.rng(0, 100), a.getRange())
-    assertEquals(TrackDragTest.rng(150, 250), b.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), a.getRange)
+    assertEquals(TrackDragTest.rng(150, 250), b.getRange)
   }
 
   @Test
@@ -174,7 +201,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(List.of(mover), 150)
 
     assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(0, 100), mover.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), mover.getRange)
     assertSame(obstacle, t0.get(200))
   }
 
@@ -189,12 +216,12 @@ class TrackDragTest extends GdxTestBase {
     // 请求 +250：最多移到与障碍贴合（+200），一次调用直接应用
     val applied: Long = timeline.moveTime(List.of(mover), 250)
     assertEquals(200, applied)
-    assertEquals(TrackDragTest.rng(200, 300), mover.getRange())
+    assertEquals(TrackDragTest.rng(200, 300), mover.getRange)
     assertSame(obstacle, t0.get(350))
 
     // 请求在可用范围内时全额应用（返回带符号的实际偏移）
     assertEquals(-50, timeline.moveTime(List.of(mover), -50))
-    assertEquals(TrackDragTest.rng(150, 250), mover.getRange())
+    assertEquals(TrackDragTest.rng(150, 250), mover.getRange)
   }
 
   @Test
@@ -210,8 +237,8 @@ class TrackDragTest extends GdxTestBase {
     val applied: Int = timeline.moveTrack(List.of(mover), 1)
 
     assertEquals(0, applied)
-    assertSame(t0, mover.getTrack())
-    assertEquals(TrackDragTest.rng(0, 100), mover.getRange())
+    assertSame(t0, mover.getTrack)
+    assertEquals(TrackDragTest.rng(0, 100), mover.getRange)
     assertSame(obstacle, t1.get(50))
   }
 
@@ -228,10 +255,10 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(List.of(s), 30)
 
     assertEquals(30, applied)
-    assertEquals(TrackDragTest.rng(30, 100), s.getRange())
-    assertSame(t0, s.getTrack())
+    assertEquals(TrackDragTest.rng(30, 100), s.getRange)
+    assertSame(t0, s.getTrack)
     // 裁切不改 origin
-    assertEquals(0, s.getOrigin())
+    assertEquals(0, s.getOrigin)
   }
 
   @Test
@@ -243,7 +270,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(List.of(s), 50)
 
     assertEquals(50, applied)
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
   }
 
   @Test
@@ -255,7 +282,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(List.of(s), -20)
 
     assertEquals(-20, applied)
-    assertEquals(TrackDragTest.rng(0, 80), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 80), s.getRange)
   }
 
   @Test
@@ -270,7 +297,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(List.of(s), -50)
 
     assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(100, 200), s.getRange())
+    assertEquals(TrackDragTest.rng(100, 200), s.getRange)
     assertSame(obstacle, t0.get(50))
   }
 
@@ -287,7 +314,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(List.of(s), -60)
 
     assertEquals(-20, applied)
-    assertEquals(TrackDragTest.rng(30, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(30, 100), s.getRange)
     assertSame(obstacle, t0.get(10))
   }
 
@@ -304,7 +331,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(List.of(s), 200)
 
     assertEquals(30, applied)
-    assertEquals(TrackDragTest.rng(0, 80), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 80), s.getRange)
     assertSame(obstacle, t0.get(90))
   }
 
@@ -321,15 +348,15 @@ class TrackDragTest extends GdxTestBase {
     // 伸展被后一个成员的起点挡住：整组偏移截断为 0，模型不变
     val applied: Long = timeline.setEnd(List.of(a, b), 50)
     assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(0, 100), a.getRange())
-    assertEquals(TrackDragTest.rng(100, 200), b.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), a.getRange)
+    assertEquals(TrackDragTest.rng(100, 200), b.getRange)
     assertSame(a, t0.get(50))
     assertSame(b, t0.get(150))
 
     // 再次请求仍截断为 0，成员仍不重叠
     assertEquals(0, timeline.setEnd(List.of(a, b), 50))
-    assertEquals(TrackDragTest.rng(0, 100), a.getRange())
-    assertEquals(TrackDragTest.rng(100, 200), b.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), a.getRange)
+    assertEquals(TrackDragTest.rng(100, 200), b.getRange)
   }
 
   @Test
@@ -343,15 +370,15 @@ class TrackDragTest extends GdxTestBase {
     // 前移被前一个成员的终点挡住：整组偏移截断为 0，模型不变
     val applied: Long = timeline.setStart(List.of(a, b), -50)
     assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(100, 200), a.getRange())
-    assertEquals(TrackDragTest.rng(200, 300), b.getRange())
+    assertEquals(TrackDragTest.rng(100, 200), a.getRange)
+    assertEquals(TrackDragTest.rng(200, 300), b.getRange)
     assertSame(a, t0.get(100))
     assertSame(b, t0.get(250))
 
     // 再次请求仍截断为 0，成员仍不重叠
     assertEquals(0, timeline.setStart(List.of(a, b), -50))
-    assertEquals(TrackDragTest.rng(100, 200), a.getRange())
-    assertEquals(TrackDragTest.rng(200, 300), b.getRange())
+    assertEquals(TrackDragTest.rng(100, 200), a.getRange)
+    assertEquals(TrackDragTest.rng(200, 300), b.getRange)
   }
 
   // ---------------------------------------------------------------------
@@ -401,13 +428,13 @@ class TrackDragTest extends GdxTestBase {
     timeline.split(t0, 40)
 
     // 原始片段被压缩到左半
-    assertEquals(TrackDragTest.rng(0, 40), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 40), s.getRange)
     assertSame(s, t0.get(20))
     // 右半是不相同的另一个片段
     val right: Segment = t0.get(60)
     assertNotSame(s, right)
-    assertEquals(TrackDragTest.rng(40, 100), right.getRange())
-    assertSame(t0, right.getTrack())
+    assertEquals(TrackDragTest.rng(40, 100), right.getRange)
+    assertSame(t0, right.getTrack)
     // 轨道上总共 2 个片段
     assertEquals(2, countOn(t0))
   }
@@ -425,19 +452,19 @@ class TrackDragTest extends GdxTestBase {
     s.setOrigin(1000)
 
     project.undoManager.execute(new UndoManager.MoveSegCommand(t0, t1, s, TrackDragTest.rng(0, 100), TrackDragTest.rng(50, 150)))
-    assertEquals(TrackDragTest.rng(50, 150), s.getRange())
-    assertSame(t1, s.getTrack())
-    assertEquals(1050, s.getOrigin())
+    assertEquals(TrackDragTest.rng(50, 150), s.getRange)
+    assertSame(t1, s.getTrack)
+    assertEquals(1050, s.getOrigin)
 
     project.undoManager.undo()
-    assertSame(t0, s.getTrack())
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
-    assertEquals(1000, s.getOrigin())
+    assertSame(t0, s.getTrack)
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
+    assertEquals(1000, s.getOrigin)
 
     project.undoManager.redo()
-    assertSame(t1, s.getTrack())
-    assertEquals(TrackDragTest.rng(50, 150), s.getRange())
-    assertEquals(1050, s.getOrigin())
+    assertSame(t1, s.getTrack)
+    assertEquals(TrackDragTest.rng(50, 150), s.getRange)
+    assertEquals(1050, s.getOrigin)
   }
 
   @Test
@@ -447,13 +474,13 @@ class TrackDragTest extends GdxTestBase {
     timeline.`override`(t0, s, TrackDragTest.rng(0, 100))
 
     project.undoManager.execute(new UndoManager.ResizeSegCommand(t0, s, TrackDragTest.rng(0, 100), TrackDragTest.rng(30, 100)))
-    assertEquals(TrackDragTest.rng(30, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(30, 100), s.getRange)
 
     project.undoManager.undo()
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
 
     project.undoManager.redo()
-    assertEquals(TrackDragTest.rng(30, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(30, 100), s.getRange)
   }
 
   @Test
@@ -466,12 +493,12 @@ class TrackDragTest extends GdxTestBase {
     project.undoManager.execute(new UndoManager.SplitSegCommand(t0, s, TrackDragTest.rng(0, 100), right, 40))
 
     // execute 已应用分割：一分为二
-    assertEquals(TrackDragTest.rng(0, 40), s.getRange())
-    assertEquals(TrackDragTest.rng(40, 100), right.getRange())
+    assertEquals(TrackDragTest.rng(0, 40), s.getRange)
+    assertEquals(TrackDragTest.rng(40, 100), right.getRange)
     assertEquals(2, countOn(t0))
 
     project.undoManager.undo()
-    assertEquals(TrackDragTest.rng(0, 100), s.getRange())
+    assertEquals(TrackDragTest.rng(0, 100), s.getRange)
     assertEquals(1, countOn(t0))
     assertSame(s, t0.get(50))
   }
@@ -491,16 +518,16 @@ class TrackDragTest extends GdxTestBase {
     Using.resource(timeline.record()) { h =>
       timeline.moveTime(List.of(a, b), 1000)
     }
-    assertEquals(TrackDragTest.rng(1000, 1100), a.getRange())
-    assertEquals(2000, a.getOrigin())
-    assertEquals(TrackDragTest.rng(1500, 1600), b.getRange())
-    assertEquals(3000, b.getOrigin())
+    assertEquals(TrackDragTest.rng(1000, 1100), a.getRange)
+    assertEquals(2000, a.getOrigin)
+    assertEquals(TrackDragTest.rng(1500, 1600), b.getRange)
+    assertEquals(3000, b.getOrigin)
 
     project.undoManager.undo()
-    assertEquals(TrackDragTest.rng(0, 100), a.getRange())
-    assertEquals(1000, a.getOrigin())
-    assertEquals(TrackDragTest.rng(500, 600), b.getRange())
-    assertEquals(2000, b.getOrigin())
+    assertEquals(TrackDragTest.rng(0, 100), a.getRange)
+    assertEquals(1000, a.getOrigin)
+    assertEquals(TrackDragTest.rng(500, 600), b.getRange)
+    assertEquals(2000, b.getOrigin)
   }
 
   // ---------------------------------------------------------------------

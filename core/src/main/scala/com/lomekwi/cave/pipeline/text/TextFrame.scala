@@ -13,14 +13,15 @@ import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) with Transformable {
-  @volatile private var text: String = null
-  @volatile private var font: BitmapFont = null
+  @volatile private var text: String = uninitialized
+  @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()
-  private var transform: Transform = null
-  private var actor: TransFrameActor = null
+  private var transform: Transform = uninitialized
+  private var actor: TransFrameActor = uninitialized
   private final val tmpMatrix: Matrix4 = new Matrix4()
   @volatile private var glyphsMissing: Boolean = false
   @volatile private var cachedWidth: Float = 0f
@@ -34,7 +35,7 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
   }
 
   def setText(text: CharSequence): Unit = {
-    this.text = text.toString()
+    this.text = text.toString
     version += 1
   }
 
@@ -47,11 +48,11 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
     this.actor = actor
   }
 
-  def getActor(): TransFrameActor = {
+  def getActor: TransFrameActor = {
     actor
   }
 
-  override def getTransform(): Transform = {
+  override def getTransform: Transform = {
     transform
   }
 
@@ -59,11 +60,11 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
     this.transform = transform
   }
 
-  override def getBaseWidth(): Float = {
+  override def getBaseWidth: Float = {
     cachedWidth
   }
 
-  override def getBaseHeight(): Float = {
+  override def getBaseHeight: Float = {
     cachedHeight
   }
 
@@ -73,18 +74,18 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
       layoutVersion = version
     }
     if (font == null || text == null || glyphsMissing) return
-    val t = getTransform()
-    val scaleX = if (t.isFlipX()) -1f else 1f
-    val scaleY = if (t.isFlipY()) -1f else 1f
+    val t = getTransform
+    val scaleX = if (t.isFlipX) -1f else 1f
+    val scaleY = if (t.isFlipY) -1f else 1f
     val w = cachedWidth
     val h = cachedHeight
 
     val saved = new Matrix4(batch.getTransformMatrix)
-    val sx = scaleX * t.getScaleX()
-    val sy = scaleY * t.getScaleY()
+    val sx = scaleX * t.getScaleX
+    val sy = scaleY * t.getScaleY
     tmpMatrix.set(saved)
-    tmpMatrix.translate(t.getX() + w * sx / 2, t.getY() + h * sy / 2, 0)
-    tmpMatrix.rotate(0, 0, 1, t.getRotation())
+    tmpMatrix.translate(t.getX + w * sx / 2, t.getY + h * sy / 2, 0)
+    tmpMatrix.rotate(0, 0, 1, t.getRotation)
     tmpMatrix.scale(sx, sy, 1)
     batch.setTransformMatrix(tmpMatrix)
     font.setColor(WHITE)

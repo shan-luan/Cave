@@ -24,10 +24,10 @@ class TransNode extends Filter[Transformable] {
   })
 
   private final val out: FilterOut = addOutPort(new FilterOut("输出") {
-    override def getData(): Transformable = {
-      val frame: Transformable = getFilterIn().getData()
+    override def getData: Transformable = {
+      val frame: Transformable = getFilterIn.getData
       if (frame != null) {
-        var t: Transform = frame.getTransform()
+        var t: Transform = frame.getTransform
         if (t == null) {
           t = new Transform()
           frame.setTransform(t)
@@ -48,44 +48,44 @@ class TransNode extends Filter[Transformable] {
     setDRotation(dRotation)
   }
 
-  def getDx(): Double = {
+  def getDx: Double = {
     TransNode.`val`(dx)
   }
 
   def setDx(v: Double): Unit = {
-    dx.getDefaultData().setVal(v)
+    dx.getDefaultData.setVal(v)
   }
 
-  def getDy(): Double = {
+  def getDy: Double = {
     TransNode.`val`(dy)
   }
 
   def setDy(v: Double): Unit = {
-    dy.getDefaultData().setVal(v)
+    dy.getDefaultData.setVal(v)
   }
 
-  def getScaleX(): Double = {
+  def getScaleX: Double = {
     TransNode.`val`(scaleX)
   }
 
   def setScaleX(v: Double): Unit = {
-    scaleX.getDefaultData().setVal(v)
+    scaleX.getDefaultData.setVal(v)
   }
 
-  def getScaleY(): Double = {
+  def getScaleY: Double = {
     TransNode.`val`(scaleY)
   }
 
   def setScaleY(v: Double): Unit = {
-    scaleY.getDefaultData().setVal(v)
+    scaleY.getDefaultData.setVal(v)
   }
 
-  def getDRotation(): Double = {
+  def getDRotation: Double = {
     TransNode.`val`(dRotation)
   }
 
   def setDRotation(v: Double): Unit = {
-    dRotation.getDefaultData().setVal(v)
+    dRotation.getDefaultData.setVal(v)
   }
 
   def flipX(): Boolean = {
@@ -104,11 +104,11 @@ class TransNode extends Filter[Transformable] {
     flipYState = v
   }
 
-  override def getType(): Class[Transformable] = {
+  override def getType: Class[Transformable] = {
     classOf[Transformable]
   }
 
-  override def getName(): String = {
+  override def getName: String = {
     "变换"
   }
 }
@@ -121,6 +121,6 @@ object TransNode {
   }
 
   private def `val`(p: Node.InPort[NumFrame]): Double = {
-    p.getData().getVal()
+    p.getData.getVal
   }
 }

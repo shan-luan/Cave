@@ -25,7 +25,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.lang.management.ManagementFactory
-import java.util.ArrayList
+import java.util
 
 import org.lwjgl.system.JNI.invokePPP
 import org.lwjgl.system.JNI.invokePPZ
@@ -70,7 +70,7 @@ object StartupHelper {
      *         in this one
      */
     def startNewJvmIfRequired(redirectOutput: Boolean): Boolean = {
-        val osName: String = System.getProperty("os.name").toLowerCase();
+        val osName: String = System.getProperty("os.name").toLowerCase()
         if (!osName.contains("mac")) {
             if (osName.contains("windows")) {
 // Here, we are trying to work around an issue with how LWJGL3 loads its extracted .dll files.
@@ -79,97 +79,97 @@ object StartupHelper {
 // By extracting to the relevant "ProgramData" folder, which is usually "C:\ProgramData", we avoid this.
 // We also temporarily change the "user.name" property to one without any chars that would be invalid.
 // We revert our changes immediately after loading LWJGL3 natives.
-                var programData: String = System.getenv("ProgramData");
+                var programData: String = System.getenv("ProgramData")
                 if(programData == null) programData = "C:\\Temp\\"; // if ProgramData isn't set, try some fallback.
-                val prevTmpDir: String = System.getProperty("java.io.tmpdir", programData);
-                val prevUser: String = System.getProperty("user.name", "libGDX_User");
-                System.setProperty("java.io.tmpdir", programData + "/libGDX-temp");
-                System.setProperty("user.name", ("User_" + prevUser.hashCode() + "_GDX" + Version.VERSION).replace('.', '_'));
-                Lwjgl3NativesLoader.load();
-                System.setProperty("java.io.tmpdir", prevTmpDir);
-                System.setProperty("user.name", prevUser);
+                val prevTmpDir: String = System.getProperty("java.io.tmpdir", programData)
+                val prevUser: String = System.getProperty("user.name", "libGDX_User")
+                System.setProperty("java.io.tmpdir", programData + "/libGDX-temp")
+                System.setProperty("user.name", ("User_" + prevUser.hashCode() + "_GDX" + Version.VERSION).replace('.', '_'))
+                Lwjgl3NativesLoader.load()
+                System.setProperty("java.io.tmpdir", prevTmpDir)
+                System.setProperty("user.name", prevUser)
             }
-            return false;
+            return false
         }
 
         // Checks if we are already on the main thread, such as from running via Construo.
-        val objc_msgSend: Long = ObjCRuntime.getLibrary.getFunctionAddress("objc_msgSend");
-        val NSThread: Long      = objc_getClass("NSThread");
-        val currentThread: Long = invokePPP(NSThread, sel_getUid("currentThread"), objc_msgSend);
-        val isMainThread: Boolean = invokePPZ(currentThread, sel_getUid("isMainThread"), objc_msgSend);
-        if(isMainThread) return false;
+        val objc_msgSend: Long = ObjCRuntime.getLibrary.getFunctionAddress("objc_msgSend")
+        val NSThread: Long      = objc_getClass("NSThread")
+        val currentThread: Long = invokePPP(NSThread, sel_getUid("currentThread"), objc_msgSend)
+        val isMainThread: Boolean = invokePPZ(currentThread, sel_getUid("isMainThread"), objc_msgSend)
+        if(isMainThread) return false
 
-        val pid: Long = LibC.getpid();
+        val pid: Long = LibC.getpid()
 
         // check whether -XstartOnFirstThread is enabled
         if ("1".equals(System.getenv("JAVA_STARTED_ON_FIRST_THREAD_" + pid))) {
-            return false;
+            return false
         }
 
         // check whether the JVM was previously restarted
         // avoids looping, but most certainly leads to a crash
         if ("true".equals(System.getProperty(JVM_RESTARTED_ARG))) {
             System.err.println(
-                    "There was a problem evaluating whether the JVM was started with the -XstartOnFirstThread argument.");
-            return false;
+                    "There was a problem evaluating whether the JVM was started with the -XstartOnFirstThread argument.")
+            return false
         }
 
         // Restart the JVM with -XstartOnFirstThread
-        val jvmArgs: ArrayList[String] = new ArrayList[String]();
-        val separator: String = System.getProperty("file.separator", "/");
+        val jvmArgs: util.ArrayList[String] = new util.ArrayList[String]()
+        val separator: String = System.getProperty("file.separator", "/")
         // The following line is used assuming you target Java 8, the minimum for LWJGL3.
-        val javaExecPath: String = System.getProperty("java.home") + separator + "bin" + separator + "java";
+        val javaExecPath: String = System.getProperty("java.home") + separator + "bin" + separator + "java"
         // If targeting Java 9 or higher, you could use the following instead of the above line:
         //String javaExecPath = ProcessHandle.current().info().command().orElseThrow();
 
-        if (!(new File(javaExecPath)).exists()) {
+        if (!new File(javaExecPath).exists()) {
             System.err.println(
-                    "A Java installation could not be found. If you are distributing this app with a bundled JRE, be sure to set the -XstartOnFirstThread argument manually!");
-            return false;
+                    "A Java installation could not be found. If you are distributing this app with a bundled JRE, be sure to set the -XstartOnFirstThread argument manually!")
+            return false
         }
 
-        jvmArgs.add(javaExecPath);
-        jvmArgs.add("-XstartOnFirstThread");
-        jvmArgs.add("-D" + JVM_RESTARTED_ARG + "=true");
-        jvmArgs.addAll(ManagementFactory.getRuntimeMXBean.getInputArguments);
-        jvmArgs.add("-cp");
-        jvmArgs.add(System.getProperty("java.class.path"));
-        var mainClass: String = System.getenv("JAVA_MAIN_CLASS_" + pid);
+        jvmArgs.add(javaExecPath)
+        jvmArgs.add("-XstartOnFirstThread")
+        jvmArgs.add("-D" + JVM_RESTARTED_ARG + "=true")
+        jvmArgs.addAll(ManagementFactory.getRuntimeMXBean.getInputArguments)
+        jvmArgs.add("-cp")
+        jvmArgs.add(System.getProperty("java.class.path"))
+        var mainClass: String = System.getenv("JAVA_MAIN_CLASS_" + pid)
         if (mainClass == null) {
-            val trace: Array[StackTraceElement] = Thread.currentThread().getStackTrace;
+            val trace: Array[StackTraceElement] = Thread.currentThread().getStackTrace
             if (trace.length > 0) {
-                mainClass = trace(trace.length - 1).getClassName;
+                mainClass = trace(trace.length - 1).getClassName
             } else {
-                System.err.println("The main class could not be determined.");
-                return false;
+                System.err.println("The main class could not be determined.")
+                return false
             }
         }
-        jvmArgs.add(mainClass);
+        jvmArgs.add(mainClass)
 
         try {
             if (!redirectOutput) {
-                val processBuilder: ProcessBuilder = new ProcessBuilder(jvmArgs);
-                processBuilder.start();
+                val processBuilder: ProcessBuilder = new ProcessBuilder(jvmArgs)
+                processBuilder.start()
             } else {
-                val process: Process = (new ProcessBuilder(jvmArgs))
-                        .redirectErrorStream(true).start();
+                val process: Process = new ProcessBuilder(jvmArgs)
+                        .redirectErrorStream(true).start()
                 val processOutput: BufferedReader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream));
-                var line: String = null;
+                        new InputStreamReader(process.getInputStream))
+                var line: String = null
 
                 while ({ line = processOutput.readLine(); line != null }) {
-                    System.out.println(line);
+                    System.out.println(line)
                 }
 
-                process.waitFor();
+                process.waitFor()
             }
         } catch {
             case e: Exception =>
-                System.err.println("There was a problem restarting the JVM");
+                System.err.println("There was a problem restarting the JVM")
                 e.printStackTrace();
         }
 
-        return true;
+        true
     }
 
     /**
@@ -190,7 +190,5 @@ object StartupHelper {
      * @return whether a new JVM was started and thus no code should be executed
      *         in this one
      */
-    def startNewJvmIfRequired(): Boolean = {
-        return startNewJvmIfRequired(true);
-    }
+    def startNewJvmIfRequired(): Boolean = startNewJvmIfRequired(true)
 }

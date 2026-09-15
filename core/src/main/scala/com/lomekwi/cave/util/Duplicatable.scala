@@ -13,7 +13,7 @@ trait Duplicatable[T <: Duplicatable[T]] extends Serializable {
       Using.resource(new ByteArrayOutputStream()) { baos =>
         Using.resource(new ObjectOutputStream(baos)) { oos =>
           oos.writeObject(this)
-          Using.resource(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) { ois =>
+          Using.resource(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray))) { ois =>
             ois.readObject().asInstanceOf[T]
           }
         }

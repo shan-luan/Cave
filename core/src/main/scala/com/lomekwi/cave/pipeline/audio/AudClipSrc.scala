@@ -15,13 +15,13 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
   addOutPort(new Node.OutPort[NumFrame]("时长", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(getDuration().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(getDuration.toDouble)
       `val`
     }
   })
 
-  def getAudRes(): AudRes = {
+  def getAudRes: AudRes = {
     audRes
   }
 
@@ -37,24 +37,24 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
 
     try {
       audRes.get(track.index, time, frame)
-      if (frame.getSamples() == null) return null
-      return frame
+      if (frame.getSamples == null) return null
+      frame
     } catch {
       case e: Exception =>
         throw new RuntimeException(e)
     }
   }
 
-  override def getLengthPerExportFrame(): Long = {
-    audRes.getFrameLength()
+  override def getLengthPerExportFrame: Long = {
+    audRes.getFrameLength
   }
-  override def getDuration(): Long = {
-    audRes.getDuration()
+  override def getDuration: Long = {
+    audRes.getDuration
   }
-  override def getFrameType(): Class[AudFrame] = {
+  override def getFrameType: Class[AudFrame] = {
     classOf[AudFrame]
   }
-  override def getDisplayName(): String = {
+  override def getDisplayName: String = {
     "音频源"
   }
   override def onDuplicate(original: Source[?]): Unit = {

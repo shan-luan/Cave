@@ -14,7 +14,7 @@ abstract class Frame(final val track: Track, private val source: Source[?]) exte
     this(track, null)
   }
 
-  def getSource(): Source[?] = source
+  def getSource: Source[?] = source
 
   def withTime(timestamp: Long): Frame = {
     this.timestamp = timestamp
@@ -24,5 +24,5 @@ abstract class Frame(final val track: Track, private val source: Source[?]) exte
     closed = true
   }
 
-  def isClosed(): Boolean = closed
+  def isClosed: Boolean = closed
 }

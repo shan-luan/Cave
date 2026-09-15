@@ -21,8 +21,4 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
 
 object Interval {
   given Ordering[Interval] = Ordering.by(i => (i.lo, i.hi))
-
-  extension (lo: Long) def ~(hi: Long): Interval = Interval(lo, hi)
-
-  extension (lo: Int) def ~(hi: Int): Interval = Interval(lo.toLong, hi.toLong)
 }

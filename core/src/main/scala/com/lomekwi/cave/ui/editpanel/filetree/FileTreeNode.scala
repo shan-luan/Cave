@@ -13,6 +13,7 @@ import com.lomekwi.cave.util.MimeType
 import java.io.File
 
 import com.lomekwi.cave.util.i18n.I18N.i18n
+import scala.compiletime.uninitialized
 
 class FileTreeNode(file: File) extends Tree.Node[FileTreeNode, File, VisLabel]() {
   private var childrenLoaded: Boolean = false
@@ -60,14 +61,14 @@ class FileTreeNode(file: File) extends Tree.Node[FileTreeNode, File, VisLabel]()
       }
     }
   }
-  class DraggableLabel(text: String) extends VisLabel(text) {
-    private var dragActor: VisLabel = null
-    App.root.getDragAndDrop().addSource(new DragAndDrop.Source(this) {
+  private class DraggableLabel(text: String) extends VisLabel(text) {
+    private var dragActor: VisLabel = uninitialized
+    App.root.getDragAndDrop.addSource(new DragAndDrop.Source(this) {
       override def dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload = {
         val payload = new DragAndDrop.Payload()
         payload.setObject(getValue)
 
-        dragActor = new VisLabel(getText.toString())
+        dragActor = new VisLabel(getText.toString)
         payload.setDragActor(dragActor)
         payload
       }

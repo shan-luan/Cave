@@ -10,10 +10,9 @@ import com.lomekwi.cave.timeline.SegmentSelectedEvent
 import com.lomekwi.cave.timeline.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
 
-import java.util.HashSet
-import java.util.Set
 
 import scala.jdk.CollectionConverters.*
+import java.util
 
 /** 时间线捕获阶段监听器 —— 处理框选与空白区播放头 seek。 */
 class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputListener {
@@ -31,7 +30,7 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
     }
 
     val trackIndex: Int = tlGroup.yToTrackIndex(y)
-    val onSegment: Boolean = trackIndex >= 0 && trackIndex < tlGroup.timeline.getTracks().size()
+    val onSegment: Boolean = trackIndex >= 0 && trackIndex < tlGroup.timeline.getTracks.size()
       && tlGroup.timeline.getTrack(trackIndex).get(tlGroup.xToAbsoluteTime(x)) != null
     if (!onSegment) {
       tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
@@ -59,9 +58,9 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
     if (maxX - minX < 2 || maxY - minY < 2) return
 
     val firstTrack: Int = Math.max(0, tlGroup.yToTrackIndex(maxY))
-    val lastTrack: Int = Math.min(tlGroup.timeline.getTracks().size() - 1, tlGroup.yToTrackIndex(minY))
+    val lastTrack: Int = Math.min(tlGroup.timeline.getTracks.size() - 1, tlGroup.yToTrackIndex(minY))
 
-    val toSelect: Set[Segment] = new HashSet[Segment]()
+    val toSelect: util.Set[Segment] = new util.HashSet[Segment]()
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = tlGroup.timeline.getTrack(i)
@@ -79,12 +78,12 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
 
         val timeRange: Interval = Interval(segStartTime, segEndTime)
         for (seg <- track.getIntersectingSegments(timeRange).asScala) {
-          val segLeft: Float = tlGroup.absoluteTimeToX(seg.getRange().lo)
-          val segRight: Float = tlGroup.absoluteTimeToX(seg.getRange().hi)
+          val segLeft: Float = tlGroup.absoluteTimeToX(seg.getRange.lo)
+          val segRight: Float = tlGroup.absoluteTimeToX(seg.getRange.hi)
 
           if (segRight > minX && segLeft < maxX) {
-            if (seg.getGroup() != null) {
-              toSelect.addAll(seg.getGroup())
+            if (seg.getGroup != null) {
+              toSelect.addAll(seg.getGroup)
             } else {
               toSelect.add(seg)
             }
@@ -102,15 +101,15 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
       }
       val count: Int = tlGroup.selectedSegments.size()
       if (count >= 2) {
-        val e = new SegmentSelectedEvent(null, null, count)
+        val e = SegmentSelectedEvent(null, null, count)
         tlGroup.project.projEventBus.post(e)
         App.appEventBus.post(e)
-        val ge = new SegmentSetSelectedEvent(tlGroup.selectedSegments, count)
+        val ge = SegmentSetSelectedEvent(tlGroup.selectedSegments, count)
         tlGroup.project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       } else if (count == 1) {
         val seg: Segment = toSelect.iterator().next()
-        val e = new SegmentSelectedEvent(seg, seg.getTrack(), 1)
+        val e = SegmentSelectedEvent(seg, seg.getTrack, 1)
         tlGroup.project.projEventBus.post(e)
         App.appEventBus.post(e)
       }

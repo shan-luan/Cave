@@ -4,11 +4,11 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
+import java.util
 
-import java.util.ArrayList
 
 class ExportOptionsSet extends Json.Serializable {
-  var presets: ArrayList[ExportOptions] = new ArrayList[ExportOptions]()
+  var presets: util.ArrayList[ExportOptions] = new util.ArrayList[ExportOptions]()
   var currentIndex: Int = 0
 
   presets.add(new ExportOptions())
@@ -17,20 +17,20 @@ class ExportOptionsSet extends Json.Serializable {
     presets.get(currentIndex)
   }
 
-  def hasPrev(): Boolean = {
+  private def hasPrev: Boolean = {
     currentIndex > 0
   }
 
-  def hasNext(): Boolean = {
+  def hasNext: Boolean = {
     currentIndex < presets.size() - 1
   }
 
   def prev(): Unit = {
-    if (hasPrev()) currentIndex -= 1
+    if (hasPrev) currentIndex -= 1
   }
 
   def next(): Unit = {
-    if (hasNext()) currentIndex += 1
+    if (hasNext) currentIndex += 1
   }
 
   def save(): Unit = {

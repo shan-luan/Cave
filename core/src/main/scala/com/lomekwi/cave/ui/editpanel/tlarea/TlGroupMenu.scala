@@ -16,20 +16,19 @@ import com.lomekwi.cave.util.MimeType
 
 import java.io.File
 import java.io.IOException
-import java.util.ArrayList
-import java.util.List
-import java.util.Set
+import java.util
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
+import scala.compiletime.uninitialized
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
 
 class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends PopupMenu {
   private var time: Long = 0L
-  private var pasteItem: MenuItem = null
+  private var pasteItem: MenuItem = uninitialized
 
   {
     val addMenu: PopupMenu = new PopupMenu()
@@ -45,7 +44,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
 
   def setContext(time: Long): Unit = {
     this.time = time
-    pasteItem.setDisabled(!(App.copyManager.getClipboard().isInstanceOf[Segment] || App.copyManager.getClipboard().isInstanceOf[SegmentGroup] || App.copyManager.getClipboard().isInstanceOf[SegmentSet]))
+    pasteItem.setDisabled(!(App.copyManager.getClipboard.isInstanceOf[Segment] || App.copyManager.getClipboard.isInstanceOf[SegmentGroup] || App.copyManager.getClipboard.isInstanceOf[SegmentSet]))
   }
 
   private def onAddMedia(): Unit = {
@@ -76,15 +75,15 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
   private def onAddText(): Unit = {
     val seg: Segment = new Segment(new TextSrc())
     seg.setOrigin(time)
-    val duration: Long = seg.getSource().getDefaultSegmentDuration()
+    val duration: Long = seg.getSource.getDefaultSegmentDuration
 
     var targetTrack: Int = 0
     val range: Interval = Interval(time, time + duration)
-    while (!tlGroup.getTimeline().getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
+    while (!tlGroup.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
       targetTrack += 1
     }
 
-    val timeline = tlGroup.getTimeline()
+    val timeline = tlGroup.getTimeline
     Using.resource(timeline.record()) { h =>
       timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
     }
@@ -93,24 +92,24 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
   }
 
   private def addMediaFile(file: File): Unit = {
-    val project: Project = tlGroup.getProject()
+    val project: Project = tlGroup.getProject
     try {
-      val segments: List[Segment] = project.mediaSegFactory.getAll(file)
+      val segments: util.List[Segment] = project.mediaSegFactory.getAll(file)
       if (segments.isEmpty) return
 
       val baseTrack: Int = 0
       var trackOffset: Int = 0
-      val added: List[Segment] = new ArrayList[Segment]()
+      val added: util.List[Segment] = new util.ArrayList[Segment]()
 
-      val timeline = tlGroup.getTimeline()
+      val timeline = tlGroup.getTimeline
       Using.resource(timeline.record()) { h =>
         for (seg <- segments.asScala) {
           seg.setOrigin(time)
-          val duration: Long = seg.getSource().getDefaultSegmentDuration()
+          val duration: Long = seg.getSource.getDefaultSegmentDuration
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
             val range: Interval = Interval(time, time + duration)
-            while (!timeline.getTrack(targetTrack).isFree(range, Set.of[Segment]())) {
+            while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
               targetTrack += 1
             }
 

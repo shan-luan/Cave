@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.timeline.Interval.~
-
 import org.junit.Assert.{assertEquals, assertFalse, assertTrue}
 import org.junit.Test
 
@@ -40,19 +38,6 @@ class IntervalTest {
   def shift_movesBothEndpoints(): Unit = {
     assertEquals(Interval(110, 210), Interval(100, 200).shift(10))
     assertEquals(Interval(90, 190), Interval(100, 200).shift(-10))
-  }
-
-  @Test
-  def infixOperator_buildsInterval(): Unit = {
-    assertEquals(Interval(1, 100), 1 ~ 100)
-    assertEquals(Interval(1, 100), 1L ~ 100L)
-  }
-
-  @Test
-  def infixOperator_needsParensAroundComputedEndpoint(): Unit = {
-    val time = 10L
-    val duration = 100L
-    assertEquals(Interval(10, 110), time ~ (time + duration))
   }
 
   @Test

@@ -11,15 +11,15 @@ class NodeEditorTab(nodeGraph0: NodeGraph) extends Tab(false, true) {
   private final val nodeGraph: NodeGraph = nodeGraph0
   private final val content: Table = new NodeEditorView()
 
-  def getNodeGraph(): NodeGraph = {
+  def getNodeGraph: NodeGraph = {
     nodeGraph
   }
 
-  override def getTabTitle(): String = {
+  override def getTabTitle: String = {
     I18N.i18n("节点编辑器")
   }
 
-  override def getContentTable(): Table = {
+  override def getContentTable: Table = {
     content
   }
 }

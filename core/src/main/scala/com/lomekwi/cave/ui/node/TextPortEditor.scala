@@ -20,18 +20,18 @@ import java.util.Objects
 final class TextPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
   {
-    val defaultValue: String = port.getDefaultData().asInstanceOf[String]
+    val defaultValue: String = port.getDefaultData.asInstanceOf[String]
     val textArea: VisTextArea = new VisTextArea(if (defaultValue == null) "" else defaultValue)
     // 撑高 prefHeight，否则 X2 皮肤下 linesShowing 为 0，文字不会绘制
     textArea.setPrefRows(3f)
     textArea.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         val newVal: String = textArea.getText
-        val oldVal: String = port.getDefaultData().asInstanceOf[String]
+        val oldVal: String = port.getDefaultData.asInstanceOf[String]
         if (Objects.equals(oldVal, newVal)) return
         val strPort: Node.InPort[String] = port.asInstanceOf[Node.InPort[String]]
         strPort.setDefaultData(newVal)
-        val p: Project = App.root.getFrontendProject()
+        val p: Project = App.root.getFrontendProject
         if (p != null) {
           p.projEventBus.post(RefreshRequestEvent)
         }
@@ -39,9 +39,9 @@ final class TextPortEditor(port0: Node.InPort[?], source: Source[?]) extends Vis
     })
     align(Align.topLeft)
     defaults().left()
-    add(new VisLabel(port.getName())).pad(2f).left().row()
+    add(new VisLabel(port.getName)).pad(2f).left().row()
     add(textArea).growX().pad(2f)
   }
 
-  override def getPort(): Node.InPort[?] = port
+  override def getPort: Node.InPort[?] = port
 }

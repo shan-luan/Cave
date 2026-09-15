@@ -19,7 +19,7 @@ import com.lomekwi.cave.ui.editpanel.EditPanel
 final class NodeGraphPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
   {
-    val button: VisTextButton = new VisTextButton(port.getName())
+    val button: VisTextButton = new VisTextButton(port.getName)
     button.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         openEditor()
@@ -31,12 +31,12 @@ final class NodeGraphPortEditor(port0: Node.InPort[?], source: Source[?]) extend
   }
 
   private def openEditor(): Unit = {
-    val nodeGraph: NodeGraph = port.getDefaultData().asInstanceOf[NodeGraph]
+    val nodeGraph: NodeGraph = port.getDefaultData.asInstanceOf[NodeGraph]
     if (nodeGraph == null) return
-    val panel: EditPanel = App.root.getFrontendEditPanel()
+    val panel: EditPanel = App.root.getFrontendEditPanel
     if (panel == null) return
-    panel.getTlTabs().openNodeEditor(nodeGraph)
+    panel.getTlTabs.openNodeEditor(nodeGraph)
   }
 
-  override def getPort(): Node.InPort[?] = port
+  override def getPort: Node.InPort[?] = port
 }

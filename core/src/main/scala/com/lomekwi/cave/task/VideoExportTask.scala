@@ -23,23 +23,24 @@ import org.bytedeco.javacv.FFmpegFrameRecorder
 
 import java.io.File
 import java.nio.FloatBuffer
-import java.util.Arrays
+import java.util
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.atomic.AtomicReferenceArray
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 class VideoExportTask(private val timeline: Timeline, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
-  private var recorder: FFmpegFrameRecorder = null
-  private var frames: AtomicReferenceArray[Frame] = null
-  private var activeSegments: Array[Segment] = null
-  private var fb: FrameBuffer = null
-  private var batch: SpriteBatch = null
+  private var recorder: FFmpegFrameRecorder = uninitialized
+  private var frames: AtomicReferenceArray[Frame] = uninitialized
+  private var activeSegments: Array[Segment] = uninitialized
+  private var fb: FrameBuffer = uninitialized
+  private var batch: SpriteBatch = uninitialized
   @volatile private var t: Long = 0
   private var frameLen: Long = 0
-  private var cvFrame: org.bytedeco.javacv.Frame = null
+  private var cvFrame: org.bytedeco.javacv.Frame = uninitialized
   private final val queue: SynchronousQueue[org.bytedeco.javacv.Frame] = new SynchronousQueue[org.bytedeco.javacv.Frame]()
-  private var projMatrix: Matrix4 = null
+  private var projMatrix: Matrix4 = uninitialized
 
   recorder = new FFmpegFrameRecorder(outputFile, width, height)
   {
@@ -56,8 +57,8 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   cvFrame = new org.bytedeco.javacv.Frame(width, height, org.bytedeco.javacv.Frame.DEPTH_UBYTE, 4)
   projMatrix = new Matrix4().setToOrtho(0, fb.getWidth.toFloat, fb.getHeight.toFloat, 0, 0, 1)
 
-  override def getProgress(): Float = {
-    t.toFloat / timeline.getLength()
+  override def getProgress: Float = {
+    t.toFloat / timeline.getLength
   }
 
   override def run(): Unit = {
@@ -69,11 +70,11 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       recorder.setFrameRate(fps)
       recorder.start()
       var i: Int = 0
-      while (t < timeline.getLength()) {
+      while (t < timeline.getLength) {
         i = 0
         for (track <- timeline.asScala) {
           var seg = activeSegments(i)
-          if (seg == null || !seg.getRange().contains(t)) {
+          if (seg == null || !seg.getRange.contains(t)) {
             seg = track.get(t)
             if (seg != null) {
               seg.sync(t)
@@ -100,21 +101,21 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   }
 
   private def exportAudio(): Unit = {
-    val tracks: Array[Track] = timeline.getTracks().toArray(new Array[Track](0))
+    val tracks: Array[Track] = timeline.getTracks.toArray(new Array[Track](0))
     val active: Array[Segment] = new Array[Segment](tracks.length)
     val mixBuf: Array[Float] = new Array[Float](VideoExportTask.AUDIO_FRAME_SIZE)
 
     var audioT: Long = 0
-    while (audioT < timeline.getLength()) {
-      Arrays.fill(mixBuf, 0f)
+    while (audioT < timeline.getLength) {
+      util.Arrays.fill(mixBuf, 0f)
 
       var i = 0
       while (i < tracks.length) {
-        if (tracks(i).getLength() != 0) {
+        if (tracks(i).getLength != 0) {
           var seg = active(i)
-          if (seg == null || !seg.getRange().contains(audioT)) {
+          if (seg == null || !seg.getRange.contains(audioT)) {
             seg = tracks(i).get(audioT)
-            if (seg != null && seg.getSource().isInstanceOf[AudClipSrc]) {
+            if (seg != null && seg.getSource.isInstanceOf[AudClipSrc]) {
               seg.sync(audioT)
             }
             active(i) = seg
@@ -122,8 +123,8 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           if (seg != null) {
             val frame = seg.get(audioT)
             frame match {
-              case af: AudFrame if af.getSamples() != null =>
-                val samples = af.getSamples()
+              case af: AudFrame if af.getSamples != null =>
+                val samples = af.getSamples
                 val len = Math.min(samples.length, mixBuf.length)
                 var si = 0
                 while (si < len) {
@@ -188,7 +189,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
     cvFrame.close()
     recorder.close()
   }
-  override def getName(): String = {
+  override def getName: String = {
     i18n("视频导出：") + timeline.project.name
   }
 }

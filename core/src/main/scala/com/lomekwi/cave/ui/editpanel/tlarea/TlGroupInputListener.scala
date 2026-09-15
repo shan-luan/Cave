@@ -58,7 +58,7 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
 
   override def keyDown(event: InputEvent, keycode: Int): Boolean = {
     if (App.shortcutManager.isActive(TlGroup.Actions.PLAY_PAUSE)) {
-      tlGroup.playhead.setPlaying(!tlGroup.playhead.isPlaying())
+      tlGroup.playhead.setPlaying(!tlGroup.playhead.isPlaying)
       return true
     }
     if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {

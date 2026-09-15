@@ -2,10 +2,11 @@ package com.lomekwi.cave.app.copy
 
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.selection.SelectableSelectedEvent
+import scala.compiletime.uninitialized
 
 class CopyManager {
-  private var clipboard: Copyable = null
-  private var latestCopyable: Copyable = null
+  private var clipboard: Copyable = uninitialized
+  private var latestCopyable: Copyable = uninitialized
 
   @Subscribe
   def onSelection(e: SelectableSelectedEvent[?]): Unit = {
@@ -34,7 +35,7 @@ class CopyManager {
     clipboard = copyable
   }
 
-  def getClipboard(): Copyable = {
+  def getClipboard: Copyable = {
     clipboard
   }
 

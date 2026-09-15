@@ -13,6 +13,7 @@ import com.lomekwi.cave.resource.decoder.ImgDecRes
 import java.io.ObjectInputStream
 import java.nio.ByteBuffer
 
+import scala.compiletime.uninitialized
 import scala.util.Using
 
 import com.lomekwi.cave.util.Units.SECOND
@@ -24,7 +25,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
   @transient private var cachedPixels: ByteBuffer = scala.compiletime.uninitialized
   @transient private var unpackRowLength: Int = scala.compiletime.uninitialized
   @transient @volatile private var decoded: Boolean = scala.compiletime.uninitialized
-  @transient private var texture: Texture = null
+  @transient private var texture: Texture = uninitialized
 
 
   override protected def newDecoder(): ImgDecRes = {
@@ -33,13 +34,13 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
 
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val idr = metadataDecRes.asInstanceOf[ImgDecRes]
-    width = idr.getWidth()
-    height = idr.getHeight()
+    width = idr.getWidth
+    height = idr.getHeight
     val tmp = new ImgFrame(null)
     try {
       idr.get(0, tmp)
-      cachedPixels = idr.getCachedPixels()
-      unpackRowLength = idr.getUnpackRowLength()
+      cachedPixels = idr.getCachedPixels
+      unpackRowLength = idr.getUnpackRowLength
       decoded = true
     } catch {
       case _: Exception =>
@@ -47,15 +48,15 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
   }
 
-  def getWidth(): Int = {
+  def getWidth: Int = {
     width
   }
 
-  def getHeight(): Int = {
+  def getHeight: Int = {
     height
   }
 
-  def getFrameLength(): Long = {
+  def getFrameLength: Long = {
     SECOND / 30
   }
 
@@ -65,8 +66,8 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
         dec.start()
         val tmp = new ImgFrame(null)
         dec.get(0, tmp)
-        cachedPixels = dec.getCachedPixels()
-        unpackRowLength = dec.getUnpackRowLength()
+        cachedPixels = dec.getCachedPixels
+        unpackRowLength = dec.getUnpackRowLength
       }
       decoded = true
     }
@@ -78,7 +79,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
   override def sync(trackIndex: Int, time: Long): Unit = {
   }
 
-  def getTexture(): Texture = {
+  def getTexture: Texture = {
     if (texture != null) {
       return texture
     }
@@ -96,14 +97,14 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
   }
 
   override def getPreview(time: Long): Texture = {
-    getTexture()
+    getTexture
   }
 
-  override def getPreview(): Texture = {
-    getTexture()
+  override def getPreview: Texture = {
+    getTexture
   }
 
-  override def getPreviewInterval(): Long = {
+  override def getPreviewInterval: Long = {
     SECOND
   }
 

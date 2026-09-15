@@ -16,11 +16,11 @@ class TimelineTab(tlMain: Container[TlGroup]) extends Tab(false, false) {
     content.add(tlMain).grow()
   }
 
-  override def getTabTitle(): String = {
+  override def getTabTitle: String = {
     I18N.i18n("时间线")
   }
 
-  override def getContentTable(): Table = {
+  override def getContentTable: Table = {
     content
   }
 }

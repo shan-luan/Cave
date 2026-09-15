@@ -46,23 +46,24 @@ import com.lomekwi.cave.ui.topbar.TopBar
 import com.lomekwi.cave.app.App
 
 import space.earlygrey.shapedrawer.ShapeDrawer
+import scala.compiletime.uninitialized
 
 class Root extends ApplicationListener {
-  private var stage: Stage = null
+  private var stage: Stage = uninitialized
 
-  private var toastManager: ToastManager = null
+  private var toastManager: ToastManager = uninitialized
 
-  private var mainLayout: VisTable = null
-  private var majorArea: Container[Table] = null
+  private var mainLayout: VisTable = uninitialized
+  private var majorArea: Container[Table] = uninitialized
 
-  private var topBar: TopBar = null
-  private var tabbedPane: TopTabbedPane = null
+  private var topBar: TopBar = uninitialized
+  private var tabbedPane: TopTabbedPane = uninitialized
 
-  private var dragAndDrop: DragAndDrop = null
+  private var dragAndDrop: DragAndDrop = uninitialized
 
-  private var shapeDrawer: ShapeDrawer = null
+  private var shapeDrawer: ShapeDrawer = uninitialized
 
-  private var generator: FreeTypeFontGenerator = null
+  private var generator: FreeTypeFontGenerator = uninitialized
 
   App.root = this
 
@@ -87,9 +88,9 @@ class Root extends ApplicationListener {
           return true
         }
 
-        val project: Project = getFrontendProject()
+        val project: Project = getFrontendProject
         if (project == null || project.undoManager == null) return false
-        val ep: EditPanel = getFrontendEditPanel()
+        val ep: EditPanel = getFrontendEditPanel
         // 需要项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
           topBar.performSave()
@@ -100,7 +101,7 @@ class Root extends ApplicationListener {
           return true
         }
 
-        if (isTextInputFocused()) return false
+        if (isTextInputFocused) return false
 
         // 复制（全局，无需项目）
         if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
@@ -111,33 +112,33 @@ class Root extends ApplicationListener {
         // 撤销 / 重做
         if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
           project.undoManager.undo()
-          if (ep != null) ep.getTlGroup().markTimelineDirty()
+          if (ep != null) ep.getTlGroup.markTimelineDirty()
           return true
         }
         if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
           project.undoManager.redo()
-          if (ep != null) ep.getTlGroup().markTimelineDirty()
+          if (ep != null) ep.getTlGroup.markTimelineDirty()
           return true
         }
 
-        return false
+        false
       }
 
-      override def keyUp(keycode: Int): Boolean = { return false }
+      override def keyUp(keycode: Int): Boolean = false
 
-      override def keyTyped(character: Char): Boolean = { return false }
+      override def keyTyped(character: Char): Boolean = false
 
-      override def touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = { return false }
+      override def touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = false
 
-      override def touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = { return false }
+      override def touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = false
 
-      override def touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean = { return false }
+      override def touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean = false
 
-      override def mouseMoved(screenX: Int, screenY: Int): Boolean = { return false }
+      override def mouseMoved(screenX: Int, screenY: Int): Boolean = false
 
-      override def scrolled(amountX: Float, amountY: Float): Boolean = { return false }
+      override def scrolled(amountX: Float, amountY: Float): Boolean = false
 
-      override def touchCancelled(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = { return false }
+      override def touchCancelled(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean = false
     })
 
     VisUI.load(injectChineseFont(VisUI.SkinScale.X2))
@@ -157,7 +158,7 @@ class Root extends ApplicationListener {
           }
           target = target.getParent
         }
-        return false
+        false
       }
     })
     multiplexer.addProcessor(stage)
@@ -185,16 +186,16 @@ class Root extends ApplicationListener {
     mainLayout.add(tabbedPane.getTable).fillX().top().row()
     tabbedPane.refreshVisibility()
     majorArea = new Container[Table] {
-      override def getMinHeight(): Float = {
+      override def getMinHeight: Float = {
         0
       }
-      override def getMinWidth(): Float = {
+      override def getMinWidth: Float = {
         0
       }
-      override def getPrefHeight(): Float = {
+      override def getPrefHeight: Float = {
         0
       }
-      override def getPrefWidth(): Float = {
+      override def getPrefWidth: Float = {
         0
       }
     }
@@ -234,23 +235,23 @@ class Root extends ApplicationListener {
     VisUI.dispose()
     generator.dispose()
   }
-  def getStage(): Stage = {
+  def getStage: Stage = {
     stage
   }
 
-  def isTextInputFocused(): Boolean = {
+  def isTextInputFocused: Boolean = {
     if (stage == null) return false
     val focus = stage.getKeyboardFocus
-    return focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
+    focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
   }
 
-  def getMainLayout(): VisTable = {
+  def getMainLayout: VisTable = {
     mainLayout
   }
-  def getMajorArea(): Container[Table] = {
+  def getMajorArea: Container[Table] = {
     majorArea
   }
-  def getTabbedPane(): TopTabbedPane = {
+  def getTabbedPane: TopTabbedPane = {
     tabbedPane
   }
   private def injectChineseFont(scale: VisUI.SkinScale): Skin = {
@@ -286,20 +287,14 @@ class Root extends ApplicationListener {
     skin
   }
 
-  def getFrontendProject(): Project = {
-    if (tabbedPane.getActiveTab.isInstanceOf[ProjectTab]) {
-      return tabbedPane.getActiveTab.asInstanceOf[ProjectTab].getProject()
-    } else {
-      return null
-    }
+  def getFrontendProject: Project = tabbedPane.getActiveTab match {
+    case tab: ProjectTab => tab.getProject
+    case _ => null
   }
 
-  def getFrontendEditPanel(): EditPanel = {
-    if (tabbedPane.getActiveTab.isInstanceOf[ProjectTab]) {
-      return tabbedPane.getActiveTab.asInstanceOf[ProjectTab].getEditPanel()
-    } else {
-      return null
-    }
+  def getFrontendEditPanel: EditPanel = tabbedPane.getActiveTab match {
+    case tab: ProjectTab => tab.getEditPanel
+    case _ => null
   }
 
   private def registerDefaultShortcuts(): Unit = {
@@ -313,15 +308,15 @@ class Root extends ApplicationListener {
     topBar.applyCustomShortcuts()
   }
 
-  def getDragAndDrop(): DragAndDrop = {
+  def getDragAndDrop: DragAndDrop = {
     dragAndDrop
   }
 
-  def getShapeDrawer(): ShapeDrawer = {
+  def getShapeDrawer: ShapeDrawer = {
     shapeDrawer
   }
 
-  def getToastManager(): ToastManager = {
+  def getToastManager: ToastManager = {
     toastManager
   }
 }

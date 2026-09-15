@@ -76,7 +76,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
 
     // 5. 撤销快照之后执行的全部命令，时间线应回到快照状态
     var undoCalls = 0
-    while (project.undoManager.canUndo()) {
+    while (project.undoManager.canUndo) {
       project.undoManager.undo()
       undoCalls += 1
     }
@@ -85,7 +85,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
 
     // 6. 重做全部命令，时间线应回到操作后的状态
     var redoCalls = 0
-    while (project.undoManager.canRedo()) {
+    while (project.undoManager.canRedo) {
       project.undoManager.redo()
       redoCalls += 1
     }
@@ -143,7 +143,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def randomGrouping(rnd: Random): Unit = {
-    for (track <- timeline.getTracks().asScala) {
+    for (track <- timeline.getTracks.asScala) {
       for (seg <- track.asScala) {
         if (rnd.nextFloat() < 0.35f) {
           var group: SegmentGroup = null
@@ -189,7 +189,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
 
   /** 与 UI 一致：拖拽锚点片段时，其所在组的成员会一起被操作。 */
   private def dragMembers(segment: Segment): List[Segment] = {
-    val group = segment.getGroup()
+    val group = segment.getGroup
     if (group != null) List.copyOf(group) else List.of(segment)
   }
 
@@ -198,7 +198,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     var minIdx = Integer.MAX_VALUE
     for (m <- members.asScala) {
-      minIdx = Math.min(minIdx, m.getTrack().index)
+      minIdx = Math.min(minIdx, m.getTrack.index)
     }
     var trackDelta = rnd.nextInt(3) - 1 // -1..1
     if (minIdx + trackDelta < 0) trackDelta = 0
@@ -231,13 +231,13 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   private def splitOp(rnd: Random, placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val s = placed.get(rnd.nextInt(placed.size()))
-    val r = s.getRange()
+    val r = s.getRange
     val lo: Long = r.lo
     val hi: Long = r.hi
     if (hi - lo < 2) return
     val time = lo + 1 + rnd.nextLong(hi - lo - 1)
     Using.resource(timeline.record()) { h =>
-      timeline.split(s.getTrack(), time)
+      timeline.split(s.getTrack, time)
     }
   }
 
@@ -282,7 +282,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
 
   private def placedSegments(): List[Segment] = {
     val out: List[Segment] = new ArrayList[Segment]()
-    for (track <- timeline.getTracks().asScala) {
+    for (track <- timeline.getTracks.asScala) {
       for (s <- track.asScala) {
         out.add(s)
       }

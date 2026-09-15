@@ -3,13 +3,14 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 import com.kotcrab.vis.ui.widget.{MenuItem, PopupMenu}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
+import scala.compiletime.uninitialized
 
 class SegMenu private[tlarea] (private val tlGroup: TlGroup) extends PopupMenu {
-  private var segActor: SegActor = null
+  private var segActor: SegActor = uninitialized
   private var time: Long = 0L
 
   addItem(new MenuItem("复制", new ChangeListenerX(() => {
-    if (tlGroup.selectedSegments.contains(segActor.getSegment())) {
+    if (tlGroup.selectedSegments.contains(segActor.getSegment)) {
       App.copyManager.copy()
     }
   })))

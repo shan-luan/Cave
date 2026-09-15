@@ -1,7 +1,9 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util.{AbstractSequentialList, ListIterator, NoSuchElementException}
+import java.util
+import java.util.{AbstractSequentialList, NoSuchElementException}
+import scala.compiletime.uninitialized
 
 /**
  * 有序的 filter 链表。链表本身是 {@code Source}（作为头）与各 {@link Filter} 组成的
@@ -15,10 +17,10 @@ import java.util.{AbstractSequentialList, ListIterator, NoSuchElementException}
  * FilterOut。链的末端就是最后一个元素自身的 FilterOut（不额外连接端口），
  * {@code Source.get()} 直接从它取数据。添加/移除/重排时自动维护连接。</p>
  *
- * @param <T> filter 处理的帧类型
+ * @tparam T filter 处理的帧类型
  */
 @SerialVersionUID(1L)
-class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequentialList[Filter[? >: T]] with Serializable {
+class FilterList[T](private final val head: Filter[? >: T]) extends util.AbstractSequentialList[Filter[? >: T]] with Serializable {
   private final val headEntry: FilterList.Entry = new FilterList.Entry(null)
   private final val tailEntry: FilterList.Entry = new FilterList.Entry(null)
   private var _size: Int = 0
@@ -26,7 +28,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
   if (head == null) {
     throw new IllegalArgumentException("head 不能为 null")
   }
-  if (head.getFilterOut() == null) {
+  if (head.getFilterOut == null) {
     throw new IllegalArgumentException("head 必须有 FilterOut")
   }
   headEntry.next = tailEntry
@@ -38,7 +40,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
     _size
   }
 
-  override def listIterator(index: Int): ListIterator[Filter[? >: T]] = {
+  override def listIterator(index: Int): util.ListIterator[Filter[? >: T]] = {
     if (index < 0 || index > _size) {
       throw new IndexOutOfBoundsException("index: " + index + ", size: " + _size)
     }
@@ -109,15 +111,15 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
   }
 
   private def portOut(entry: FilterList.Entry): Node.OutPort[?] = {
-    if (entry == headEntry) return head.getFilterOut()
+    if (entry == headEntry) return head.getFilterOut
     if (entry == tailEntry) return null
-    entry.filter.asInstanceOf[Filter[? >: T]].getFilterOut()
+    entry.filter.asInstanceOf[Filter[? >: T]].getFilterOut
   }
 
   private def portIn(entry: FilterList.Entry): Node.InPort[?] = {
     if (entry == tailEntry) return null // 链末端不连接端口，输出即最后一个 filter 的 FilterOut
     if (entry == headEntry) return null
-    entry.filter.asInstanceOf[Filter[? >: T]].getFilterIn()
+    entry.filter.asInstanceOf[Filter[? >: T]].getFilterIn
   }
 
   private def entryAt(index: Int): FilterList.Entry = {
@@ -171,8 +173,8 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
     entry.filter = filter.asInstanceOf[Filter[? >: Object]]
     connect(entry.prev, entry)
     connect(entry, entry.next)
-    old.getFilterIn().unlink()
-    old.getFilterOut().unlink()
+    old.getFilterIn.unlink()
+    old.getFilterOut.unlink()
     old
   }
 
@@ -180,8 +182,8 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
     var x = headEntry.next
     while (x != tailEntry) {
       val next = x.next
-      x.filter.getFilterIn().unlink()
-      x.filter.getFilterOut().unlink()
+      x.filter.getFilterIn.unlink()
+      x.filter.getFilterOut.unlink()
       x.filter = null
       x.prev = null
       x.next = null
@@ -193,32 +195,32 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
   }
 
   /** 双向迭代器。 */
-  private final class FilterListIterator(index: Int) extends ListIterator[Filter[? >: T]] {
-    private var lastReturned: FilterList.Entry = null
-    private var _next: FilterList.Entry = null
+  private final class FilterListIterator(index: Int) extends util.ListIterator[Filter[? >: T]] {
+    private var lastReturned: FilterList.Entry = uninitialized
+    private var _next: FilterList.Entry = uninitialized
     private var _nextIndex: Int = 0
 
     _next = if (index == _size) tailEntry else entryAt(index)
     _nextIndex = index
 
-    override def hasNext(): Boolean = {
+    override def hasNext: Boolean = {
       _nextIndex < _size
     }
 
     override def next(): Filter[? >: T] = {
-      if (!hasNext()) throw new NoSuchElementException()
+      if (!hasNext) throw new NoSuchElementException()
       lastReturned = _next
       _next = _next.next
       _nextIndex += 1
       lastReturned.filter.asInstanceOf[Filter[? >: T]]
     }
 
-    override def hasPrevious(): Boolean = {
+    override def hasPrevious: Boolean = {
       _nextIndex > 0
     }
 
     override def previous(): Filter[? >: T] = {
-      if (!hasPrevious()) throw new NoSuchElementException()
+      if (!hasPrevious) throw new NoSuchElementException()
       _next = if (_next == null) tailEntry else _next.prev
       lastReturned = _next
       _nextIndex -= 1
@@ -261,9 +263,9 @@ class FilterList[T](private final val head: Filter[? >: T]) extends AbstractSequ
 object FilterList {
   @SerialVersionUID(1L)
   private[pipeline] final class Entry extends Serializable {
-    private[pipeline] var filter: Filter[? >: Object] = null
-    private[pipeline] var prev: Entry = null
-    private[pipeline] var next: Entry = null
+    private[pipeline] var filter: Filter[? >: Object] = uninitialized
+    private[pipeline] var prev: Entry = uninitialized
+    private[pipeline] var next: Entry = uninitialized
 
     def this(filter: Filter[? >: Object]) = {
       this()

@@ -8,46 +8,50 @@ import com.lomekwi.cave.project.ProjectFrontedEvent
 import com.lomekwi.cave.project.ProjectLoadedEvent
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.widget.AutoHideTabbedPane
+import scala.compiletime.uninitialized
 
 class TopTabbedPane extends AutoHideTabbedPane {
-  private var currentProjectTab: ProjectTab = null
+  private var currentProjectTab: ProjectTab = uninitialized
 
   {
     App.appEventBus.register(this)
     addListener(new TabbedPaneListener {
       override def switchedTab(tab: Tab): Unit = {
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
-          currentProjectTab.getProject().playhead.setPlaying(false)
+          currentProjectTab.getProject.playhead.setPlaying(false)
         }
 
-        App.root.getMajorArea().setActor(tab.getContentTable)
+        App.root.getMajorArea.setActor(tab.getContentTable)
 
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
-          currentProjectTab.getProject().projEventBus.post(ProjectBackgroundedEvent)
+          currentProjectTab.getProject.projEventBus.post(ProjectBackgroundedEvent)
         }
 
-        if (tab.isInstanceOf[ProjectTab]) {
-          currentProjectTab = tab.asInstanceOf[ProjectTab]
-          tab.asInstanceOf[ProjectTab].getProject().projEventBus.post(ProjectFrontedEvent)
-        } else {
-          currentProjectTab = null
+        tab match {
+          case pt: ProjectTab =>
+            currentProjectTab = pt
+            pt.getProject.projEventBus.post(ProjectFrontedEvent)
+          case _ =>
+            currentProjectTab = null
         }
 
         App.appEventBus.post(TabSwitchedEvent)
       }
 
       override def removedTab(tab: Tab): Unit = {
-        if (tab.isInstanceOf[ProjectTab]) {
-          tab.asInstanceOf[ProjectTab].getProject().playhead.setPlaying(false)
-          tab.asInstanceOf[ProjectTab].getProject().projEventBus.post(ProjectBackgroundedEvent)
-          if (currentProjectTab eq tab) {
-            currentProjectTab = null
-          }
+        tab match {
+          case pt: ProjectTab =>
+            pt.getProject.playhead.setPlaying(false)
+            pt.getProject.projEventBus.post(ProjectBackgroundedEvent)
+            if (currentProjectTab eq tab) {
+              currentProjectTab = null
+            }
+          case _ =>
         }
       }
 
       override def removedAllTabs(): Unit = {
-        App.root.getMajorArea().setActor(null)
+        App.root.getMajorArea.setActor(null)
         App.appEventBus.post(TabSwitchedEvent)
       }
     })

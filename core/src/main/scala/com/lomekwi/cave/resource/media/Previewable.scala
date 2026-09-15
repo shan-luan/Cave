@@ -4,5 +4,5 @@ import com.badlogic.gdx.graphics.Texture
 
 trait Previewable {
   def getPreview(time: Long): Texture
-  def getPreviewInterval(): Long
+  def getPreviewInterval: Long
 }

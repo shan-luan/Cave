@@ -1,17 +1,17 @@
 package com.lomekwi.cave.util
 
 object Units {
-  final val KILO = 1_000L
+  private final val KILO = 1_000L
   final val MEGA = KILO * KILO
-  final val GIGA = KILO * MEGA
-  final val TERA = KILO * GIGA
+  private final val GIGA = KILO * MEGA
+  private final val TERA = KILO * GIGA
   final val PETA = KILO * TERA
 
-  final val MICROSECOND = 1//timebase
-  final val MILLISECOND = KILO * MICROSECOND
+  private final val MICROSECOND = 1//timebase
+  private final val MILLISECOND = KILO * MICROSECOND
   final val SECOND = KILO * MILLISECOND
-  final val MINUTE = 60 * SECOND
-  final val HOUR = 60 * MINUTE
+  private final val MINUTE = 60 * SECOND
+  private final val HOUR = 60 * MINUTE
   final val DAY = 24 * HOUR
 
   /**

@@ -74,7 +74,7 @@ class TlGroupDragSimTest extends GdxTestBase {
   /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
   private def place(track: Track, s: Segment, start: Long, end: Long): SegActor = {
     timeline.tryAdd(track, s, Interval(start, end))
-    val actor = s.getActor()
+    val actor = s.getActor
     actor.tl = tl
     actor.setPosition(absX(start), trackTopY(track.index))
     actor.setSize(absX(end) - absX(start), view.trackHeight)
@@ -83,9 +83,9 @@ class TlGroupDragSimTest extends GdxTestBase {
 
   /** 模拟 act() 重建：actor 纯粹按模型摆位，不得改动模型。 */
   private def rebuildFromModel(actor: SegActor): Unit = {
-    val s = actor.getSegment()
-    val r = s.getRange()
-    actor.setPosition(absX(r.lo), trackTopY(s.getTrack().index))
+    val s = actor.getSegment
+    val r = s.getRange
+    actor.setPosition(absX(r.lo), trackTopY(s.getTrack.index))
     actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
   }
 
@@ -110,22 +110,22 @@ class TlGroupDragSimTest extends GdxTestBase {
 
     // 事件驱动一次：应恰好移动 100_000µs
     actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
-    assertEquals(Interval(100_000L, 1000_000L + 100_000L), s.getRange())
+    assertEquals(Interval(100_000L, 1000_000L + 100_000L), s.getRange)
 
     // 鼠标不动，多帧重建（纯投影）：模型与 origin 必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(100_000L, 1000_000L + 100_000L), s.getRange())
-      assertEquals(5_000_000L + 100_000L, s.getOrigin())
+      assertEquals(Interval(100_000L, 1000_000L + 100_000L), s.getRange)
+      assertEquals(5_000_000L + 100_000L, s.getOrigin)
       i += 1
     }
 
     actor.finishDrag()
 
     project.undoManager.undo()
-    assertEquals(Interval(0L, 1000_000L), s.getRange())
-    assertEquals(5_000_000L, s.getOrigin())
+    assertEquals(Interval(0L, 1000_000L), s.getRange)
+    assertEquals(5_000_000L, s.getOrigin)
   }
 
   // ---------------------------------------------------------------------
@@ -151,13 +151,13 @@ class TlGroupDragSimTest extends GdxTestBase {
     actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
 
     // 应恰好落到轨道 2，而不是越跳越远
-    assertEquals(2, s.getTrack().index)
+    assertEquals(2, s.getTrack.index)
 
     // 鼠标不动，多帧重建（纯投影）：轨道必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(2, s.getTrack().index)
+      assertEquals(2, s.getTrack.index)
       i += 1
     }
   }
@@ -178,15 +178,15 @@ class TlGroupDragSimTest extends GdxTestBase {
 
     val newFrontLocalX = 50f // 起点右移 50px=50ms
     actor.dragTo(newFrontLocalX, view.trackHeight / 2)
-    assertEquals(Interval(50_000L, 1000_000L), s.getRange())
-    assertEquals(0, s.getOrigin())
+    assertEquals(Interval(50_000L, 1000_000L), s.getRange)
+    assertEquals(0, s.getOrigin)
 
     // 鼠标不动（停在裁切后的新起点 absX(50000)），多帧重建：起点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(50_000L, 1000_000L), s.getRange())
-      assertEquals(0, s.getOrigin())
+      assertEquals(Interval(50_000L, 1000_000L), s.getRange)
+      assertEquals(0, s.getOrigin)
       i += 1
     }
   }
@@ -203,15 +203,15 @@ class TlGroupDragSimTest extends GdxTestBase {
 
     val newWidth = actor.getWidth + 60f // 终点右移 60px=60ms
     actor.dragTo(newWidth, view.trackHeight / 2)
-    assertEquals(Interval(0L, 1000_000L + 60_000L), s.getRange())
-    assertEquals(5_000_000L, s.getOrigin())
+    assertEquals(Interval(0L, 1000_000L + 60_000L), s.getRange)
+    assertEquals(5_000_000L, s.getOrigin)
 
     // 鼠标不动，多帧重建：终点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(0L, 1000_000L + 60_000L), s.getRange())
-      assertEquals(5_000_000L, s.getOrigin())
+      assertEquals(Interval(0L, 1000_000L + 60_000L), s.getRange)
+      assertEquals(5_000_000L, s.getOrigin)
       i += 1
     }
   }

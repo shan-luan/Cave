@@ -14,39 +14,40 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
 import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor
 
 import java.util.concurrent.CountDownLatch
+import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
-  @transient private var texture: Texture = null
-  @transient private var actor: TransFrameActor = null
+  @transient private var texture: Texture = uninitialized
+  @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[NumFrame]("宽度", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(vdoRes.getWidth().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(vdoRes.getWidth.toDouble)
       `val`
     }
   })
   addOutPort(new Node.OutPort[NumFrame]("高度", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(vdoRes.getHeight().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(vdoRes.getHeight.toDouble)
       `val`
     }
   })
   addOutPort(new Node.OutPort[NumFrame]("时长", classOf[NumFrame]) {
     private final val `val`: NumFrame = new NumFrame(null)
 
-    override def getData(): NumFrame = {
-      `val`.setVal(getDuration().toDouble)
+    override def getData: NumFrame = {
+      `val`.setVal(getDuration.toDouble)
       `val`
     }
   })
 
-  def getVdoRes(): VdoRes = {
+  def getVdoRes: VdoRes = {
     vdoRes
   }
 
@@ -62,7 +63,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
     if (!initialized) {
       Gdx.app.postRunnable(() => {
         if (texture == null) {
-          texture = new Texture(vdoRes.getWidth(), vdoRes.getHeight(), Pixmap.Format.RGBA8888)
+          texture = new Texture(vdoRes.getWidth, vdoRes.getHeight, Pixmap.Format.RGBA8888)
         }
         frame = new ImgFrame(track, this)
         frame.setTexture(texture)
@@ -91,19 +92,19 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
         e.printStackTrace()
         frame.setPixels(null)
     }
-    frame.getTransform().reset(0, 0)
+    frame.getTransform.reset(0, 0)
     frame
   }
-  override def getLengthPerExportFrame(): Long = {
-    vdoRes.getFrameLength()
+  override def getLengthPerExportFrame: Long = {
+    vdoRes.getFrameLength
   }
-  override def getDuration(): Long = {
-    vdoRes.getDuration()
+  override def getDuration: Long = {
+    vdoRes.getDuration
   }
-  override def getFrameType(): Class[ImgFrame] = {
+  override def getFrameType: Class[ImgFrame] = {
     classOf[ImgFrame]
   }
-  override def getDisplayName(): String = {
+  override def getDisplayName: String = {
     "视频源"
   }
   override def onDuplicate(original: Source[?]): Unit = {

@@ -14,6 +14,7 @@ import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
+import java.util
 
 /**
  * NumFrame 输入端口编辑 widget：Spinner 行。直接持有端口模型，修改写默认值记 undo，
@@ -21,18 +22,18 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
  */
 final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
-  private final val defaultData: NumFrame = port.getDefaultData().asInstanceOf[NumFrame]
+  private final val defaultData: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(
-    (if (defaultData != null) defaultData.getVal() else 0.0).toFloat, -99999f, 99999f, 1f, 2)
+    (if (defaultData != null) defaultData.getVal else 0.0).toFloat, -99999f, 99999f, 1f, 2)
   private final val spinner: Spinner = new Spinner("", model)
   spinner.addListener(new ChangeListener {
     override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
       val newVal: Double = model.getValue.toDouble
-      val oldVal: Double = if (defaultData != null) defaultData.getVal() else 0.0
+      val oldVal: Double = if (defaultData != null) defaultData.getVal else 0.0
       if (oldVal == newVal) return
-      val p: Project = App.root.getFrontendProject()
+      val p: Project = App.root.getFrontendProject
       if (p != null) {
-        p.undoManager.record(new UndoManager.NumPortValueCommand(port, source, oldVal, newVal))
+        p.undoManager.record(UndoManager.NumPortValueCommand(port, source, oldVal, newVal))
         p.projEventBus.post(RefreshRequestEvent)
       }
       if (defaultData != null) defaultData.setVal(newVal)
@@ -40,22 +41,22 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
   })
   align(Align.topLeft)
   defaults().left()
-  add(new VisLabel(port.getName())).pad(2f)
+  add(new VisLabel(port.getName)).pad(2f)
   add(spinner).width(90f).pad(2f)
 
-  override def getPort(): Node.InPort[?] = port
+  override def getPort: Node.InPort[?] = port
 
   override def act(delta: Float): Unit = {
     super.act(delta)
     // 用户正在输入时不覆盖，避免打断编辑
-    if (spinner.getTextField.hasKeyboardFocus()) return
-    val data: NumFrame = port.getDefaultData().asInstanceOf[NumFrame]
-    val modelVal: Double = if (data != null) data.getVal() else 0.0
+    if (spinner.getTextField.hasKeyboardFocus) return
+    val data: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
+    val modelVal: Double = if (data != null) data.getVal else 0.0
     val current: Float = model.getValue
     if (Math.abs(current - modelVal) > 0.005f) {
       model.setValue(modelVal.toFloat, false)
       spinner.getTextField.setText(
-        String.format(java.util.Locale.US, "%.2f", modelVal))
+        String.format(util.Locale.US, "%.2f", modelVal))
     }
   }
 }

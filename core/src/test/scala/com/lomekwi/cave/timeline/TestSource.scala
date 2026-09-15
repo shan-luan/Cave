@@ -18,19 +18,19 @@ class TestSource(duration0: Long) extends Source[TestSource.TestFrame] {
     new TestSource.TestFrame(track)
   }
 
-  override def getLengthPerExportFrame(): Long = {
+  override def getLengthPerExportFrame: Long = {
     1
   }
 
-  override def getDuration(): Long = {
+  override def getDuration: Long = {
     duration
   }
 
-  override def getDisplayName(): String = {
+  override def getDisplayName: String = {
     "test"
   }
 
-  override def getFrameType(): Class[TestSource.TestFrame] = {
+  override def getFrameType: Class[TestSource.TestFrame] = {
     classOf[TestSource.TestFrame]
   }
 

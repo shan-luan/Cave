@@ -11,7 +11,7 @@ class NumFrame(track: Track, source: Source[?]) extends Frame(track, source) {
     this(track, null)
   }
 
-  def getVal(): Double = {
+  def getVal: Double = {
     `val`
   }
 

@@ -25,15 +25,16 @@ import com.lomekwi.cave.app.App
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 class ExportDialog(private val project: Project) extends VisDialog(i18n("导出视频")) {
-  private var fileChooserField: FileChooserField = null
-  private var widthModel: IntSpinnerModel = null
-  private var heightModel: IntSpinnerModel = null
-  private var fpsModel: SimpleFloatSpinnerModel = null
-  private var bitrateModel: SimpleFloatSpinnerModel = null
-  private var presetSet: ExportOptionsSet = null
+  private var fileChooserField: FileChooserField = uninitialized
+  private var widthModel: IntSpinnerModel = uninitialized
+  private var heightModel: IntSpinnerModel = uninitialized
+  private var fpsModel: SimpleFloatSpinnerModel = uninitialized
+  private var bitrateModel: SimpleFloatSpinnerModel = uninitialized
+  private var presetSet: ExportOptionsSet = uninitialized
 
   {
     presetSet = ExportOptionsSet.load()
@@ -136,7 +137,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
         presetSet.save()
         presetLabel.setText(presetLabelText())
         applyOptions(opts)
-        App.root.getToastManager().show(
+        App.root.getToastManager.show(
           i18n("已保存预设 #") + (presetSet.currentIndex + 1), 1.5f)
       }
     })
@@ -145,7 +146,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     delBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         if (presetSet.presets.size() <= 1) {
-          App.root.getToastManager().show(i18n("至少保留一个预设"), 1.5f)
+          App.root.getToastManager.show(i18n("至少保留一个预设"), 1.5f)
           return
         }
         presetSet.presets.remove(presetSet.currentIndex)
@@ -155,7 +156,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
         presetSet.save()
         presetLabel.setText(presetLabelText())
         applyOptions(presetSet.current())
-        App.root.getToastManager().show(i18n("已删除预设"), 1.5f)
+        App.root.getToastManager.show(i18n("已删除预设"), 1.5f)
       }
     })
 
@@ -171,11 +172,11 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   private def detectDimensions(): Array[Int] = {
     for (res <- project.resources.values().asScala) {
       res match {
-        case v: VdoRes => return Array(v.getWidth(), v.getHeight())
+        case v: VdoRes => return Array(v.getWidth, v.getHeight)
         case _ =>
       }
     }
-    return Array(1920, 1080)
+    Array(1920, 1080)
   }
 
   private def presetLabelText(): String = {
@@ -184,7 +185,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
 
   private def collectOptions(): ExportOptions = {
     new ExportOptions(
-      fileChooserField.getPath(),
+      fileChooserField.getPath,
       widthModel.getValue,
       heightModel.getValue,
       fpsModel.getValue,
@@ -194,20 +195,20 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
 
   private def applyOptions(opts: ExportOptions): Unit = {
     if (opts.width == 0) {
-      App.root.getToastManager().show(i18n("此预设为空，请先保存"), 2f)
+      App.root.getToastManager.show(i18n("此预设为空，请先保存"), 2f)
       return
     }
     fileChooserField.setPath(opts.outputPath)
     widthModel.setValue(opts.width)
     heightModel.setValue(opts.height)
     fpsModel.setValue(opts.fps.toFloat)
-    bitrateModel.setValue(opts.getBitrateMbps().toFloat)
+    bitrateModel.setValue(opts.getBitrateMbps.toFloat)
   }
 
   private def startExport(): Unit = {
-    val path: String = fileChooserField.getPath()
+    val path: String = fileChooserField.getPath
     if (path.isEmpty) {
-      App.root.getToastManager().show(i18n("请选择输出文件"), 2f)
+      App.root.getToastManager.show(i18n("请选择输出文件"), 2f)
       return
     }
 
@@ -222,7 +223,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
       width, height, fps, bitrate
     )
     App.taskPool.submit(task)
-    App.root.getToastManager().show(i18n("开始导出：") + new java.io.File(path).getName, 2f)
+    App.root.getToastManager.show(i18n("开始导出：") + new java.io.File(path).getName, 2f)
     fadeOut()
   }
 

@@ -11,9 +11,10 @@ import org.bytedeco.ffmpeg.global.avutil
 import org.bytedeco.javacv.Frame
 
 import java.nio.ByteBuffer
+import scala.compiletime.uninitialized
 
 class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
-  private var bufferedPixels: ByteBuffer = null
+  private var bufferedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 
   protected def setPixelFormat(pixelFormat: Int): Unit = {
@@ -27,42 +28,42 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
     grabber.grabImage()
   }
 
-  def getWidth(): Int = {
+  def getWidth: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getImageWidth
   }
 
-  def getHeight(): Int = {
+  def getHeight: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getImageHeight
   }
 
-  def getLengthInVideoFrames(): Int = {
+  def getLengthInVideoFrames: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getLengthInVideoFrames
   }
 
-  override def getCodecName(): String = {
+  override def getCodecName: String = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getVideoCodecName
   }
 
-  override def getCodec(): Int = {
+  override def getCodec: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getVideoCodec
   }
 
-  override def getLengthPerFrame(): Long = {
+  override def getLengthPerFrame: Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
@@ -78,7 +79,7 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
     bufferedPixels = pixels
   }
 
-  def getBufferedPixels(): ByteBuffer = {
+  def getBufferedPixels: ByteBuffer = {
     bufferedPixels
   }
 
@@ -92,9 +93,9 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
     }
 
     val validTime = toValidTime(time)
-    val diff = validTime - getLastFrameTime()
+    val diff = validTime - getLastFrameTime
 
-    if (diff < 0 || diff > 2 * getLengthPerFrame()) {
+    if (diff < 0 || diff > 2 * getLengthPerFrame) {
       seek(validTime)
       bufferedPixels = null
     }
@@ -117,7 +118,7 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
     if (!isTimeLegal(time)) {
       return
     }
-    val nextFrameTime = getTimestamp() + getLengthPerFrame()
+    val nextFrameTime = getTimestamp + getLengthPerFrame
 
     if (!((time < nextFrameTime) && bufferedPixels != null)) {
       var output: Frame = null

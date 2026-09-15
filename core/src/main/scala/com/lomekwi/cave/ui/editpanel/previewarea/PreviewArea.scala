@@ -24,10 +24,10 @@ import com.lomekwi.cave.ui.Focusable
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import com.lomekwi.cave.util.Units
 
-import java.util.ArrayList
-import java.util.List
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import java.util
 
 /**
  * 负责渲染和显示预览内容
@@ -36,12 +36,12 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private final val project: Project = project0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
-  private final val canvas: Group = panZoom.getCanvas()
+  private final val canvas: Group = panZoom.getCanvas
   //此列表仅应在主线程读取.
-  private final val frames: List[Frame] = new ArrayList[Frame]()
+  private final val frames: util.List[Frame] = new util.ArrayList[Frame]()
   private var refViewportArea: Float = -1f
   private var lastWidth: Float = 0
-  private var exportOpts: ExportOptionsSet = null
+  private var exportOpts: ExportOptionsSet = uninitialized
   private var lastHeight: Float = 0
 
   project.projEventBus.register(this)
@@ -63,9 +63,9 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
       override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
         if (event.getTarget.isInstanceOf[TransFrameActor]) return
-        val editPanel = App.root.getFrontendEditPanel()
+        val editPanel = App.root.getFrontendEditPanel
         if (editPanel != null) {
-          val tlGroup = editPanel.getTlGroup()
+          val tlGroup = editPanel.getTlGroup
           tlGroup.clearSelection()
         }
       }
@@ -81,25 +81,25 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   @Subscribe
   def sink(frame: ImgFrame): Unit = {
     val track: Track = frame.track
-    track.getWorker().getSinkPhaser().register()
+    track.getWorker.getSinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
       frame.upload()
-      val i: TransFrameActor = frame.getActor()
+      val i: TransFrameActor = frame.getActor
       canvas.addActor(i)
-      track.getWorker().getSinkPhaser().arriveAndDeregister()
+      track.getWorker.getSinkPhaser.arriveAndDeregister()
     })
   }
 
   @Subscribe
   def sink(frame: TextFrame): Unit = {
     val track: Track = frame.track
-    track.getWorker().getSinkPhaser().register()
+    track.getWorker.getSinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
-      val i: TransFrameActor = frame.getActor()
+      val i: TransFrameActor = frame.getActor
       canvas.addActor(i)
-      track.getWorker().getSinkPhaser().arriveAndDeregister()
+      track.getWorker.getSinkPhaser.arriveAndDeregister()
     })
   }
 
@@ -116,7 +116,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   //TODO:减少对象分配开销
-  def clearFrames(idx: Int): Unit = {
+  private def clearFrames(idx: Int): Unit = {
     Gdx.app.postRunnable(() => {
       val inBounds = idx >= 0 && idx < frames.size()
       val frame = if (inBounds) frames.get(idx) else null
@@ -139,8 +139,8 @@ class PreviewArea(project0: Project) extends Group with Focusable {
       if (frame != null) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null) {
-          val segment: Segment = if (frame.getSource() != null) frame.getSource().getSegment() else null
-          val selected = segment != null && segment.isSelected()
+          val segment: Segment = if (frame.getSource != null) frame.getSource.getSegment else null
+          val selected = segment != null && segment.isSelected
           actor.setSelected(selected)
         }
       }
@@ -152,7 +152,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     canvas.setZIndex(0)
     var i = 0
     for (frame <- frames.asScala) {
-      if (!(frame == null || frame.isClosed())) {
+      if (!(frame == null || frame.isClosed)) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null && (actor.getParent eq canvas)) {
           actor.setZIndex(i)
@@ -163,7 +163,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    App.root.getShapeDrawer().filledRectangle(getX, getY, getWidth, getHeight, Color.BLACK)
+    App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.BLACK)
     drawAxes()
     drawPresetOutlines()
     super.draw(batch, parentAlpha)
@@ -171,11 +171,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   private def drawSnapGuides(): Unit = {
-    val drawer = App.root.getShapeDrawer()
+    val drawer = App.root.getShapeDrawer
     canvas.getChildren.asScala.foreach {
       case tfa: TransFrameActor =>
-        val lx = tfa.getSnapLineX()
-        val ly = tfa.getSnapLineY()
+        val lx = tfa.getSnapLineX
+        val ly = tfa.getSnapLineY
         if (!(java.lang.Float.isNaN(lx) && java.lang.Float.isNaN(ly))) {
           if (!java.lang.Float.isNaN(lx)) {
             PreviewArea.guidePos.set(lx, 0f)
@@ -199,7 +199,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def drawPresetOutlines(): Unit = {
     if (exportOpts == null) exportOpts = ExportOptionsSet.load()
-    val drawer = App.root.getShapeDrawer()
+    val drawer = App.root.getShapeDrawer
     val ox = getX + canvas.getX
     val oy = getY + canvas.getY
     val s = canvas.getScaleX
@@ -211,7 +211,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   private def drawAxes(): Unit = {
-    val drawer = App.root.getShapeDrawer()
+    val drawer = App.root.getShapeDrawer
     val ox = getX + canvas.getX
     val oy = getY + canvas.getY
     val x0 = getX
@@ -278,8 +278,8 @@ object PreviewArea {
 
   private def getFrameActor(frame: Frame): TransFrameActor = {
     frame match {
-      case imgFrame: ImgFrame => imgFrame.getActor()
-      case textFrame: TextFrame => textFrame.getActor()
+      case imgFrame: ImgFrame => imgFrame.getActor
+      case textFrame: TextFrame => textFrame.getActor
       case _ => null
     }
   }

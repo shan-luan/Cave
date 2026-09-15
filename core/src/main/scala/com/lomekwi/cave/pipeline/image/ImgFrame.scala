@@ -11,31 +11,32 @@ import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
 import java.nio.ByteBuffer
+import scala.compiletime.uninitialized
 
 class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) with Transformable with Renderable {
-  private var transform: Transform = null
-  private var pixels: ByteBuffer = null
+  private var transform: Transform = uninitialized
+  private var pixels: ByteBuffer = uninitialized
   @volatile private var pixelsDirty: Boolean = false
-  private var texture: Texture = null
-  private var actor: TransFrameActor = null
+  private var texture: Texture = uninitialized
+  private var actor: TransFrameActor = uninitialized
   private var unpackRowLength: Int = 0
 
   def this(track: Track) = {
     this(track, null)
   }
-  override def getTransform(): Transform = {
+  override def getTransform: Transform = {
     transform
   }
   override def setTransform(transform: Transform): Unit = {
     this.transform = transform
   }
-  override def getBaseWidth(): Float = {
+  override def getBaseWidth: Float = {
     texture.getWidth.toFloat
   }
-  override def getBaseHeight(): Float = {
+  override def getBaseHeight: Float = {
     texture.getHeight.toFloat
   }
-  def getPixels(): ByteBuffer = {
+  def getPixels: ByteBuffer = {
     pixels
   }
 
@@ -43,7 +44,7 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
     this.pixels = pixels
     pixelsDirty = true
   }
-  def getTexture(): Texture = {
+  def getTexture: Texture = {
     texture
   }
   def setTexture(texture: Texture): ImgFrame = {
@@ -56,7 +57,7 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
     this
   }
 
-  def getUnpackRowLength(): Int = {
+  def getUnpackRowLength: Int = {
     unpackRowLength
   }
 
@@ -93,19 +94,19 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
     }
   }
 
-  def getActor(): TransFrameActor = {
+  def getActor: TransFrameActor = {
     actor
   }
 
   override def render(batch: Batch): Unit = {
     upload()
-    val t = getTransform()
-    val baseW = getBaseWidth()
-    val baseH = getBaseHeight()
-    val scaleX = if (t.isFlipX()) -1f else 1f
-    val scaleY = if (t.isFlipY()) -1f else 1f
-    val w = baseW * t.getScaleX()
-    val h = baseH * t.getScaleY()
-    batch.draw(getTexture(), t.getX(), t.getY(), w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation(), 0, 0, baseW.toInt, baseH.toInt, false, false)
+    val t = getTransform
+    val baseW = getBaseWidth
+    val baseH = getBaseHeight
+    val scaleX = if (t.isFlipX) -1f else 1f
+    val scaleY = if (t.isFlipY) -1f else 1f
+    val w = baseW * t.getScaleX
+    val h = baseH * t.getScaleY
+    batch.draw(getTexture, t.getX, t.getY, w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation, 0, 0, baseW.toInt, baseH.toInt, false, false)
   }
 }

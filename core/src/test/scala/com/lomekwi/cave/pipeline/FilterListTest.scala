@@ -37,18 +37,18 @@ class FilterListTest {
     val src = new NumSrc(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
-    src.getFilters().add(f1)
-    src.getFilters().add(f2)
+    src.getFilters.add(f1)
+    src.getFilters.add(f2)
 
     // source.out → f1.in
-    assertSame(src.headOut, f1.getFilterIn().getPrev())
+    assertSame(src.headOut, f1.getFilterIn.getPrev)
     // f1.out → f2.in
-    assertSame(f1.getFilterOut(), f2.getFilterIn().getPrev())
+    assertSame(f1.getFilterOut, f2.getFilterIn.getPrev)
     // 链末端：最后一个 filter 的 out 不连接
-    assertFalse(f2.getFilterOut().isLinked())
+    assertFalse(f2.getFilterOut.isLinked)
 
-    f1.delta.getDefaultData().setVal(1)
-    f2.delta.getDefaultData().setVal(2)
+    f1.delta.getDefaultData.setVal(1)
+    f2.delta.getDefaultData.setVal(2)
     assertEquals(13.0, src.get(0, null).`val`, 0)
   }
 
@@ -58,18 +58,18 @@ class FilterListTest {
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    src.getFilters().add(a)
-    src.getFilters().add(c)
-    src.getFilters().add(1, b)
+    src.getFilters.add(a)
+    src.getFilters.add(c)
+    src.getFilters.add(1, b)
 
-    assertSame(src.headOut, a.getFilterIn().getPrev())
-    assertSame(a.getFilterOut(), b.getFilterIn().getPrev())
-    assertSame(b.getFilterOut(), c.getFilterIn().getPrev())
-    assertFalse(c.getFilterOut().isLinked())
+    assertSame(src.headOut, a.getFilterIn.getPrev)
+    assertSame(a.getFilterOut, b.getFilterIn.getPrev)
+    assertSame(b.getFilterOut, c.getFilterIn.getPrev)
+    assertFalse(c.getFilterOut.isLinked)
 
-    a.delta.getDefaultData().setVal(1)
-    b.delta.getDefaultData().setVal(2)
-    c.delta.getDefaultData().setVal(3)
+    a.delta.getDefaultData.setVal(1)
+    b.delta.getDefaultData.setVal(2)
+    c.delta.getDefaultData.setVal(3)
     assertEquals(16.0, src.get(0, null).`val`, 0)
   }
 
@@ -78,14 +78,14 @@ class FilterListTest {
     val src = new NumSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters().add(a)
+    src.getFilters.add(a)
     // add(size) 是合法的追加语义，曾因 entryAt 越界而抛 IndexOutOfBounds
-    src.getFilters().add(1, b)
+    src.getFilters.add(1, b)
 
-    assertEquals(2, src.getFilters().size())
-    assertEquals(a, src.getFilters().get(0))
-    assertEquals(b, src.getFilters().get(1))
-    assertSame(a.getFilterOut(), b.getFilterIn().getPrev())
+    assertEquals(2, src.getFilters.size())
+    assertEquals(a, src.getFilters.get(0))
+    assertEquals(b, src.getFilters.get(1))
+    assertSame(a.getFilterOut, b.getFilterIn.getPrev)
   }
 
   @Test
@@ -94,26 +94,26 @@ class FilterListTest {
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    src.getFilters().add(a)
-    src.getFilters().add(b)
-    src.getFilters().add(c)
-    src.getFilters().remove(b)
+    src.getFilters.add(a)
+    src.getFilters.add(b)
+    src.getFilters.add(c)
+    src.getFilters.remove(b)
 
-    assertEquals(2, src.getFilters().size())
-    assertSame(src.headOut, a.getFilterIn().getPrev())
-    assertSame(a.getFilterOut(), c.getFilterIn().getPrev())
-    assertFalse(c.getFilterOut().isLinked())
+    assertEquals(2, src.getFilters.size())
+    assertSame(src.headOut, a.getFilterIn.getPrev)
+    assertSame(a.getFilterOut, c.getFilterIn.getPrev)
+    assertFalse(c.getFilterOut.isLinked)
     // b 被移除且解除连接
-    assertNull(b.getFilterIn().getPrev())
-    assertFalse(b.getFilterOut().isLinked())
+    assertNull(b.getFilterIn.getPrev)
+    assertFalse(b.getFilterOut.isLinked)
 
-    a.delta.getDefaultData().setVal(1)
-    c.delta.getDefaultData().setVal(2)
+    a.delta.getDefaultData.setVal(1)
+    c.delta.getDefaultData.setVal(2)
     assertEquals(13.0, src.get(0, null).`val`, 0)
 
     // 链表顺序正确（regression：unlink 曾漏更新 pred.next/next.prev，导致残骸节点残留）
-    assertEquals(a, src.getFilters().get(0))
-    assertEquals(c, src.getFilters().get(1))
+    assertEquals(a, src.getFilters.get(0))
+    assertEquals(c, src.getFilters.get(1))
   }
 
   @Test
@@ -121,20 +121,20 @@ class FilterListTest {
     val src = new NumSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters().add(a)
-    src.getFilters().add(b)
+    src.getFilters.add(a)
+    src.getFilters.add(b)
 
     val c = new AddFilter()
-    src.getFilters().set(0, c)
+    src.getFilters.set(0, c)
 
-    assertSame(src.headOut, c.getFilterIn().getPrev())
-    assertSame(c.getFilterOut(), b.getFilterIn().getPrev())
-    assertFalse(b.getFilterOut().isLinked())
-    assertNull(a.getFilterIn().getPrev())
-    assertFalse(a.getFilterOut().isLinked())
+    assertSame(src.headOut, c.getFilterIn.getPrev)
+    assertSame(c.getFilterOut, b.getFilterIn.getPrev)
+    assertFalse(b.getFilterOut.isLinked)
+    assertNull(a.getFilterIn.getPrev)
+    assertFalse(a.getFilterOut.isLinked)
 
-    c.delta.getDefaultData().setVal(5)
-    b.delta.getDefaultData().setVal(1)
+    c.delta.getDefaultData.setVal(5)
+    b.delta.getDefaultData.setVal(1)
     assertEquals(16.0, src.get(0, null).`val`, 0)
   }
 
@@ -143,12 +143,12 @@ class FilterListTest {
     val src = new NumSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters().add(a)
-    src.getFilters().add(b)
-    src.getFilters().clear()
+    src.getFilters.add(a)
+    src.getFilters.add(b)
+    src.getFilters.clear()
 
-    assertEquals(0, src.getFilters().size())
-    assertFalse(src.headOut.isLinked())
+    assertEquals(0, src.getFilters.size())
+    assertFalse(src.headOut.isLinked)
     assertEquals(10.0, src.get(0, null).`val`, 0)
   }
 
@@ -157,7 +157,7 @@ class FilterListTest {
     val src = new NumSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    val filters: List[Filter[Numable]] = src.getFilters().asInstanceOf[List[Filter[Numable]]]
+    val filters: List[Filter[Numable]] = src.getFilters.asInstanceOf[List[Filter[Numable]]]
 
     // 先 add 两个
     filters.add(a)
@@ -169,27 +169,27 @@ class FilterListTest {
     lit.add(mid)
 
     assertEquals(3, filters.size())
-    assertSame(src.headOut, a.getFilterIn().getPrev())
-    assertSame(a.getFilterOut(), mid.getFilterIn().getPrev())
-    assertSame(mid.getFilterOut(), b.getFilterIn().getPrev())
-    assertFalse(b.getFilterOut().isLinked())
+    assertSame(src.headOut, a.getFilterIn.getPrev)
+    assertSame(a.getFilterOut, mid.getFilterIn.getPrev)
+    assertSame(mid.getFilterOut, b.getFilterIn.getPrev)
+    assertFalse(b.getFilterOut.isLinked)
 
     // iterator remove 中间
     lit = filters.listIterator(1)
     assertEquals(mid, lit.next()) // 返回 mid
     lit.remove()
     assertEquals(2, filters.size())
-    assertSame(a.getFilterOut(), b.getFilterIn().getPrev())
-    assertNull(mid.getFilterIn().getPrev())
-    assertFalse(mid.getFilterOut().isLinked())
+    assertSame(a.getFilterOut, b.getFilterIn.getPrev)
+    assertNull(mid.getFilterIn.getPrev)
+    assertFalse(mid.getFilterOut.isLinked)
   }
 
   @Test
   def serialization_roundTrip_restoresChain(): Unit = {
     val src = new NumSrc(10)
     val f1 = new AddFilter()
-    f1.delta.getDefaultData().setVal(3)
-    src.getFilters().add(f1)
+    f1.delta.getDefaultData.setVal(3)
+    src.getFilters.add(f1)
 
     val bos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(bos)) { oos =>
@@ -199,10 +199,10 @@ class FilterListTest {
       ois.readObject().asInstanceOf[NumSrc]
     }
 
-    assertEquals(1, copy.getFilters().size())
+    assertEquals(1, copy.getFilters.size())
     // 端口连接恢复
-    assertSame(copy.headOut, copy.getFilters().get(0).getFilterIn().getPrev())
-    assertFalse(copy.getFilters().get(0).getFilterOut().isLinked())
+    assertSame(copy.headOut, copy.getFilters.get(0).getFilterIn.getPrev)
+    assertFalse(copy.getFilters.get(0).getFilterOut.isLinked)
     // 求值正确
     assertEquals(13.0, copy.get(0, null).`val`, 0)
   }
@@ -217,20 +217,20 @@ object FilterListTest {
     private final val in: FilterIn = addInPort(new FilterIn("in") {
     })
     private final val out: FilterOut = addOutPort(new FilterOut("out") {
-      override def getData(): Numable = {
-        val f = getFilterIn().getData()
+      override def getData: Numable = {
+        val f = getFilterIn.getData
         if (f != null) {
-          f.`val` += delta.getData().getVal()
+          f.`val` += delta.getData.getVal
         }
         return f
       }
     })
 
-    override def getType(): Class[Numable] = {
+    override def getType: Class[Numable] = {
       classOf[Numable]
     }
 
-    override def getName(): String = {
+    override def getName: String = {
       "加数"
     }
   }
@@ -246,19 +246,19 @@ object FilterListTest {
     override def sync(time: Long, track: com.lomekwi.cave.timeline.Track): Unit = {
     }
 
-    override def getLengthPerExportFrame(): Long = {
+    override def getLengthPerExportFrame: Long = {
       1
     }
 
-    override def getDuration(): Long = {
+    override def getDuration: Long = {
       Long.MaxValue
     }
 
-    override def getDisplayName(): String = {
+    override def getDisplayName: String = {
       "数字源"
     }
 
-    override def getFrameType(): Class[Numable] = {
+    override def getFrameType: Class[Numable] = {
       classOf[Numable]
     }
 

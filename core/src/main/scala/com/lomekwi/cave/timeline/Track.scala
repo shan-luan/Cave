@@ -7,11 +7,13 @@ import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
 
 import java.io.{ObjectInputStream, ObjectOutputStream, Serializable}
-import java.util.{ArrayList, Collection, Collections, Iterator, List, Objects}
+import java.util
+import java.util.{Collections, Objects}
 import java.util.concurrent.{Future, Phaser}
 import java.util.concurrent.locks.LockSupport
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
@@ -20,9 +22,9 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
 
   private var length: Long = 0L
   private var lengthChanged: Boolean = true
-  private var serializationRanges: Array[Long] = null
-  private var serializationSources: List[Segment] = null
-  @transient private var worker: TrackWorker = null
+  private var serializationRanges: Array[Long] = uninitialized
+  private var serializationSources: util.List[Segment] = uninitialized
+  @transient private var worker: TrackWorker = uninitialized
 
   worker = new TrackWorker()
 
@@ -30,7 +32,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     this.timeline = timeline
   }
 
-  protected[timeline] def isEmpty(): Boolean = this.synchronized {
+  protected[timeline] def isEmpty: Boolean = this.synchronized {
     sources.isEmpty
   }
 
@@ -46,17 +48,17 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     }
     shift
   }
-  protected[timeline] def getShift(r: Interval): Long = this.synchronized {
+  private def getShift(r: Interval): Long = this.synchronized {
     getShift(r, null)
   }
-  protected[timeline] def getShift(r: Interval, exclude: Interval): Long = this.synchronized {
+  private def getShift(r: Interval, exclude: Interval): Long = this.synchronized {
     pickShift(getShiftForward(r, exclude), getShiftBackward(r, exclude))
   }
-  protected[timeline] def getShiftForward(r: Interval, exclude: Interval): Long = this.synchronized {
-    shiftScan(r, exclude, List.of[Segment](), true)
+  private def getShiftForward(r: Interval, exclude: Interval): Long = this.synchronized {
+    shiftScan(r, exclude, util.List.of[Segment](), true)
   }
-  protected[timeline] def getShiftBackward(r: Interval, exclude: Interval): Long = this.synchronized {
-    shiftScan(r, exclude, List.of[Segment](), false)
+  private def getShiftBackward(r: Interval, exclude: Interval): Long = this.synchronized {
+    shiftScan(r, exclude, util.List.of[Segment](), false)
   }
 
   private def pickShift(forward: Long, backward: Long): Long = this.synchronized {
@@ -99,7 +101,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     sources.rangeUntil(Interval(time, time)).lastOption.orNull
   }
 
-  private def shiftScan(r: Interval, exclude: Interval, ignore: Collection[Segment], forward: Boolean): Long = this.synchronized {
+  private def shiftScan(r: Interval, exclude: Interval, ignore: util.Collection[Segment], forward: Boolean): Long = this.synchronized {
     val lo: Long = r.lo
     val hi: Long = r.hi
     var s: Long = 0
@@ -133,11 +135,11 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
 
   /** 该条目是否不构成障碍：与 exclude 相连，或在 ignore 中。 */
-  private def ignorable(exclude: Interval, ignore: Collection[Segment], interval: Interval, segment: Segment): Boolean = {
+  private def ignorable(exclude: Interval, ignore: util.Collection[Segment], interval: Interval, segment: Segment): Boolean = {
     (exclude != null && interval.isConnected(exclude)) || ignore.contains(segment)
   }
 
-  private def isFree(range: Interval, exclude: Interval, ignore: Collection[Segment]): Boolean = this.synchronized {
+  private def isFree(range: Interval, exclude: Interval, ignore: util.Collection[Segment]): Boolean = this.synchronized {
     intersectingEntries(range).forall { case (interval, segment) => ignorable(exclude, ignore, interval, segment) }
   }
 
@@ -153,15 +155,15 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     onChanged()
   }
   protected[timeline] def remove(segment: Segment): Boolean = this.synchronized {
-    val r = segment.getRange()
-    if (r != null) {
-      sources.remove(r)
+    val r = segment.getRange
+    if (r != null && sources.remove(r).isDefined) {
+      onChanged()
       true
     } else {
       false
     }
   }
-  protected[timeline] def remove(segments: Collection[Segment]): Unit = this.synchronized {
+  protected[timeline] def remove(segments: util.Collection[Segment]): Unit = this.synchronized {
     for (s <- segments.asScala) {
       remove(s)
     }
@@ -174,7 +176,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    * @param ignore 不视为障碍的片段集合（为空时相当于完全空闲检查）
    * @return 如果范围内没有任何非忽略片段占用则返回 true
    */
-  def isFree(range: Interval, ignore: Collection[Segment]): Boolean = this.synchronized {
+  def isFree(range: Interval, ignore: util.Collection[Segment]): Boolean = this.synchronized {
     intersectingEntries(range).forall { case (_, segment) => ignore.contains(segment) }
   }
 
@@ -182,7 +184,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     val entry = entryAt(time)
     if (entry.isEmpty) return false
     val s = entry.get._2
-    val r = s.getRange()
+    val r = s.getRange
     val lo: Long = r.lo
     val hi: Long = r.hi
     if (time <= lo || time >= hi) return false
@@ -208,59 +210,59 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    * 探测起点沿指定方向最多可移动多少。forward=右移（裁头，仅受自身长度限制）；
    * 左移（伸头）受 0、origin 与前邻限制，越界时冻结。
    */
-  protected[timeline] def probeSetStart(segments: Collection[Segment], forward: Boolean): Long = this.synchronized {
+  protected[timeline] def probeSetStart(segments: util.Collection[Segment], forward: Boolean): Long = this.synchronized {
     segments.stream()
-      .filter((s: Segment) => this.eq(s.getTrack()))
+      .filter((s: Segment) => this.eq(s.getTrack))
       .mapToLong((s: Segment) => {
-        val r = s.getRange()
+        val r = s.getRange
         val lo: Long = r.lo
         if (forward) {
           r.hi - 1 - lo
         } else {
-          Math.min(Longs.max(0, s.prevRange().fold(0L)(_.hi), s.getMinStart()) - lo, 0)
+          Math.min(Longs.max(0, s.prevRange().fold(0L)(_.hi), s.getMinStart) - lo, 0)
         }
       })
       .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
   }
-  private def own(segments: Collection[Segment]): List[Segment] = {
-    val out = new ArrayList[Segment](segments.size())
+  private def own(segments: util.Collection[Segment]): util.List[Segment] = {
+    val out = new util.ArrayList[Segment](segments.size())
     for (s <- segments.asScala) {
-      if (this.eq(s.getTrack())) out.add(s)
+      if (this.eq(s.getTrack)) out.add(s)
     }
     out
   }
-  protected[timeline] def setStart(segments: Collection[Segment], deltaTime: Long): Unit = this.synchronized {
-    segments.stream().filter((s: Segment) => this.eq(s.getTrack())).forEach((s: Segment) => setStart(s, deltaTime))
+  protected[timeline] def setStart(segments: util.Collection[Segment], deltaTime: Long): Unit = this.synchronized {
+    segments.stream().filter((s: Segment) => this.eq(s.getTrack)).forEach((s: Segment) => setStart(s, deltaTime))
   }
   protected[timeline] def setStart(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Interval(segment.getRange().lo + deltaTime, segment.getRange().hi))
+    `override`(segment, Interval(segment.getRange.lo + deltaTime, segment.getRange.hi))
   }
 
   /**
    * 探测终点沿指定方向可移动多少。右移（伸尾）受后继起点与源长度 maxEnd 限制，越界时冻结；
    * 左移（裁尾）仅受自身长度限制。
    */
-  protected[timeline] def probeSetEnd(segments: Collection[Segment], forward: Boolean): Long = this.synchronized {
+  protected[timeline] def probeSetEnd(segments: util.Collection[Segment], forward: Boolean): Long = this.synchronized {
     segments.stream()
-      .filter((s: Segment) => this.eq(s.getTrack()))
+      .filter((s: Segment) => this.eq(s.getTrack))
       .mapToLong((s: Segment) => {
-        val r = s.getRange()
+        val r = s.getRange
         val hi: Long = r.hi
         if (forward) {
-          Math.max(Math.min(s.nextRange().fold(Long.MaxValue)(_.lo), s.getMaxEnd()) - hi, 0)
+          Math.max(Math.min(s.nextRange().fold(Long.MaxValue)(_.lo), s.getMaxEnd) - hi, 0)
         } else {
           r.lo + 1 - hi
         }
       })
       .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
   }
-  protected[timeline] def setEnd(segments: Collection[Segment], deltaTime: Long): Unit = this.synchronized {
-    segments.stream().filter((s: Segment) => this.eq(s.getTrack())).forEach((s: Segment) => setEnd(s, deltaTime))
+  protected[timeline] def setEnd(segments: util.Collection[Segment], deltaTime: Long): Unit = this.synchronized {
+    segments.stream().filter((s: Segment) => this.eq(s.getTrack)).forEach((s: Segment) => setEnd(s, deltaTime))
   }
   protected[timeline] def setEnd(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Interval(segment.getRange().lo, segment.getRange().hi + deltaTime))
+    `override`(segment, Interval(segment.getRange.lo, segment.getRange.hi + deltaTime))
   }
 
   /**
@@ -268,32 +270,32 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    * 是拖拽成员则跳过（其自身会继续找），否则即最近障碍；取全体最严者。
    * 左移还受时间轴 0 限制。
    */
-  protected[timeline] def probeMove(segments: Collection[Segment], forward: Boolean): Long = this.synchronized {
+  protected[timeline] def probeMove(segments: util.Collection[Segment], forward: Boolean): Long = this.synchronized {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍 = 无界
     segments.stream()
-      .filter((s: Segment) => this.eq(s.getTrack()))
+      .filter((s: Segment) => this.eq(s.getTrack))
       .mapToLong((s: Segment) => {
-        val r = s.getRange()
+        val r = s.getRange
         if (forward) {
           val next = s.next()
           if (next == null || segments.contains(next)) noBlock
-          else next.getRange().lo - r.hi
+          else next.getRange.lo - r.hi
         } else {
           val lo: Long = r.lo
           val prev = s.prev()
           val obstacle: Long = if (prev == null || segments.contains(prev)) noBlock
-            else prev.getRange().hi - lo
+            else prev.getRange.hi - lo
           Track.tighter(-lo, obstacle) // 0 边界：偏移 ≥ -lo
         }
       })
       .reduce(noBlock, Track.tighter)
   }
 
-  protected[timeline] def move(segments: Collection[Segment], deltaTime: Long): Unit = this.synchronized {
+  protected[timeline] def move(segments: util.Collection[Segment], deltaTime: Long): Unit = this.synchronized {
     val owned = own(segments)
     remove(owned)
     for (s <- owned.asScala) {
-      `override`(s, s.getRange().shift(deltaTime))
+      `override`(s, s.getRange.shift(deltaTime))
       s.offsetOrigin(deltaTime)
     }
   }
@@ -340,7 +342,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     }
   }
 
-  def getLength(): Long = this.synchronized {
+  def getLength: Long = this.synchronized {
     if (lengthChanged) {
       length = sources.lastOption.map(_._1.hi).getOrElse(0L)
       lengthChanged = false
@@ -348,7 +350,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     length
   }
   /** 与 range 有公共点的片段，按区间升序；返回快照。 */
-  def getIntersectingSegments(range: Interval): List[Segment] = this.synchronized {
+  def getIntersectingSegments(range: Interval): util.List[Segment] = this.synchronized {
     intersectingEntries(range).map(_._2).toList.asJava
   }
 
@@ -385,7 +387,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
 
   private def writeObject(oos: ObjectOutputStream): Unit = {
     serializationRanges = new Array[Long](sources.size * 2)
-    serializationSources = new ArrayList[Segment](sources.size)
+    serializationSources = new util.ArrayList[Segment](sources.size)
     var i = 0
     for ((r, s) <- sources) {
       serializationRanges(i) = r.lo
@@ -418,35 +420,35 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     }
   }
 
-  def getTimeline(): Timeline = {
+  def getTimeline: Timeline = {
     timeline
   }
 
-  def getWorker(): TrackWorker = {
+  def getWorker: TrackWorker = {
     if (worker == null) {
       worker = new TrackWorker()
     }
     worker
   }
 
-  override def iterator(): Iterator[Segment] = {
+  override def iterator(): util.Iterator[Segment] = {
     sources.valuesIterator.asJava
   }
 
   class TrackWorker extends Runnable {
     private final val gapFrame: GapFrame = new GapFrame(Track.this)
-    private var sinkPhaser: Phaser = null
-    private var future: Future[?] = null
-    @volatile private var workerThread: Thread = null
+    private var sinkPhaser: Phaser = uninitialized
+    private var future: Future[?] = uninitialized
+    @volatile private var workerThread: Thread = uninitialized
     @volatile private var updateNeeded: Boolean = false
 
     timeline.project.projEventBus.register(this)
 
-    def getSinkPhaser(): Phaser = {
+    def getSinkPhaser: Phaser = {
       sinkPhaser
     }
 
-    def getFuture(): Future[?] = {
+    def getFuture: Future[?] = {
       future
     }
 
@@ -461,8 +463,8 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
       try {
         val p = timeline.project.playhead
         while (!Thread.currentThread().isInterrupted) {
-          var t: Long = p.getTime()
-          if (!p.isPlaying()) {
+          var t: Long = p.getTime
+          if (!p.isPlaying) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
 
             val s = get(t)
@@ -482,19 +484,19 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
               var parkTime: Long = Long.MaxValue
               val next = get(t, 1, false)
               if (next != null) {
-                parkTime = next.getRange().lo - t
+                parkTime = next.getRange.lo - t
                 parkTime *= 1000
                 parkTime = Math.max(parkTime, 1)
               }
               Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
               LockSupport.parkNanos(parkTime)
             } else {
-              val r = s.getRange()
+              val r = s.getRange
               Gdx.app.debug("Track" + index, "找到片段: " + s)
               s.sync(t)
               val end: Long = r.hi
               while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
-                t = timeline.project.playhead.getTime()
+                t = timeline.project.playhead.getTime
                 val frame = s.get(t)
                 if (!updateNeeded && frame != null) {
                   timeline.project.projEventBus.post(frame)
@@ -560,11 +562,11 @@ object Track {
 
   private def segmentEquals(a: Segment, b: Segment): Boolean = {
     if (a.eq(b)) return true
-    val sa = a.getSource()
-    val sb = b.getSource()
+    val sa = a.getSource
+    val sb = b.getSource
     sa.getClass == sb.getClass
-      && sa.getDuration() == sb.getDuration()
-      && a.getOrigin() == b.getOrigin()
-      && Objects.equals(a.getRange(), b.getRange())
+      && sa.getDuration == sb.getDuration
+      && a.getOrigin == b.getOrigin
+      && Objects.equals(a.getRange, b.getRange)
   }
 }

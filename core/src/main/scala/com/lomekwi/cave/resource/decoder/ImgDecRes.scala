@@ -7,9 +7,10 @@ import org.bytedeco.javacv.Frame
 import java.nio.ByteBuffer
 
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
+import scala.compiletime.uninitialized
 
 class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
-  private var cachedPixels: ByteBuffer = null
+  private var cachedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 
   override def grab(): Frame = {
@@ -24,21 +25,21 @@ class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
     grabber.setAudioChannels(0)
   }
 
-  def getWidth(): Int = {
+  def getWidth: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getImageWidth
   }
 
-  def getHeight(): Int = {
+  def getHeight: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getImageHeight
   }
 
-  override def getLengthPerFrame(): Long = {
+  override def getLengthPerFrame: Long = {
     0
   }
 
@@ -74,19 +75,19 @@ class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
   override def seek(time: Long): Unit = {
   }
 
-  override def getCodecName(): String = {
+  override def getCodecName: String = {
     grabber.getVideoCodecName
   }
 
-  override def getCodec(): Int = {
+  override def getCodec: Int = {
     grabber.getVideoCodec
   }
 
-  def getCachedPixels(): ByteBuffer = {
+  def getCachedPixels: ByteBuffer = {
     cachedPixels
   }
 
-  def getUnpackRowLength(): Int = {
+  def getUnpackRowLength: Int = {
     unpackRowLength
   }
 }

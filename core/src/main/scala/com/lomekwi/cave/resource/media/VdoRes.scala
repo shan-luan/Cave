@@ -13,8 +13,10 @@ import org.bytedeco.javacv.Frame
 
 import java.io.ObjectInputStream
 import java.nio.ByteBuffer
+import java.util
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import scala.compiletime.uninitialized
 
 
 @SerialVersionUID(1L)
@@ -23,9 +25,9 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   private var height: Int = scala.compiletime.uninitialized
   private var frameLength: Long = scala.compiletime.uninitialized
 
-  @transient private var thumbnailer: Thumbnailer = null
+  @transient private var thumbnailer: Thumbnailer = uninitialized
 
-  private def getThumbnailer(): Thumbnailer = {
+  private def getThumbnailer: Thumbnailer = {
     if (thumbnailer == null) {
       thumbnailer = new Thumbnailer()
     }
@@ -35,22 +37,22 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   override def getDecoder(trackIndex: Int): VdoDecRes = {
     super.getDecoder(trackIndex).asInstanceOf[VdoDecRes]
   }
-  def getWidth(): Int = {
+  def getWidth: Int = {
     width
   }
-  def getHeight(): Int = {
+  def getHeight: Int = {
     height
   }
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val vdr = metadataDecRes.asInstanceOf[VdoDecRes]
-    width = vdr.getWidth()
-    height = vdr.getHeight()
-    frameLength = vdr.getLengthPerFrame()
-    codecName = vdr.getCodecName()
-    codec = vdr.getCodec()
+    width = vdr.getWidth
+    height = vdr.getHeight
+    frameLength = vdr.getLengthPerFrame
+    codecName = vdr.getCodecName
+    codec = vdr.getCodec
   }
 
-  def getFrameLength(): Long = {
+  def getFrameLength: Long = {
     frameLength
   }
 
@@ -59,23 +61,23 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   }
 
   override def getPreview(time: Long): Texture = {
-    getThumbnailer().get(time)
+    getThumbnailer.get(time)
   }
 
-  override def getPreview(): Texture = {
-    getThumbnailer().get(duration / 2)
+  override def getPreview: Texture = {
+    getThumbnailer.get(duration / 2)
   }
 
-  override def getPreviewInterval(): Long = {
-    getThumbnailer().interval
+  override def getPreviewInterval: Long = {
+    getThumbnailer.interval
   }
 
   def getThumbnail(srcTime: Long): Texture = {
-    getThumbnailer().get(srcTime)
+    getThumbnailer.get(srcTime)
   }
 
-  def getThumbInterval(): Long = {
-    getThumbnailer().interval
+  def getThumbInterval: Long = {
+    getThumbnailer.interval
   }
 
   override def close(): Unit = {
@@ -101,7 +103,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     private final val pendingSlots: ConcurrentLinkedQueue[Integer] =
       new ConcurrentLinkedQueue[Integer]()
 
-    @transient private var fullPixmap: Pixmap = null
+    @transient private var fullPixmap: Pixmap = uninitialized
     @transient private var thumbW: Int = 0
 
     private final val batchSlots: Array[Int] = new Array[Int](BATCH_SIZE)
@@ -135,9 +137,9 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
       }
     }
 
-    @transient private var cachedDec: VdoDecRes = null
+    @transient private var cachedDec: VdoDecRes = uninitialized
 
-    private def getCachedDecoder(): VdoDecRes = {
+    private def getCachedDecoder: VdoDecRes = {
       if (cachedDec == null) {
         cachedDec = newDecoder()
       }
@@ -145,9 +147,9 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
 
     private def processPendingSlots(): Unit = {
-      val dec = getCachedDecoder()
+      val dec = getCachedDecoder
       try {
-        if (!dec.isInitialized()) {
+        if (!dec.isInitialized) {
           dec.start()
         }
         if (fullPixmap == null) {
@@ -191,7 +193,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         flushBatch()
       } catch {
         case e: Exception =>
-          Gdx.app.error("VdoRes", "Thumbnail worker failed for " + getPath(), e)
+          Gdx.app.error("VdoRes", "Thumbnail worker failed for " + getPath, e)
       } finally {
         workerRunning.set(false)
         if (!pendingSlots.isEmpty) {
@@ -205,8 +207,8 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         return
       }
       val n = batchCount
-      val slots = java.util.Arrays.copyOf(batchSlots, n)
-      val pixmaps = java.util.Arrays.copyOf(batchPixmaps, n)
+      val slots = util.Arrays.copyOf(batchSlots, n)
+      val pixmaps = util.Arrays.copyOf(batchPixmaps, n)
       Gdx.app.postRunnable(() => {
         for (i <- 0 until n) {
           if (!cache.containsKey(slots(i))) {

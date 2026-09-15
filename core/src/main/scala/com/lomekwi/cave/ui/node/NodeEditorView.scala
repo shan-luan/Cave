@@ -15,7 +15,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 //TODO:WIP
 class NodeEditorView extends VisTable with Focusable {
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
-  private final val canvas: Group = panZoom.getCanvas()
+  private final val canvas: Group = panZoom.getCanvas
 
   setFillParent(true)
   add(panZoom).grow()
@@ -44,7 +44,7 @@ class NodeEditorView extends VisTable with Focusable {
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    val drawer = App.root.getShapeDrawer()
+    val drawer = App.root.getShapeDrawer
     drawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.NODE_BG)
     drawGrid(drawer)
     super.draw(batch, parentAlpha)

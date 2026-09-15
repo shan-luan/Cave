@@ -3,9 +3,10 @@ package com.lomekwi.cave.pipeline.audio
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.timeline.Track
+import scala.compiletime.uninitialized
 
 class AudFrame(sampleRate0: Int, track: Track, source: Source[?]) extends Frame(track, source) {
-  private var samples: Array[Float] = null
+  private var samples: Array[Float] = uninitialized
   private final val sampleRate: Int = sampleRate0
   private var time: Long = 0
 
@@ -13,7 +14,7 @@ class AudFrame(sampleRate0: Int, track: Track, source: Source[?]) extends Frame(
     this(sampleRate, track, null)
   }
 
-  def getSamples(): Array[Float] = {
+  def getSamples: Array[Float] = {
     samples
   }
 
@@ -22,11 +23,11 @@ class AudFrame(sampleRate0: Int, track: Track, source: Source[?]) extends Frame(
     this
   }
 
-  def getSampleRate(): Int = {
+  def getSampleRate: Int = {
     sampleRate
   }
 
-  def getTime(): Long = {
+  def getTime: Long = {
     time
   }
 

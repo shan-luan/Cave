@@ -9,15 +9,15 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 
 /**
  * 解码器类。
- * @param <F> 产生的帧类型
+ * @tparam F 产生的帧类型
  */
 abstract class DecRes[F <: Frame] protected (protected val source: MedRes) extends Resource {
-  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(source.getPath())
+  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(source.getPath)
   @volatile protected var initialized: Boolean = false
 
   def start(): Unit = this.synchronized {
     if (!initialized) {
-      if (source.getCodecName() != null) {
+      if (source.getCodecName != null) {
         grabber.setVideoCodecName(tryGetDecoder())
       }
       configure()
@@ -26,7 +26,7 @@ abstract class DecRes[F <: Frame] protected (protected val source: MedRes) exten
       Gdx.app.debug("DecRes", this.toString + "初始化")
     }
   }
-  protected def tryGetDecoder(): String = {
+  private def tryGetDecoder(): String = {
     null
   }
   protected def configure(): Unit
@@ -59,33 +59,33 @@ abstract class DecRes[F <: Frame] protected (protected val source: MedRes) exten
   def get(time: Long, frame: F): Unit
 
   def seek(time: Long): Unit
-  def isInitialized(): Boolean = {
+  def isInitialized: Boolean = {
     initialized
   }
   protected def toValidTime(time: Long): Long = {
-    Math.min(Math.max(0, time), getLengthInTime())
+    Math.min(Math.max(0, time), getLengthInTime)
   }
   protected def isTimeLegal(time: Long): Boolean = {
     toValidTime(time) == time
   }
-  def getLengthInTime(): Long = {
+  def getLengthInTime: Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     Math.max(grabber.getLengthInTime, 0)
   }
-  def getTimestamp(): Long = {
+  def getTimestamp: Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getTimestamp
   }
-  def getCodecName(): String
+  def getCodecName: String
 
-  def getCodec(): Int
+  def getCodec: Int
 
-  def getLengthPerFrame(): Long
-  def getLastFrameTime(): Long = {
-    getTimestamp() - getTimestamp() % getLengthPerFrame()
+  def getLengthPerFrame: Long
+  def getLastFrameTime: Long = {
+    getTimestamp - getTimestamp % getLengthPerFrame
   }
 }

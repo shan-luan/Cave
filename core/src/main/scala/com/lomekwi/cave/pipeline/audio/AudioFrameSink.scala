@@ -6,16 +6,17 @@ import com.lomekwi.cave.project.ProjectBackgroundedEvent
 import com.lomekwi.cave.project.ProjectFrontedEvent
 import com.lomekwi.cave.resource.decoder.AudDecRes
 
-import java.util.Arrays
+import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
+import scala.compiletime.uninitialized
 
 class AudioFrameSink {
   @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer()
-  private var currentFuture: Future[?] = null
+  private var currentFuture: Future[?] = uninitialized
 
   @Subscribe
   def sink(frame: AudFrame): Unit = {
-    frame.track.getWorker().getSinkPhaser().register()
+    frame.track.getWorker.getSinkPhaser.register()
     afm.submit(frame)
   }
 
@@ -57,7 +58,7 @@ object AudioFrameSink {
 
     override def run(): Unit = {
       while (!stopped) {
-        Arrays.fill(output, 0f)
+        util.Arrays.fill(output, 0f)
         var f: AudFrame = null
         try {
           f = frames.poll(AudioFrameMixer.POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
@@ -69,11 +70,11 @@ object AudioFrameSink {
           var continueLoop = true
           while (continueLoop) {
             var j = 0
-            for (sample <- f.getSamples()) {
+            for (sample <- f.getSamples) {
               output(j) += sample
               j += 1
             }
-            f.track.getWorker().getSinkPhaser().arriveAndDeregister()
+            f.track.getWorker.getSinkPhaser.arriveAndDeregister()
             if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {
@@ -103,7 +104,7 @@ object AudioFrameSink {
     }
   }
 
-  object AudioFrameMixer {
+  private object AudioFrameMixer {
     private final val POLL_TIMEOUT_MILLIS = 20L
   }
 }

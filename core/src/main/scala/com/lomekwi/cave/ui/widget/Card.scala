@@ -12,13 +12,14 @@ import com.badlogic.gdx.utils.Align
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisTable
+import scala.compiletime.uninitialized
 
 /**
  * 一个长的像window的table.
  */
 class Card(title: String) extends VisTable {
-  private var titleLabel: Label = null
-  private var titleTable: Table = null
+  private var titleLabel: Label = uninitialized
+  private var titleTable: Table = uninitialized
   private var drawTitleTable: Boolean = false
 
   {
@@ -51,15 +52,15 @@ class Card(title: String) extends VisTable {
     drawTitleTable = false
   }
 
-  override def getPrefWidth(): Float = {
+  override def getPrefWidth: Float = {
     Math.max(super.getPrefWidth, titleTable.getPrefWidth + getPadLeft + getPadRight)
   }
 
-  def getTitleLabel(): Label = {
+  def getTitleLabel: Label = {
     titleLabel
   }
 
-  def getTitleTable(): Table = {
+  def getTitleTable: Table = {
     titleTable
   }
 

@@ -51,7 +51,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
   }
 
   /** 获取当前路径文本（已 trim）。 */
-  def getPath(): String = {
+  def getPath: String = {
     pathField.getText.trim()
   }
 
@@ -61,7 +61,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
   }
 
   /** 暴露底层文本框，以便进行更细粒度的控制（如添加验证器）。 */
-  def getPathField(): VisValidatableTextField = {
+  def getPathField: VisValidatableTextField = {
     pathField
   }
 }

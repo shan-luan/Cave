@@ -1,19 +1,19 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util.{AbstractSet, Collection, HashSet, Iterator, Set}
+import java.util
 
 //TODO:WIP
 @SerialVersionUID(1L)
-class NodeGraph extends AbstractSet[Node] with Serializable {
-  private final val delegate: Set[Node] = new HashSet[Node]()
+class NodeGraph extends util.AbstractSet[Node] with Serializable {
+  private final val delegate: util.Set[Node] = new util.HashSet[Node]()
 
-  def this(nodes: Collection[? <: Node]) = {
+  def this(nodes: util.Collection[? <: Node]) = {
     this()
     delegate.addAll(nodes)
   }
 
-  override def iterator(): Iterator[Node] = {
+  override def iterator(): util.Iterator[Node] = {
     delegate.iterator()
   }
 
