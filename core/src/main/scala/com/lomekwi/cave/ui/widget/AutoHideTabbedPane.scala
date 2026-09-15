@@ -45,21 +45,22 @@ class AutoHideTabbedPane extends TabbedPane {
       case t: Table => t
       case _ => null
     }
-    if (parent == null) return
+    if (parent != null) {
+      val cell: Cell[?] = parent.getCell(table)
+      if (cell != null) {
+        val show: Boolean = getTabs.size > 1
+        if (show != visible) {
+          visible = show
 
-    val cell: Cell[?] = parent.getCell(table)
-    if (cell == null) return
-
-    val show: Boolean = getTabs.size > 1
-    if (show == visible) return
-    visible = show
-
-    table.clearActions()
-    if (show) {
-      table.setVisible(true)
-      animateCellHeight(table, cell, cell.getPrefHeight, table.getPrefHeight)
-    } else {
-      animateCellHeight(table, cell, table.getHeight, 0)
+          table.clearActions()
+          if (show) {
+            table.setVisible(true)
+            animateCellHeight(table, cell, cell.getPrefHeight, table.getPrefHeight)
+          } else {
+            animateCellHeight(table, cell, table.getHeight, 0)
+          }
+        }
+      }
     }
   }
 

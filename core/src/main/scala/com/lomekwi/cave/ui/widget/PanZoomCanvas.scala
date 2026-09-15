@@ -38,9 +38,10 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
         if (super.touchDown(event, x, y, pointer, button)) {
           Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize)
-          return true
+          true
+        } else {
+          false
         }
-        false
       }
 
       override def drag(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
@@ -62,9 +63,10 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
 
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
     val hit = super.hit(x, y, touchable)
-    if (hit != null) return hit
-    if (touchable && (getTouchable ne Touchable.enabled)) return null
-    if (x >= 0 && x < getWidth && y >= 0 && y < getHeight) this else null
+    if (hit != null) hit
+    else if (touchable && (getTouchable ne Touchable.enabled)) null
+    else if (x >= 0 && x < getWidth && y >= 0 && y < getHeight) this
+    else null
   }
 
   private def getScale: Float = {
@@ -107,13 +109,13 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     val oldScale = getScale
     setZoom((zoom * Math.pow(zoomFactor, -amountY)).toFloat)
     val newScale = getScale
-    if (newScale == oldScale) return
-
-    screenPos.set(stageX, stageY)
-    stageToLocalCoordinates(screenPos)
-    xOffset = screenPos.x - (screenPos.x - xOffset) * (newScale / oldScale)
-    yOffset = screenPos.y - (screenPos.y - yOffset) * (newScale / oldScale)
-    updateCanvas()
+    if (newScale != oldScale) {
+      screenPos.set(stageX, stageY)
+      stageToLocalCoordinates(screenPos)
+      xOffset = screenPos.x - (screenPos.x - xOffset) * (newScale / oldScale)
+      yOffset = screenPos.y - (screenPos.y - yOffset) * (newScale / oldScale)
+      updateCanvas()
+    }
   }
 
   def resetView(): Unit = {

@@ -55,21 +55,21 @@ class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
     }
     if (cachedPixels != null) {
       frame.setPixels(cachedPixels)
-      return
-    }
-    val grabbed = grab()
-    if (grabbed != null && grabbed.image != null && grabbed.image(0) != null) {
-      if (grabbed.imageStride > 0 && grabbed.imageChannels > 0) {
-        unpackRowLength = grabbed.imageStride / grabbed.imageChannels
+    } else {
+      val grabbed = grab()
+      if (grabbed != null && grabbed.image != null && grabbed.image(0) != null) {
+        if (grabbed.imageStride > 0 && grabbed.imageChannels > 0) {
+          unpackRowLength = grabbed.imageStride / grabbed.imageChannels
+        }
+        val src = grabbed.image(0).asInstanceOf[ByteBuffer]
+        src.rewind()
+        val copy = ByteBuffer.allocateDirect(src.limit())
+        copy.put(src)
+        copy.flip()
+        cachedPixels = copy
       }
-      val src = grabbed.image(0).asInstanceOf[ByteBuffer]
-      src.rewind()
-      val copy = ByteBuffer.allocateDirect(src.limit())
-      copy.put(src)
-      copy.flip()
-      cachedPixels = copy
+      frame.setPixels(cachedPixels)
     }
-    frame.setPixels(cachedPixels)
   }
 
   override def seek(time: Long): Unit = {

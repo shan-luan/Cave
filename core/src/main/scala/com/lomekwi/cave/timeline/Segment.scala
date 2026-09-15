@@ -63,8 +63,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
    */
   def get(time: Long): Frame = {
     val f = source.get(toLocalTime(time), track)
-    if (f == null) return null
-    f.withTime(time)
+    if (f == null) null else f.withTime(time)
   }
 
   /**
@@ -98,8 +97,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
   /**获取拉伸时在时间轴上合法的最大终点*/
   def getMaxEnd: Long = {
     val duration = source.getDuration
-    if (duration == Long.MaxValue) return Long.MaxValue
-    origin + duration
+    if (duration == Long.MaxValue) Long.MaxValue else origin + duration
   }
 
   /**
@@ -107,8 +105,7 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
    */
   override def compareTo(o: Segment): Int = {
     val c = Integer.compare(trackIndex(), o.trackIndex())
-    if (c != 0) return c
-    java.lang.Long.compare(rangeStart(), o.rangeStart())
+    if (c != 0) c else java.lang.Long.compare(rangeStart(), o.rangeStart())
   }
 
   private def trackIndex(): Int = {
@@ -121,8 +118,9 @@ class Segment(private val source: Source[?]) extends Serializable with java.lang
     if (range == null) Long.MaxValue else range.lo
   }
   protected[timeline] def setRange(range: Interval): Unit = {
-    if (range.equals(this.range)) return
-    this.range = range
+    if (!range.equals(this.range)) {
+      this.range = range
+    }
   }
 
   private def readObject(in: ObjectInputStream): Unit = {

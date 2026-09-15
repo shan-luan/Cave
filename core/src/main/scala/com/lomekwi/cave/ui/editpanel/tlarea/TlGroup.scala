@@ -21,6 +21,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 
 import scala.compiletime.uninitialized
 import scala.util.Using
+import scala.util.boundary, boundary.break
 import scala.jdk.CollectionConverters.*
 
 import com.badlogic.gdx.Input.Keys.*
@@ -74,9 +75,10 @@ class TlGroup(project0: Project) extends Group with Focusable {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
         if (super.touchDown(event, x, y, pointer, button)) {
           Gdx.graphics.setSystemCursor(Cursor.SystemCursor.AllResize)
-          return true
+          true
+        } else {
+          false
         }
-        false
       }
 
       override def drag(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
@@ -198,7 +200,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
     playhead.seek(Math.max(xToAbsoluteTime(x), 0))
   }
 
-  def selectSegment(segment: Segment, addToSelection: Boolean): Unit = {
+  def selectSegment(segment: Segment, addToSelection: Boolean): Unit = boundary[Unit] {
     val group = segment.getGroup
     if (group != null) {
       if (addToSelection) {
@@ -239,7 +241,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
         project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       }
-      return
+      break(())
     }
     if (!addToSelection) {
       clearSelection()
@@ -332,16 +334,18 @@ class TlGroup(project0: Project) extends Group with Focusable {
   /** 快捷键分割入口：按当前鼠标位置定位分割点。 */
   private[tlarea] def splitAtCursor(): Unit = {
     val stage = getStage
-    if (stage == null) return
-    val local = stageToLocalCoordinates(
-      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
-    val trackIndex = yToTrackIndex(local.y)
-    val time = xToAbsoluteTime(local.x)
-    val track = timeline.getTrack(trackIndex)
-    val segment = track.get(time)
-    if (segment == null) return
-    splitSegment(segment, time)
-    dirty = true
+    if (stage != null) {
+      val local = stageToLocalCoordinates(
+        stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
+      val trackIndex = yToTrackIndex(local.y)
+      val time = xToAbsoluteTime(local.x)
+      val track = timeline.getTrack(trackIndex)
+      val segment = track.get(time)
+      if (segment != null) {
+        splitSegment(segment, time)
+        dirty = true
+      }
+    }
   }
 
   private def splitSegment(segment: Segment, time: Long): Unit = {
@@ -377,34 +381,36 @@ class TlGroup(project0: Project) extends Group with Focusable {
 
   private def deleteAtCursor(): Unit = {
     val stage = getStage
-    if (stage == null) return
-    val local = stageToLocalCoordinates(
-      stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
-    val trackIndex = yToTrackIndex(local.y)
-    val track = timeline.getTrack(trackIndex)
-    val segment = track.get(xToAbsoluteTime(local.x))
-    if (segment == null) return
-    Using.resource(timeline.record()) { h =>
-      timeline.remove(segment)
+    if (stage != null) {
+      val local = stageToLocalCoordinates(
+        stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
+      val trackIndex = yToTrackIndex(local.y)
+      val track = timeline.getTrack(trackIndex)
+      val segment = track.get(xToAbsoluteTime(local.x))
+      if (segment != null) {
+        Using.resource(timeline.record()) { h =>
+          timeline.remove(segment)
+        }
+        dirty = true
+      }
     }
-    dirty = true
   }
 
   private[tlarea] def deleteSelected(): Unit = {
     if (selectedSegments.isEmpty) {
       deleteAtCursor()
-      return
+    } else {
+      val segments: util.List[Segment] = util.List.copyOf(selectedSegments)
+      clearSelection()
+      Using.resource(timeline.record()) { h =>
+        timeline.remove(segments)
+      }
+      dirty = true
     }
-    val segments: util.List[Segment] = util.List.copyOf(selectedSegments)
-    clearSelection()
-    Using.resource(timeline.record()) { h =>
-      timeline.remove(segments)
-    }
-    dirty = true
   }
 
-  private[tlarea] def groupSelectedSegments(): Unit = {
-    if (selectedSegments.size() < 2) return
+  private[tlarea] def groupSelectedSegments(): Unit = boundary[Unit] {
+    if (selectedSegments.size() < 2) break(())
 
     val anyInGroup = selectedSegments.asScala.exists(seg => seg.getGroup != null)
 
@@ -493,34 +499,33 @@ class TlGroup(project0: Project) extends Group with Focusable {
 //FIXME:跨项目粘贴
   private[tlarea] def performPaste(): Unit = {
     val clip = App.copyManager.getClipboard
-    if (clip == null) return
-
     val s = getStage
-    if (s == null) return
-    val local = stageToLocalCoordinates(
-      s.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
+    if (clip != null && s != null) {
+      val local = stageToLocalCoordinates(
+        s.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
 
-    val baseTime = Math.max(xToAbsoluteTime(local.x), 0)
-    val baseTrack = Math.max(yToTrackIndex(local.y), 0)
+      val baseTime = Math.max(xToAbsoluteTime(local.x), 0)
+      val baseTrack = Math.max(yToTrackIndex(local.y), 0)
 
-    var pasted: util.List[Segment] = null
-    clip match {
-      case templateGroup: SegmentGroup => pasted = pasteGroup(templateGroup, baseTime, baseTrack)
-      case templateSet: SegmentSet => pasted = pasteSet(templateSet, baseTime, baseTrack)
-      case template: Segment => pasted = pasteSegment(template, baseTime, baseTrack)
-      case _ => pasted = util.List.of[Segment]()
+      var pasted: util.List[Segment] = null
+      clip match {
+        case templateGroup: SegmentGroup => pasted = pasteGroup(templateGroup, baseTime, baseTrack)
+        case templateSet: SegmentSet => pasted = pasteSet(templateSet, baseTime, baseTrack)
+        case template: Segment => pasted = pasteSegment(template, baseTime, baseTrack)
+        case _ => pasted = util.List.of[Segment]()
+      }
+
+      if (!pasted.isEmpty) {
+        selectSegments(pasted)
+      }
+
+      App.copyManager.refreshClipboard()
     }
-
-    if (!pasted.isEmpty) {
-      selectSegments(pasted)
-    }
-
-    App.copyManager.refreshClipboard()
   }
 
-  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): util.List[Segment] = {
+  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): util.List[Segment] = boundary {
     val duration = template.getRange.hi - template.getRange.lo
-    if (duration <= 0) return util.List.of[Segment]()
+    if (duration <= 0) break(util.List.of[Segment]())
 
     var track = timeline.getTrack(baseTrack)
     var range = Interval(time, time + duration)
@@ -751,15 +756,17 @@ object TlGroup {
     private[tlarea] def zoom(amountY: Float, anchorXRatio: Float): Boolean = {
       val oldDuration = durationTime
       val scaleFactor = 1f + amountY * 0.1f
-      if (scaleFactor <= 0f) return false
+      if (scaleFactor <= 0f) {
+        false
+      } else {
+        var newDuration = (oldDuration * scaleFactor).toLong
+        if (newDuration <= SECOND) newDuration = SECOND
 
-      var newDuration = (oldDuration * scaleFactor).toLong
-      if (newDuration <= SECOND) newDuration = SECOND
-
-      val anchorTime = startTime + (anchorXRatio * oldDuration).toLong
-      durationTime = newDuration
-      startTime = Math.max(anchorTime - (anchorXRatio * newDuration).toLong, 0)
-      true
+        val anchorTime = startTime + (anchorXRatio * oldDuration).toLong
+        durationTime = newDuration
+        startTime = Math.max(anchorTime - (anchorXRatio * newDuration).toLong, 0)
+        true
+      }
     }
 
     private[tlarea] def scrollHorizontal(deltaPixels: Float, width: Float): Unit = {

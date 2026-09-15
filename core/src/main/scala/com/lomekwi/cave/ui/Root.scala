@@ -74,54 +74,45 @@ class Root extends ApplicationListener {
 
     multiplexer.addProcessor(0, new InputProcessor {
       override def keyDown(keycode: Int): Boolean = {
+        val project: Project = getFrontendProject
+        val ep: EditPanel = getFrontendEditPanel
         // 无需项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
           topBar.performNew()
-          return true
-        }
-        if (App.shortcutManager.isActive(TopBar.TopActions.OPEN)) {
+          true
+        } else if (App.shortcutManager.isActive(TopBar.TopActions.OPEN)) {
           topBar.performOpen()
-          return true
-        }
-        if (App.shortcutManager.isActive(TopBar.TopActions.CLOSE)) {
+          true
+        } else if (App.shortcutManager.isActive(TopBar.TopActions.CLOSE)) {
           topBar.performClose()
-          return true
-        }
-
-        val project: Project = getFrontendProject
-        if (project == null || project.undoManager == null) return false
-        val ep: EditPanel = getFrontendEditPanel
-        // 需要项目的 TopActions
-        if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
+          true
+        } else if (project == null || project.undoManager == null) {
+          false
+        } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
+          // 需要项目的 TopActions
           topBar.performSave()
-          return true
-        }
-        if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
+          true
+        } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
           topBar.performSaveAs()
-          return true
-        }
-
-        if (isTextInputFocused) return false
-
-        // 复制（全局，无需项目）
-        if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
+          true
+        } else if (isTextInputFocused) {
+          false
+        } else if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
+          // 复制（全局，无需项目）
           App.copyManager.copy()
-          return true
-        }
-
-        // 撤销 / 重做
-        if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
+          true
+        } else if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
+          // 撤销 / 重做
           project.undoManager.undo()
           if (ep != null) ep.getTlGroup.markTimelineDirty()
-          return true
-        }
-        if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
+          true
+        } else if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
           project.undoManager.redo()
           if (ep != null) ep.getTlGroup.markTimelineDirty()
-          return true
+          true
+        } else {
+          false
         }
-
-        false
       }
 
       override def keyUp(keycode: Int): Boolean = false
@@ -145,18 +136,18 @@ class Root extends ApplicationListener {
     stage = new Stage(new ScreenViewport())
     stage.addCaptureListener(new InputListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-        if (button != Input.Buttons.LEFT) return false
-        var target: Actor = event.getTarget
-        while (target != null) {
-          if (target.isInstanceOf[Focusable]) {
+        if (button == Input.Buttons.LEFT) {
+          var target: Actor = event.getTarget
+          while (target != null && !target.isInstanceOf[Focusable]) {
+            target = target.getParent
+          }
+          if (target != null) {
             val focusTarget: Actor = target
             Gdx.app.postRunnable(() => {
               stage.setKeyboardFocus(focusTarget)
               stage.setScrollFocus(focusTarget)
             })
-            return false
           }
-          target = target.getParent
         }
         false
       }
@@ -240,9 +231,12 @@ class Root extends ApplicationListener {
   }
 
   def isTextInputFocused: Boolean = {
-    if (stage == null) return false
-    val focus = stage.getKeyboardFocus
-    focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
+    if (stage == null) {
+      false
+    } else {
+      val focus = stage.getKeyboardFocus
+      focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
+    }
   }
 
   def getMainLayout: VisTable = {

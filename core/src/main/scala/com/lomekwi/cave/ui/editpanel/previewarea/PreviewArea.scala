@@ -57,16 +57,17 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   private def setupDragListener(): Unit = {
     addListener(new ClickListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-        if (x < 0 || x > getWidth || y < 0 || y > getHeight) return false
-        super.touchDown(event, x, y, pointer, button)
+        if (x < 0 || x > getWidth || y < 0 || y > getHeight) false
+        else super.touchDown(event, x, y, pointer, button)
       }
 
       override def clicked(event: InputEvent, x: Float, y: Float): Unit = {
-        if (event.getTarget.isInstanceOf[TransFrameActor]) return
-        val editPanel = App.root.getFrontendEditPanel
-        if (editPanel != null) {
-          val tlGroup = editPanel.getTlGroup
-          tlGroup.clearSelection()
+        if (!event.getTarget.isInstanceOf[TransFrameActor]) {
+          val editPanel = App.root.getFrontendEditPanel
+          if (editPanel != null) {
+            val tlGroup = editPanel.getTlGroup
+            tlGroup.clearSelection()
+          }
         }
       }
 

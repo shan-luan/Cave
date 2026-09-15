@@ -37,8 +37,7 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
 
     try {
       audRes.get(track.index, time, frame)
-      if (frame.getSamples == null) return null
-      frame
+      if (frame.getSamples == null) null else frame
     } catch {
       case e: Exception =>
         throw new RuntimeException(e)

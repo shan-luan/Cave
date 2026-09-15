@@ -12,41 +12,43 @@ import com.lomekwi.cave.timeline.Track
 
 
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary, boundary.break
 import java.util
 
 /** 时间线捕获阶段监听器 —— 处理框选与空白区播放头 seek。 */
 class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputListener {
 
   override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-    if (button != Input.Buttons.LEFT) return false
-
-    if (App.shortcutManager.isActive(TlGroup.Actions.MARQUEE_SELECT)) {
+    if (button != Input.Buttons.LEFT) {
+      false
+    } else if (App.shortcutManager.isActive(TlGroup.Actions.MARQUEE_SELECT)) {
       tlGroup.marqueeActive = true
       tlGroup.marqueeStartX = x
       tlGroup.marqueeStartY = y
       tlGroup.marqueeEndX = x
       tlGroup.marqueeEndY = y
-      return true
+      true
+    } else {
+      val trackIndex: Int = tlGroup.yToTrackIndex(y)
+      val onSegment: Boolean = trackIndex >= 0 && trackIndex < tlGroup.timeline.getTracks.size()
+        && tlGroup.timeline.getTrack(trackIndex).get(tlGroup.xToAbsoluteTime(x)) != null
+      if (!onSegment) {
+        tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
+      }
+      false
     }
-
-    val trackIndex: Int = tlGroup.yToTrackIndex(y)
-    val onSegment: Boolean = trackIndex >= 0 && trackIndex < tlGroup.timeline.getTracks.size()
-      && tlGroup.timeline.getTrack(trackIndex).get(tlGroup.xToAbsoluteTime(x)) != null
-    if (!onSegment) {
-      tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
-    }
-    false
   }
 
   override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-    if (!tlGroup.marqueeActive) return
-    tlGroup.marqueeEndX = x
-    tlGroup.marqueeEndY = y
-    event.stop()
+    if (tlGroup.marqueeActive) {
+      tlGroup.marqueeEndX = x
+      tlGroup.marqueeEndY = y
+      event.stop()
+    }
   }
 
-  override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
-    if (!tlGroup.marqueeActive) return
+  override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = boundary[Unit] {
+    if (!tlGroup.marqueeActive) break(())
     tlGroup.marqueeActive = false
     event.stop()
 
@@ -55,7 +57,7 @@ class TlGroupCaptureListener(private final val tlGroup: TlGroup) extends InputLi
     val minY: Float = Math.min(tlGroup.marqueeStartY, tlGroup.marqueeEndY)
     val maxY: Float = Math.max(tlGroup.marqueeStartY, tlGroup.marqueeEndY)
 
-    if (maxX - minX < 2 || maxY - minY < 2) return
+    if (maxX - minX < 2 || maxY - minY < 2) break(())
 
     val firstTrack: Int = Math.max(0, tlGroup.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(tlGroup.timeline.getTracks.size() - 1, tlGroup.yToTrackIndex(minY))

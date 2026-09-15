@@ -37,16 +37,7 @@ class ShortcutManager {
 
   def isActive(action: ShortcutAction): Boolean = {
     val keys = actionToKeys.get(action)
-
-    if (keys.isEmpty) return false
-
-    for (key <- keys.asScala) {
-      if (!Gdx.input.isKeyPressed(key)) {
-        return false
-      }
-    }
-
-    true
+    !keys.isEmpty && keys.asScala.forall(key => Gdx.input.isKeyPressed(key))
   }
 
   def load(): Unit = {

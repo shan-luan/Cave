@@ -49,31 +49,32 @@ object MimeType {
    */
   def detectMimeType(file: File): String = {
     if (file == null || !file.exists()) {
-      return null
-    }
+      null
+    } else {
+      val path: Path = file.toPath
 
-    val path: Path = file.toPath
-
-    // 首先尝试使用系统检测
-    try {
-      val systemMimeType = Files.probeContentType(path)
-      if (systemMimeType != null && !systemMimeType.isEmpty) {
-        return systemMimeType
+      // 首先尝试使用系统检测
+      val systemMimeType = try {
+        Files.probeContentType(path)
+      } catch {
+        // 系统检测失败，继续使用扩展名检测
+        case _: Exception => null
       }
-    } catch {
-      case _: Exception =>
-      // 系统检测失败，继续使用扩展名检测
-    }
 
-    // 使用文件扩展名进行匹配
-    val fileName = file.getName.toLowerCase()
-    val lastDotIndex = fileName.lastIndexOf('.')
-    if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
-      val extension = fileName.substring(lastDotIndex + 1)
-      return extensionToMimeType.getOrElse(extension, null)
+      if (systemMimeType != null && !systemMimeType.isEmpty) {
+        systemMimeType
+      } else {
+        // 使用文件扩展名进行匹配
+        val fileName = file.getName.toLowerCase()
+        val lastDotIndex = fileName.lastIndexOf('.')
+        if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
+          val extension = fileName.substring(lastDotIndex + 1)
+          extensionToMimeType.getOrElse(extension, null)
+        } else {
+          null
+        }
+      }
     }
-
-    null
   }
 
   /**

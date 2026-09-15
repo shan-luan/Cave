@@ -38,25 +38,15 @@ class UndoManager(@transient private val project: Project) {
 
   private def push(command: UndoManager.UndoableCommand): Unit = {
     // 与栈顶同类型的可合并命令直接合并
-    if (!undoStack.isEmpty) {
-      command match {
-        case _: UndoManager.MergeableCommand =>
-          val top = undoStack.peek()
-          top match {
-            case topMc: UndoManager.MergeableCommand if top.getClass == command.getClass =>
-              if (topMc.merge(command)) {
-                redoStack.clear()
-                if (undoStack.size() > UndoManager.MAX_UNDO) {
-                  undoStack.removeLast()
-                }
-                return
-              }
-            case _ =>
-          }
-        case _ =>
-      }
+    val top = if (undoStack.isEmpty) null else undoStack.peek()
+    val merged = (command, top) match {
+      case (_: UndoManager.MergeableCommand, topMc: UndoManager.MergeableCommand) =>
+        topMc.getClass == command.getClass && topMc.merge(command)
+      case _ => false
     }
-    undoStack.push(command)
+    if (!merged) {
+      undoStack.push(command)
+    }
     redoStack.clear()
     if (undoStack.size() > UndoManager.MAX_UNDO) {
       undoStack.removeLast()
@@ -64,26 +54,28 @@ class UndoManager(@transient private val project: Project) {
   }
 
   def undo(): Unit = {
-    if (undoStack.isEmpty) return
-    val wasDirty = project.isDirty
-    project.currentVersion = project.currentVersion - 1
-    val command = undoStack.pop()
-    command.undo()
-    redoStack.push(command)
-    if (wasDirty != project.isDirty) {
-      project.projEventBus.post(ProjectDirtyChangedEvent)
+    if (!undoStack.isEmpty) {
+      val wasDirty = project.isDirty
+      project.currentVersion = project.currentVersion - 1
+      val command = undoStack.pop()
+      command.undo()
+      redoStack.push(command)
+      if (wasDirty != project.isDirty) {
+        project.projEventBus.post(ProjectDirtyChangedEvent)
+      }
     }
   }
 
   def redo(): Unit = {
-    if (redoStack.isEmpty) return
-    val wasDirty = project.isDirty
-    project.currentVersion = project.currentVersion + 1
-    val command = redoStack.pop()
-    command.redo()
-    undoStack.push(command)
-    if (wasDirty != project.isDirty) {
-      project.projEventBus.post(ProjectDirtyChangedEvent)
+    if (!redoStack.isEmpty) {
+      val wasDirty = project.isDirty
+      project.currentVersion = project.currentVersion + 1
+      val command = redoStack.pop()
+      command.redo()
+      undoStack.push(command)
+      if (wasDirty != project.isDirty) {
+        project.projEventBus.post(ProjectDirtyChangedEvent)
+      }
     }
   }
 

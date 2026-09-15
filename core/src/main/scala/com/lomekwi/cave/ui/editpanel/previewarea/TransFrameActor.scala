@@ -31,6 +31,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary, boundary.break
 import java.util
 
 class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectable {
@@ -83,15 +84,15 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   this.frame = frame0
   this.transformable = frame0
   addListener(new InputListener {
-    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      if (button != 0 || pointer != 0) return false
+    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = boundary[Boolean] {
+      if (button != 0 || pointer != 0) break(false)
       val source = frame.getSource
-      if (source == null) return false
+      if (source == null) break(false)
 
       val handle = gizmo.hitHandle(event.getStageX, event.getStageY)
       if (handle != null && selected) {
         startGizmoDrag(source, handle, event.getStageX, event.getStageY)
-        return true
+        break(true)
       }
 
       dragModifier = TransFrameActor.findOrCreateTransNode(source)
@@ -109,17 +110,16 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       if (gizmoDragging) {
         updateGizmoDrag(event.getStageX, event.getStageY)
-        return
+      } else if (dragModifier != null) {
+        dragging = true
+        updateDrag(event.getStageX, event.getStageY)
       }
-      if (dragModifier == null) return
-      dragging = true
-      updateDrag(event.getStageX, event.getStageY)
     }
 
-    override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
+    override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = boundary[Unit] {
       if (gizmoDragging) {
         finishGizmoDrag()
-        return
+        break(())
       }
       if (dragModifier != null && dragging) {
         val p: Project = App.root.getFrontendProject
@@ -214,26 +214,28 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     setScaleX(if (transform.isFlipX) -1f else 1f)
     setScaleY(if (transform.isFlipY) -1f else 1f)
 
-    if (dragModifier == null || getParent == null || getStage == null) return
-    TransFrameActor.dragStagePos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
-    getStage.screenToStageCoordinates(TransFrameActor.dragStagePos)
-    if (gizmoDragging) {
-      updateGizmoDrag(TransFrameActor.dragStagePos.x, TransFrameActor.dragStagePos.y)
-    } else if (dragging) {
-      updateDrag(TransFrameActor.dragStagePos.x, TransFrameActor.dragStagePos.y)
+    if (dragModifier != null && getParent != null && getStage != null) {
+      TransFrameActor.dragStagePos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(TransFrameActor.dragStagePos)
+      if (gizmoDragging) {
+        updateGizmoDrag(TransFrameActor.dragStagePos.x, TransFrameActor.dragStagePos.y)
+      } else if (dragging) {
+        updateDrag(TransFrameActor.dragStagePos.x, TransFrameActor.dragStagePos.y)
+      }
     }
   }
 
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
-    if (!touchable || !isTouchable) return null
-    if (insidePreviewHitRegion(x, y)) this else null
+    if (!touchable || !isTouchable) null
+    else if (insidePreviewHitRegion(x, y)) this
+    else null
   }
 
   /**
    * 判断事件点(x, y)是否落在「本Actor在stage坐标下的AABB 与 预览区域AABB」的交集内。
    * 仅处理交集内的事件，避免 TransFrameActor 抢夺预览区域之外的事件。
    */
-  private def insidePreviewHitRegion(x: Float, y: Float): Boolean = {
+  private def insidePreviewHitRegion(x: Float, y: Float): Boolean = boundary[Boolean] {
     val w = getWidth
     val h = getHeight
 
@@ -251,11 +253,11 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val extRight = w + handleOff
     val extBottom = -handleOff
     val extTop = h + handleOff
-    if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false
+    if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) break(false)
 
     val parent = getParent
     val grand = if (parent != null) parent.getParent else null
-    if (!grand.isInstanceOf[PreviewArea]) return true
+    if (!grand.isInstanceOf[PreviewArea]) break(true)
     val preview = grand.asInstanceOf[PreviewArea]
 
     TransFrameActor.hitCorner1.set(extLeft, extBottom)
@@ -285,7 +287,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     TransFrameActor.intersectBounds.y = Math.max(TransFrameActor.actorBounds.y, TransFrameActor.previewBounds.y)
     TransFrameActor.intersectBounds.width = Math.min(TransFrameActor.actorBounds.x + TransFrameActor.actorBounds.width, TransFrameActor.previewBounds.x + TransFrameActor.previewBounds.width) - TransFrameActor.intersectBounds.x
     TransFrameActor.intersectBounds.height = Math.min(TransFrameActor.actorBounds.y + TransFrameActor.actorBounds.height, TransFrameActor.previewBounds.y + TransFrameActor.previewBounds.height) - TransFrameActor.intersectBounds.y
-    if (TransFrameActor.intersectBounds.width <= 0 || TransFrameActor.intersectBounds.height <= 0) return false
+    if (TransFrameActor.intersectBounds.width <= 0 || TransFrameActor.intersectBounds.height <= 0) break(false)
 
     TransFrameActor.hitCorner1.set(x, y)
     localToStageCoordinates(TransFrameActor.hitCorner1)
@@ -392,10 +394,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  private def updateGizmoDrag(stageX: Float, stageY: Float): Unit = {
+  private def updateGizmoDrag(stageX: Float, stageY: Float): Unit = boundary[Unit] {
     if (gizmoHandle == Gizmo.Handle.ROTATE) {
       updateRotateDrag(stageX, stageY)
-      return
+      break(())
     }
 
     // stage 坐标取差后换算为画布本地 delta（canvas 仅平移+均匀缩放）
@@ -636,11 +638,11 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     Array(l, r, b, t, (l + r) * 0.5f, (b + t) * 0.5f)
   }
 
-  private def computeSnapAdjustment(dx: Float, dy: Float): Unit = {
+  private def computeSnapAdjustment(dx: Float, dy: Float): Unit = boundary[Unit] {
     TransFrameActor.snapAdjust.set(0f, 0f)
     snapLineX = Float.NaN
     snapLineY = Float.NaN
-    if (myStartBBox == null || siblingBBoxes == null) return
+    if (myStartBBox == null || siblingBBoxes == null) break(())
     val p = getParent
     val threshold = if (p != null) TransFrameActor.SNAP_THRESHOLD_SCREEN / p.getScaleX else TransFrameActor.SNAP_THRESHOLD_SCREEN
 
@@ -759,10 +761,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   protected class Gizmo {
     private[TransFrameActor] var hoveredHandle: Gizmo.Handle = uninitialized
 
-    private[TransFrameActor] def hitHandle(stageX: Float, stageY: Float): Gizmo.Handle = {
+    private[TransFrameActor] def hitHandle(stageX: Float, stageY: Float): Gizmo.Handle = boundary[Gizmo.Handle] {
       val w = getWidth
       val h = getHeight
-      if (w <= 0 || h <= 0) return null
+      if (w <= 0 || h <= 0) break(null)
       val hw = w / 2f
       val hh = h / 2f
 
@@ -783,7 +785,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         val dx = lx - localPositions(i)(0)
         val dy = ly - localPositions(i)(1)
         if (dx * dx + dy * dy <= r2) {
-          return Gizmo.Handle.values(i)
+          break(Gizmo.Handle.values(i))
         }
         i += 1
       }
@@ -803,30 +805,31 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       val dx = stageX - hx
       val dy = stageY - hy
       if (dx * dx + dy * dy <= r2) {
-        return Gizmo.Handle.ROTATE
+        break(Gizmo.Handle.ROTATE)
       }
 
       null
     }
 
     private[TransFrameActor] def updateCursor(stageX: Float, stageY: Float): Unit = {
-      if (!selected) return
-      val h = hitHandle(stageX, stageY)
-      if (h != hoveredHandle) {
-        hoveredHandle = h
-        setCursor(h)
+      if (selected) {
+        val h = hitHandle(stageX, stageY)
+        if (h != hoveredHandle) {
+          hoveredHandle = h
+          setCursor(h)
+        }
       }
     }
 
-    private[TransFrameActor] def setCursor(handle: Gizmo.Handle): Unit = {
-      if (Gdx.app.getType != Application.ApplicationType.Desktop) return
+    private[TransFrameActor] def setCursor(handle: Gizmo.Handle): Unit = boundary[Unit] {
+      if (Gdx.app.getType != Application.ApplicationType.Desktop) break(())
       if (handle == null) {
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Arrow)
-        return
+        break(())
       }
       if (handle == Gizmo.Handle.ROTATE) {
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand)
-        return
+        break(())
       }
       // 光标由锚点→手柄的屏幕方向决定，旋转/翻转后仍与视觉一致
       val w = getWidth
@@ -901,10 +904,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       }
     }
 
-    private[TransFrameActor] def draw(activeHandle: Gizmo.Handle): Unit = {
+    private[TransFrameActor] def draw(activeHandle: Gizmo.Handle): Unit = boundary[Unit] {
       val w = getWidth
       val h = getHeight
-      if (w <= 0 || h <= 0) return
+      if (w <= 0 || h <= 0) break(())
       val hw = w / 2f
       val hh = h / 2f
       val sd: ShapeDrawer = App.root.getShapeDrawer

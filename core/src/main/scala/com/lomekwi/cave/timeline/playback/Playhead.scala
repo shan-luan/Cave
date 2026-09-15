@@ -9,16 +9,16 @@ class Playhead(@transient private val projEventBus: EventBus) {
   @volatile private var playing: Boolean = false
 
   def setPlaying(playing: Boolean): Unit = {
-    if (playing == isPlaying) return
+    if (playing != isPlaying) {
+      if (playing) {
+        anchor = System.nanoTime() - frozenTime
+      } else {
+        frozenTime = System.nanoTime() - anchor
+      }
 
-    if (playing) {
-      anchor = System.nanoTime() - frozenTime
-    } else {
-      frozenTime = System.nanoTime() - anchor
+      this.playing = playing
+      projEventBus.post(PlayStateChangedEvent)
     }
-
-    this.playing = playing
-    projEventBus.post(PlayStateChangedEvent)
   }
 
   def isPlaying: Boolean = playing

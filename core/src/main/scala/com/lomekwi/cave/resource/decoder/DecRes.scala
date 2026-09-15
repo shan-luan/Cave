@@ -37,11 +37,10 @@ abstract class DecRes[F <: Frame] protected (protected val source: MedRes) exten
     grabber.stop()
   }
   override def close(): Unit = {
-    if (!initialized) {
-      return
+    if (initialized) {
+      grabber.stop()
+      grabber.close()
     }
-    grabber.stop()
-    grabber.close()
   }
   def grab(): org.bytedeco.javacv.Frame
 

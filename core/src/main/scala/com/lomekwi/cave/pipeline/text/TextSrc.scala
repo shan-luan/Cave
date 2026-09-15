@@ -17,6 +17,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
+import scala.util.boundary, boundary.break
 
 @SerialVersionUID(1L)
 class TextSrc(text: String) extends Source[TextFrame] {
@@ -85,7 +86,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
 
   override def sync(time: Long, track: Track): Unit = {}
 
-  override protected def generate(time: Long, track: Track): TextFrame = {
+  override protected def generate(time: Long, track: Track): TextFrame = boundary {
     if (frame != null && (frame.track ne track)) {
       initialized = false
     }
@@ -118,7 +119,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
       } catch {
         case _: InterruptedException =>
           Thread.currentThread().interrupt()
-          return null
+          break(null)
       }
     }
     frame.setText(getText)

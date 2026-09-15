@@ -66,23 +66,24 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
   }
 
   def upload(): Unit = {
-    if (!pixelsDirty) return
-    pixelsDirty = false
-    if (pixels != null) {
-      Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength)
-      texture.bind()
-      Gdx.gl.glTexSubImage2D(
-        GL20.GL_TEXTURE_2D,
-        0,
-        0,
-        0,
-        texture.getWidth,
-        texture.getHeight,
-        GL20.GL_RGBA,
-        GL20.GL_UNSIGNED_BYTE,
-        pixels
-      )
-      Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0)
+    if (pixelsDirty) {
+      pixelsDirty = false
+      if (pixels != null) {
+        Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength)
+        texture.bind()
+        Gdx.gl.glTexSubImage2D(
+          GL20.GL_TEXTURE_2D,
+          0,
+          0,
+          0,
+          texture.getWidth,
+          texture.getHeight,
+          GL20.GL_RGBA,
+          GL20.GL_UNSIGNED_BYTE,
+          pixels
+        )
+        Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0)
+      }
     }
   }
   override def close(): Unit = {

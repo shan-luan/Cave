@@ -88,13 +88,14 @@ class Inspector extends VisTable {
   }
 
   private def showInfo(seg: Segment): Unit = {
-    if (seg == null) return
-    currentSeg = seg
-    currentSegSet = null
-    content.clear()
-    content.setFillParent(false)
-    content.top()
-    appendSegmentInfo(seg)
+    if (seg != null) {
+      currentSeg = seg
+      currentSegSet = null
+      content.clear()
+      content.setFillParent(false)
+      content.top()
+      appendSegmentInfo(seg)
+    }
   }
 
   private def appendSegmentInfo(seg: Segment): Unit = {

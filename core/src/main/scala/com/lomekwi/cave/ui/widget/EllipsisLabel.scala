@@ -9,8 +9,8 @@ class EllipsisLabel(text: String, maxChars: Int) extends VisLabel(EllipsisLabel.
 
 object EllipsisLabel {
   private def truncate(text: String, maxChars: Int): String = {
-    if (text == null) return ""
-    if (text.length() <= maxChars) return text
-    text.substring(0, maxChars) + "..."
+    if (text == null) ""
+    else if (text.length() <= maxChars) text
+    else text.substring(0, maxChars) + "..."
   }
 }

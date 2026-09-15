@@ -95,39 +95,39 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     val project: Project = tlGroup.getProject
     try {
       val segments: util.List[Segment] = project.mediaSegFactory.getAll(file)
-      if (segments.isEmpty) return
+      if (!segments.isEmpty) {
+        val baseTrack: Int = 0
+        var trackOffset: Int = 0
+        val added: util.List[Segment] = new util.ArrayList[Segment]()
 
-      val baseTrack: Int = 0
-      var trackOffset: Int = 0
-      val added: util.List[Segment] = new util.ArrayList[Segment]()
+        val timeline = tlGroup.getTimeline
+        Using.resource(timeline.record()) { h =>
+          for (seg <- segments.asScala) {
+            seg.setOrigin(time)
+            val duration: Long = seg.getSource.getDefaultSegmentDuration
+            if (duration > 0) {
+              var targetTrack: Int = baseTrack + trackOffset
+              val range: Interval = Interval(time, time + duration)
+              while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
+                targetTrack += 1
+              }
 
-      val timeline = tlGroup.getTimeline
-      Using.resource(timeline.record()) { h =>
-        for (seg <- segments.asScala) {
-          seg.setOrigin(time)
-          val duration: Long = seg.getSource.getDefaultSegmentDuration
-          if (duration > 0) {
-            var targetTrack: Int = baseTrack + trackOffset
-            val range: Interval = Interval(time, time + duration)
-            while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
-              targetTrack += 1
+              timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
+              trackOffset = targetTrack - baseTrack + 1
+              added.add(seg)
             }
-
-            timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
-            trackOffset = targetTrack - baseTrack + 1
-            added.add(seg)
           }
         }
-      }
 
-      if (added.size() >= 2) {
-        val group = new SegmentGroup()
-        for (seg <- added.asScala) {
-          group.add(seg)
+        if (added.size() >= 2) {
+          val group = new SegmentGroup()
+          for (seg <- added.asScala) {
+            group.add(seg)
+          }
         }
-      }
 
-      tlGroup.markTimelineDirty()
+        tlGroup.markTimelineDirty()
+      }
     } catch {
       case e: IOException =>
         Gdx.app.error("TlGroupMenu", "添加媒体片段失败: " + e.getMessage)

@@ -12,6 +12,7 @@ import java.util.{Collections, Objects}
 import java.util.concurrent.{Future, Phaser}
 import java.util.concurrent.locks.LockSupport
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
@@ -114,34 +115,27 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   private def shiftScan(r: Interval, exclude: Interval, ignore: util.Collection[Segment], forward: Boolean): Long = this.synchronized {
     val lo: Long = r.lo
     val hi: Long = r.hi
-    var s: Long = 0
-    var step = 0
-    while (step < Track.MAX_SLIDE_STEPS) {
-      if (isFree(r.shift(s), exclude, ignore)) {
-        return s
-      }
-      val obstacles = intersectingEntries(r.shift(s))
-        .collect { case (interval, segment) if !ignorable(exclude, ignore, interval, segment) => interval }
-      if (forward) {
-        obstacles.map(_.hi).maxOption match {
-          case None => return s
-          case Some(maxEnd) =>
-            val next = maxEnd - lo
-            if (next <= s) return Long.MaxValue
-            s = next
-        }
+
+    @tailrec
+    def scan(s: Long, step: Int): Long = {
+      if (step >= Track.MAX_SLIDE_STEPS || isFree(r.shift(s), exclude, ignore)) {
+        s
       } else {
-        obstacles.map(_.lo).minOption match {
-          case None => return s
-          case Some(minStart) =>
-            val next = minStart - hi
-            if (next >= s) return s
-            s = next
+        val obstacles = intersectingEntries(r.shift(s))
+          .collect { case (interval, segment) if !ignorable(exclude, ignore, interval, segment) => interval }
+        val candidate =
+          if (forward) obstacles.map(_.hi).maxOption.map(_ - lo)
+          else obstacles.map(_.lo).minOption.map(_ - hi)
+        candidate match {
+          case None => s
+          case Some(next) if forward && next <= s => Long.MaxValue
+          case Some(next) if !forward && next >= s => s
+          case Some(next) => scan(next, step + 1)
         }
       }
-      step += 1
     }
-    s
+
+    scan(0L, 0)
   }
 
   /** 该条目是否不构成障碍：与 exclude 相连，或在 ignore 中。 */
@@ -192,17 +186,23 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
 
   protected[timeline] def split(time: Long): Boolean = this.synchronized {
     val entry = entryAt(time)
-    if (entry.isEmpty) return false
-    val s = entry.get._2
-    val r = s.getRange
-    val lo: Long = r.lo
-    val hi: Long = r.hi
-    if (time <= lo || time >= hi) return false
-    val right = s.duplicate()
-    sources.remove(r)
-    `override`(s, Interval(lo, time))
-    `override`(right, Interval(time, hi))
-    true
+    if (entry.isEmpty) {
+      false
+    } else {
+      val s = entry.get._2
+      val r = s.getRange
+      val lo: Long = r.lo
+      val hi: Long = r.hi
+      if (time <= lo || time >= hi) {
+        false
+      } else {
+        val right = s.duplicate()
+        sources.remove(r)
+        `override`(s, Interval(lo, time))
+        `override`(right, Interval(time, hi))
+        true
+      }
+    }
   }
 
   /* ------------------------------------------------------------------
@@ -371,14 +371,18 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
    * 以便跨时间线（如序列化快照）的结构对比。
    */
   override def equals(o: Any): Boolean = {
-    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) return true
-    o match {
+    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
+      true
+    } else o match {
       case other: Track =>
-        if (index != other.index) return false
-        val a = sources.iterator.toIndexedSeq
-        val b = other.sources.iterator.toIndexedSeq
-        a.size == b.size && a.zip(b).forall { (ea, eb) =>
-          ea._1.equals(eb._1) && Track.segmentEquals(ea._2, eb._2)
+        if (index != other.index) {
+          false
+        } else {
+          val a = sources.iterator.toIndexedSeq
+          val b = other.sources.iterator.toIndexedSeq
+          a.size == b.size && a.zip(b).forall { (ea, eb) =>
+            ea._1.equals(eb._1) && Track.segmentEquals(ea._2, eb._2)
+          }
         }
       case _ => false
     }
@@ -528,20 +532,24 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
 object Track {
   /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */
   private[timeline] def tighter(a: Long, b: Long): Long = {
-    if (a == Long.MaxValue || a == Long.MinValue) return b
-    if (b == Long.MaxValue || b == Long.MinValue) return a
-    if (Math.abs(b) < Math.abs(a)) b else a
+    if (a == Long.MaxValue || a == Long.MinValue) b
+    else if (b == Long.MaxValue || b == Long.MinValue) a
+    else if (Math.abs(b) < Math.abs(a)) b
+    else a
   }
 
   private final val MAX_SLIDE_STEPS = 10000
 
   private def segmentEquals(a: Segment, b: Segment): Boolean = {
-    if (a.eq(b)) return true
-    val sa = a.getSource
-    val sb = b.getSource
-    sa.getClass == sb.getClass
-      && sa.getDuration == sb.getDuration
-      && a.getOrigin == b.getOrigin
-      && Objects.equals(a.getRange, b.getRange)
+    if (a.eq(b)) {
+      true
+    } else {
+      val sa = a.getSource
+      val sb = b.getSource
+      sa.getClass == sb.getClass
+        && sa.getDuration == sb.getDuration
+        && a.getOrigin == b.getOrigin
+        && Objects.equals(a.getRange, b.getRange)
+    }
   }
 }

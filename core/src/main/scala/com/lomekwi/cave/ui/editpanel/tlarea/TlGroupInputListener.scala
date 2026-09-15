@@ -16,13 +16,13 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
     if (button == Input.Buttons.LEFT && !tlGroup.marqueeActive) {
       tlGroup.clearSelection()
       tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
-      return true
-    }
-    if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
+      true
+    } else if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
       tlGroup.tlGroupMenu.setContext(Math.max(tlGroup.xToAbsoluteTime(x), 0))
-      return true
+      true
+    } else {
+      false
     }
-    false
   }
 
   override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
@@ -32,50 +32,44 @@ class TlGroupInputListener(private final val tlGroup: TlGroup) extends InputList
   }
 
   override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-    if (tlGroup.marqueeActive) return
-    tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
+    if (!tlGroup.marqueeActive) {
+      tlGroup.playhead.seek(Math.max(tlGroup.xToAbsoluteTime(x), 0))
+    }
   }
 
   override def scrolled(event: InputEvent, x: Float, y: Float, amountX: Float, amountY: Float): Boolean = {
     val ip: Input = Gdx.input
 
-    if (ip.isKeyPressed(CONTROL_LEFT) && ip.isKeyPressed(SHIFT_LEFT)) {
+    val handled: Boolean = if (ip.isKeyPressed(CONTROL_LEFT) && ip.isKeyPressed(SHIFT_LEFT)) {
       tlGroup.view.adjustTrackHeight(amountY * 10)
-
+      true
     } else if (ip.isKeyPressed(CONTROL_LEFT)) {
       tlGroup.view.scrollVertical(amountY * 10)
-
+      true
     } else if (ip.isKeyPressed(SHIFT_LEFT)) {
       tlGroup.view.scrollHorizontal(amountY * 30, tlGroup.getWidth)
-
+      true
     } else {
-      if (!tlGroup.view.zoom(amountY, x / tlGroup.getWidth)) return true
+      tlGroup.view.zoom(amountY, x / tlGroup.getWidth)
     }
 
-    tlGroup.dirty = true
+    if (handled) {
+      tlGroup.dirty = true
+    }
     true
   }
 
   override def keyDown(event: InputEvent, keycode: Int): Boolean = {
     if (App.shortcutManager.isActive(TlGroup.Actions.PLAY_PAUSE)) {
       tlGroup.playhead.setPlaying(!tlGroup.playhead.isPlaying)
-      return true
-    }
-    if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {
+    } else if (App.shortcutManager.isActive(TlGroup.Actions.SPLIT)) {
       tlGroup.splitAtCursor()
-      return true
-    }
-    if (App.shortcutManager.isActive(TlGroup.Actions.DELETE)) {
+    } else if (App.shortcutManager.isActive(TlGroup.Actions.DELETE)) {
       tlGroup.deleteSelected()
-      return true
-    }
-    if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {
+    } else if (App.shortcutManager.isActive(TlGroup.Actions.GROUP)) {
       tlGroup.groupSelectedSegments()
-      return true
-    }
-    if (App.shortcutManager.isActive(TlGroup.Actions.PASTE)) {
+    } else if (App.shortcutManager.isActive(TlGroup.Actions.PASTE)) {
       tlGroup.performPaste()
-      return true
     }
     true
   }

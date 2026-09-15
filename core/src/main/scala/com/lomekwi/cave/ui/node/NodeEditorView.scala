@@ -55,25 +55,25 @@ class NodeEditorView extends VisTable with Focusable {
     val oy = getY + canvas.getY
     val s = canvas.getScaleX
     val spacing = NodeEditorView.GRID_SPACING * s
-    if (spacing < NodeEditorView.MIN_GRID_PIXEL) return
+    if (spacing >= NodeEditorView.MIN_GRID_PIXEL) {
+      val x0 = getX
+      val x1 = getX + getWidth
+      val y0 = getY
+      val y1 = getY + getHeight
 
-    val x0 = getX
-    val x1 = getX + getWidth
-    val y0 = getY
-    val y1 = getY + getHeight
+      val startX = Math.ceil(((x0 - ox) / spacing).toDouble).toFloat * spacing
+      var x = ox + startX
+      while (x <= x1) {
+        drawer.line(x, y0, x, y1, Colors.NODE_GRID, 1f)
+        x += spacing
+      }
 
-    val startX = Math.ceil(((x0 - ox) / spacing).toDouble).toFloat * spacing
-    var x = ox + startX
-    while (x <= x1) {
-      drawer.line(x, y0, x, y1, Colors.NODE_GRID, 1f)
-      x += spacing
-    }
-
-    val startY = Math.ceil(((y0 - oy) / spacing).toDouble).toFloat * spacing
-    var y = oy + startY
-    while (y <= y1) {
-      drawer.line(x0, y, x1, y, Colors.NODE_GRID, 1f)
-      y += spacing
+      val startY = Math.ceil(((y0 - oy) / spacing).toDouble).toFloat * spacing
+      var y = oy + startY
+      while (y <= y1) {
+        drawer.line(x0, y, x1, y, Colors.NODE_GRID, 1f)
+        y += spacing
+      }
     }
   }
 }

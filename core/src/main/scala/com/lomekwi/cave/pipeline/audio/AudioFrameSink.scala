@@ -9,6 +9,7 @@ import com.lomekwi.cave.resource.decoder.AudDecRes
 import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
 import scala.compiletime.uninitialized
+import scala.util.boundary, boundary.break
 
 class AudioFrameSink {
   @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer()
@@ -35,13 +36,14 @@ class AudioFrameSink {
   private def stopMixer(): Unit = {
     val f = currentFuture
     currentFuture = null
-    if (f == null) return
-    afm.stop()
-    try {
-      f.get(200, TimeUnit.MILLISECONDS)
-    } catch {
-      case _: Exception =>
-        f.cancel(true)
+    if (f != null) {
+      afm.stop()
+      try {
+        f.get(200, TimeUnit.MILLISECONDS)
+      } catch {
+        case _: Exception =>
+          f.cancel(true)
+      }
     }
   }
 }
@@ -56,7 +58,7 @@ object AudioFrameSink {
       stopped = true
     }
 
-    override def run(): Unit = {
+    override def run(): Unit = boundary[Unit] {
       while (!stopped) {
         util.Arrays.fill(output, 0f)
         var f: AudFrame = null
@@ -64,7 +66,7 @@ object AudioFrameSink {
           f = frames.poll(AudioFrameMixer.POLL_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
         } catch {
           case _: InterruptedException =>
-            return
+            break(())
         }
         if (f != null) {
           var continueLoop = true
@@ -83,7 +85,7 @@ object AudioFrameSink {
             }
           }
           if (stopped || Thread.currentThread().isInterrupted) {
-            return
+            break(())
           }
           clamp(output)
           App.audioOut.writeSamples(output)

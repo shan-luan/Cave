@@ -203,21 +203,20 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
 
     private def flushBatch(): Unit = {
-      if (batchCount == 0) {
-        return
-      }
-      val n = batchCount
-      val slots = util.Arrays.copyOf(batchSlots, n)
-      val pixmaps = util.Arrays.copyOf(batchPixmaps, n)
-      Gdx.app.postRunnable(() => {
-        for (i <- 0 until n) {
-          if (!cache.containsKey(slots(i))) {
-            cache.put(slots(i), new Texture(pixmaps(i)))
+      if (batchCount != 0) {
+        val n = batchCount
+        val slots = util.Arrays.copyOf(batchSlots, n)
+        val pixmaps = util.Arrays.copyOf(batchPixmaps, n)
+        Gdx.app.postRunnable(() => {
+          for (i <- 0 until n) {
+            if (!cache.containsKey(slots(i))) {
+              cache.put(slots(i), new Texture(pixmaps(i)))
+            }
+            pixmaps(i).dispose()
           }
-          pixmaps(i).dispose()
-        }
-      })
-      batchCount = 0
+        })
+        batchCount = 0
+      }
     }
 
     private[media] def dispose(): Unit = {

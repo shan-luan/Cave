@@ -81,19 +81,19 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
 
   def getTexture: Texture = {
     if (texture != null) {
-      return texture
+      texture
+    } else if (cachedPixels == null) {
+      null
+    } else {
+      texture = new Texture(width, height, Pixmap.Format.RGBA8888)
+      texture.bind()
+      cachedPixels.rewind()
+      Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength)
+      Gdx.gl.glTexSubImage2D(GL20.GL_TEXTURE_2D, 0, 0, 0, width, height,
+        GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, cachedPixels)
+      Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0)
+      texture
     }
-    if (cachedPixels == null) {
-      return null
-    }
-    texture = new Texture(width, height, Pixmap.Format.RGBA8888)
-    texture.bind()
-    cachedPixels.rewind()
-    Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, unpackRowLength)
-    Gdx.gl.glTexSubImage2D(GL20.GL_TEXTURE_2D, 0, 0, 0, width, height,
-      GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, cachedPixels)
-    Gdx.gl.glPixelStorei(GL30.GL_UNPACK_ROW_LENGTH, 0)
-    texture
   }
 
   override def getPreview(time: Long): Texture = {

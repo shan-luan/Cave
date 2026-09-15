@@ -14,6 +14,7 @@ import com.lomekwi.cave.ui.Colors
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary, boundary.break
 import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
@@ -74,10 +75,10 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       }
     }
 
-    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
+    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = boundary[Boolean] {
       val parent = getParent
       if (parent == null || !parent.isInstanceOf[TlGroup]) {
-        return false
+        break(false)
       }
       val tlGroup = parent.asInstanceOf[TlGroup]
       if (button == Input.Buttons.LEFT) {
@@ -173,8 +174,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   /** 拖拽中：每次鼠标移动都会调用，按 dragSide 分派到三种分支（含吸附）。 */
-  private[tlarea] def dragTo(diffToActorX: Float, diffToActorY: Float): Unit = {
-    if (tl == null || dragSide == DragSide.NONE) return
+  private[tlarea] def dragTo(diffToActorX: Float, diffToActorY: Float): Unit = boundary[Unit] {
+    if (tl == null || dragSide == DragSide.NONE) break(())
 
     tl.snapIndicatorTime = -1
 
@@ -221,51 +222,60 @@ abstract class SegActor(private val segment: Segment) extends Actor {
 
   /** 裁切吸附：忽略 drag 成员与同轨道片段，返回吸附后的时间并设置指示线。 */
   private def snapResizeTime(rawTime: Long): Long = {
-    if (snapDisabled()) return rawTime
-    val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
-    for (s <- segment.getTrack.asScala) ignore.add(s)
-    val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
-    if (snapped != rawTime) tl.snapIndicatorTime = snapped
-    snapped
+    if (snapDisabled()) {
+      rawTime
+    } else {
+      val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
+      for (s <- segment.getTrack.asScala) ignore.add(s)
+      val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
+      if (snapped != rawTime) tl.snapIndicatorTime = snapped
+      snapped
+    }
   }
 
   /** 整体移动吸附：起点与终点各求吸附点，取更近者。 */
   private def snapMoveTarget(target: Long, duration: Long): Long = {
-    if (snapDisabled()) return target
-    val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
-    val segEnd: Long = target + duration
-    val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
-    var snappedEnd: Long = tl.timeline.snapTime(segEnd, snapThreshold(), ignore) - duration
-    if (snappedEnd < 0) snappedEnd = 0
-    val startMoved: Boolean = snappedStart != target
-    val endMoved: Boolean = snappedEnd != target
-    if (startMoved && endMoved) {
-      if (Math.abs(snappedStart - target) <= Math.abs(snappedEnd - target)) {
+    if (snapDisabled()) {
+      target
+    } else {
+      val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
+      val segEnd: Long = target + duration
+      val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
+      var snappedEnd: Long = tl.timeline.snapTime(segEnd, snapThreshold(), ignore) - duration
+      if (snappedEnd < 0) snappedEnd = 0
+      val startMoved: Boolean = snappedStart != target
+      val endMoved: Boolean = snappedEnd != target
+      if (startMoved && endMoved) {
+        if (Math.abs(snappedStart - target) <= Math.abs(snappedEnd - target)) {
+          tl.snapIndicatorTime = snappedStart
+          snappedStart
+        } else {
+          tl.snapIndicatorTime = snappedEnd + duration
+          snappedEnd
+        }
+      } else if (startMoved) {
         tl.snapIndicatorTime = snappedStart
-        return snappedStart
+        snappedStart
+      } else if (endMoved) {
+        tl.snapIndicatorTime = snappedEnd + duration
+        snappedEnd
+      } else {
+        target
       }
-      tl.snapIndicatorTime = snappedEnd + duration
-      return snappedEnd
-    } else if (startMoved) {
-      tl.snapIndicatorTime = snappedStart
-      return snappedStart
-    } else if (endMoved) {
-      tl.snapIndicatorTime = snappedEnd + duration
-      return snappedEnd
     }
-    target
   }
 
   /** 松手时调用：提交 undo 并清空会话。 */
   private[tlarea] def finishDrag(): Unit = {
-    if (tl == null) return
-    tl.dirty = true
-    tl.snapIndicatorTime = -1
-    tl.timeline.submit()
-    dragMembers = null
-    dragOrigStarts = null
-    dragOrigDurations = null
-    dragOrigTracks = null
+    if (tl != null) {
+      tl.dirty = true
+      tl.snapIndicatorTime = -1
+      tl.timeline.submit()
+      dragMembers = null
+      dragOrigStarts = null
+      dragOrigDurations = null
+      dragOrigTracks = null
+    }
   }
 
   /** 收集参与拖拽的成员并快照各自的起点/时长/轨道。 */
@@ -304,56 +314,55 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     val trackDelta: Int = newTrack.index - members.get(0).getTrack.index
 
     val minIdx: Int = members.stream().mapToInt((m: Segment) => m.getTrack.index).min().orElseThrow()
-    if (minIdx + trackDelta < 0) return
+    if (minIdx + trackDelta >= 0) {
+      val currentStart0: Long = members.get(0).getRange.lo
+      tl.timeline.moveTime(members, target - currentStart0)
 
-    val currentStart0: Long = members.get(0).getRange.lo
-    tl.timeline.moveTime(members, target - currentStart0)
-
-    if (trackDelta != 0) {
-      tl.timeline.moveTrack(members, trackDelta)
+      if (trackDelta != 0) {
+        tl.timeline.moveTrack(members, trackDelta)
+      }
     }
   }
 
   private def handleFrontResize(newStart: Long): Unit = {
     val absDelta: Long = newStart - dragOldStart
     val n: Int = dragMembers.size()
-    var i = 0
-    while (i < n) {
+    val inBounds = (0 until n).forall { i =>
       val ns: Long = dragOrigStarts(i) + absDelta
-      if (ns >= dragOrigStarts(i) + dragOrigDurations(i) || ns < 0) return
-      i += 1
+      ns < dragOrigStarts(i) + dragOrigDurations(i) && ns >= 0
     }
+    if (inBounds) {
+      val members: util.List[Segment] = util.List.copyOf(dragMembers)
+      val currentStart0: Long = members.get(0).getRange.lo
 
-    val members: util.List[Segment] = util.List.copyOf(dragMembers)
-    val currentStart0: Long = members.get(0).getRange.lo
-
-    // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/前邻/起点下界）后应用；
-    // applied 为 0 等价于没动。
-    tl.timeline.setStart(members, newStart - currentStart0)
+      // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/前邻/起点下界）后应用；
+      // applied 为 0 等价于没动。
+      tl.timeline.setStart(members, newStart - currentStart0)
+    }
   }
 
   private def handleBehindResize(newEnd: Long): Unit = {
     val oldEnd: Long = dragOldStart + dragOldDuration
     val absDelta: Long = newEnd - oldEnd
     val n: Int = dragMembers.size()
-    var i = 0
-    while (i < n) {
+    val inBounds = (0 until n).forall { i =>
       val ne: Long = dragOrigStarts(i) + dragOrigDurations(i) + absDelta
-      if (ne <= dragOrigStarts(i)) return
-      i += 1
+      ne > dragOrigStarts(i)
     }
+    if (inBounds) {
+      val members: util.List[Segment] = util.List.copyOf(dragMembers)
+      val currentEnd0: Long = members.get(0).getRange.hi
 
-    val members: util.List[Segment] = util.List.copyOf(dragMembers)
-    val currentEnd0: Long = members.get(0).getRange.hi
-
-    // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/后邻/源长度上界）后应用；
-    // applied 为 0 等价于没动。
-    tl.timeline.setEnd(members, newEnd - currentEnd0)
+      // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/后邻/源长度上界）后应用；
+      // applied 为 0 等价于没动。
+      tl.timeline.setEnd(members, newEnd - currentEnd0)
+    }
   }
 
   private def setCursor(cursor: Cursor.SystemCursor): Unit = {
-    if (Gdx.app.getType != Application.ApplicationType.Desktop) return
-    Gdx.graphics.setSystemCursor(cursor)
+    if (Gdx.app.getType == Application.ApplicationType.Desktop) {
+      Gdx.graphics.setSystemCursor(cursor)
+    }
   }
 
   private def getMenu: SegMenu = {

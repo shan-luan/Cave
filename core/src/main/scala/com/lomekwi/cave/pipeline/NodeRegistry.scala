@@ -39,14 +39,11 @@ class NodeRegistry {
    */
   def createCompatible(source: Source[?], index: Int): Node = {
     val frameType: Class[?] = source.getFrameType
-    var count = 0
-    for (nodeClass <- entries.asScala) {
-      if (NodeRegistry.isCompatible(nodeClass, frameType)) {
-        if (count == index) return NodeRegistry.create(nodeClass)
-        count += 1
-      }
-    }
-    null
+    entries.asScala.iterator
+      .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))
+      .zipWithIndex
+      .collectFirst { case (nodeClass, i) if i == index => NodeRegistry.create(nodeClass) }
+      .orNull
   }
 }
 
@@ -65,22 +62,20 @@ object NodeRegistry {
   }
 
   private def isCompatible(nodeClass: Class[? <: Node], frameType: Class[?]): Boolean = {
-    if (!classOf[Filter[?]].isAssignableFrom(nodeClass)) return true // 非 Filter 节点始终兼容
-    val asFilter: Class[? <: Filter[?]] = nodeClass.asSubclass(classOf[Filter[?]])
-    targetTypeOf(asFilter).isAssignableFrom(frameType)
+    if (!classOf[Filter[?]].isAssignableFrom(nodeClass)) {
+      true // 非 Filter 节点始终兼容
+    } else {
+      val asFilter: Class[? <: Filter[?]] = nodeClass.asSubclass(classOf[Filter[?]])
+      targetTypeOf(asFilter).isAssignableFrom(frameType)
+    }
   }
 
   private def targetTypeOf(filterClass: Class[? <: Filter[?]]): Class[?] = {
-    val superclass: Type = filterClass.getGenericSuperclass
-    superclass match {
-      case pt: ParameterizedType =>
-        val arg: Type = pt.getActualTypeArguments()(0)
-        arg match {
-          case clazz: Class[?] => return clazz
-          case _ =>
-        }
-      case _ =>
+    val arg: Option[Type] = filterClass.getGenericSuperclass match {
+      case pt: ParameterizedType => Some(pt.getActualTypeArguments()(0))
+      case _ => None
     }
-    throw new IllegalArgumentException("无法从 " + filterClass.getName + " 推断目标类型")
+    arg.collect { case clazz: Class[?] => clazz }
+      .getOrElse(throw new IllegalArgumentException("无法从 " + filterClass.getName + " 推断目标类型"))
   }
 }

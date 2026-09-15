@@ -36,13 +36,13 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       }
 
       override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
-        if (source.getActor.isDescendantOf(MediaPool.this)) return
-
-        val file = payload.getObject.asInstanceOf[File]
-        if (!resources.containsKey(file)) {
-          val item = new MediaPoolItem(file, findShowable(file))
-          addActor(item)
-          registerDragSource(item)
+        if (!source.getActor.isDescendantOf(MediaPool.this)) {
+          val file = payload.getObject.asInstanceOf[File]
+          if (!resources.containsKey(file)) {
+            val item = new MediaPoolItem(file, findShowable(file))
+            addActor(item)
+            registerDragSource(item)
+          }
         }
       }
     })

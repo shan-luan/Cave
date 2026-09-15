@@ -20,6 +20,7 @@ import com.lomekwi.cave.ui.widget.Card
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary, boundary.break
 import java.util
 
 /**
@@ -45,23 +46,26 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
         dragStageY = event.getStageY
         dragWindowY = getY
         event.cancel()
-        return true
+        true
+      } else {
+        false
       }
-      false
     }
 
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-      if (!dragging) return
-      event.cancel()
-      setY(dragWindowY + (event.getStageY - dragStageY))
+      if (dragging) {
+        event.cancel()
+        setY(dragWindowY + (event.getStageY - dragStageY))
+      }
     }
 
     override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
-      if (!dragging) return
-      dragging = false
-      doReorder()
-      if (rebuildCallback != null) {
-        rebuildCallback.run()
+      if (dragging) {
+        dragging = false
+        doReorder()
+        if (rebuildCallback != null) {
+          rebuildCallback.run()
+        }
       }
     }
   })
@@ -97,33 +101,34 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   }
 
   private def move(up: Boolean): Unit = {
-    if (source == null) return
-    val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
-    val index = filters.indexOf(filter)
-    if (index < 0) return
-    val target = if (up) index - 1 else index + 1
-    if (target < 0 || target >= filters.size()) return
-    filters.remove(index)
-    filters.add(target, filter)
-    val p: Project = App.root.getFrontendProject
-    if (p != null) {
-      p.undoManager.record(UndoManager.ReorderFilterCommand(source, filter, index, target))
-      p.projEventBus.post(RefreshRequestEvent)
-    }
-    if (rebuildCallback != null) {
-      rebuildCallback.run()
+    val filters = if (source == null) null else source.getFilters.asInstanceOf[util.List[Filter[?]]]
+    if (filters != null) {
+      val index = filters.indexOf(filter)
+      val target = if (up) index - 1 else index + 1
+      if (index >= 0 && target >= 0 && target < filters.size()) {
+        filters.remove(index)
+        filters.add(target, filter)
+        val p: Project = App.root.getFrontendProject
+        if (p != null) {
+          p.undoManager.record(UndoManager.ReorderFilterCommand(source, filter, index, target))
+          p.projEventBus.post(RefreshRequestEvent)
+        }
+        if (rebuildCallback != null) {
+          rebuildCallback.run()
+        }
+      }
     }
   }
 
   /** 拖拽结束后，根据卡片在列表中的位置计算目标索引并重排。 */
-  private def doReorder(): Unit = {
-    if (source == null) return
+  private def doReorder(): Unit = boundary[Unit] {
+    if (source == null) break(())
     val p = getParent
     p match {
       case content: VisTable =>
         val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
-        if (myIndex < 0) return
+        if (myIndex < 0) break(())
 
         val myCenterY = getY + getHeight / 2
         var target = 0
@@ -133,7 +138,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
           }
         }
 
-        if (target == myIndex) return
+        if (target == myIndex) break(())
 
         filters.remove(myIndex)
         filters.add(target, filter)
@@ -149,15 +154,16 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
 
   override def close(): Unit = {
     val index = source.getFilters.indexOf(filter)
-    if (index < 0) return
-    source.getFilters.remove(filter)
-    val p: Project = App.root.getFrontendProject
-    if (p != null) {
-      p.undoManager.record(UndoManager.RemoveFilterCommand(source, filter, index))
-      p.projEventBus.post(RefreshRequestEvent)
+    if (index >= 0) {
+      source.getFilters.remove(filter)
+      val p: Project = App.root.getFrontendProject
+      if (p != null) {
+        p.undoManager.record(UndoManager.RemoveFilterCommand(source, filter, index))
+        p.projEventBus.post(RefreshRequestEvent)
+      }
+      remove()
+      if (rebuildCallback != null) rebuildCallback.run()
     }
-    remove()
-    if (rebuildCallback != null) rebuildCallback.run()
   }
 
   def setRebuildCallback(callback: Runnable): Unit = {

@@ -86,15 +86,15 @@ object Node {
 
     def linkFrom(p: Node.OutPort[?]): Boolean = {
       if (!canLinkFrom(p)) {
-        return false
+        false
+      } else {
+        unlink()
+
+        setPrev(p.asInstanceOf[Node.OutPort[? <: T]])
+        p.addNext(this)
+
+        true
       }
-
-      unlink()
-
-      setPrev(p.asInstanceOf[Node.OutPort[? <: T]])
-      p.addNext(this)
-
-      true
     }
 
     override def unlink(): Unit = {

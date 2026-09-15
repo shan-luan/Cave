@@ -115,30 +115,29 @@ class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
       start()
     }
 
-    if (!isTimeLegal(time)) {
-      return
-    }
-    val nextFrameTime = getTimestamp + getLengthPerFrame
+    if (isTimeLegal(time)) {
+      val nextFrameTime = getTimestamp + getLengthPerFrame
 
-    if (!((time < nextFrameTime) && bufferedPixels != null)) {
-      var output: Frame = null
-      var retryCount = 0
-      val maxRetries = 10
-      while (output == null && retryCount < maxRetries) {
-        output = grab()
-        retryCount += 1
-      }
-      if (output != null) {
-        bufferedPixels = output.image(0).asInstanceOf[ByteBuffer]
-        if (output.imageStride > 0 && output.imageChannels > 0) {
-          unpackRowLength = output.imageStride / output.imageChannels
+      if (!((time < nextFrameTime) && bufferedPixels != null)) {
+        var output: Frame = null
+        var retryCount = 0
+        val maxRetries = 10
+        while (output == null && retryCount < maxRetries) {
+          output = grab()
+          retryCount += 1
+        }
+        if (output != null) {
+          bufferedPixels = output.image(0).asInstanceOf[ByteBuffer]
+          if (output.imageStride > 0 && output.imageChannels > 0) {
+            unpackRowLength = output.imageStride / output.imageChannels
+          }
         }
       }
-    }
 
-    // 目标时间在下一帧之前，且缓存有效，直接返回缓存
-    frame.setPixels(bufferedPixels)
-    frame.setUnpackRowLength(unpackRowLength)
+      // 目标时间在下一帧之前，且缓存有效，直接返回缓存
+      frame.setPixels(bufferedPixels)
+      frame.setUnpackRowLength(unpackRowLength)
+    }
   }
 
   override def seek(time: Long): Unit = {

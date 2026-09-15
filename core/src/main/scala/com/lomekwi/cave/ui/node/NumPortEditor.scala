@@ -30,13 +30,14 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
     override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
       val newVal: Double = model.getValue.toDouble
       val oldVal: Double = if (defaultData != null) defaultData.getVal else 0.0
-      if (oldVal == newVal) return
-      val p: Project = App.root.getFrontendProject
-      if (p != null) {
-        p.undoManager.record(UndoManager.NumPortValueCommand(port, source, oldVal, newVal))
-        p.projEventBus.post(RefreshRequestEvent)
+      if (oldVal != newVal) {
+        val p: Project = App.root.getFrontendProject
+        if (p != null) {
+          p.undoManager.record(UndoManager.NumPortValueCommand(port, source, oldVal, newVal))
+          p.projEventBus.post(RefreshRequestEvent)
+        }
+        if (defaultData != null) defaultData.setVal(newVal)
       }
-      if (defaultData != null) defaultData.setVal(newVal)
     }
   })
   align(Align.topLeft)
@@ -49,14 +50,15 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
   override def act(delta: Float): Unit = {
     super.act(delta)
     // 用户正在输入时不覆盖，避免打断编辑
-    if (spinner.getTextField.hasKeyboardFocus) return
-    val data: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
-    val modelVal: Double = if (data != null) data.getVal else 0.0
-    val current: Float = model.getValue
-    if (Math.abs(current - modelVal) > 0.005f) {
-      model.setValue(modelVal.toFloat, false)
-      spinner.getTextField.setText(
-        String.format(util.Locale.US, "%.2f", modelVal))
+    if (!spinner.getTextField.hasKeyboardFocus) {
+      val data: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
+      val modelVal: Double = if (data != null) data.getVal else 0.0
+      val current: Float = model.getValue
+      if (Math.abs(current - modelVal) > 0.005f) {
+        model.setValue(modelVal.toFloat, false)
+        spinner.getTextField.setText(
+          String.format(util.Locale.US, "%.2f", modelVal))
+      }
     }
   }
 }

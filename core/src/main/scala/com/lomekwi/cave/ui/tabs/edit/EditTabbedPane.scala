@@ -47,18 +47,17 @@ class EditTabbedPane extends AutoHideTabbedPane {
   //TODO:WIP
   /** 打开绑定到指定节点图的编辑器标签页；已为同一个节点图打开过则直接切换过去。 */
   def openNodeEditor(nodeGraph: NodeGraph): Unit = {
-    val it = getTabs.iterator()
-    while (it.hasNext) {
-      val tab = it.next()
-      tab match {
-        case editor: NodeEditorTab if editor.getNodeGraph eq nodeGraph =>
-          switchTab(editor)
-          return
-        case _ =>
-      }
+    val tabs = getTabs
+    val existing = (0 until tabs.size).map(i => tabs.get(i)).collectFirst {
+      case editor: NodeEditorTab if editor.getNodeGraph eq nodeGraph => editor
     }
-    val editor = new NodeEditorTab(nodeGraph)
-    add(editor)
-    switchTab(editor)
+    existing match {
+      case Some(editor) =>
+        switchTab(editor)
+      case None =>
+        val editor = new NodeEditorTab(nodeGraph)
+        add(editor)
+        switchTab(editor)
+    }
   }
 }

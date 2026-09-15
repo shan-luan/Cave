@@ -231,10 +231,10 @@ class TopBar extends MenuBar {
           try {
             if (!hasProjectExtension(file.name())) {
               App.root.getToastManager.show(i18n("请选择 .cave 项目文件"), toastTimeOut)
-              return
+            } else {
+              App.appEventBus.post(ProjectLoadedEvent(Projects.open(file)))
+              App.root.getToastManager.show(i18n("项目已打开"), toastTimeOut)
             }
-            App.appEventBus.post(ProjectLoadedEvent(Projects.open(file)))
-            App.root.getToastManager.show(i18n("项目已打开"), toastTimeOut)
           } catch {
             case e @ (_: IOException | _: ClassNotFoundException) =>
               e.printStackTrace()
@@ -251,9 +251,44 @@ class TopBar extends MenuBar {
 
   def performSave(): Unit = {
     try {
-      if (App.root.getFrontendProject == null) return
+      val project = App.root.getFrontendProject
+      if (project != null) {
+        if (project.getSavePath == null) {
+          val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
+          conf.title = i18n("选择保存位置...")
+          if (Gdx.app.getType == Application.ApplicationType.Android) {
+            conf.mimeFilter = "*/*"
+          }
+          conf.intent = NativeFileChooserIntent.SAVE
+          fileChooser.chooseFile(conf, new NativeFileChooserCallback {
+            override def onFileChosen(file: FileHandle): Unit = {
+              try {
+                if (App.root.getFrontendProject != null) {
+                  Projects.save(App.root.getFrontendProject, file)
+                  App.root.getToastManager.show(i18n("项目已保存"), toastTimeOut)
+                }
+              } catch {
+                case e: IOException =>
+                  e.printStackTrace()
+              }
+            }
+            override def onCancellation(): Unit = {}
+            override def onError(exception: Exception): Unit = {}
+          })
+        } else {
+          Projects.save(project)
+          App.root.getToastManager.show(i18n("项目已保存"), toastTimeOut)
+        }
+      }
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+    }
+  }
 
-      if (App.root.getFrontendProject.getSavePath == null) {
+  def performSaveAs(): Unit = {
+    try {
+      if (App.root.getFrontendProject != null) {
         val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
         conf.title = i18n("选择保存位置...")
         if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -275,41 +310,7 @@ class TopBar extends MenuBar {
           override def onCancellation(): Unit = {}
           override def onError(exception: Exception): Unit = {}
         })
-      } else {
-        Projects.save(App.root.getFrontendProject)
-        App.root.getToastManager.show(i18n("项目已保存"), toastTimeOut)
       }
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-    }
-  }
-
-  def performSaveAs(): Unit = {
-    try {
-      if (App.root.getFrontendProject == null) return
-
-      val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
-      conf.title = i18n("选择保存位置...")
-      if (Gdx.app.getType == Application.ApplicationType.Android) {
-        conf.mimeFilter = "*/*"
-      }
-      conf.intent = NativeFileChooserIntent.SAVE
-      fileChooser.chooseFile(conf, new NativeFileChooserCallback {
-        override def onFileChosen(file: FileHandle): Unit = {
-          try {
-            if (App.root.getFrontendProject != null) {
-              Projects.save(App.root.getFrontendProject, file)
-              App.root.getToastManager.show(i18n("项目已保存"), toastTimeOut)
-            }
-          } catch {
-            case e: IOException =>
-              e.printStackTrace()
-          }
-        }
-        override def onCancellation(): Unit = {}
-        override def onError(exception: Exception): Unit = {}
-      })
     } catch {
       case e: Exception =>
         e.printStackTrace()

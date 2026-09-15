@@ -66,8 +66,9 @@ object ExportOptionsSet {
     val prefs: Preferences = Gdx.app.getPreferences(PREFS_NAME)
     val json: String = prefs.getString(KEY, null)
     if (json == null || json.isEmpty) {
-      return new ExportOptionsSet()
+      new ExportOptionsSet()
+    } else {
+      new Json().fromJson(classOf[ExportOptionsSet], json)
     }
-    new Json().fromJson(classOf[ExportOptionsSet], json)
   }
 }

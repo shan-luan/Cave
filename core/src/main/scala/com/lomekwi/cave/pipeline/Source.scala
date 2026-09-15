@@ -48,11 +48,9 @@ abstract class Source[T <: Frame] extends Filter[T] with Serializable {
    */
   final def get(time: Long, track: Track): T = {
     frame = generate(time, track)
-    if (filters.isEmpty) {
-      return frame
-    }
+    if (filters.isEmpty) frame
     // 沿 chain：headOut → f1.in → f1.out → ... → 最后一个 filter 的 out
-    filters.get(filters.size() - 1).getFilterOut.getData.asInstanceOf[T]
+    else filters.get(filters.size() - 1).getFilterOut.getData.asInstanceOf[T]
   }
 
   /**

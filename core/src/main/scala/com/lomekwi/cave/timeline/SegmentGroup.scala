@@ -20,9 +20,10 @@ class SegmentGroup extends util.AbstractCollection[Segment] with Serializable wi
   override def add(segment: Segment): Boolean = {
     if (segments.add(segment)) {
       segment.setGroup(this)
-      return true
+      true
+    } else {
+      false
     }
-    false
   }
 
   override def remove(o: Any): Boolean = o match {

@@ -92,12 +92,13 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
     private[media] def get(): Texture = {
       if (texture != null) {
-        return texture
+        texture
+      } else {
+        if (generating.compareAndSet(false, true)) {
+          App.workerExecutor.execute(() => generate())
+        }
+        null
       }
-      if (generating.compareAndSet(false, true)) {
-        App.workerExecutor.execute(() => generate())
-      }
-      null
     }
 
     private def generate(): Unit = {
@@ -308,22 +309,21 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
 
     private def flushBatch(): Unit = {
-      if (batchCount == 0) {
-        return
+      if (batchCount != 0) {
+        val n = batchCount
+        val slots = util.Arrays.copyOf(batchSlots, n)
+        val peaks = util.Arrays.copyOf(batchPeaks, n)
+        Gdx.app.postRunnable(() => {
+          for (i <- 0 until n) {
+            val px = slots(i) % texWidth
+            val py = slots(i) / texWidth
+            pixmap.setColor(peaks(i), 0f, 0f, 1f)
+            pixmap.drawPixel(px, py)
+          }
+          dirty = true
+        })
+        batchCount = 0
       }
-      val n = batchCount
-      val slots = util.Arrays.copyOf(batchSlots, n)
-      val peaks = util.Arrays.copyOf(batchPeaks, n)
-      Gdx.app.postRunnable(() => {
-        for (i <- 0 until n) {
-          val px = slots(i) % texWidth
-          val py = slots(i) / texWidth
-          pixmap.setColor(peaks(i), 0f, 0f, 1f)
-          pixmap.drawPixel(px, py)
-        }
-        dirty = true
-      })
-      batchCount = 0
     }
 
     private[media] def dispose(): Unit = {

@@ -24,9 +24,10 @@ class TlRuler(private final val tlGroup: TlGroup) extends Widget {
       if (button == Input.Buttons.LEFT) {
         tlGroup.clearSelection()
         tlGroup.seekPlayheadAtX(x)
-        return true
+        true
+      } else {
+        false
       }
-      false
     }
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       tlGroup.seekPlayheadAtX(x)

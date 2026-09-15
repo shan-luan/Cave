@@ -100,8 +100,9 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   private def connect(pred: FilterList.Entry, succ: FilterList.Entry): Unit = {
     val in: Node.InPort[?] = portIn(succ)
     val out: Node.OutPort[?] = portOut(pred)
-    if (in == null || out == null) return
-    in.asInstanceOf[Node.InPort[Any]].linkFrom(out.asInstanceOf[Node.OutPort[Any]])
+    if (in != null && out != null) {
+      in.asInstanceOf[Node.InPort[Any]].linkFrom(out.asInstanceOf[Node.OutPort[Any]])
+    }
   }
 
   /** 断开 pred.out 与 succ.in 之间的连接（pred/succ 可能是哨兵）。 */
@@ -111,15 +112,15 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   }
 
   private def portOut(entry: FilterList.Entry): Node.OutPort[?] = {
-    if (entry == headEntry) return head.getFilterOut
-    if (entry == tailEntry) return null
-    entry.filter.asInstanceOf[Filter[? >: T]].getFilterOut
+    if (entry == headEntry) head.getFilterOut
+    else if (entry == tailEntry) null
+    else entry.filter.asInstanceOf[Filter[? >: T]].getFilterOut
   }
 
   private def portIn(entry: FilterList.Entry): Node.InPort[?] = {
-    if (entry == tailEntry) return null // 链末端不连接端口，输出即最后一个 filter 的 FilterOut
-    if (entry == headEntry) return null
-    entry.filter.asInstanceOf[Filter[? >: T]].getFilterIn
+    // 链末端不连接端口，输出即最后一个 filter 的 FilterOut
+    if (entry == tailEntry || entry == headEntry) null
+    else entry.filter.asInstanceOf[Filter[? >: T]].getFilterIn
   }
 
   private def entryAt(index: Int): FilterList.Entry = {

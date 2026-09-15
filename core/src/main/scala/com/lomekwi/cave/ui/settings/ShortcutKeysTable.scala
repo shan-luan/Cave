@@ -29,26 +29,28 @@ class ShortcutKeysTable extends EntryTable {
 
   private final val recordingProcessor: InputProcessor = new InputProcessor {
     override def keyDown(keycode: Int): Boolean = {
-      if (recordingAction == null) return false
-      if (keycode == Input.Keys.ESCAPE) {
+      if (recordingAction == null) {
+        false
+      } else if (keycode == Input.Keys.ESCAPE) {
         finishRecording(false)
-        return true
+        true
+      } else if (ShortcutKeysTable.isModifier(keycode)) {
+        true
+      } else {
+        val keys: util.List[Integer] = new util.ArrayList[Integer]()
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
+          keys.add(Input.Keys.CONTROL_LEFT)
+        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))
+          keys.add(Input.Keys.SHIFT_LEFT)
+        if (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))
+          keys.add(Input.Keys.ALT_LEFT)
+        keys.add(keycode)
+
+        App.shortcutManager.register(recordingAction, keys.stream().mapToInt((i: Integer) => i).toArray()*)
+        App.shortcutManager.persist()
+        finishRecording(true)
+        true
       }
-      if (ShortcutKeysTable.isModifier(keycode)) return true
-
-      val keys: util.List[Integer] = new util.ArrayList[Integer]()
-      if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
-        keys.add(Input.Keys.CONTROL_LEFT)
-      if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))
-        keys.add(Input.Keys.SHIFT_LEFT)
-      if (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))
-        keys.add(Input.Keys.ALT_LEFT)
-      keys.add(keycode)
-
-      App.shortcutManager.register(recordingAction, keys.stream().mapToInt((i: Integer) => i).toArray()*)
-      App.shortcutManager.persist()
-      finishRecording(true)
-      true
     }
 
     override def keyUp(keycode: Int): Boolean = false
@@ -141,19 +143,22 @@ class ShortcutKeysTable extends EntryTable {
 
   private def keyDisplay(action: ShortcutAction): String = {
     val keys: util.Collection[Integer] = App.shortcutManager.getKeys(action)
-    if (keys.isEmpty) return i18n("未设置")
-    val list: util.List[Integer] = new util.ArrayList[Integer](keys)
-    list.sort((a: Integer, b: Integer) => {
-      val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1
-      val bMod = if (ShortcutKeysTable.isModifier(b)) 0 else 1
-      if (aMod != bMod) aMod - bMod else 0
-    })
-    val sb = new StringBuilder()
-    for (k <- list.asScala) {
-      if (sb.length() > 0) sb.append(" + ")
-      sb.append(ShortcutKeysTable.keyName(k))
+    if (keys.isEmpty) {
+      i18n("未设置")
+    } else {
+      val list: util.List[Integer] = new util.ArrayList[Integer](keys)
+      list.sort((a: Integer, b: Integer) => {
+        val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1
+        val bMod = if (ShortcutKeysTable.isModifier(b)) 0 else 1
+        if (aMod != bMod) aMod - bMod else 0
+      })
+      val sb = new StringBuilder()
+      for (k <- list.asScala) {
+        if (sb.length() > 0) sb.append(" + ")
+        sb.append(ShortcutKeysTable.keyName(k))
+      }
+      sb.toString
     }
-    sb.toString
   }
 
   override def getName: String = {
@@ -166,19 +171,15 @@ object ShortcutKeysTable {
   private def hasCustomKeys(action: ShortcutAction): Boolean = {
     val current: util.Collection[Integer] = App.shortcutManager.getKeys(action)
     val defaults = action.defaultKeys()
-    if (current.size() != defaults.length) return true
-    val curSorted: util.List[Integer] = new util.ArrayList[Integer](current)
-    Collections.sort(curSorted)
-    val defSorted = defaults.clone()
-    util.Arrays.sort(defSorted)
-    var i = 0
-    val it = curSorted.iterator()
-    while (it.hasNext) {
-      val k = it.next()
-      if (k != defSorted(i)) return true
-      i += 1
+    if (current.size() != defaults.length) {
+      true
+    } else {
+      val curSorted: util.List[Integer] = new util.ArrayList[Integer](current)
+      Collections.sort(curSorted)
+      val defSorted = defaults.clone()
+      util.Arrays.sort(defSorted)
+      curSorted.asScala.zipWithIndex.exists((k, i) => k != defSorted(i))
     }
-    false
   }
 
   private def isModifier(keycode: Int): Boolean = {
@@ -188,11 +189,11 @@ object ShortcutKeysTable {
   }
 
   private def keyName(keycode: Int): String = {
-    if (keycode >= Input.Keys.A && keycode <= Input.Keys.Z)
-      return String.valueOf(('A' + (keycode - Input.Keys.A)).toChar)
-    if (keycode >= Input.Keys.NUM_0 && keycode <= Input.Keys.NUM_9)
-      return String.valueOf(('0' + (keycode - Input.Keys.NUM_0)).toChar)
-    keycode match {
+    if (keycode >= Input.Keys.A && keycode <= Input.Keys.Z) {
+      String.valueOf(('A' + (keycode - Input.Keys.A)).toChar)
+    } else if (keycode >= Input.Keys.NUM_0 && keycode <= Input.Keys.NUM_9) {
+      String.valueOf(('0' + (keycode - Input.Keys.NUM_0)).toChar)
+    } else keycode match {
       case Input.Keys.CONTROL_LEFT | Input.Keys.CONTROL_RIGHT => "Ctrl"
       case Input.Keys.SHIFT_LEFT | Input.Keys.SHIFT_RIGHT => "Shift"
       case Input.Keys.ALT_LEFT | Input.Keys.ALT_RIGHT => "Alt"

@@ -8,6 +8,7 @@ import java.io.{ObjectInputStream, Serializable}
 import java.util
 
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary, boundary.break
 
 @SerialVersionUID(1L)
 class Timeline(final val project: Project) extends Serializable with java.lang.Iterable[Track] with Duplicatable[Timeline] {
@@ -58,14 +59,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
   def split(track: Track, time: Long): Unit = {
     val s = track.get(time)
-    if (s == null) return
-    val r = s.getRange
-    val lo: Long = r.lo
-    val hi: Long = r.hi
-    if (time <= lo || time >= hi) return
-    if (track.split(time)) {
-      val right = track.get(time)
-      push(SplitSegCommand(track, s, r, right, time))
+    if (s != null) {
+      val r = s.getRange
+      val lo: Long = r.lo
+      val hi: Long = r.hi
+      if (time > lo && time < hi && track.split(time)) {
+        val right = track.get(time)
+        push(SplitSegCommand(track, s, r, right, time))
+      }
     }
   }
   def split(time: Long): Unit = {
@@ -85,12 +86,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /** 各轨道 probe 后取限制最严者，把 deltaTime 同向截断并应用。@return 实际应用的偏移量，0 表示未移动。 */
-  private def applyPerTrack(segments: util.Collection[Segment], deltaTime: Long, end: Boolean): Long = {
-    if (deltaTime == 0 || segments.isEmpty) return 0
+  private def applyPerTrack(segments: util.Collection[Segment], deltaTime: Long, end: Boolean): Long = boundary {
+    if (deltaTime == 0 || segments.isEmpty) break(0L)
     val forward = deltaTime > 0
     val tracks: util.Set[Track] = new util.HashSet[Track]()
     for (s <- segments.asScala) if (s.getTrack != null) tracks.add(s.getTrack)
-    if (tracks.isEmpty) return 0
+    if (tracks.isEmpty) break(0L)
 
     val bound: Long = tracks.stream()
       .mapToLong((track: Track) => if (end) track.probeSetEnd(segments, forward)
@@ -99,7 +100,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     // 夹紧到与请求同向且不超过请求量
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
-    if (applied == 0) return 0
+    if (applied == 0) break(0L)
 
     // 捕获旧区间 → 修改 → 记录
     val before: util.Map[Segment, Interval] = new util.HashMap[Segment, Interval]()
@@ -123,12 +124,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     applied
   }
   /** 仅按时间平移片段（轨道不变）。deltaTime 截断到最大可用量后应用：整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
-  def moveTime(segments: util.Collection[Segment], deltaTime: Long): Long = {
-    if (deltaTime == 0 || segments.isEmpty) return 0
+  def moveTime(segments: util.Collection[Segment], deltaTime: Long): Long = boundary {
+    if (deltaTime == 0 || segments.isEmpty) break(0L)
     val forward = deltaTime > 0
     val tracks: util.Set[Track] = new util.HashSet[Track]()
     for (s <- segments.asScala) if (s.getTrack != null) tracks.add(s.getTrack)
-    if (tracks.isEmpty) return 0
+    if (tracks.isEmpty) break(0L)
 
     val bound: Long = tracks.stream()
       .mapToLong((tr: Track) => tr.probeMove(segments, forward))
@@ -136,7 +137,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     // 防御性夹紧：同向且不超过请求量
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
-    if (applied == 0) return 0
+    if (applied == 0) break(0L)
 
     // 先构造命令再移动（移除直接走 Track，避免重复记录）
     val entries: util.List[MoveSegsCommand.MoveEntry] = new util.ArrayList[MoveSegsCommand.MoveEntry](segments.size())
@@ -163,10 +164,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 轨道上（不反向、不超过请求量），保持组内成员相对间距。
    * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
    */
-  def moveTrack(segments: util.Collection[Segment], deltaTrack: Int): Int = {
+  def moveTrack(segments: util.Collection[Segment], deltaTrack: Int): Int = boundary {
     val applied = findPlaceableTrack(segments, deltaTrack)
     // applied 即本次实际落位的轨道偏移（0 表示不动）
-    if (applied == 0) return 0
+    if (applied == 0) break(0)
 
     val entries: util.List[MoveSegsCommand.MoveEntry] = new util.ArrayList[MoveSegsCommand.MoveEntry](segments.size())
     for (s <- segments.asScala) {
@@ -195,8 +196,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 索引越大的轨道越可能为空，且 getTrack 会按需创建，因此正向探测总能找到落点；
    * 反向受 0 限制，找不到时返回 0（保持原位）。
    */
-  private def findPlaceableTrack(segments: util.Collection[Segment], deltaTrack: Int): Int = {
-    if (deltaTrack == 0 || segments.isEmpty) return 0
+  private def findPlaceableTrack(segments: util.Collection[Segment], deltaTrack: Int): Int = boundary {
+    if (deltaTrack == 0 || segments.isEmpty) break(0)
     val minIdx = segments.stream().mapToInt((s: Segment) => s.getTrack.index).min().orElseThrow()
     val step = if (deltaTrack > 0) 1 else -1
     val span = Math.abs(deltaTrack)
@@ -204,7 +205,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     while (k > 0) {
       // 目标轨道尚不存在（索引 ≥ tracks.size()）时视为空闲
       val target = minIdx + deltaTrack - step * (span - k)
-      if (canPlaceGroupOnTrack(segments, target)) return step * k
+      if (canPlaceGroupOnTrack(segments, target)) break(step * k)
       k -= 1
     }
     0
@@ -215,21 +216,24 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 目标轨道尚不存在（索引 ≥ tracks.size()）时视为空闲。
    */
   private def canPlaceGroupOnTrack(segments: util.Collection[Segment], target: Int): Boolean = {
-    if (target < 0) return false
-    var refIdx = segments.iterator().next().getTrack.index
-    for (s <- segments.asScala) refIdx = Math.min(refIdx, s.getTrack.index)
-    segments.asScala.forall { s =>
-      val ti = s.getTrack.index + (target - refIdx)
-      ti >= tracks.size() || tracks.get(ti).isFree(s.getRange, segments)
+    if (target < 0) {
+      false
+    } else {
+      var refIdx = segments.iterator().next().getTrack.index
+      for (s <- segments.asScala) refIdx = Math.min(refIdx, s.getTrack.index)
+      segments.asScala.forall { s =>
+        val ti = s.getTrack.index + (target - refIdx)
+        ti >= tracks.size() || tracks.get(ti).isFree(s.getRange, segments)
+      }
     }
   }
   /** 在 [time±threshold] 内扫描所有轨道片段，返回最近的起点/终点（无则原值）；ignore 不参与。 */
-  def snapTime(time: Long, threshold: Long, ignore: util.Collection[Segment]): Long = {
+  def snapTime(time: Long, threshold: Long, ignore: util.Collection[Segment]): Long = boundary {
     var best = time
     var bestDist = threshold
     val searchStart: Long = Math.max(0, time - threshold)
     val searchEnd: Long = time + threshold
-    if (searchEnd <= searchStart) return time
+    if (searchEnd <= searchStart) break(time)
     val searchRange: Interval = Interval(searchStart, searchEnd)
     for (track <- tracks.asScala) {
       for (seg <- track.getIntersectingSegments(searchRange).asScala) {
@@ -270,29 +274,29 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 若期间没有修改则不提交。
    */
   def submit(): Unit = {
-    if (!recording) return
-    recording = false
-    if (recorded.isEmpty) return
-    if (recorded.size() == 1) {
-      project.undoManager.record(recorded.get(0))
-    } else {
-      val arr = recorded.toArray(new Array[UndoableCommand](0))
-      project.undoManager.record(new CompoundCommand(arr*))
+    if (recording) {
+      recording = false
+      if (!recorded.isEmpty) {
+        if (recorded.size() == 1) {
+          project.undoManager.record(recorded.get(0))
+        } else {
+          val arr = recorded.toArray(new Array[UndoableCommand](0))
+          project.undoManager.record(new CompoundCommand(arr*))
+        }
+        recorded.clear()
+      }
     }
-    recorded.clear()
   }
   /** 记录模式下把一次修改对应的命令压入记录栈。同类型命令会与栈尾合并。 */
   private def push(command: UndoableCommand): Unit = {
-    if (!recording) return
-    // 与 recording 栈中最近命令合并
-    if (!recorded.isEmpty && command.isInstanceOf[MergeableCommand]) {
-      val last = recorded.get(recorded.size() - 1)
-      if (last.getClass == command.getClass) {
-        val lm = last.asInstanceOf[MergeableCommand]
-        if (lm.merge(command)) return
+    if (recording) {
+      // 与 recording 栈中最近命令合并
+      val last = if (recorded.isEmpty) null else recorded.get(recorded.size() - 1)
+      val mergeable = last != null && command.isInstanceOf[MergeableCommand] && last.getClass == command.getClass
+      if (!mergeable || !last.asInstanceOf[MergeableCommand].merge(command)) {
+        recorded.add(command)
       }
     }
-    recorded.add(command)
   }
 
   /**
@@ -329,8 +333,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 比较时把"缺失"与"空轨道"视为相等（只允许尾部为空的差异）。
    */
   override def equals(o: Any): Boolean = {
-    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) return true
-    o match {
+    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
+      true
+    } else o match {
       case other: Timeline =>
         val max = Math.max(tracks.size(), other.tracks.size())
         (0 until max).forall { i =>
@@ -390,8 +395,8 @@ object Timeline {
   }
 
   private def trackEquals(a: Track, b: Track): Boolean = {
-    if (a == null) return b == null || b.isEmpty
-    if (b == null) return a.isEmpty
-    a.equals(b)
+    if (a == null) b == null || b.isEmpty
+    else if (b == null) a.isEmpty
+    else a.equals(b)
   }
 }

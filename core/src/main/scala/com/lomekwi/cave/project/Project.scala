@@ -51,14 +51,12 @@ class Project protected[project] extends Serializable with AutoCloseable {
   playhead = new Playhead(projEventBus)
 
   def update(): Unit = {
-    if (!isActive) {
-      return
-    }
-
-    for (track <- timeline.getTracks.asScala) {
-      if (track.getWorker.getFuture == null || track.getWorker.getFuture.isDone) {
-        val future = App.workerExecutor.submit(track.getWorker)
-        track.getWorker.setFuture(future)
+    if (isActive) {
+      for (track <- timeline.getTracks.asScala) {
+        if (track.getWorker.getFuture == null || track.getWorker.getFuture.isDone) {
+          val future = App.workerExecutor.submit(track.getWorker)
+          track.getWorker.setFuture(future)
+        }
       }
     }
   }

@@ -32,10 +32,10 @@ final class NodeGraphPortEditor(port0: Node.InPort[?], source: Source[?]) extend
 
   private def openEditor(): Unit = {
     val nodeGraph: NodeGraph = port.getDefaultData.asInstanceOf[NodeGraph]
-    if (nodeGraph == null) return
     val panel: EditPanel = App.root.getFrontendEditPanel
-    if (panel == null) return
-    panel.getTlTabs.openNodeEditor(nodeGraph)
+    if (nodeGraph != null && panel != null) {
+      panel.getTlTabs.openNodeEditor(nodeGraph)
+    }
   }
 
   override def getPort: Node.InPort[?] = port

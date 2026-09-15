@@ -10,6 +10,7 @@ import org.bytedeco.javacv.Frame
 import java.nio.FloatBuffer
 import java.util
 import scala.annotation.tailrec
+import scala.util.boundary, boundary.break
 
 class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
   import AudDecRes.*
@@ -49,14 +50,14 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
     seek(validTime)
   }
 
-  override def get(time: Long, frame: AudFrame): Unit = {
+  override def get(time: Long, frame: AudFrame): Unit = boundary[Unit] {
     if (!initialized) {
       start()
     }
 
     if (!isTimeLegal(time)) {
       frame.setSamples(null)
-      return
+      break(())
     }
 
     var written = 0
@@ -80,7 +81,7 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
         val f = grab()
         if (f == null || f.samples == null || f.samples.length == 0) {
           frame.setSamples(null)
-          return
+          break(())
         }
         if (f.timestamp + getLengthPerFrame >= time) {
           val sb = f.samples(0).asInstanceOf[FloatBuffer]
@@ -108,7 +109,7 @@ class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
       if (f == null || f.samples == null || f.samples.length == 0) {
         if (written == 0) {
           frame.setSamples(null)
-          return
+          break(())
         }
         // 文件末尾不足部分以静音填充
         filling = false
