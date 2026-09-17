@@ -14,7 +14,6 @@ import com.lomekwi.cave.ui.Colors
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
-import scala.util.boundary, boundary.break
 import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
@@ -75,10 +74,10 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       }
     }
 
-    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = boundary[Boolean] {
+    override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       val parent = getParent
       if (parent == null || !parent.isInstanceOf[TlGroup]) {
-        break(false)
+        return false
       }
       val tlGroup = parent.asInstanceOf[TlGroup]
       if (button == Input.Buttons.LEFT) {
@@ -174,8 +173,8 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   /** 拖拽中：每次鼠标移动都会调用，按 dragSide 分派到三种分支（含吸附）。 */
-  private[tlarea] def dragTo(diffToActorX: Float, diffToActorY: Float): Unit = boundary[Unit] {
-    if (tl == null || dragSide == DragSide.NONE) break(())
+  private[tlarea] def dragTo(diffToActorX: Float, diffToActorY: Float): Unit = {
+    if (tl == null || dragSide == DragSide.NONE) return
 
     tl.snapIndicatorTime = -1
 

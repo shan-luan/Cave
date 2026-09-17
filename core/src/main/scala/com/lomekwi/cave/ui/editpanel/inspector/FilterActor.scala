@@ -20,7 +20,6 @@ import com.lomekwi.cave.ui.widget.Card
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
-import scala.util.boundary, boundary.break
 import java.util
 
 /**
@@ -121,14 +120,14 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   }
 
   /** 拖拽结束后，根据卡片在列表中的位置计算目标索引并重排。 */
-  private def doReorder(): Unit = boundary[Unit] {
-    if (source == null) break(())
+  private def doReorder(): Unit = {
+    if (source == null) return
     val p = getParent
     p match {
       case content: VisTable =>
         val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
-        if (myIndex < 0) break(())
+        if (myIndex < 0) return
 
         val myCenterY = getY + getHeight / 2
         var target = 0
@@ -138,7 +137,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
           }
         }
 
-        if (target == myIndex) break(())
+        if (target == myIndex) return
 
         filters.remove(myIndex)
         filters.add(target, filter)

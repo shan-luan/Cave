@@ -15,7 +15,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
-import scala.util.boundary, boundary.break
 
 @SerialVersionUID(1L)
 class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
@@ -56,7 +55,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
     vdoRes.sync(track.index, time)
   }
 
-  override def generate(time: Long, track: Track): ImgFrame = boundary {
+  override def generate(time: Long, track: Track): ImgFrame = {
     if (frame != null && (frame.track ne track)) {
       initialized = false
     }
@@ -83,7 +82,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
       } catch {
         case _: InterruptedException =>
           Thread.currentThread().interrupt()
-          break(null)
+          return null
       }
     }
     try {

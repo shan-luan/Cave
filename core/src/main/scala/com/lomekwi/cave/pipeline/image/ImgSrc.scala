@@ -17,7 +17,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
-import scala.util.boundary, boundary.break
 
 @SerialVersionUID(1L)
 class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
@@ -58,7 +57,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
     imgRes.sync(track.index, time)
   }
 
-  override def generate(time: Long, track: Track): ImgFrame = boundary {
+  override def generate(time: Long, track: Track): ImgFrame = {
     if (frame != null && (frame.track ne track)) {
       initialized = false
     }
@@ -85,7 +84,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
       } catch {
         case _: InterruptedException =>
           Thread.currentThread().interrupt()
-          break(null)
+          return null
       }
     }
     try {

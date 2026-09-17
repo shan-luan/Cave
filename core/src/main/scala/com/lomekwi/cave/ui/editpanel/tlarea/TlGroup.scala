@@ -21,7 +21,6 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 
 import scala.compiletime.uninitialized
 import scala.util.Using
-import scala.util.boundary, boundary.break
 import scala.jdk.CollectionConverters.*
 
 import com.badlogic.gdx.Input.Keys.*
@@ -200,7 +199,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
     playhead.seek(Math.max(xToAbsoluteTime(x), 0))
   }
 
-  def selectSegment(segment: Segment, addToSelection: Boolean): Unit = boundary[Unit] {
+  def selectSegment(segment: Segment, addToSelection: Boolean): Unit = {
     val group = segment.getGroup
     if (group != null) {
       if (addToSelection) {
@@ -241,7 +240,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
         project.projEventBus.post(ge)
         App.appEventBus.post(ge)
       }
-      break(())
+      return
     }
     if (!addToSelection) {
       clearSelection()
@@ -409,8 +408,8 @@ class TlGroup(project0: Project) extends Group with Focusable {
     }
   }
 
-  private[tlarea] def groupSelectedSegments(): Unit = boundary[Unit] {
-    if (selectedSegments.size() < 2) break(())
+  private[tlarea] def groupSelectedSegments(): Unit = {
+    if (selectedSegments.size() < 2) return
 
     val anyInGroup = selectedSegments.asScala.exists(seg => seg.getGroup != null)
 
@@ -523,9 +522,9 @@ class TlGroup(project0: Project) extends Group with Focusable {
     }
   }
 
-  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): util.List[Segment] = boundary {
+  private def pasteSegment(template: Segment, time: Long, baseTrack: Int): util.List[Segment] = {
     val duration = template.getRange.hi - template.getRange.lo
-    if (duration <= 0) break(util.List.of[Segment]())
+    if (duration <= 0) return util.List.of[Segment]()
 
     var track = timeline.getTrack(baseTrack)
     var range = Interval(time, time + duration)
