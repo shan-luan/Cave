@@ -9,7 +9,7 @@ import com.lomekwi.cave.util.i18n.I18N
 //TODO:WIP
 class NodeEditorTab(nodeGraph0: NodeGraph) extends Tab(false, true) {
   private final val nodeGraph: NodeGraph = nodeGraph0
-  private final val content: Table = new NodeEditorView()
+  private final val content: Table = new NodeEditorView(nodeGraph)
 
   def getNodeGraph: NodeGraph = {
     nodeGraph

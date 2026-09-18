@@ -4,30 +4,85 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Group
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.Colors
 import com.lomekwi.cave.ui.Focusable
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import space.earlygrey.shapedrawer.ShapeDrawer
 
+import java.util
+import scala.jdk.CollectionConverters.*
+
 //TODO:WIP
-class NodeEditorView extends VisTable with Focusable {
-  private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
-  private final val canvas: Group = panZoom.getCanvas
+class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
+  private final val nodeGraph: NodeGraph = nodeGraph0
+  private val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
+  private val canvas: Group = panZoom.getCanvas
+  private final val displayedNodes: util.Set[Node] = new util.HashSet[Node]()
+  private var dirty: Boolean = false
 
   setFillParent(true)
   add(panZoom).grow()
   setupListener()
-  addTestLabels()
+  syncNodeActors()
+  placeNodeActors()
 
-  private def addTestLabels(): Unit = {
-    val table = new VisTable()
-    table.setFillParent(true)
-    table.add(new VisLabel("节点编辑器")).pad(20f).row()
-    table.add(new VisLabel("滚轮缩放 / WASD 移动")).row()
-    canvas.addActor(table)
+  override def act(delta: Float): Unit = {
+    super.act(delta)
+    if (dirty || !isUpToDate) {
+      syncNodeActors()
+      dirty = false
+    }
+  }
+
+  def markDirty(): Unit = {
+    dirty = true
+  }
+
+  def getNodeGraph: NodeGraph = {
+    nodeGraph
+  }
+
+  private def isUpToDate: Boolean = {
+    displayedNodes.size() == nodeGraph.size() && displayedNodes.containsAll(nodeGraph)
+  }
+
+  private def syncNodeActors(): Unit = {
+    val toAdd: util.Set[Node] = new util.HashSet[Node](nodeGraph)
+    toAdd.removeAll(displayedNodes)
+    val toRemove: util.Set[Node] = new util.HashSet[Node](displayedNodes)
+    toRemove.removeAll(nodeGraph)
+
+    for (actor <- canvas.getChildren.asScala.toSeq) {
+      actor match {
+        case nodeActor: NodeActor if toRemove.contains(nodeActor.getNode) =>
+          nodeActor.remove()
+        case _ =>
+      }
+    }
+
+    for (node <- toAdd.asScala) {
+      val actor = new NodeActor(node)
+      actor.pack()
+      canvas.addActor(actor)
+    }
+
+    displayedNodes.removeAll(toRemove)
+    displayedNodes.addAll(toAdd)
+  }
+
+  private def placeNodeActors(): Unit = {
+    for (actor <- canvas.getChildren.asScala) {
+      actor match {
+        case nodeActor: NodeActor =>
+          val position = nodeGraph.getPosition(nodeActor.getNode)
+          nodeActor.setPosition(position.x, position.y)
+        case _ =>
+      }
+    }
   }
 
   private def setupListener(): Unit = {
