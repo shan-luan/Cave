@@ -1,15 +1,41 @@
 package com.lomekwi.cave.ui.node
 
 import com.badlogic.gdx.Input
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
+import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.widget.Card
 
+import scala.jdk.CollectionConverters.*
+
 //TODO:WIP
 class NodeActor(node0: Node) extends Card(node0.getName) {
   private final val node: Node = node0
+  private final val inTable: VisTable = new VisTable()
+  private final val outTable: VisTable = new VisTable()
+
+  inTable.top().left()
+  inTable.defaults().left()
+  outTable.top().right()
+  outTable.defaults().right()
+  add(inTable).top().left()
+  add(outTable).top().right().growX()
+
+  for (in <- node.getInPorts.asScala) {
+    val editor: Actor = CardWidgetsRegistry.createEditor(in, null)
+    inTable.add(new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])).growX().row()
+  }
+
+  for (out <- node.getOutPorts.asScala) {
+    val row: Actor = CardWidgetsRegistry.createOutputRow(out)
+    if (row != null) {
+      outTable.add(row).growX()
+    }
+    outTable.add(new OutPortActor(out)).row()
+  }
 
   def getNode: Node = {
     node

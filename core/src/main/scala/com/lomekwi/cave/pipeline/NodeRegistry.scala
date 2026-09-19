@@ -24,6 +24,16 @@ class NodeRegistry {
     entries.add(nodeClass)
   }
 
+  /** 已注册节点的数量（不做帧类型过滤）。 */
+  def getCount: Int = {
+    entries.size()
+  }
+
+  /** 按注册顺序创建第 index 个节点（不做帧类型过滤）。 */
+  def create(index: Int): Node = {
+    NodeRegistry.create(entries.get(index))
+  }
+
   def getCompatibleCount(source: Source[?]): Int = {
     val frameType: Class[?] = source.getFrameType
     var count = 0

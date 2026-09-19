@@ -15,6 +15,7 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
+import com.lomekwi.cave.ui.node.CardWidgetsRegistry
 import com.lomekwi.cave.ui.widget.Card
 
 

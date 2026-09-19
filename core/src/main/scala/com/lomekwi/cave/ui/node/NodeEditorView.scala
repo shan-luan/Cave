@@ -1,15 +1,21 @@
 package com.lomekwi.cave.ui.node
 
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Group
 import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.kotcrab.vis.ui.widget.MenuItem
+import com.kotcrab.vis.ui.widget.PopupMenu
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.Colors
 import com.lomekwi.cave.ui.Focusable
+import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import space.earlygrey.shapedrawer.ShapeDrawer
 
@@ -22,11 +28,15 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   private val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
   private val canvas: Group = panZoom.getCanvas
   private final val displayedNodes: util.Set[Node] = new util.HashSet[Node]()
+  private final val nodeMenu: PopupMenu = new PopupMenu()
+  private final val spawnPos: Vector2 = new Vector2()
   private var dirty: Boolean = false
 
   setFillParent(true)
   add(panZoom).grow()
   setupListener()
+  setupContextMenu()
+  buildNodeMenu()
   syncNodeActors()
   placeNodeActors()
 
@@ -34,6 +44,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
     super.act(delta)
     if (dirty || !isUpToDate) {
       syncNodeActors()
+      placeNodeActors()
       dirty = false
     }
   }
@@ -96,6 +107,41 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
         true
       }
     })
+  }
+
+  /** 在空画布上右键弹出节点创建菜单，创建位置取右键处。 */
+  private def setupContextMenu(): Unit = {
+    panZoom.addListener(new InputListener {
+      override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
+        if (button == Input.Buttons.RIGHT && event.getTarget.eq(panZoom)) {
+          spawnPos.set(event.getStageX, event.getStageY)
+          canvas.stageToLocalCoordinates(spawnPos)
+          true
+        } else {
+          false
+        }
+      }
+
+      override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
+        if (button == Input.Buttons.RIGHT && event.getTarget.eq(panZoom)) {
+          nodeMenu.showMenu(getStage, event.getStageX, event.getStageY)
+        }
+      }
+    })
+  }
+
+  private def buildNodeMenu(): Unit = {
+    for (i <- 0 until App.nodeRegistry.getCount) {
+      val name: String = App.nodeRegistry.create(i).getName
+      nodeMenu.addItem(new MenuItem(name, new ChangeListenerX(() => addNode(App.nodeRegistry.create(i)))))
+    }
+  }
+
+  private def addNode(node: Node): Unit = {
+    if (nodeGraph.add(node)) {
+      nodeGraph.setPosition(node, spawnPos.x, spawnPos.y)
+      markDirty()
+    }
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {

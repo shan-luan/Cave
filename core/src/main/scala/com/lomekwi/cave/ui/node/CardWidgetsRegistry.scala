@@ -1,14 +1,10 @@
-package com.lomekwi.cave.ui.editpanel.inspector
+package com.lomekwi.cave.ui.node
 
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.num.NumFrame
-import com.lomekwi.cave.ui.node.NodeGraphPortEditor
-import com.lomekwi.cave.ui.node.NumOutputRow
-import com.lomekwi.cave.ui.node.NumPortEditor
-import com.lomekwi.cave.ui.node.TextPortEditor
 
 import java.util
 import java.util.function.BiFunction
@@ -63,8 +59,9 @@ object CardWidgetsRegistry {
     }
   }
 
-  /** 端口约束为交叉类型：目标类型必须满足全部约束。 */
+  /** 端口约束为交叉类型：目标类型必须满足全部约束；无约束端口视为无可编辑类型。 */
   private def accepts(port: Node.InPort[?], `type`: Class[?]): Boolean = {
-    port.getConstraint.asScala.forall(c => c.isAssignableFrom(`type`))
+    val constraint = port.getConstraint.asScala
+    constraint.nonEmpty && constraint.forall(c => c.isAssignableFrom(`type`))
   }
 }
