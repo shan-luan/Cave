@@ -25,7 +25,8 @@ class Card(title: String) extends VisTable {
   {
     val style = VisUI.getSkin.get(classOf[Window.WindowStyle])
     setBackground(style.background)
-    setClip(true)
+    // 标题栏在 drawBackground 中按卡片自身坐标系手动绘制，需要开启变换
+    setTransform(true)
 
     titleLabel = new Label(title, new Label.LabelStyle(style.titleFont, style.titleFontColor))
     titleLabel.setEllipsis(true)

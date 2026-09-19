@@ -10,12 +10,14 @@ import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.widget.Card
 
 import scala.jdk.CollectionConverters.*
+import java.util
 
 //TODO:WIP
 class NodeActor(node0: Node) extends Card(node0.getName) {
   private final val node: Node = node0
   private final val inTable: VisTable = new VisTable()
   private final val outTable: VisTable = new VisTable()
+  private final val portActors: util.Map[Node.Port, PortActor] = new util.HashMap[Node.Port, PortActor]()
 
   inTable.top().left()
   inTable.defaults().left()
@@ -26,7 +28,9 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
 
   for (in <- node.getInPorts.asScala) {
     val editor: Actor = CardWidgetsRegistry.createEditor(in, null)
-    inTable.add(new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])).growX().row()
+    val portActor = new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])
+    portActors.put(in, portActor)
+    inTable.add(portActor).growX().row()
   }
 
   for (out <- node.getOutPorts.asScala) {
@@ -34,7 +38,14 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
     if (row != null) {
       outTable.add(row).growX()
     }
-    outTable.add(new OutPortActor(out)).row()
+    val portActor = new OutPortActor(out)
+    portActors.put(out, portActor)
+    outTable.add(portActor).row()
+  }
+
+  /** 本卡片中承载指定端口的端口圆点，没有则返回 null。 */
+  def getPortActor(port: Node.Port): PortActor = {
+    portActors.get(port)
   }
 
   def getNode: Node = {
