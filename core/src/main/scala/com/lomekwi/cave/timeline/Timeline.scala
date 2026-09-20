@@ -96,12 +96,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       .mapToLong((track: Track) => if (end) track.probeSetEnd(segments, forward)
                                     else track.probeSetStart(segments, forward))
       .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
-    // 夹紧到与请求同向且不超过请求量
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
     if (applied == 0) return 0L
 
-    // 捕获旧区间 → 修改 → 记录
     val before: util.Map[Segment, Interval] = new util.HashMap[Segment, Interval]()
     for (s <- segments.asScala) before.put(s, s.getRange)
     for (track <- tracks.asScala) {
@@ -133,7 +131,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val bound: Long = tracks.stream()
       .mapToLong((tr: Track) => tr.probeMove(segments, forward))
       .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
-    // 防御性夹紧：同向且不超过请求量
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
     if (applied == 0) return 0L
@@ -165,7 +162,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    */
   def moveTrack(segments: util.Collection[Segment], deltaTrack: Int): Int = {
     val applied = findPlaceableTrack(segments, deltaTrack)
-    // applied 即本次实际落位的轨道偏移（0 表示不动）
     if (applied == 0) return 0
 
     val entries: util.List[MoveSegsCommand.MoveEntry] = new util.ArrayList[MoveSegsCommand.MoveEntry](segments.size())
@@ -251,7 +247,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
         }
       }
     }
-    // 距 0 比当前最佳吸附点更近时吸附到 0
     if (time < threshold && time < bestDist) {
       best = 0
     }
@@ -289,7 +284,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   /** 记录模式下把一次修改对应的命令压入记录栈。同类型命令会与栈尾合并。 */
   private def push(command: UndoableCommand): Unit = {
     if (recording) {
-      // 与 recording 栈中最近命令合并
       val last = if (recorded.isEmpty) null else recorded.get(recorded.size() - 1)
       val mergeable = last != null && command.isInstanceOf[MergeableCommand] && last.getClass == command.getClass
       if (!mergeable || !last.asInstanceOf[MergeableCommand].merge(command)) {
@@ -298,11 +292,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
   }
 
-  /**
-   * 获取指定索引的轨道，如果不存在则自动创建
-   * @param index 轨道索引
-   * @return 对应的轨道对象
-   */
+  /** 获取指定索引的轨道，不存在则自动创建。 */
   def getTrack(index: Int): Track = {
     while (tracks.size() <= index) {
       tracks.add(new Track(this, tracks.size()))

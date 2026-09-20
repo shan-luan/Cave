@@ -78,7 +78,6 @@ trait PortActor extends Actor with PortHolder {
     }
   }
 
-  /** 绘制圆点。 */
   protected def drawDot(drawer: ShapeDrawer): Unit = {
     getAnchor(anchorTmp)
     drawer.filledCircle(anchorTmp.x, anchorTmp.y, PortActor.DOT_RADIUS, Color.WHITE)

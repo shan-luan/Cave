@@ -89,9 +89,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
   }
 
-  // ---------------------------------------------------------------------
   // 中部整体移动：小幅拖拽不应被放大
-  // ---------------------------------------------------------------------
 
   @Test
   def middleDragMovesBySameDeltaAndIsStableAndUndoable(): Unit = {
@@ -128,9 +126,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(5_000_000L, s.getOrigin)
   }
 
-  // ---------------------------------------------------------------------
   // 竖直方向整个移动：拖动一小段距离不应跳到极远轨道
-  // ---------------------------------------------------------------------
 
   @Test
   def middleDragVerticalLandsOnMouseTrackAndIsStable(): Unit = {
@@ -162,9 +158,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
   }
 
-  // ---------------------------------------------------------------------
   // 边缘裁切：小幅拖拽不应放大，且不改变 origin
-  // ---------------------------------------------------------------------
 
   @Test
   def frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable(): Unit = {

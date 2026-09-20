@@ -44,9 +44,6 @@ abstract class MedRes(private val path: String) extends Resource with Serializab
     }): RemovalListener[Integer, DecRes[?]])
     .build()
 
-  /**
-   * 必须确保路径对应一个存在的文件
-   */
   instances.add(this)
   try {
     Using.resource(newDecoder()) { metadataDecRes =>

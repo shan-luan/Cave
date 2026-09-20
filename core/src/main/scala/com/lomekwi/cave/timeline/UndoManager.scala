@@ -109,7 +109,7 @@ object UndoManager {
     def merge(other: UndoableCommand): Boolean
   }
 
-  // ──────────────── 单片段命令（保留向后兼容） ────────────────
+  // 单片段命令（保留向后兼容）
 
   case class AddSegCommand(track: Track, segment: Segment, range: Interval) extends UndoableCommand {
     override def undo(): Unit = {
@@ -194,7 +194,7 @@ object UndoManager {
     source.getFilters.asInstanceOf[util.List[Filter[?]]]
   }
 
-  // ──────────────── 批量命令（可合并） ────────────────
+  // 批量命令（可合并）
 
   /** 批量移动片段命令。合并时：同 segment 保留旧起点、更新终点；新 segment 直接追加。 */
   final class MoveSegsCommand(entries0: util.List[MoveSegsCommand.MoveEntry]) extends MergeableCommand {

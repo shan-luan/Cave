@@ -60,7 +60,6 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
     pathField.setText(path)
   }
 
-  /** 暴露底层文本框，以便进行更细粒度的控制（如添加验证器）。 */
   def getPathField: VisValidatableTextField = {
     pathField
   }

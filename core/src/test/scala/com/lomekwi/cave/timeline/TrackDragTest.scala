@@ -38,9 +38,7 @@ class TrackDragTest extends GdxTestBase {
     new Segment(new TestSource(duration))
   }
 
-  // ---------------------------------------------------------------------
   // 添加 / 移除
-  // ---------------------------------------------------------------------
 
   @Test
   def addPlacesSegmentAndSetsRangeAndTrack(): Unit = {
@@ -117,9 +115,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(0, timeline.getLength)
   }
 
-  // ---------------------------------------------------------------------
   // move（整体平移）
-  // ---------------------------------------------------------------------
 
   @Test
   def moveSingleSegmentByTimePreservesDurationAndOffsetsOrigin(): Unit = {
@@ -242,9 +238,7 @@ class TrackDragTest extends GdxTestBase {
     assertSame(obstacle, t1.get(50))
   }
 
-  // ---------------------------------------------------------------------
   // setStart / setEnd（头/尾裁切）
-  // ---------------------------------------------------------------------
 
   @Test
   def setStartSlidesFrontKeepsEndFixed(): Unit = {
@@ -381,9 +375,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(200, 300), b.getRange)
   }
 
-  // ---------------------------------------------------------------------
   // snapTime（吸附点获取）
-  // ---------------------------------------------------------------------
 
   @Test
   def snapTimeSnapsToNearestEdgeWithinThreshold(): Unit = {
@@ -415,9 +407,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(0, timeline.snapTime(5, 10, Set.of[Segment]()))
   }
 
-  // ---------------------------------------------------------------------
   // 分割
-  // ---------------------------------------------------------------------
 
   @Test
   def splitSplitsSegmentIntoTwoHalvesWithCorrectRanges(): Unit = {
@@ -439,9 +429,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(2, countOn(t0))
   }
 
-  // ---------------------------------------------------------------------
   // Undo / redo（与上个提交一致的命令语义）
-  // ---------------------------------------------------------------------
 
   @Test
   def undoRedoMoveSegCommandRestoresState(): Unit = {
@@ -529,8 +517,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(500, 600), b.getRange)
     assertEquals(2000, b.getOrigin)
   }
-
-  // ---------------------------------------------------------------------
 
   private def countOn(track: Track): Int = {
     var c = 0

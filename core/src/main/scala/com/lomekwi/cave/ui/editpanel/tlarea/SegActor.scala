@@ -21,7 +21,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   private[tlarea] var tl: TimelineView = uninitialized
   private[tlarea] var dragSide: DragSide = DragSide.NONE
 
-  // 拖拽状态 //////////////////////////
+  // 拖拽状态
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
   private var dragOldStart: Long = 0L
@@ -158,8 +158,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     dragSide
   }
 
-  // 拖拽会话：init → drag → finish 由本 actor 驱动。碰撞由模型把 delta
-  // 同向截断到最大可用偏移量处理，无需修正重试。actor 位置是模型的纯投影。
+  // 拖拽会话由本 actor 驱动，actor 位置是模型的纯投影。
 
   /** 按下时调用：快照参与拖拽的成员并开始录制 undo。 */
   private[tlarea] def initDrag(diffToActorX: Float, diffToActorY: Float): Unit = {
@@ -303,10 +302,6 @@ abstract class SegActor(private val segment: Segment) extends Actor {
     }
   }
 
-  // 整体平移。模型 moveTime/moveTrack 都按相对当前位置位移，因此这里的
-  // delta 必须相对当前模型状态，避免同帧多次 mouse move 反复累加。
-  // 模型内部会把 delta 同向截断到最大可用偏移量（撞上障碍即贴合）后应用，
-  // 因此每次 mouse move 一次调用即可，无需按修正量重试。
   private def handleMiddleDrag(target: Long, newTrack: Track): Unit = {
     val members: util.List[Segment] = util.List.copyOf(dragMembers)
 
@@ -334,8 +329,6 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       val members: util.List[Segment] = util.List.copyOf(dragMembers)
       val currentStart0: Long = members.get(0).getRange.lo
 
-      // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/前邻/起点下界）后应用；
-      // applied 为 0 等价于没动。
       tl.timeline.setStart(members, newStart - currentStart0)
     }
   }
@@ -352,8 +345,6 @@ abstract class SegActor(private val segment: Segment) extends Actor {
       val members: util.List[Segment] = util.List.copyOf(dragMembers)
       val currentEnd0: Long = members.get(0).getRange.hi
 
-      // 模型内部把 delta 同向截断到最大可用偏移量（自身长度/后邻/源长度上界）后应用；
-      // applied 为 0 等价于没动。
       tl.timeline.setEnd(members, newEnd - currentEnd0)
     }
   }

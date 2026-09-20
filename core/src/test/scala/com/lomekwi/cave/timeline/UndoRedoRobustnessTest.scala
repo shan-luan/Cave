@@ -93,9 +93,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     assertEquals("撤销与重做的步数应一致", undoCalls, redoCalls)
   }
 
-  // ---------------------------------------------------------------------
   // 随机布局
-  // ---------------------------------------------------------------------
 
   private def createRandomSegments(rnd: Random): Unit = {
     val occupied: List[List[Interval]] = new ArrayList[List[Interval]]()
@@ -159,9 +157,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  // ---------------------------------------------------------------------
   // 随机拖拽（每次 = 一个 record 块 = 一条可撤销命令）
-  // ---------------------------------------------------------------------
 
   private def randomDrag(rnd: Random): Unit = {
     var attempt = 0

@@ -34,7 +34,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   headEntry.next = tailEntry
   tailEntry.prev = headEntry
 
-  // ──────────────── AbstractSequentialList 接口 ────────────────
+  // AbstractSequentialList 接口
 
   override def size(): Int = {
     _size
@@ -47,7 +47,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     new FilterListIterator(index)
   }
 
-  // ──────────────── 链表结构 ────────────────
+  // 链表结构
 
   /**
    * 把 filter 插入到 succ 之前，并维护连接：
@@ -62,17 +62,14 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     val pred = succ.prev
     val newEntry = new FilterList.Entry(filter.asInstanceOf[Filter[? >: Object]])
 
-    // 断开旧连接 pred.out → succ.in
     disconnect(pred, succ)
 
-    // 组装链表
     newEntry.prev = pred
     newEntry.next = succ
     pred.next = newEntry
     succ.prev = newEntry
     _size += 1
 
-    // 建立新连接 pred.out → filter.in → filter.out → succ.in
     connect(pred, newEntry)
     connect(newEntry, succ)
   }
@@ -81,13 +78,10 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   private def unlink(entry: FilterList.Entry): Unit = {
     val pred = entry.prev
     val next = entry.next
-    // 更新链表指针：把 entry 从链中摘除
     pred.next = next
     next.prev = pred
-    // 断开 entry.in ← pred.out 与 entry.out → next.in
     disconnect(pred, entry)
     disconnect(entry, next)
-    // 重连 pred.out → next.in
     connect(pred, next)
 
     entry.filter = null
@@ -146,7 +140,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     x
   }
 
-  // ──────────────── List 变体（保持连接） ────────────────
+  // List 变体（保持连接）
 
   override def add(filter: Filter[? >: T]): Boolean = {
     linkBefore(filter, tailEntry)
@@ -168,7 +162,6 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   override def set(index: Int, filter: Filter[? >: T]): Filter[? >: T] = {
     val entry = entryAt(index)
     val old = entry.filter.asInstanceOf[Filter[? >: T]]
-    // 替换：断开旧 filter 的连接，接入新 filter
     disconnect(entry.prev, entry)
     disconnect(entry, entry.next)
     entry.filter = filter.asInstanceOf[Filter[? >: Object]]
@@ -195,7 +188,6 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     _size = 0
   }
 
-  /** 双向迭代器。 */
   private final class FilterListIterator(index: Int) extends util.ListIterator[Filter[? >: T]] {
     private var lastReturned: FilterList.Entry = uninitialized
     private var _next: FilterList.Entry = uninitialized

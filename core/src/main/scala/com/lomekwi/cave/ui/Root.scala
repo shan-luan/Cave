@@ -164,7 +164,6 @@ class Root extends ApplicationListener {
     this.shapeDrawer = new ShapeDrawer(stage.getBatch, region)
     white.dispose()
 
-    // 初始化UI组件
     mainLayout = new VisTable()
     mainLayout.setBackground("window-bg")
     mainLayout.setFillParent(true)

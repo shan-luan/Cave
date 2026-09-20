@@ -204,7 +204,7 @@ class TopBar extends MenuBar {
     }
   }
 
-  // -- 全局快捷键动作（由 Root.InputProcessor 调用） --
+  // 全局快捷键动作（由 Root.InputProcessor 调用）
 
   def performNew(): Unit = {
     try {

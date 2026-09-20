@@ -44,7 +44,7 @@ class NodeRegistry {
   }
 
   /**
-   * 创建第 index 个兼容节点。返回类型按 Filter 使用方约定——非 Filter 节点
+   * 创建第 index 个兼容节点。返回类型按 Filter 使用方约定：非 Filter 节点
    * 目前没有消费方，Inspector 只会把结果加入 filter 链。
    */
   def createCompatible(source: Source[?], index: Int): Node = {
@@ -73,7 +73,7 @@ object NodeRegistry {
 
   private def isCompatible(nodeClass: Class[? <: Node], frameType: Class[?]): Boolean = {
     if (!classOf[Filter[?]].isAssignableFrom(nodeClass)) {
-      true // 非 Filter 节点始终兼容
+      true
     } else {
       val asFilter: Class[? <: Filter[?]] = nodeClass.asSubclass(classOf[Filter[?]])
       targetTypeOf(asFilter).isAssignableFrom(frameType)

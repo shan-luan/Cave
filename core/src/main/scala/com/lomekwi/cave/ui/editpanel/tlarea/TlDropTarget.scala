@@ -15,7 +15,7 @@ import java.util
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
 
-/** 时间线拖放目标 —— 接收拖入的文件并落地为片段。 */
+/** 时间线拖放目标：接收拖入的文件并落地为片段。 */
 class TlDropTarget(private final val timelineView: TimelineView) extends DragAndDrop.Target(timelineView) {
 
   override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
