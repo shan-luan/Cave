@@ -65,8 +65,8 @@ class PreviewArea(project0: Project) extends Group with Focusable {
         if (!event.getTarget.isInstanceOf[TransFrameActor]) {
           val editPanel = App.root.getFrontendEditPanel
           if (editPanel != null) {
-            val tlGroup = editPanel.getTlGroup
-            tlGroup.clearSelection()
+            val timelineView = editPanel.getTimelineView
+            timelineView.clearSelection()
           }
         }
       }

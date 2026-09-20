@@ -26,17 +26,17 @@ import scala.jdk.CollectionConverters.*
 import com.badlogic.gdx.Input.Keys.*
 import java.util
 
-class TlGroup(project0: Project) extends Group with Focusable {
+class TimelineView(project0: Project) extends Group with Focusable {
 
   private final val renderer: TimelineRenderer = new TimelineRenderer()
   final val segMenu: SegMenu = new SegMenu(this)
-  final val tlGroupMenu: TlGroupMenu = new TlGroupMenu(this)
+  final val viewMenu: TlMenu = new TlMenu(this)
 
   private[tlarea] var timeline: Timeline = uninitialized
   private[tlarea] var playhead: Playhead = uninitialized
   private[tlarea] var project: Project = uninitialized
 
-  private[tlarea] final val view: TlGroup.ViewState = new TlGroup.ViewState()
+  private[tlarea] final val view: TimelineView.ViewState = new TimelineView.ViewState()
 
   /** 拖拽吸附时的吸附时间点，-1 表示无吸附（由 SegActor 拖拽时设置） */
   private[tlarea] var snapIndicatorTime: Long = -1
@@ -65,9 +65,9 @@ class TlGroup(project0: Project) extends Group with Focusable {
   addDefaultListeners()
 
   private def addDefaultListeners(): Unit = {
-    addListener(new TlGroupInputListener(this))
-    addCaptureListener(new TlGroupCaptureListener(this))
-    App.root.getDragAndDrop.addTarget(new TlGroupDropTarget(this))
+    addListener(new TlInputListener(this))
+    addCaptureListener(new TlCaptureListener(this))
+    App.root.getDragAndDrop.addTarget(new TlDropTarget(this))
     addListener(new DragListener {
       setButton(Input.Buttons.MIDDLE)
 
@@ -107,24 +107,24 @@ class TlGroup(project0: Project) extends Group with Focusable {
       if (!App.root.isTextInputFocused && (getStage.getKeyboardFocus eq this)) {
         val timePerPixel: Float = view.durationTime.toFloat / getWidth
 
-        if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) {
-          view.startTime += (TlGroup.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong
+        if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_RIGHT)) {
+          view.startTime += (TimelineView.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong
           acted = true
         }
-        if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) {
-          view.startTime = Math.max(0, view.startTime - (TlGroup.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong)
+        if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_LEFT)) {
+          view.startTime = Math.max(0, view.startTime - (TimelineView.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong)
           acted = true
         }
-        if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) {
-          view.trackYShift = Math.max(0, view.trackYShift + TlGroup.KEY_VERTICAL_SPEED * delta)
+        if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_DOWN)) {
+          view.trackYShift = Math.max(0, view.trackYShift + TimelineView.KEY_VERTICAL_SPEED * delta)
           acted = true
         }
-        if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) {
-          view.trackYShift = Math.max(0, view.trackYShift - TlGroup.KEY_VERTICAL_SPEED * delta)
+        if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_UP)) {
+          view.trackYShift = Math.max(0, view.trackYShift - TimelineView.KEY_VERTICAL_SPEED * delta)
           acted = true
         }
 
-        if (App.shortcutManager.isActive(TlGroup.Actions.SEEK)) {
+        if (App.shortcutManager.isActive(TimelineView.Actions.SEEK)) {
           seekPlayheadAtX(pointer.x)
           acted = true
         }
@@ -373,8 +373,8 @@ class TlGroup(project0: Project) extends Group with Focusable {
     }
     if (splitAny && group != null) {
       for (member <- segments.asScala) group.remove(member)
-      if (beforeSegments.size() >= 2) TlGroup.regroup(beforeSegments)
-      if (afterSegments.size() >= 2) TlGroup.regroup(afterSegments)
+      if (beforeSegments.size() >= 2) TimelineView.regroup(beforeSegments)
+      if (afterSegments.size() >= 2) TimelineView.regroup(afterSegments)
     }
   }
 
@@ -702,7 +702,7 @@ class TlGroup(project0: Project) extends Group with Focusable {
   }
 }
 
-object TlGroup {
+object TimelineView {
   private final val KEY_HORIZONTAL_SPEED: Float = 1200f
   private final val KEY_VERTICAL_SPEED: Float = 1200f
 

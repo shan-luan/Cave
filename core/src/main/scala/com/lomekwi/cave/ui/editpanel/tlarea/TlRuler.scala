@@ -14,7 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Widget
 import com.kotcrab.vis.ui.VisUI
 import com.lomekwi.cave.app.App
 
-class TlRuler(private final val tlGroup: TlGroup) extends Widget {
+class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val font: BitmapFont = VisUI.getSkin.getFont("default-font")
   private final val sb: java.lang.StringBuilder = new java.lang.StringBuilder(8)
 
@@ -22,26 +22,26 @@ class TlRuler(private final val tlGroup: TlGroup) extends Widget {
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       if (button == Input.Buttons.LEFT) {
-        tlGroup.clearSelection()
-        tlGroup.seekPlayheadAtX(x)
+        timelineView.clearSelection()
+        timelineView.seekPlayheadAtX(x)
         true
       } else {
         false
       }
     }
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-      tlGroup.seekPlayheadAtX(x)
+      timelineView.seekPlayheadAtX(x)
     }
   })
 
   override def act(delta: Float): Unit = {
     super.act(delta)
-    if (App.shortcutManager.isActive(TlGroup.Actions.SEEK)) {
+    if (App.shortcutManager.isActive(TimelineView.Actions.SEEK)) {
       val pointer: Vector2 = new Vector2(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
       getStage.screenToStageCoordinates(pointer)
       stageToLocalCoordinates(pointer)
       if (pointer.x >= 0 && pointer.x <= getWidth && pointer.y >= 0 && pointer.y <= getHeight) {
-        tlGroup.seekPlayheadAtX(pointer.x)
+        timelineView.seekPlayheadAtX(pointer.x)
       }
     }
   }
@@ -54,12 +54,12 @@ class TlRuler(private final val tlGroup: TlGroup) extends Widget {
     super.draw(batch, parentAlpha)
     App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.DARK_GRAY)
 
-    val interval: Long = niceScale((tlGroup.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth).toLong)
-    val start: Long = (tlGroup.view.startTime / interval) * interval
+    val interval: Long = niceScale((timelineView.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth).toLong)
+    val start: Long = (timelineView.view.startTime / interval) * interval
 
     var t = start
-    while (t < tlGroup.view.startTime + tlGroup.view.durationTime) {
-      val x: Float = tlGroup.absoluteTimeToX(t) + getX
+    while (t < timelineView.view.startTime + timelineView.view.durationTime) {
+      val x: Float = timelineView.absoluteTimeToX(t) + getX
       App.root.getShapeDrawer.filledRectangle(x, getY, 1, getHeight, Color.WHITE)
       formatTime(t, interval)
       font.setColor(Color.WHITE)

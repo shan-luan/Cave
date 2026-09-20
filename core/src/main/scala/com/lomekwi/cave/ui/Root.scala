@@ -39,7 +39,7 @@ import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.ui.editpanel.EditPanel
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
+import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.tabs.app.ProjectTab
 import com.lomekwi.cave.ui.tabs.app.TopTabbedPane
 import com.lomekwi.cave.ui.topbar.TopBar
@@ -97,18 +97,18 @@ class Root extends ApplicationListener {
           true
         } else if (isTextInputFocused) {
           false
-        } else if (App.shortcutManager.isActive(TlGroup.Actions.COPY)) {
+        } else if (App.shortcutManager.isActive(TimelineView.Actions.COPY)) {
           // 复制（全局，无需项目）
           App.copyManager.copy()
           true
-        } else if (App.shortcutManager.isActive(TlGroup.Actions.UNDO)) {
+        } else if (App.shortcutManager.isActive(TimelineView.Actions.UNDO)) {
           // 撤销 / 重做
           project.undoManager.undo()
-          if (ep != null) ep.getTlGroup.markTimelineDirty()
+          if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
-        } else if (App.shortcutManager.isActive(TlGroup.Actions.REDO)) {
+        } else if (App.shortcutManager.isActive(TimelineView.Actions.REDO)) {
           project.undoManager.redo()
-          if (ep != null) ep.getTlGroup.markTimelineDirty()
+          if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
         } else {
           false
@@ -292,7 +292,7 @@ class Root extends ApplicationListener {
   }
 
   private def registerDefaultShortcuts(): Unit = {
-    for (action <- TlGroup.Actions.values) {
+    for (action <- TimelineView.Actions.values) {
       App.shortcutManager.register(action, action.defaultKeys()*)
     }
     for (action <- TopBar.TopActions.values) {

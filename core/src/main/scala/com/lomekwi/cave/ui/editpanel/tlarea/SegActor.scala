@@ -18,7 +18,7 @@ import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
 abstract class SegActor(private val segment: Segment) extends Actor {
-  private[tlarea] var tl: TlGroup = uninitialized
+  private[tlarea] var tl: TimelineView = uninitialized
   private[tlarea] var dragSide: DragSide = DragSide.NONE
 
   // 拖拽状态 //////////////////////////
@@ -76,10 +76,10 @@ abstract class SegActor(private val segment: Segment) extends Actor {
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       val parent = getParent
-      if (parent == null || !parent.isInstanceOf[TlGroup]) {
+      if (parent == null || !parent.isInstanceOf[TimelineView]) {
         return false
       }
-      val tlGroup = parent.asInstanceOf[TlGroup]
+      val timelineView = parent.asInstanceOf[TimelineView]
       if (button == Input.Buttons.LEFT) {
         if (x < edgeWidth) {
           dragSide = DragSide.FRONT
@@ -89,15 +89,15 @@ abstract class SegActor(private val segment: Segment) extends Actor {
           dragSide = DragSide.MIDDLE
         }
         event.stop()
-        val alreadySelected: Boolean = tlGroup.selectedSegments.contains(segment)
+        val alreadySelected: Boolean = timelineView.selectedSegments.contains(segment)
         if (!alreadySelected) {
-          tlGroup.selectSegment(segment, false)
+          timelineView.selectSegment(segment, false)
         }
-        tl = tlGroup
+        tl = timelineView
         initDrag(x, y)
         true
       } else {
-        getMenu.setContext(SegActor.this, parent.asInstanceOf[TlGroup].xToAbsoluteTime(getX + x))
+        getMenu.setContext(SegActor.this, parent.asInstanceOf[TimelineView].xToAbsoluteTime(getX + x))
         false
       }
     }
@@ -216,7 +216,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
   }
 
   private def snapDisabled(): Boolean = {
-    App.shortcutManager.isActive(TlGroup.Actions.SNAP_IGNORE)
+    App.shortcutManager.isActive(TimelineView.Actions.SNAP_IGNORE)
   }
 
   /** 裁切吸附：忽略 drag 成员与同轨道片段，返回吸附后的时间并设置指示线。 */
@@ -366,7 +366,7 @@ abstract class SegActor(private val segment: Segment) extends Actor {
 
   private def getMenu: SegMenu = {
     getParent match {
-      case g: TlGroup => g.segMenu
+      case g: TimelineView => g.segMenu
       case _ => null
     }
   }

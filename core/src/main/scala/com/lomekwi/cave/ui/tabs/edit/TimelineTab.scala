@@ -4,11 +4,11 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
+import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.editpanel.tlarea.TlRuler
 import com.lomekwi.cave.util.i18n.I18N
 
-class TimelineTab(tlMain: Container[TlGroup]) extends Tab(false, false) {
+class TimelineTab(tlMain: Container[TimelineView]) extends Tab(false, false) {
   private final val content: Table = new VisTable()
 
   {

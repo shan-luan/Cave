@@ -26,7 +26,7 @@ import scala.compiletime.uninitialized
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
 
-class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends PopupMenu {
+class TlMenu private[tlarea] (private final val timelineView: TimelineView) extends PopupMenu {
   private var time: Long = 0L
   private var pasteItem: MenuItem = uninitialized
 
@@ -38,7 +38,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
     addItem.setSubMenu(addMenu)
     this.addItem(addItem)
 
-    pasteItem = new MenuItem("粘贴", new ChangeListenerX(() => tlGroup.performPaste()))
+    pasteItem = new MenuItem("粘贴", new ChangeListenerX(() => timelineView.performPaste()))
     this.addItem(pasteItem)
   }
 
@@ -67,7 +67,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
       override def onCancellation(): Unit = {}
 
       override def onError(exception: Exception): Unit = {
-        Gdx.app.error("TlGroupMenu", "选择文件失败", exception)
+        Gdx.app.error("TlMenu", "选择文件失败", exception)
       }
     })
   }
@@ -79,20 +79,20 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
 
     var targetTrack: Int = 0
     val range: Interval = Interval(time, time + duration)
-    while (!tlGroup.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
+    while (!timelineView.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
       targetTrack += 1
     }
 
-    val timeline = tlGroup.getTimeline
+    val timeline = timelineView.getTimeline
     Using.resource(timeline.record()) { h =>
       timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
     }
 
-    tlGroup.markTimelineDirty()
+    timelineView.markTimelineDirty()
   }
 
   private def addMediaFile(file: File): Unit = {
-    val project: Project = tlGroup.getProject
+    val project: Project = timelineView.getProject
     try {
       val segments: util.List[Segment] = project.mediaSegFactory.getAll(file)
       if (!segments.isEmpty) {
@@ -100,7 +100,7 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
         var trackOffset: Int = 0
         val added: util.List[Segment] = new util.ArrayList[Segment]()
 
-        val timeline = tlGroup.getTimeline
+        val timeline = timelineView.getTimeline
         Using.resource(timeline.record()) { h =>
           for (seg <- segments.asScala) {
             seg.setOrigin(time)
@@ -126,11 +126,11 @@ class TlGroupMenu private[tlarea] (private final val tlGroup: TlGroup) extends P
           }
         }
 
-        tlGroup.markTimelineDirty()
+        timelineView.markTimelineDirty()
       }
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlGroupMenu", "添加媒体片段失败: " + e.getMessage)
+        Gdx.app.error("TlMenu", "添加媒体片段失败: " + e.getMessage)
     }
   }
 }

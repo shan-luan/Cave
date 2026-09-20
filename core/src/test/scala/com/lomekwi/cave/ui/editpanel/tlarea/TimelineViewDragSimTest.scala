@@ -17,7 +17,7 @@ import org.objenesis.ObjenesisStd
 
 import java.lang.reflect.Field
 
-import TlGroupDragSimTest.*
+import TimelineViewDragSimTest.*
 
 /**
  * 用真实 SegActor 拖拽会话模拟"鼠标拖拽"交互，验证重构后的 UI 拖拽逻辑：
@@ -25,25 +25,25 @@ import TlGroupDragSimTest.*
  * 2) 拖拽边缘裁切时不该改变片段 origin；
  * 3) act() 重建是模型的纯投影：重建不得改动模型，模型状态必须稳定。
  *
- * 说明：TlGroup 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
+ * 说明：TimelineView 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
  * 在 headless 测试里不便构造。因此这里用 Objenesis 绕过构造函数实例化，
  * 再反射填入拖拽逻辑真正依赖的模型/视图字段，其余 UI 保持空。
- * actor 不挂 parent（Group 内部 children 未初始化），直接注入 TlGroup 引用，
+ * actor 不挂 parent（Group 内部 children 未初始化），直接注入 TimelineView 引用，
  * 拖拽逻辑只读 actor 的位置/尺寸。
  */
-class TlGroupDragSimTest extends GdxTestBase {
+class TimelineViewDragSimTest extends GdxTestBase {
 
   private var project: TestProject = null
   private var timeline: Timeline = null
-  private var tl: TlGroup = null
-  private var view: TlGroup.ViewState = null
+  private var tl: TimelineView = null
+  private var view: TimelineView.ViewState = null
 
   @Before
   def setUp(): Unit = {
     project = new TestProject()
     timeline = project.timeline
 
-    tl = new ObjenesisStd().newInstance(classOf[TlGroup])
+    tl = new ObjenesisStd().newInstance(classOf[TimelineView])
     tl.setSize(WIDTH, HEIGHT)
 
     setField(tl, "timeline", timeline)
@@ -51,7 +51,7 @@ class TlGroupDragSimTest extends GdxTestBase {
     setField(tl, "selectedSegments", new SegmentSet())
     setField(tl, "dirty", true)
 
-    view = new TlGroup.ViewState()
+    view = new TimelineView.ViewState()
     view.startTime = 0
     view.durationTime = DURATION_US
     view.trackHeight = TRACK_H
@@ -217,7 +217,7 @@ class TlGroupDragSimTest extends GdxTestBase {
   }
 }
 
-object TlGroupDragSimTest {
+object TimelineViewDragSimTest {
 
   private final val WIDTH: Float = 2000f
   private final val HEIGHT: Float = 400f

@@ -25,7 +25,7 @@ import com.lomekwi.cave.project.ProjectLoadedEvent
 import com.lomekwi.cave.project.Projects
 import com.lomekwi.cave.project.Projects.hasProjectExtension
 import com.lomekwi.cave.task.Task
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
+import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.ui.settings.SettingsDialog
 import com.lomekwi.cave.ui.tabs.app.TabSwitchedEvent
@@ -97,10 +97,10 @@ class TopBar extends MenuBar {
       if (project != null) {
         project.undoManager.undo()
         val ep = App.root.getFrontendEditPanel
-        if (ep != null) ep.getTlGroup.markTimelineDirty()
+        if (ep != null) ep.getTimelineView.markTimelineDirty()
       }
     }))
-    undoItem.setShortcut(TlGroup.Actions.UNDO.defaultKeys()*)
+    undoItem.setShortcut(TimelineView.Actions.UNDO.defaultKeys()*)
     editMenu.addItem(undoItem)
 
     val redoItem: MenuItem = new MenuItemP(i18n("重做"), new ChangeListenerX(() => {
@@ -108,10 +108,10 @@ class TopBar extends MenuBar {
       if (project != null) {
         project.undoManager.redo()
         val ep = App.root.getFrontendEditPanel
-        if (ep != null) ep.getTlGroup.markTimelineDirty()
+        if (ep != null) ep.getTimelineView.markTimelineDirty()
       }
     }))
-    redoItem.setShortcut(TlGroup.Actions.REDO.defaultKeys()*)
+    redoItem.setShortcut(TimelineView.Actions.REDO.defaultKeys()*)
     editMenu.addItem(redoItem)
 
     addMenu(editMenu)

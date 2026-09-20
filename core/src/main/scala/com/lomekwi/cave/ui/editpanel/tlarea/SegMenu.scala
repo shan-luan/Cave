@@ -5,17 +5,17 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import scala.compiletime.uninitialized
 
-class SegMenu private[tlarea] (private val tlGroup: TlGroup) extends PopupMenu {
+class SegMenu private[tlarea] (private val timelineView: TimelineView) extends PopupMenu {
   private var segActor: SegActor = uninitialized
   private var time: Long = 0L
 
   addItem(new MenuItem("复制", new ChangeListenerX(() => {
-    if (tlGroup.selectedSegments.contains(segActor.getSegment)) {
+    if (timelineView.selectedSegments.contains(segActor.getSegment)) {
       App.copyManager.copy()
     }
   })))
-  addItem(new MenuItem("删除", new ChangeListenerX(() => tlGroup.removeSeg(segActor))))
-  addItem(new MenuItem("分割", new ChangeListenerX(() => tlGroup.split(segActor, time))))
+  addItem(new MenuItem("删除", new ChangeListenerX(() => timelineView.removeSeg(segActor))))
+  addItem(new MenuItem("分割", new ChangeListenerX(() => timelineView.split(segActor, time))))
 
   def setContext(segActor: SegActor, time: Long): Unit = {
     this.segActor = segActor

@@ -11,7 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
+import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 
 /**
  * 可平移/缩放的画布容器：内部持有 canvas Group，滚轮以光标为中心缩放，
@@ -134,10 +134,10 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     val stage = getStage
     if (stage != null && getParent != null && (stage.getKeyboardFocus eq getParent)) {
       val speed = moveSpeed * delta / getScale
-      if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_UP)) yOffset -= speed
-      if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_DOWN)) yOffset += speed
-      if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_LEFT)) xOffset += speed
-      if (App.shortcutManager.isActive(TlGroup.Actions.SCROLL_RIGHT)) xOffset -= speed
+      if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_UP)) yOffset -= speed
+      if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_DOWN)) yOffset += speed
+      if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_LEFT)) xOffset += speed
+      if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_RIGHT)) xOffset -= speed
     }
     updateCanvas()
     super.act(delta)

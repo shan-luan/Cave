@@ -55,7 +55,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   protected[timeline] def tryAdd(segment: Segment, r: Interval): Long = this.synchronized {
     val shift = getShift(r)
     if (shift == 0) {
-      `override`(segment, r)
+      addOrThrow(segment, r)
     }
     shift
   }
@@ -146,13 +146,9 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   private def isFree(range: Interval, exclude: Interval, ignore: util.Collection[Segment]): Boolean = this.synchronized {
     intersectingEntries(range).forall { case (interval, segment) => ignorable(exclude, ignore, interval, segment) }
   }
-
-  /**
-   *只是不检查。千万不要真的拿来覆盖。
-   * @author shan_luan_
-   */
-  protected[timeline] def `override`(segment: Segment, r: Interval): Unit = this.synchronized {
-    assert(isFree(r, Collections.singleton(segment)))
+    
+  protected[timeline] def addOrThrow(segment: Segment, r: Interval): Unit = this.synchronized {
+    require(isFree(r, Collections.singleton(segment)))
     sources.put(r, segment)
     segment.setTrack(this)
     segment.setRange(r)
@@ -198,8 +194,8 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
       } else {
         val right = s.duplicate()
         sources.remove(r)
-        `override`(s, Interval(lo, time))
-        `override`(right, Interval(time, hi))
+        addOrThrow(s, Interval(lo, time))
+        addOrThrow(right, Interval(time, hi))
         true
       }
     }
@@ -246,7 +242,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
   protected[timeline] def setStart(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Interval(segment.getRange.lo + deltaTime, segment.getRange.hi))
+    addOrThrow(segment, Interval(segment.getRange.lo + deltaTime, segment.getRange.hi))
   }
 
   /**
@@ -272,7 +268,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   }
   protected[timeline] def setEnd(segment: Segment, deltaTime: Long): Unit = this.synchronized {
     remove(segment)
-    `override`(segment, Interval(segment.getRange.lo, segment.getRange.hi + deltaTime))
+    addOrThrow(segment, Interval(segment.getRange.lo, segment.getRange.hi + deltaTime))
   }
 
   /**
@@ -305,7 +301,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
     val owned = own(segments)
     remove(owned)
     for (s <- owned.asScala) {
-      `override`(s, s.getRange.shift(deltaTime))
+      addOrThrow(s, s.getRange.shift(deltaTime))
       s.offsetOrigin(deltaTime)
     }
   }

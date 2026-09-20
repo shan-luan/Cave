@@ -4,7 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.ui.editpanel.previewarea.PreviewArea
 import com.lomekwi.cave.ui.editpanel.mediapool.MediaPool
-import com.lomekwi.cave.ui.editpanel.tlarea.TlGroup
+import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.tabs.edit.TimelineTab
 import com.lomekwi.cave.ui.tabs.edit.EditTabbedPane
 import com.kotcrab.vis.ui.widget.VisTable
@@ -13,13 +13,13 @@ import scala.compiletime.uninitialized
 class EditPanel(private[editpanel] val project: Project) {
   private[editpanel] var previewArea: PreviewArea = uninitialized
   private[editpanel] var tl: VisTable = uninitialized
-  private[editpanel] var tlMain: Container[TlGroup] = uninitialized
+  private[editpanel] var tlMain: Container[TimelineView] = uninitialized
   private[editpanel] var res: Container[MediaPool] = uninitialized
   private[editpanel] var tlTabs: EditTabbedPane = uninitialized
 
   {
     previewArea = new PreviewArea(project)
-    tlMain = new Container[TlGroup](new TlGroup(project)).fill().clip().minSize(0, 0)
+    tlMain = new Container[TimelineView](new TimelineView(project)).fill().clip().minSize(0, 0)
     tlTabs = new EditTabbedPane()
     tlTabs.add(new TimelineTab(tlMain))
     tl = new VisTable()
@@ -33,7 +33,7 @@ class EditPanel(private[editpanel] val project: Project) {
     previewArea
   }
 
-  def getTlGroup: TlGroup = {
+  def getTimelineView: TimelineView = {
     tlMain.getActor
   }
 

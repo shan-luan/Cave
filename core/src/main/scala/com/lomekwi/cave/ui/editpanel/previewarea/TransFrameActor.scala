@@ -150,7 +150,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
           val editPanel = App.root.getFrontendEditPanel
           if (editPanel != null) {
             val addToSelection = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-            editPanel.getTlGroup.selectSegment(segment, addToSelection)
+            editPanel.getTimelineView.selectSegment(segment, addToSelection)
           }
         }
       }

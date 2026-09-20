@@ -117,7 +117,7 @@ object UndoManager {
     }
 
     override def redo(): Unit = {
-      track.`override`(segment, range)
+      track.addOrThrow(segment, range)
     }
   }
 
@@ -127,7 +127,7 @@ object UndoManager {
     }
 
     override def undo(): Unit = {
-      track.`override`(segment, range)
+      track.addOrThrow(segment, range)
       if (group != null) group.add(segment)
     }
 
@@ -140,25 +140,25 @@ object UndoManager {
   case class ResizeSegCommand(track: Track, segment: Segment, oldRange: Interval, newRange: Interval) extends UndoableCommand {
     override def undo(): Unit = {
       track.remove(segment)
-      track.`override`(segment, oldRange)
+      track.addOrThrow(segment, oldRange)
     }
 
     override def redo(): Unit = {
       track.remove(segment)
-      track.`override`(segment, newRange)
+      track.addOrThrow(segment, newRange)
     }
   }
 
   case class MoveSegCommand(fromTrack: Track, toTrack: Track, segment: Segment, oldRange: Interval, newRange: Interval) extends UndoableCommand {
     override def undo(): Unit = {
       toTrack.remove(segment)
-      fromTrack.`override`(segment, oldRange)
+      fromTrack.addOrThrow(segment, oldRange)
       segment.offsetOrigin(oldRange.lo - newRange.lo)
     }
 
     override def redo(): Unit = {
       fromTrack.remove(segment)
-      toTrack.`override`(segment, newRange)
+      toTrack.addOrThrow(segment, newRange)
       segment.offsetOrigin(newRange.lo - oldRange.lo)
     }
   }
@@ -167,14 +167,14 @@ object UndoManager {
     override def undo(): Unit = {
       track.remove(originalSeg)
       track.remove(newSeg)
-      track.`override`(originalSeg, originalRange)
+      track.addOrThrow(originalSeg, originalRange)
     }
 
     override def redo(): Unit = {
       track.remove(originalSeg)
       track.remove(newSeg)
-      track.`override`(originalSeg, Interval(originalRange.lo, splitTime))
-      track.`override`(newSeg, Interval(splitTime, originalRange.hi))
+      track.addOrThrow(originalSeg, Interval(originalRange.lo, splitTime))
+      track.addOrThrow(newSeg, Interval(splitTime, originalRange.hi))
     }
   }
 
@@ -203,7 +203,7 @@ object UndoManager {
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
         e.toTrack.remove(e.segment)
-        e.fromTrack.`override`(e.segment, e.oldRange)
+        e.fromTrack.addOrThrow(e.segment, e.oldRange)
         e.segment.offsetOrigin(e.oldRange.lo - e.newRange.lo)
       }
     }
@@ -211,7 +211,7 @@ object UndoManager {
     override def redo(): Unit = {
       for (e <- entries.asScala) {
         e.fromTrack.remove(e.segment)
-        e.toTrack.`override`(e.segment, e.newRange)
+        e.toTrack.addOrThrow(e.segment, e.newRange)
         e.segment.offsetOrigin(e.newRange.lo - e.oldRange.lo)
       }
     }
@@ -248,14 +248,14 @@ object UndoManager {
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
         e.track.remove(e.segment)
-        e.track.`override`(e.segment, e.oldRange)
+        e.track.addOrThrow(e.segment, e.oldRange)
       }
     }
 
     override def redo(): Unit = {
       for (e <- entries.asScala) {
         e.track.remove(e.segment)
-        e.track.`override`(e.segment, e.newRange)
+        e.track.addOrThrow(e.segment, e.newRange)
       }
     }
 
@@ -290,7 +290,7 @@ object UndoManager {
 
     override def undo(): Unit = {
       entries.asScala.reverseIterator.foreach { e =>
-        e.track.`override`(e.segment, e.range)
+        e.track.addOrThrow(e.segment, e.range)
         if (e.group != null) e.group.add(e.segment)
       }
     }

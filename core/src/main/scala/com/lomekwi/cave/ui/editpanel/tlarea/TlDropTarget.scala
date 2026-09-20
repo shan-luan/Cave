@@ -16,7 +16,7 @@ import scala.util.Using
 import scala.jdk.CollectionConverters.*
 
 /** 时间线拖放目标 —— 接收拖入的文件并落地为片段。 */
-class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.Target(tlGroup) {
+class TlDropTarget(private final val timelineView: TimelineView) extends DragAndDrop.Target(timelineView) {
 
   override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
     payload.getObject match {
@@ -30,22 +30,22 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: util.List[Segment] = tlGroup.project.mediaSegFactory.getAll(file)
-      val startTime: Long = tlGroup.xToAbsoluteTime(x)
-      val baseTrack: Int = tlGroup.yToTrackIndex(y)
+      val segments: util.List[Segment] = timelineView.project.mediaSegFactory.getAll(file)
+      val startTime: Long = timelineView.xToAbsoluteTime(x)
+      val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
       val added: util.List[Segment] = new util.ArrayList[Segment]()
-      Using.resource(tlGroup.timeline.record()) { h =>
+      Using.resource(timelineView.timeline.record()) { h =>
         for (seg <- segments.asScala) {
           seg.setOrigin(startTime)
           val duration: Long = seg.getSource.getDefaultSegmentDuration
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
             val range: Interval = Interval(startTime, startTime + duration)
-            while (!tlGroup.timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
+            while (!timelineView.timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
               targetTrack += 1
             }
-            tlGroup.timeline.tryAdd(tlGroup.timeline.getTrack(targetTrack), seg, range)
+            timelineView.timeline.tryAdd(timelineView.timeline.getTrack(targetTrack), seg, range)
             trackOffset = targetTrack - baseTrack + 1
             added.add(seg)
           }
@@ -57,10 +57,10 @@ class TlGroupDropTarget(private final val tlGroup: TlGroup) extends DragAndDrop.
           group.add(seg)
         }
       }
-      tlGroup.dirty = true
+      timelineView.dirty = true
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlGroup", "拖拽文件失败: " + e.getMessage)
+        Gdx.app.error("TlDropTarget", "拖拽文件失败: " + e.getMessage)
     }
   }
 }

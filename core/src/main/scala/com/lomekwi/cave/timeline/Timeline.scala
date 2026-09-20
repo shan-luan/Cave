@@ -31,8 +31,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
     shift
   }
-  protected[timeline] def `override`(track: Track, segment: Segment, range: Interval): Unit = {
-    track.`override`(segment, range)
+  protected[timeline] def addOrThrow(track: Track, segment: Segment, range: Interval): Unit = {
+    track.addOrThrow(segment, range)
     push(AddSegCommand(track, segment, range))
   }
   def remove(segment: Segment): Unit = {
@@ -150,7 +150,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
     for (s <- segments.asScala) {
       val tr = s.getTrack
-      tr.`override`(s, s.getRange.shift(applied))
+      tr.addOrThrow(s, s.getRange.shift(applied))
       s.offsetOrigin(applied)
     }
     push(new MoveSegsCommand(entries))
@@ -181,7 +181,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       if (t != null) t.remove(s)
     }
     for (s <- segments.asScala) {
-      getTrack(s.getTrack.index + applied).`override`(s, s.getRange)
+      getTrack(s.getTrack.index + applied).addOrThrow(s, s.getRange)
     }
     if (!entries.isEmpty) {
       push(new MoveSegsCommand(entries))
