@@ -23,6 +23,8 @@ trait PortActor extends Actor with PortHolder {
   private final val peerTmp: Vector2 = new Vector2()
   private final val cursor: Vector2 = new Vector2()
   private var dragging: Boolean = false
+  private var detached: Boolean = false
+  private var pendingPeer: PortActor = null
 
   /**
    * 圆点在绘制坐标系中的位置。
@@ -37,6 +39,8 @@ trait PortActor extends Actor with PortHolder {
         // 圆点上的按下不应冒泡到卡片，否则会同时拖动节点
         event.stop()
         dragging = true
+        detached = false
+        pendingPeer = null
         setCursor(event.getStageX, event.getStageY)
         true
       }
@@ -44,6 +48,10 @@ trait PortActor extends Actor with PortHolder {
 
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       if (dragging) {
+        if (!detached) {
+          detached = true
+          pendingPeer = detachForDrag()
+        }
         setCursor(event.getStageX, event.getStageY)
       }
     }
@@ -51,7 +59,10 @@ trait PortActor extends Actor with PortHolder {
     override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
       if (dragging) {
         dragging = false
-        dropLink(event.getStageX, event.getStageY)
+        if (detached) {
+          detached = false
+          dropLink(event.getStageX, event.getStageY)
+        }
       }
     }
   })
@@ -73,20 +84,34 @@ trait PortActor extends Actor with PortHolder {
     drawer.filledCircle(anchorTmp.x, anchorTmp.y, PortActor.DOT_RADIUS, Color.WHITE)
   }
 
-  /** 绘制拖拽中的临时连线。 */
+  /** 绘制拖拽中的临时连线。起点是被拖连接的固定端，没有固定端时从本圆点引出。 */
   protected def drawPendingLink(drawer: ShapeDrawer): Unit = {
-    if (dragging) {
-      drawCurve(drawer, getAnchor(anchorTmp), cursor, Colors.ACCENT_LIGHT)
+    if (detached) {
+      if (pendingPeer == null) {
+        drawCurve(drawer, getAnchor(anchorTmp), cursor, Colors.ACCENT_LIGHT)
+      } else {
+        drawCurve(drawer, peerAnchor(pendingPeer, anchorTmp), cursor, Colors.ACCENT_LIGHT)
+      }
     }
   }
+
+  /**
+   * 开始拖拽连线时摘下端口上已有的连接，返回该连接另一端的圆点，作为拖拽线的固定端，
+   * 使整条线看起来是被从原地提起来。默认不摘，返回 null，拖拽线从本圆点引出。
+   */
+  protected def detachForDrag(): PortActor = null
 
   /** 绘制从自身圆点到另一个端口圆点的连线。 */
   protected def drawLink(drawer: ShapeDrawer, peer: PortActor): Unit = {
     getAnchor(anchorTmp)
-    peer.getAnchor(peerTmp)
-    peer.getParent.localToStageCoordinates(peerTmp)
-    toDrawingFrame(peerTmp)
-    drawCurve(drawer, anchorTmp, peerTmp, Colors.ACCENT)
+    drawCurve(drawer, anchorTmp, peerAnchor(peer, peerTmp), Colors.ACCENT)
+  }
+
+  /** 另一个端口圆点的 anchor，折算到当前绘制坐标系。 */
+  private def peerAnchor(peer: PortActor, out: Vector2): Vector2 = {
+    peer.getAnchor(out)
+    peer.getParent.localToStageCoordinates(out)
+    toDrawingFrame(out)
   }
 
   /** 绘制从 start 到 end 的三次贝塞尔曲线，两端沿水平方向引出。 */

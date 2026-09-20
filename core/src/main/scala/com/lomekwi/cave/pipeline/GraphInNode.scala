@@ -28,4 +28,6 @@ final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
   override def getName: String = {
     "输入"
   }
+
+  override def canRemove: Boolean = false
 }

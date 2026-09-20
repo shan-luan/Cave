@@ -7,7 +7,11 @@ final class Sink extends Node {
     "总输出"
   }
 
+  def getIn: Node.InPort[Object] = in
+
   def get(): Object = {
     in.getData
   }
+
+  override def canRemove: Boolean = false
 }

@@ -146,7 +146,7 @@ class Track(@transient private var timeline: Timeline, final val index: Int) ext
   private def isFree(range: Interval, exclude: Interval, ignore: util.Collection[Segment]): Boolean = this.synchronized {
     intersectingEntries(range).forall { case (interval, segment) => ignorable(exclude, ignore, interval, segment) }
   }
-    
+
   protected[timeline] def addOrThrow(segment: Segment, r: Interval): Unit = this.synchronized {
     require(isFree(r, Collections.singleton(segment)))
     sources.put(r, segment)

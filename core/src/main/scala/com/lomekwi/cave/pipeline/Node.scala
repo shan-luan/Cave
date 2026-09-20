@@ -14,7 +14,7 @@ abstract class Node extends Serializable {
   private final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
   private final val outPorts: util.List[Node.OutPort[?]] = new util.ArrayList[Node.OutPort[?]]()
 
-  protected def remove(): Unit = {
+  protected[pipeline] def remove(): Unit = {
     for (in <- inPorts.asScala) {
       in.unlink()
     }
@@ -23,6 +23,12 @@ abstract class Node extends Serializable {
       out.unlink()
     }
   }
+
+  /**
+   * 是否允许从节点图中移除。图边界节点（图入口、总输出）不允许。
+   */
+  def canRemove: Boolean = true
+
   protected def addInPort[P <: Node.InPort[?]](p: P): P = {
     inPorts.add(p)
     p

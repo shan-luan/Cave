@@ -41,6 +41,10 @@ class NodeGraph extends util.AbstractSet[Node] with Serializable {
   override def remove(o: Any): Boolean = {
     if (delegate.remove(o)) {
       node2pos.remove(o)
+      o match {
+        case node: Node => node.remove()
+        case _ =>
+      }
       true
     } else {
       false

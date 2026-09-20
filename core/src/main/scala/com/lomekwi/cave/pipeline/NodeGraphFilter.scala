@@ -18,6 +18,9 @@ class NodeGraphFilter extends Filter[Object] {
 
   ensureInnerIn()
 
+  // 只在新图里默认连线。反序列化补建入口节点时不连，避免覆盖旧存档中用户已有的连接。
+  innerSink.getIn.linkFrom(innerIn.getOut)
+
   addOutPort(new FilterOut {
     override def getData: Object = {
       innerSink.get()

@@ -2,7 +2,7 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, NumSrc}
 import com.lomekwi.cave.pipeline.num.NumFrame
-import org.junit.Assert.{assertEquals, assertNotEquals, assertNotNull, assertNull, assertSame}
+import org.junit.Assert.{assertEquals, assertFalse, assertNotEquals, assertNotNull, assertNull, assertSame, assertTrue}
 import org.junit.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
@@ -33,6 +33,13 @@ class NodeGraphFilterTest {
     val in = graphIn(ngf)
     val sink = nodes.collectFirst { case s: Sink => s }.get
     assertNotEquals(ngf.getInnerNodes.getPosition(in), ngf.getInnerNodes.getPosition(sink))
+  }
+
+  @Test
+  def newGraph_connectsInputToSink(): Unit = {
+    val ngf = new NodeGraphFilter()
+    assertTrue(graphIn(ngf).getOut.isLinked)
+    assertTrue(sink(ngf).getIn.isLinked)
   }
 
   @Test
@@ -95,6 +102,8 @@ class NodeGraphFilterTest {
     assertEquals(2, copy.getInnerNodes.size())
     // 补建的入口节点与总输出节点不重叠
     assertNotEquals(copy.getInnerNodes.getPosition(graphIn(copy)), copy.getInnerNodes.getPosition(sink(copy)))
+    // 补建不自动连线，旧存档里用户已有的连接不被覆盖
+    assertFalse(graphIn(copy).getOut.isLinked)
   }
 
   private def graphIn(ngf: NodeGraphFilter): GraphInNode = {
