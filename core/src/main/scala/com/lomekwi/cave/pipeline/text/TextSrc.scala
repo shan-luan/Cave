@@ -85,7 +85,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
   override def sync(time: Long, track: Track): Unit = {}
 
   override protected def generate(time: Long, track: Track): TextFrame = {
-    if (frame != null && (frame.track ne track)) {
+    if (frame != null && frame.track.index != track.index) {
       initialized = false
     }
     if (font != null && generatedFontSize != getFontSize) {

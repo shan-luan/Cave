@@ -55,7 +55,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
   }
 
   override def generate(time: Long, track: Track): ImgFrame = {
-    if (frame != null && (frame.track ne track)) {
+    if (frame != null && frame.track.index != track.index) {
       initialized = false
     }
     val cd = new CountDownLatch(1)

@@ -44,12 +44,12 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(2, entries.size())
 
     val ea = entries.get(0)
-    assertSame(t0, ea.track)
+    assertEquals(0, ea.trackIndex)
     assertEquals(Interval(0, 100), ea.range)
     assertEquals(1000, ea.origin)
 
     val eb = entries.get(1)
-    assertSame(t1, eb.track)
+    assertEquals(1, eb.trackIndex)
     assertEquals(Interval(500, 600), eb.range)
     assertEquals(2000, eb.origin)
 

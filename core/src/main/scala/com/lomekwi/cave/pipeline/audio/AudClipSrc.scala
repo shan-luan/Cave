@@ -30,7 +30,8 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
 
   override protected def generate(time: Long, track: Track): AudFrame = {
 
-    if (frame == null || (frame.track ne track)) {
+    // 轨道按索引唯一，帧携带的轨道只要索引相同就仍然对应当前的轨迹线程，可以接着用
+    if (frame == null || frame.track.index != track.index) {
       frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track, this)
     }
 

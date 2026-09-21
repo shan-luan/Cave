@@ -302,7 +302,8 @@ class TimelineView(project0: Project) extends Group with Focusable {
         if (time > start && time < end) {
           timeline.split(memberTrack, time)
           beforeSources.add(member)
-          memberTrack.get(time) match {
+          // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
+          timeline.getTrack(memberTrack.index).get(time) match {
             case Segment(right) => afterSources.add(right)
             case _: Gap | null =>
           }
@@ -467,9 +468,9 @@ class TimelineView(project0: Project) extends Group with Focusable {
     val pasted = new util.ArrayList[Source[?]](entries.size())
 
     val sorted = new util.ArrayList[PasteTemplate.Entry](entries)
-    sorted.sort(util.Comparator.comparingInt[PasteTemplate.Entry]((e: PasteTemplate.Entry) => e.track.index))
+    sorted.sort(util.Comparator.comparingInt[PasteTemplate.Entry]((e: PasteTemplate.Entry) => e.trackIndex))
 
-    val minTrack = sorted.get(0).track.index
+    val minTrack = sorted.get(0).trackIndex
     val minStart = sorted.stream().mapToLong((e: PasteTemplate.Entry) => e.range.lo).min().orElse(baseTime)
     val timeOffset = baseTime - minStart
 
@@ -484,7 +485,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
       for (entry <- sorted.asScala) {
         val duration = entry.range.hi - entry.range.lo
         if (duration > 0) {
-          val trackOffset = entry.track.index - minTrack
+          val trackOffset = entry.trackIndex - minTrack
           var ti = baseTrack + trackOffset
           var track = timeline.getTrack(ti)
           val start = entry.range.lo + timeOffset

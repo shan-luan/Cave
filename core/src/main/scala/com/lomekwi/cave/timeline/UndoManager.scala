@@ -11,6 +11,7 @@ import com.lomekwi.cave.project.ProjectDirtyChangedEvent
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 import java.util
 
@@ -110,42 +111,49 @@ object UndoManager {
     def merge(other: UndoableCommand): Boolean
   }
 
-  case class AddSegCommand(track: Track, source: Source[?], range: Interval, origin: Long) extends UndoableCommand {
-    override def undo(): Unit = {
-      track.remove(source)
-    }
+  /**
+   * 一条轨道的一次版本替换：撤销即换回 before，重做即换成 after。
+   * 轨道不可变，两端版本即完整描述一次改动，且新旧版本共享绝大部分节点，
+   * 因此快照本身很轻。
+   */
+  case class TrackEdit(index: Int, before: Track, after: Track)
 
-    override def redo(): Unit = {
-      track.addOrThrow(source, range, origin)
-    }
+  /** 把同轨道的多条替换折叠成「最早的 before」与「最新的 after」，用于成批且原子地恢复。 */
+  private def foldBefore(edits: Iterable[TrackEdit]): Seq[(Int, Track)] = {
+    val m = mutable.LinkedHashMap.empty[Int, Track]
+    for (e <- edits) if (!m.contains(e.index)) m.put(e.index, e.before)
+    m.toSeq
   }
 
-  case class RemoveSegCommand(track: Track, source: Source[?], range: Interval, origin: Long, group: SourceGroup) extends UndoableCommand {
+  private def foldAfter(edits: Iterable[TrackEdit]): Seq[(Int, Track)] = {
+    val m = mutable.LinkedHashMap.empty[Int, Track]
+    for (e <- edits) m.put(e.index, e.after)
+    m.toSeq
+  }
+
+  case class AddSegCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+    override def undo(): Unit = timeline.setTrack(index, before)
+
+    override def redo(): Unit = timeline.setTrack(index, after)
+  }
+
+  case class RemoveSegCommand(timeline: Timeline, index: Int, before: Track, after: Track,
+                              source: Source[?], group: SourceGroup) extends UndoableCommand {
     override def undo(): Unit = {
-      track.addOrThrow(source, range, origin)
+      timeline.setTrack(index, before)
       if (group != null) group.add(source)
     }
 
     override def redo(): Unit = {
-      track.remove(source)
+      timeline.setTrack(index, after)
       if (group != null) group.remove(source)
     }
   }
 
-  case class SplitSegCommand(track: Track, originalSeg: Source[?], originalRange: Interval, originalOrigin: Long,
-                             newSeg: Source[?], newOrigin: Long, splitTime: Long) extends UndoableCommand {
-    override def undo(): Unit = {
-      track.remove(originalSeg)
-      track.remove(newSeg)
-      track.addOrThrow(originalSeg, originalRange, originalOrigin)
-    }
+  case class SplitSegCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+    override def undo(): Unit = timeline.setTrack(index, before)
 
-    override def redo(): Unit = {
-      track.remove(originalSeg)
-      track.remove(newSeg)
-      track.addOrThrow(originalSeg, Interval(originalRange.lo, splitTime), originalOrigin)
-      track.addOrThrow(newSeg, Interval(splitTime, originalRange.hi), newOrigin)
-    }
+    override def redo(): Unit = timeline.setTrack(index, after)
   }
 
   class CompoundCommand(commands: UndoableCommand*) extends UndoableCommand {
@@ -166,107 +174,69 @@ object UndoManager {
 
   // 批量命令（可合并）
 
-  /** 批量移动命令。合并时：同源保留旧区间与旧 origin、更新新区间与 origin；新源直接追加。 */
-  final class MoveSegsCommand(entries0: util.List[MoveSegsCommand.MoveEntry]) extends MergeableCommand {
-    private final val entries: util.List[MoveSegsCommand.MoveEntry] = new util.ArrayList[MoveSegsCommand.MoveEntry](entries0)
+  /**
+   * 批量轨道替换命令：一次操作在若干轨道上留下的版本变化。
+   * 撤销时把涉及的轨道整体换回旧版本，因此不必逐源回放。
+   */
+  private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
+                                                     protected val edits: util.List[TrackEdit]) extends MergeableCommand {
+    override def undo(): Unit = timeline.setTracks(UndoManager.foldBefore(edits.asScala))
 
-    override def undo(): Unit = {
-      entries.asScala.reverseIterator.foreach { e =>
-        e.toTrack.remove(e.source)
-        e.fromTrack.addOrThrow(e.source, e.oldRange, e.oldOrigin)
-      }
-    }
+    override def redo(): Unit = timeline.setTracks(UndoManager.foldAfter(edits.asScala))
 
-    override def redo(): Unit = {
-      for (e <- entries.asScala) {
-        e.fromTrack.remove(e.source)
-        e.toTrack.addOrThrow(e.source, e.newRange, e.newOrigin)
-      }
-    }
-
-    override def merge(other: UndoableCommand): Boolean = {
-      other match {
-        case o: MoveSegsCommand =>
-          for (ne <- o.entries.asScala) {
-            val idx = entries.asScala.indexWhere(e => e.source eq ne.source)
-            if (idx < 0) {
-              entries.add(ne)
-            } else {
-              val e = entries.get(idx)
-              entries.set(idx, MoveSegsCommand.MoveEntry(e.fromTrack, ne.toTrack, e.source,
-                e.oldRange, ne.newRange, e.oldOrigin, ne.newOrigin))
-            }
-          }
-          true
-        case _ =>
-          false
+    /** 合并：同一轨道保留最早的 before、取最新的 after。 */
+    protected def mergeEdits(other: util.List[TrackEdit]): Unit = {
+      for (ne <- other.asScala) {
+        val idx = edits.asScala.indexWhere(e => e.index == ne.index)
+        if (idx < 0) {
+          edits.add(ne)
+        } else {
+          edits.set(idx, TrackEdit(ne.index, edits.get(idx).before, ne.after))
+        }
       }
     }
   }
 
-  object MoveSegsCommand {
-    case class MoveEntry(fromTrack: Track, toTrack: Track, source: Source[?],
-                         oldRange: Interval, newRange: Interval,
-                         oldOrigin: Long, newOrigin: Long)
-  }
+  /** 批量移动命令。 */
+  final class MoveSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+    extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
-  /** 批量调整区间命令。区间变动不改 origin。合并时保留旧区间、更新新区间。 */
-  final class ResizeSegsCommand(entries0: util.List[ResizeSegsCommand.ResizeEntry]) extends MergeableCommand {
-    private final val entries: util.List[ResizeSegsCommand.ResizeEntry] = new util.ArrayList[ResizeSegsCommand.ResizeEntry](entries0)
-
-    override def undo(): Unit = {
-      entries.asScala.reverseIterator.foreach { e =>
-        e.track.remove(e.source)
-        e.track.addOrThrow(e.source, e.oldRange, e.origin)
-      }
-    }
-
-    override def redo(): Unit = {
-      for (e <- entries.asScala) {
-        e.track.remove(e.source)
-        e.track.addOrThrow(e.source, e.newRange, e.origin)
-      }
-    }
-
-    override def merge(other: UndoableCommand): Boolean = {
-      other match {
-        case o: ResizeSegsCommand =>
-          for (ne <- o.entries.asScala) {
-            val idx = entries.asScala.indexWhere(e => e.source eq ne.source)
-            if (idx < 0) {
-              entries.add(ne)
-            } else {
-              val e = entries.get(idx)
-              entries.set(idx, ResizeSegsCommand.ResizeEntry(e.track, e.source, e.origin,
-                e.oldRange, ne.newRange))
-            }
-          }
-          true
-        case _ =>
-          false
-      }
+    override def merge(other: UndoableCommand): Boolean = other match {
+      case o: MoveSegsCommand =>
+        mergeEdits(o.edits)
+        true
+      case _ =>
+        false
     }
   }
 
-  object ResizeSegsCommand {
-    case class ResizeEntry(track: Track, source: Source[?], origin: Long,
-                           oldRange: Interval, newRange: Interval)
+  /** 批量调整区间命令。 */
+  final class ResizeSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+    extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
+
+    override def merge(other: UndoableCommand): Boolean = other match {
+      case o: ResizeSegsCommand =>
+        mergeEdits(o.edits)
+        true
+      case _ =>
+        false
+    }
   }
 
   /** 批量删除命令。合并时直接追加新条目（去重）。 */
-  final class RemoveSegsCommand(entries0: util.List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
+  final class RemoveSegsCommand(private val timeline: Timeline, entries0: util.List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
     private final val entries: util.List[RemoveSegsCommand.RemoveEntry] = new util.ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
 
     override def undo(): Unit = {
-      entries.asScala.reverseIterator.foreach { e =>
-        e.track.addOrThrow(e.source, e.range, e.origin)
+      timeline.setTracks(UndoManager.foldBefore(entries.asScala.map(_.edit)))
+      for (e <- entries.asScala.reverseIterator) {
         if (e.group != null) e.group.add(e.source)
       }
     }
 
     override def redo(): Unit = {
+      timeline.setTracks(UndoManager.foldAfter(entries.asScala.map(_.edit)))
       for (e <- entries.asScala) {
-        e.track.remove(e.source)
         if (e.group != null) e.group.remove(e.source)
       }
     }
@@ -285,8 +255,7 @@ object UndoManager {
   }
 
   object RemoveSegsCommand {
-    case class RemoveEntry(track: Track, source: Source[?], range: Interval, origin: Long,
-                           group: SourceGroup)
+    case class RemoveEntry(edit: TrackEdit, source: Source[?], group: SourceGroup)
   }
 
   /** 节点图被改动后通知界面重建：只在源确实位于时间轴上时通知。 */

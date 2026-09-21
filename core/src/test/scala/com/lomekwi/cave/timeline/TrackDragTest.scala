@@ -58,7 +58,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def freshTrackIsEmptyCoveredBySingleGap(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
 
     assertTrue(t0.isEmpty)
     assertEquals(0, t0.getLength)
@@ -68,7 +68,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def elementRangeIsQueryableForBothKinds(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -81,7 +81,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def addPlacesSourceAndSetsRangeAndTrack(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -92,7 +92,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def tryAddAtOccupiedRangeDoesNotReplace(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(0, 100))
@@ -106,7 +106,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def removeSourceRemovesIt(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -117,7 +117,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def removeCollectionRemovesAll(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(0, 100))
@@ -129,7 +129,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def removeInvalidatesTrackLength(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(0, 100))
@@ -142,7 +142,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def timelineLengthFollowsEdits(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
     assertEquals(100, timeline.getLength)
@@ -158,7 +158,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveSingleSourceByTimePreservesDurationAndOffsetsOrigin(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     placeAt(t0, s, TrackDragTest.rng(0, 100), 1000)
 
@@ -172,8 +172,8 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveSingleSourceAcrossTracks(): Unit = {
-    val t0: Track = timeline.getTrack(0)
-    val t1: Track = timeline.getTrack(1)
+    def t0: Track = timeline.getTrack(0)
+    def t1: Track = timeline.getTrack(1)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -189,8 +189,8 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveMultiSelectMovesAllMembersTogether(): Unit = {
-    val t0: Track = timeline.getTrack(0)
-    val t1: Track = timeline.getTrack(1)
+    def t0: Track = timeline.getTrack(0)
+    def t1: Track = timeline.getTrack(1)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(0, 100))
@@ -207,7 +207,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveTimeBackwardClampsAtZeroForLeadingMember(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(50, 150))
@@ -224,7 +224,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveIntoOccupiedSpotOnSameTrackDoesNotApply(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val mover: Source[?] = newSrc(100)
     val obstacle: Source[?] = newSrc(1000)
     place(t0, mover, TrackDragTest.rng(0, 100))
@@ -241,7 +241,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveTimeClampsAtObstacleEdge(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val mover: Source[?] = newSrc(100)
     val obstacle: Source[?] = newSrc(100)
     place(t0, mover, TrackDragTest.rng(0, 100))
@@ -260,8 +260,8 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def moveAcrossTrackIntoOccupiedSpotDoesNotApply(): Unit = {
-    val t0: Track = timeline.getTrack(0)
-    val t1: Track = timeline.getTrack(1)
+    def t0: Track = timeline.getTrack(0)
+    def t1: Track = timeline.getTrack(1)
     val mover: Source[?] = newSrc(100)
     val obstacle: Source[?] = newSrc(1000)
     place(t0, mover, TrackDragTest.rng(0, 100))
@@ -280,7 +280,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setStartSlidesFrontKeepsEndFixed(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -295,7 +295,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setEndSlidesBackKeepsStartFixed(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 50))
 
@@ -307,7 +307,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setEndShrinksBackwards(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
@@ -319,7 +319,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setStartIntoOccupiedSpotDoesNotApply(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     val obstacle: Source[?] = newSrc(100)
     place(t0, obstacle, TrackDragTest.rng(0, 100)) // 左侧障碍占住 [0,100)
@@ -335,7 +335,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setStartBackwardClampsToNearestObstacleEdge(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(200)
     val obstacle: Source[?] = newSrc(50)
     place(t0, s, TrackDragTest.rng(50, 100))      // 前端已被裁切，origin=0 → minStart=0
@@ -352,7 +352,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def setEndForwardClampsToNearestObstacleEdge(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     val obstacle: Source[?] = newSrc(40)
     place(t0, s, TrackDragTest.rng(0, 50))
@@ -369,7 +369,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def groupSetEndAdjacentMembersDoNotOverlap(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     placeAt(t0, a, TrackDragTest.rng(0, 100), 500)   // 允许尾端伸展
@@ -391,7 +391,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def groupSetStartAdjacentMembersDoNotOverlap(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(100, 200))
@@ -415,7 +415,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def snapTimeSnapsToNearestEdgeWithinThreshold(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     val b: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(100, 200))
@@ -433,7 +433,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def snapTimeIgnoresGivenSourcesAndSnapsToZero(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val a: Source[?] = newSrc(100)
     place(t0, a, TrackDragTest.rng(100, 200))
 
@@ -447,7 +447,7 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def splitSplitsSourceIntoTwoHalvesWithCorrectRanges(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     placeAt(t0, s, TrackDragTest.rng(0, 100), 1000)
 
@@ -472,15 +472,15 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def undoRedoMoveSegsCommandRestoresState(): Unit = {
-    val t0: Track = timeline.getTrack(0)
-    val t1: Track = timeline.getTrack(1)
+    def t0: Track = timeline.getTrack(0)
+    def t1: Track = timeline.getTrack(1)
     val s: Source[?] = newSrc(100)
     placeAt(t0, s, TrackDragTest.rng(0, 100), 1000)
 
-    val entries = new java.util.ArrayList[UndoManager.MoveSegsCommand.MoveEntry]()
-    entries.add(UndoManager.MoveSegsCommand.MoveEntry(t0, t1, s,
-      TrackDragTest.rng(0, 100), TrackDragTest.rng(50, 150), 1000, 1050))
-    project.undoManager.execute(new UndoManager.MoveSegsCommand(entries))
+    val entries = new java.util.ArrayList[UndoManager.TrackEdit]()
+    entries.add(UndoManager.TrackEdit(0, t0, t0.remove(s).get))
+    entries.add(UndoManager.TrackEdit(1, t1, t1.addOrThrow(s, TrackDragTest.rng(50, 150), 1050)))
+    project.undoManager.execute(new UndoManager.MoveSegsCommand(timeline, entries))
 
     assertEquals(TrackDragTest.rng(50, 150), t1.getRange(s))
     assertSame(t1, timeline.findTrackOf(s))
@@ -499,14 +499,15 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def undoRedoResizeSegsCommandRestoresState(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
-    val entries = new java.util.ArrayList[UndoManager.ResizeSegsCommand.ResizeEntry]()
-    entries.add(UndoManager.ResizeSegsCommand.ResizeEntry(t0, s, 0L,
-      TrackDragTest.rng(0, 100), TrackDragTest.rng(30, 100)))
-    project.undoManager.execute(new UndoManager.ResizeSegsCommand(entries))
+    val before = t0
+    val entries = new java.util.ArrayList[UndoManager.TrackEdit]()
+    entries.add(UndoManager.TrackEdit(0, before,
+      before.remove(s).get.addOrThrow(s, TrackDragTest.rng(30, 100), 0L)))
+    project.undoManager.execute(new UndoManager.ResizeSegsCommand(timeline, entries))
     assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
 
     project.undoManager.undo()
@@ -518,12 +519,14 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def undoRedoSplitSegCommandRestoresState(): Unit = {
-    val t0: Track = timeline.getTrack(0)
+    def t0: Track = timeline.getTrack(0)
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
-    val right: Source[?] = s.duplicate()
+    val before = t0
+    val after = before.split(40).get
+    val right: Source[?] = segAt(after, 60)
 
-    project.undoManager.execute(new UndoManager.SplitSegCommand(t0, s, TrackDragTest.rng(0, 100), 0L, right, 40L, 40))
+    project.undoManager.execute(new UndoManager.SplitSegCommand(timeline, 0, before, after))
 
     // execute 已应用分割：一分为二
     assertEquals(TrackDragTest.rng(0, 40), t0.getRange(s))
@@ -538,8 +541,8 @@ class TrackDragTest extends GdxTestBase {
 
   @Test
   def compoundMoveUndoRestoresMultipleSources(): Unit = {
-    val t0: Track = timeline.getTrack(0)
-    val t1: Track = timeline.getTrack(1)
+    def t0: Track = timeline.getTrack(0)
+    def t1: Track = timeline.getTrack(1)
     val a: Source[?] = newSrc(100)
     placeAt(t0, a, TrackDragTest.rng(0, 100), 1000)
     val b: Source[?] = newSrc(100)
