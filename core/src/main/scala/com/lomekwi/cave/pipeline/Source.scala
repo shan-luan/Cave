@@ -52,6 +52,12 @@ abstract class Source[T <: Frame] extends Filter[T] with Serializable with Dupli
   }
 
   /**
+   * 播放头离开本源的片段时调用：自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
+   * @param time 源内时间，即离开时播放头所在的片段内位置
+   */
+  def onStepOut(time: Long, track: Track): Unit = {}
+
+  /**
    * 建议进行预取数据的耗时操作。
    */
   def prefetch(): Unit = {}

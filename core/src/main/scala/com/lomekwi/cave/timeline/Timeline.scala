@@ -532,9 +532,18 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       Gdx.app.log("Track" + index, "轨道线程启动: " + tracks(index))
       try {
         val p = project.playhead
+        // 播放头当前所在的片段。播放头离开它时在该源上收尾。
+        var activeSource: Source[?] = null
+        var activeRange: Interval = null
         while (!Thread.currentThread().isInterrupted) {
           val track = tracks(index)
           var t: Long = p.getTime
+          if (activeSource != null && !activeRange.contains(t)) {
+            val out = activeSource
+            activeSource = null
+            activeRange = null
+            out.onStepOut(t - track.getOrigin(out), track)
+          }
           if (!p.isPlaying) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
 
@@ -542,6 +551,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
             track.get(t) match {
               case Segment(source) =>
                 track.syncAt(source, t)
+                activeSource = source
+                activeRange = track.getRange(source)
                 f = track.frameAt(source, t)
               case _: Gap | null =>
             }
@@ -555,6 +566,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                 val r = track.getRange(source)
                 Gdx.app.debug("Track" + index, "找到源: " + source)
                 track.syncAt(source, t)
+                activeSource = source
+                activeRange = r
                 val end: Long = r.hi
                 while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
                   t = project.playhead.getTime
