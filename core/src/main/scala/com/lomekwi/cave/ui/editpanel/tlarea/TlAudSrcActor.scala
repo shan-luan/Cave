@@ -4,26 +4,26 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
+import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.audio.AudClipSrc
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
 import scala.compiletime.uninitialized
 
-class AudSegActor(segment: Segment) extends SegActor(segment) {
+class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
 
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
 
-    val res: AudRes = getSegment.getSource.asInstanceOf[AudClipSrc].getAudRes
+    val res: AudRes = getSource.asInstanceOf[AudClipSrc].getAudRes
     val wf: res.Waveformer = res.waveformer()
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return
 
-    val seg: Segment = getSegment
-    val range = seg.getRange
-    val segLocalStart: Long = range.lo - seg.getOrigin
-    val segLocalEnd: Long = range.hi - seg.getOrigin
+    val contentRange = range
+    val contentOrigin = origin
+    val segLocalStart: Long = contentRange.lo - contentOrigin
+    val segLocalEnd: Long = contentRange.hi - contentOrigin
     val segDuration: Long = segLocalEnd - segLocalStart
     if (segDuration <= 0) return
 
@@ -53,7 +53,7 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
     val startBucket: Float = segLocalStart.toFloat / bucketUs
     val endBucket: Float = startBucket + segDuration.toFloat / bucketUs
 
-    val shader: ShaderProgram = AudSegActor.getWaveShader
+    val shader: ShaderProgram = TlAudSrcActor.getWaveShader
     if (!shader.isCompiled) return
 
     batch.setShader(shader)
@@ -70,14 +70,14 @@ class AudSegActor(segment: Segment) extends SegActor(segment) {
   }
 }
 
-object AudSegActor {
+object TlAudSrcActor {
   private var waveShader: ShaderProgram = uninitialized
 
   private def getWaveShader: ShaderProgram = {
     if (waveShader == null) {
       waveShader = new ShaderProgram(VERT, FRAG)
       if (!waveShader.isCompiled) {
-        Gdx.app.error("AudSegActor", "Wave shader failed:\n" + waveShader.getLog)
+        Gdx.app.error("TlAudSrcActor", "Wave shader failed:\n" + waveShader.getLog)
       }
     }
     waveShader

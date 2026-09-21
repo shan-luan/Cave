@@ -45,10 +45,10 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
   }
 
   /**
-   * 获取文件对应的所有片段。
-   * 对于同时包含视频和音频流的文件，可能返回多个 Segment。
+   * 获取文件对应的所有源。
+   * 对于同时包含视频和音频流的文件，可能返回多个源。
    */
-  def getAll(file: File): util.List[Segment] = {
+  def getAll(file: File): util.List[Source[?]] = {
     var existing: util.Collection[Resource] = project.resources.get(file)
 
     if (existing.isEmpty) {
@@ -64,17 +64,17 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
       existing = project.resources.get(file)
     }
 
-    val segments: util.List[Segment] = new util.ArrayList[Segment]()
+    val sources: util.List[Source[?]] = new util.ArrayList[Source[?]]()
     for (resource <- existing.asScala) {
-      segments.add(new Segment(applyUnchecked(map.get(resource.getClass), resource)))
+      sources.add(applyUnchecked(map.get(resource.getClass), resource))
     }
-    segments
+    sources
   }
 
   /**
-   * 获取文件对应的第一个主要片段（兼容单片段场景）。
+   * 获取文件对应的第一个主要源。
    */
-  def get(file: File): Segment = {
+  def get(file: File): Source[?] = {
     getAll(file).get(0)
   }
   private def applyUnchecked[R <: Resource](fn: Function[? <: Resource, Source[?]], resource: R): Source[?] = {

@@ -7,11 +7,10 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.resource.media.VdoRes
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
-import com.lomekwi.cave.ui.editpanel.tlarea.VdoSegActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlVdoSrcActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
@@ -111,7 +110,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
     val src = original.asInstanceOf[VdoClipSrc]
     this.vdoRes = src.vdoRes
   }
-  override def createSegActor(segment: Segment): SegActor = {
-    new VdoSegActor(segment)
+  override def createTlSrcActor(): TlSrcActor = {
+    new TlVdoSrcActor(this)
   }
 }

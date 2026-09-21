@@ -8,7 +8,7 @@ import org.junit.BeforeClass
 
 /**
  * 为纯模型测试提供 headless 的 libGDX 环境（Gdx.app 等），
- * 避免在构建 Timeline/Track/Segment 时因未初始化 Gdx 而崩溃。
+ * 避免在构建 Timeline/Track/Source 时因未初始化 Gdx 而崩溃。
  */
 abstract class GdxTestBase {
 }

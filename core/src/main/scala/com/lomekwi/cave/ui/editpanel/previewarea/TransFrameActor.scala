@@ -22,7 +22,6 @@ import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.pipeline.image.TransNode
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.Colors
@@ -138,20 +137,17 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
           val oldFlipY: Boolean = gizmoFlipY
           val newFlipX: Boolean = node.flipX()
           val newFlipY: Boolean = node.flipY()
-          p.undoManager.record(UndoManager.TransformNodeCommand(frame.getSource, node,
+          p.undoManager.record(UndoManager.TransformNodeCommand(p, frame.getSource, node,
             UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
             UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)))
           p.projEventBus.post(RefreshRequestEvent)
         }
       }
       if (dragModifier != null && !dragging && !gizmoDragging) {
-        val segment: Segment = if (frame.getSource != null) frame.getSource.getSegment else null
-        if (segment != null && segment.getTrack != null) {
-          val editPanel = App.root.getFrontendEditPanel
-          if (editPanel != null) {
-            val addToSelection = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-            editPanel.getTimelineView.selectSegment(segment, addToSelection)
-          }
+        val source: Source[?] = frame.getSource
+        val editPanel = App.root.getFrontendEditPanel
+        if (source != null && editPanel != null) {
+          editPanel.getTimelineView.selectSource(source, Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
         }
       }
       dragModifier = null
@@ -515,7 +511,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         node.flipX(), node.flipY())
       if (!gizmoOldState.equals(newState)) {
         p.undoManager.record(UndoManager.TransformNodeCommand(
-          frame.getSource, node, gizmoOldState, newState))
+          p, frame.getSource, node, gizmoOldState, newState))
       }
       p.projEventBus.post(RefreshRequestEvent)
     }

@@ -5,10 +5,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.timeline.{Interval, Segment}
-import com.lomekwi.cave.timeline.SegmentSelectedEvent
-import com.lomekwi.cave.timeline.SegmentSetSelectedEvent
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track}
 
 
 import scala.jdk.CollectionConverters.*
@@ -29,9 +27,13 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       true
     } else {
       val trackIndex: Int = timelineView.yToTrackIndex(y)
-      val onSegment: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTracks.size()
-        && timelineView.timeline.getTrack(trackIndex).get(timelineView.xToAbsoluteTime(x)) != null
-      if (!onSegment) {
+      val onSource: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTracks.size() && {
+        timelineView.timeline.getTrack(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
+          case _: Segment => true
+          case _: Gap | null => false
+        }
+      }
+      if (!onSource) {
         timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
       }
       false
@@ -61,7 +63,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val firstTrack: Int = Math.max(0, timelineView.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(timelineView.timeline.getTracks.size() - 1, timelineView.yToTrackIndex(minY))
 
-    val toSelect: util.Set[Segment] = new util.HashSet[Segment]()
+    val toSelect: util.Set[Source[?]] = new util.HashSet[Source[?]]()
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = timelineView.timeline.getTrack(i)
@@ -69,25 +71,31 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val trackBottom: Float = trackTop - timelineView.view.trackHeight
 
       if (!(trackTop <= minY || trackBottom >= maxY)) {
-        var segStartTime: Long = timelineView.xToAbsoluteTime(minX)
-        var segEndTime: Long = timelineView.xToAbsoluteTime(maxX)
-        if (segStartTime > segEndTime) {
-          val t = segStartTime
-          segStartTime = segEndTime
-          segEndTime = t
+        var rangeStartTime: Long = timelineView.xToAbsoluteTime(minX)
+        var rangeEndTime: Long = timelineView.xToAbsoluteTime(maxX)
+        if (rangeStartTime > rangeEndTime) {
+          val t = rangeStartTime
+          rangeStartTime = rangeEndTime
+          rangeEndTime = t
         }
 
-        val timeRange: Interval = Interval(segStartTime, segEndTime)
-        for (seg <- track.getIntersectingSegments(timeRange).asScala) {
-          val segLeft: Float = timelineView.absoluteTimeToX(seg.getRange.lo)
-          val segRight: Float = timelineView.absoluteTimeToX(seg.getRange.hi)
+        val timeRange: Interval = Interval(rangeStartTime, rangeEndTime)
+        for (element <- track.getIntersecting(timeRange).asScala) {
+          element match {
+            case Segment(source) =>
+              val r = track.getRange(source)
+              val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
+              val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 
-          if (segRight > minX && segLeft < maxX) {
-            if (seg.getGroup != null) {
-              toSelect.addAll(seg.getGroup)
-            } else {
-              toSelect.add(seg)
-            }
+              if (sourceRight > minX && sourceLeft < maxX) {
+                val group = timelineView.timeline.getGroup(source)
+                if (group != null) {
+                  toSelect.addAll(group)
+                } else {
+                  toSelect.add(source)
+                }
+              }
+            case _: Gap =>
           }
         }
       }
@@ -95,25 +103,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     }
 
     if (!toSelect.isEmpty) {
-      timelineView.clearSelection()
-      for (seg <- toSelect.asScala) {
-        timelineView.selectedSegments.add(seg)
-        seg.setSelected(true)
-      }
-      val count: Int = timelineView.selectedSegments.size()
-      if (count >= 2) {
-        val e = SegmentSelectedEvent(null, null, count)
-        timelineView.project.projEventBus.post(e)
-        App.appEventBus.post(e)
-        val ge = SegmentSetSelectedEvent(timelineView.selectedSegments, count)
-        timelineView.project.projEventBus.post(ge)
-        App.appEventBus.post(ge)
-      } else if (count == 1) {
-        val seg: Segment = toSelect.iterator().next()
-        val e = SegmentSelectedEvent(seg, seg.getTrack, 1)
-        timelineView.project.projEventBus.post(e)
-        App.appEventBus.post(e)
-      }
+      timelineView.selectSources(toSelect)
     }
   }
 }

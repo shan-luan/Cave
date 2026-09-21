@@ -9,11 +9,10 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.resource.media.ImgRes
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.ImgSegActor
-import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlImgSrcActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
@@ -106,7 +105,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
     Long.MaxValue
   }
 
-  override def getDefaultSegmentDuration: Long = {
+  override def getDefaultDuration: Long = {
     5 * SECOND
   }
 
@@ -123,7 +122,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
     this.imgRes = src.imgRes
   }
 
-  override def createSegActor(segment: Segment): SegActor = {
-    new ImgSegActor(segment)
+  override def createTlSrcActor(): TlSrcActor = {
+    new TlImgSrcActor(this)
   }
 }

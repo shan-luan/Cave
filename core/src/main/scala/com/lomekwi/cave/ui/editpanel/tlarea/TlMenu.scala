@@ -6,11 +6,11 @@ import com.badlogic.gdx.files.FileHandle
 import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.app.copy.PasteTemplate
+import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.text.TextSrc
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.{Interval, Segment}
-import com.lomekwi.cave.timeline.SegmentGroup
-import com.lomekwi.cave.timeline.SegmentSet
+import com.lomekwi.cave.timeline.Interval
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
 
@@ -44,7 +44,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   def setContext(time: Long): Unit = {
     this.time = time
-    pasteItem.setDisabled(!(App.copyManager.getClipboard.isInstanceOf[Segment] || App.copyManager.getClipboard.isInstanceOf[SegmentGroup] || App.copyManager.getClipboard.isInstanceOf[SegmentSet]))
+    pasteItem.setDisabled(!App.copyManager.getClipboard.isInstanceOf[PasteTemplate])
   }
 
   private def onAddMedia(): Unit = {
@@ -73,19 +73,18 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val seg: Segment = new Segment(new TextSrc())
-    seg.setOrigin(time)
-    val duration: Long = seg.getSource.getDefaultSegmentDuration
+    val source: Source[?] = new TextSrc()
+    val duration: Long = source.getDefaultDuration
 
     var targetTrack: Int = 0
     val range: Interval = Interval(time, time + duration)
-    while (!timelineView.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
+    while (!timelineView.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
       targetTrack += 1
     }
 
     val timeline = timelineView.getTimeline
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
+      timeline.tryAdd(timeline.getTrack(targetTrack), source, range, time)
     }
 
     timelineView.markTimelineDirty()
@@ -94,35 +93,34 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.getProject
     try {
-      val segments: util.List[Segment] = project.mediaSegFactory.getAll(file)
-      if (!segments.isEmpty) {
+      val sources: util.List[Source[?]] = project.mediaSegFactory.getAll(file)
+      if (!sources.isEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
-        val added: util.List[Segment] = new util.ArrayList[Segment]()
+        val added: util.List[Source[?]] = new util.ArrayList[Source[?]]()
 
         val timeline = timelineView.getTimeline
         Using.resource(timeline.record()) { h =>
-          for (seg <- segments.asScala) {
-            seg.setOrigin(time)
-            val duration: Long = seg.getSource.getDefaultSegmentDuration
+          for (src <- sources.asScala) {
+            val duration: Long = src.getDefaultDuration
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
               val range: Interval = Interval(time, time + duration)
-              while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Segment]())) {
+              while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
                 targetTrack += 1
               }
 
-              timeline.tryAdd(timeline.getTrack(targetTrack), seg, range)
+              timeline.tryAdd(timeline.getTrack(targetTrack), src, range, time)
               trackOffset = targetTrack - baseTrack + 1
-              added.add(seg)
+              added.add(src)
             }
           }
         }
 
         if (added.size() >= 2) {
-          val group = new SegmentGroup()
-          for (seg <- added.asScala) {
-            group.add(seg)
+          val group = timeline.newGroup()
+          for (src <- added.asScala) {
+            group.add(src)
           }
         }
 

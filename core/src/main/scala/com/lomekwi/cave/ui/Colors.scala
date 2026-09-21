@@ -20,7 +20,7 @@ object Colors {
   /** 时间线上的浅色叠加（有效时间范围、轨道行、刻度线） */
   final val TIMELINE_OVERLAY: Color = new Color(0xffffff0d)
   /** 时间线片段悬停高亮 */
-  final val SEGMENT_HOVER: Color = new Color(0xffffff40)
+  final val SRC_HOVER: Color = new Color(0xffffff40)
 
   /** 预览区灰色引导线（坐标轴、预设轮廓） */
   final val PREVIEW_GUIDE: Color = new Color(0x808080b3)

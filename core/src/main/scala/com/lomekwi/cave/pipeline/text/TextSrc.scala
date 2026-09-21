@@ -9,11 +9,10 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TextSegActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlTextSrcActor
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
@@ -134,7 +133,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
     Long.MaxValue
   }
 
-  override def getDefaultSegmentDuration: Long = {
+  override def getDefaultDuration: Long = {
     5 * SECOND
   }
 
@@ -146,8 +145,8 @@ class TextSrc(text: String) extends Source[TextFrame] {
     "文本源"
   }
 
-  override def createSegActor(segment: Segment): SegActor = {
-    new TextSegActor(segment)
+  override def createTlSrcActor(): TlSrcActor = {
+    new TlTextSrcActor(this)
   }
 
   override def onDuplicate(original: Source[?]): Unit = {

@@ -262,7 +262,7 @@ object FilterListTest {
       classOf[Numable]
     }
 
-    override def createSegActor(segment: com.lomekwi.cave.timeline.Segment): com.lomekwi.cave.ui.editpanel.tlarea.SegActor = {
+    override def createTlSrcActor(): com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor = {
       null
     }
   }

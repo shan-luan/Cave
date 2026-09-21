@@ -5,26 +5,26 @@ import com.lomekwi.cave.util.Units.niceScale
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.image.ImgSrc
-import com.lomekwi.cave.resource.media.ImgRes
+import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.image.VdoClipSrc
+import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.ui.Colors
-import com.lomekwi.cave.timeline.Segment
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-class ImgSegActor(segment: Segment) extends SegActor(segment) {
+class TlVdoSrcActor(source: Source[?]) extends TlSrcActor(source) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     val sd: ShapeDrawer = App.root.getShapeDrawer
-    val seg: Segment = getSegment
-    val range = seg.getRange
-    val segLocalStart: Long = range.lo - seg.getOrigin
-    val segLocalEnd: Long = range.hi - seg.getOrigin
+    val contentRange = range
+    val contentOrigin = origin
+    val segLocalStart: Long = contentRange.lo - contentOrigin
+    val segLocalEnd: Long = contentRange.hi - contentOrigin
     val segDuration: Long = segLocalEnd - segLocalStart
 
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (segDuration > 0) {
-      val res: ImgRes = seg.getSource.asInstanceOf[ImgSrc].getImgRes
+      val res: VdoRes = getSource.asInstanceOf[VdoClipSrc].getVdoRes
 
       val pxPerUs: Float = getWidth / segDuration.toFloat
       val aspect: Float = res.getWidth.toFloat / res.getHeight

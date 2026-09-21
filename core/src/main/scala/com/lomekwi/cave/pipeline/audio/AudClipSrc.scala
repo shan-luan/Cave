@@ -5,10 +5,9 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.ui.editpanel.tlarea.AudSegActor
-import com.lomekwi.cave.ui.editpanel.tlarea.SegActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlAudSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 
 @SerialVersionUID(1L)
 class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
@@ -60,7 +59,7 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
     val src = original.asInstanceOf[AudClipSrc]
     this.audRes = src.audRes
   }
-  override def createSegActor(segment: Segment): SegActor = {
-    new AudSegActor(segment)
+  override def createTlSrcActor(): TlSrcActor = {
+    new TlAudSrcActor(this)
   }
 }

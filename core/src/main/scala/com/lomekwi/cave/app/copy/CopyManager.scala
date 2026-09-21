@@ -1,20 +1,18 @@
 package com.lomekwi.cave.app.copy
 
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.app.selection.SelectableSelectedEvent
+import com.lomekwi.cave.app.selection.SourceSetSelectedEvent
+
 import scala.compiletime.uninitialized
 
 class CopyManager {
   private var clipboard: Copyable = uninitialized
   private var latestCopyable: Copyable = uninitialized
 
+  /** 复制以"当前选中集"为单位：单选也是只有一项的集合。 */
   @Subscribe
-  def onSelection(e: SelectableSelectedEvent[?]): Unit = {
-    val sel = e.selectable()
-    sel match {
-      case c: Copyable => latestCopyable = c
-      case _ =>
-    }
+  def onSelection(e: SourceSetSelectedEvent): Unit = {
+    latestCopyable = e.set
   }
 
   @Subscribe
