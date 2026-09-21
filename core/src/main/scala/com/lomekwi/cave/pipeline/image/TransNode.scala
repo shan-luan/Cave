@@ -2,20 +2,19 @@ package com.lomekwi.cave.pipeline.image
 
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.num.NumFrame
 
 class TransNode extends Filter[Transformable] {
 
-  private final val dx: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("位移 X", new NumFrame(null), classOf[NumFrame]))
-  private final val dy: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("位移 Y", new NumFrame(null), classOf[NumFrame]))
-  private final val scaleX: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("缩放 X", TransNode.frame(1), classOf[NumFrame]))
-  private final val scaleY: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("缩放 Y", TransNode.frame(1), classOf[NumFrame]))
-  private final val dRotation: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("旋转", new NumFrame(null), classOf[NumFrame]))
+  private final val dx: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("位移 X", 0.0, classOf[Double]))
+  private final val dy: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("位移 Y", 0.0, classOf[Double]))
+  private final val scaleX: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("缩放 X", 1.0, classOf[Double]))
+  private final val scaleY: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("缩放 Y", 1.0, classOf[Double]))
+  private final val dRotation: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("旋转", 0.0, classOf[Double]))
 
   private var flipXState: Boolean = false
   private var flipYState: Boolean = false
@@ -53,7 +52,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDx(v: Double): Unit = {
-    dx.getDefaultData.setVal(v)
+    dx.setDefaultData(v)
   }
 
   def getDy: Double = {
@@ -61,7 +60,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDy(v: Double): Unit = {
-    dy.getDefaultData.setVal(v)
+    dy.setDefaultData(v)
   }
 
   def getScaleX: Double = {
@@ -69,7 +68,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setScaleX(v: Double): Unit = {
-    scaleX.getDefaultData.setVal(v)
+    scaleX.setDefaultData(v)
   }
 
   def getScaleY: Double = {
@@ -77,7 +76,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setScaleY(v: Double): Unit = {
-    scaleY.getDefaultData.setVal(v)
+    scaleY.setDefaultData(v)
   }
 
   def getDRotation: Double = {
@@ -85,7 +84,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDRotation(v: Double): Unit = {
-    dRotation.getDefaultData.setVal(v)
+    dRotation.setDefaultData(v)
   }
 
   def flipX(): Boolean = {
@@ -114,13 +113,7 @@ class TransNode extends Filter[Transformable] {
 }
 
 object TransNode {
-  private def frame(v: Double): NumFrame = {
-    val f = new NumFrame(null)
-    f.setVal(v)
-    f
-  }
-
-  private def `val`(p: Node.InPort[NumFrame]): Double = {
-    p.getData.getVal
+  private def `val`(p: Node.InPort[Double]): Double = {
+    p.getData
   }
 }

@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
@@ -21,29 +20,14 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
-  addOutPort(new Node.OutPort[NumFrame]("宽度", classOf[NumFrame]) {
-    private final val `val`: NumFrame = new NumFrame(null)
-
-    override def getData: NumFrame = {
-      `val`.setVal(vdoRes.getWidth.toDouble)
-      `val`
-    }
+  addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
+    override def getData: Double = vdoRes.getWidth.toDouble
   })
-  addOutPort(new Node.OutPort[NumFrame]("高度", classOf[NumFrame]) {
-    private final val `val`: NumFrame = new NumFrame(null)
-
-    override def getData: NumFrame = {
-      `val`.setVal(vdoRes.getHeight.toDouble)
-      `val`
-    }
+  addOutPort(new Node.OutPort[Double]("高度", classOf[Double]) {
+    override def getData: Double = vdoRes.getHeight.toDouble
   })
-  addOutPort(new Node.OutPort[NumFrame]("时长", classOf[NumFrame]) {
-    private final val `val`: NumFrame = new NumFrame(null)
-
-    override def getData: NumFrame = {
-      `val`.setVal(getDuration.toDouble)
-      `val`
-    }
+  addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
+    override def getData: Double = getDuration.toDouble
   })
 
   def getVdoRes: VdoRes = {

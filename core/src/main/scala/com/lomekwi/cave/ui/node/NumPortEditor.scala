@@ -10,33 +10,31 @@ import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import java.util
 
 /**
- * NumFrame 输入端口编辑 widget：Spinner 行。直接持有端口模型，修改写默认值记 undo，
+ * 数值输入端口编辑 widget：Spinner 行。直接持有端口模型，修改写默认值记 undo，
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
 final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
-  private final val defaultData: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(
-    (if (defaultData != null) defaultData.getVal else 0.0).toFloat, -99999f, 99999f, 1f, 2)
+    defaultValue.toFloat, -99999f, 99999f, 1f, 2)
   private final val spinner: Spinner = new Spinner("", model)
   spinner.addListener(new ChangeListener {
     override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
       val newVal: Double = model.getValue.toDouble
-      val oldVal: Double = if (defaultData != null) defaultData.getVal else 0.0
+      val oldVal: Double = defaultValue
       if (oldVal != newVal) {
         val p: Project = App.root.getFrontendProject
         if (p != null) {
-          p.undoManager.record(UndoManager.NumPortValueCommand(p, port, source, oldVal, newVal))
+          p.undoManager.record(UndoManager.FpPortValueCommand(p, port, source, oldVal, newVal))
           p.projEventBus.post(RefreshRequestEvent)
         }
-        if (defaultData != null) defaultData.setVal(newVal)
+        setDefaultValue(newVal)
       }
     }
   })
@@ -51,8 +49,7 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
     super.act(delta)
     // 用户正在输入时不覆盖，避免打断编辑
     if (!spinner.getTextField.hasKeyboardFocus) {
-      val data: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
-      val modelVal: Double = if (data != null) data.getVal else 0.0
+      val modelVal: Double = defaultValue
       val current: Float = model.getValue
       if (Math.abs(current - modelVal) > 0.005f) {
         model.setValue(modelVal.toFloat, false)
@@ -60,5 +57,13 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
           String.format(util.Locale.US, "%.2f", modelVal))
       }
     }
+  }
+
+  private def defaultValue: Double = {
+    port.getDefaultData.asInstanceOf[Double]
+  }
+
+  private def setDefaultValue(v: Double): Unit = {
+    port.asInstanceOf[Node.InPort[Double]].setDefaultData(v)
   }
 }

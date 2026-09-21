@@ -5,7 +5,6 @@ import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
@@ -305,7 +304,7 @@ object UndoManager {
   }
 
   /** 数值输入端口默认值变更命令。 */
-  case class NumPortValueCommand(project: Project, port: Node.InPort[?], source: Source[?], oldValue: Double, newValue: Double) extends UndoableCommand {
+  case class FpPortValueCommand(project: Project, port: Node.InPort[?], source: Source[?], oldValue: Double, newValue: Double) extends UndoableCommand {
     override def undo(): Unit = {
       setValue(oldValue)
     }
@@ -315,9 +314,7 @@ object UndoManager {
     }
 
     private def setValue(v: Double): Unit = {
-      val `def`: NumFrame = port.getDefaultData.asInstanceOf[NumFrame]
-      if (`def` != null) `def`.setVal(v)
-      else port.getData.asInstanceOf[NumFrame].setVal(v)
+      port.asInstanceOf[Node.InPort[Double]].setDefaultData(v)
       postRefresh(project, source)
     }
   }

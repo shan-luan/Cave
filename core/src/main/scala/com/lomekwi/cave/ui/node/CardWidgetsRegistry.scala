@@ -4,7 +4,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.num.NumFrame
 
 import java.util
 import java.util.function.BiFunction
@@ -23,10 +22,10 @@ object CardWidgetsRegistry {
   private final val IN_ENTRIES: util.List[InEntry] = new util.ArrayList[InEntry]()
   private final val OUT_ENTRIES: util.List[OutEntry] = new util.ArrayList[OutEntry]()
 
-  registerIn(classOf[NumFrame], (port, source) => new NumPortEditor(port, source))
+  registerIn(classOf[Double], (port, source) => new NumPortEditor(port, source))
   registerIn(classOf[String], (port, source) => new TextPortEditor(port, source))
   registerIn(classOf[NodeGraph], (port, source) => new NodeGraphPortEditor(port, source))
-  registerOut(classOf[NumFrame], port => new NumOutputRow(port))
+  registerOut(classOf[Double], port => new FpOutputRow(port))
 
   /** 注册输入端口的 widget 工厂。目标类型为端口约束需能容纳的类型。 */
   private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor]): Unit = {

@@ -3,8 +3,6 @@ package com.lomekwi.cave.pipeline
 import org.junit.Assert.{assertEquals, assertFalse, assertNull, assertSame}
 import org.junit.Test
 
-import com.lomekwi.cave.pipeline.num.NumFrame
-
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.util.List
 
@@ -28,13 +26,13 @@ class FilterListTest {
 
   @Test
   def empty_chain_returnsSourceFrame(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     assertEquals(10.0, src.get(0, null).`val`, 0)
   }
 
   @Test
   def add_linksPortsInOrder(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
     src.getFilters.add(f1)
@@ -47,14 +45,14 @@ class FilterListTest {
     // 链末端：最后一个 filter 的 out 不连接
     assertFalse(f2.getFilterOut.isLinked)
 
-    f1.delta.getDefaultData.setVal(1)
-    f2.delta.getDefaultData.setVal(2)
+    f1.delta.setDefaultData(1)
+    f2.delta.setDefaultData(2)
     assertEquals(13.0, src.get(0, null).`val`, 0)
   }
 
   @Test
   def addAtIndex_keepsChain(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
@@ -67,15 +65,15 @@ class FilterListTest {
     assertSame(b.getFilterOut, c.getFilterIn.getPrev)
     assertFalse(c.getFilterOut.isLinked)
 
-    a.delta.getDefaultData.setVal(1)
-    b.delta.getDefaultData.setVal(2)
-    c.delta.getDefaultData.setVal(3)
+    a.delta.setDefaultData(1)
+    b.delta.setDefaultData(2)
+    c.delta.setDefaultData(3)
     assertEquals(16.0, src.get(0, null).`val`, 0)
   }
 
   @Test
   def add_atSize_appendsToTail(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -90,7 +88,7 @@ class FilterListTest {
 
   @Test
   def remove_rewiresNeighbors(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
@@ -107,8 +105,8 @@ class FilterListTest {
     assertNull(b.getFilterIn.getPrev)
     assertFalse(b.getFilterOut.isLinked)
 
-    a.delta.getDefaultData.setVal(1)
-    c.delta.getDefaultData.setVal(2)
+    a.delta.setDefaultData(1)
+    c.delta.setDefaultData(2)
     assertEquals(13.0, src.get(0, null).`val`, 0)
 
     // 链表顺序正确（regression：unlink 曾漏更新 pred.next/next.prev，导致残骸节点残留）
@@ -118,7 +116,7 @@ class FilterListTest {
 
   @Test
   def set_replacesAndUnlinksOld(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -133,14 +131,14 @@ class FilterListTest {
     assertNull(a.getFilterIn.getPrev)
     assertFalse(a.getFilterOut.isLinked)
 
-    c.delta.getDefaultData.setVal(5)
-    b.delta.getDefaultData.setVal(1)
+    c.delta.setDefaultData(5)
+    b.delta.setDefaultData(1)
     assertEquals(16.0, src.get(0, null).`val`, 0)
   }
 
   @Test
   def clear_returnsToEmptyChain(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -154,10 +152,10 @@ class FilterListTest {
 
   @Test
   def listIterator_add_remove_keepsChain(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    val filters: List[Filter[Numable]] = src.getFilters.asInstanceOf[List[Filter[Numable]]]
+    val filters: List[Filter[Fpable]] = src.getFilters.asInstanceOf[List[Filter[Fpable]]]
 
     // 先 add 两个
     filters.add(a)
@@ -186,17 +184,17 @@ class FilterListTest {
 
   @Test
   def serialization_roundTrip_restoresChain(): Unit = {
-    val src = new NumSrc(10)
+    val src = new FpSrc(10)
     val f1 = new AddFilter()
-    f1.delta.getDefaultData.setVal(3)
+    f1.delta.setDefaultData(3)
     src.getFilters.add(f1)
 
     val bos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(bos)) { oos =>
       oos.writeObject(src)
     }
-    val copy: NumSrc = Using.resource(new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) { ois =>
-      ois.readObject().asInstanceOf[NumSrc]
+    val copy: FpSrc = Using.resource(new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) { ois =>
+      ois.readObject().asInstanceOf[FpSrc]
     }
 
     assertEquals(1, copy.getFilters.size())
@@ -211,23 +209,23 @@ class FilterListTest {
 object FilterListTest {
 
   /** 最小可测 Filter：把传入帧的 val 加 delta。 */
-  private[pipeline] final class AddFilter extends Filter[Numable] {
-    private[FilterListTest] final val delta: Node.InPort[NumFrame] = addInPort(
-      new Node.InPort[NumFrame]("delta", new NumFrame(null), classOf[NumFrame]) {})
+  private[pipeline] final class AddFilter extends Filter[Fpable] {
+    private[FilterListTest] final val delta: Node.InPort[Double] = addInPort(
+      new Node.InPort[Double]("delta", 0.0, classOf[Double]) {})
     private final val in: FilterIn = addInPort(new FilterIn("in") {
     })
     private final val out: FilterOut = addOutPort(new FilterOut("out") {
-      override def getData: Numable = {
+      override def getData: Fpable = {
         val f = getFilterIn.getData
         if (f != null) {
-          f.`val` += delta.getData.getVal
+          f.`val` += delta.getData
         }
         return f
       }
     })
 
-    override def getType: Class[Numable] = {
-      classOf[Numable]
+    override def getType: Class[Fpable] = {
+      classOf[Fpable]
     }
 
     override def getName: String = {
@@ -236,11 +234,11 @@ object FilterListTest {
   }
 
   /** 可复用帧：以 val 为内容。 */
-  private[pipeline] final class Numable(private[pipeline] var `val`: Double) extends Frame(null)
+  private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(null)
 
-  private[pipeline] final class NumSrc(private val base: Double) extends Source[Numable] {
-    override protected def generate(time: Long, track: com.lomekwi.cave.timeline.Track): Numable = {
-      return new Numable(base)
+  private[pipeline] final class FpSrc(private val base: Double) extends Source[Fpable] {
+    override protected def generate(time: Long, track: com.lomekwi.cave.timeline.Track): Fpable = {
+      return new Fpable(base)
     }
 
     override def sync(time: Long, track: com.lomekwi.cave.timeline.Track): Unit = {
@@ -258,8 +256,8 @@ object FilterListTest {
       "数字源"
     }
 
-    override def getFrameType: Class[Numable] = {
-      classOf[Numable]
+    override def getFrameType: Class[Fpable] = {
+      classOf[Fpable]
     }
 
     override def createTlSrcActor(): com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor = {

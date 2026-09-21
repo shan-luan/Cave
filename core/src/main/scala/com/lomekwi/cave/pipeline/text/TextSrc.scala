@@ -6,7 +6,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
 import com.lomekwi.cave.timeline.Track
@@ -21,8 +20,8 @@ import scala.compiletime.uninitialized
 class TextSrc(text: String) extends Source[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
     new Node.InPort[String]("文本", "请输入文本", classOf[String]) {})
-  private final val fontSizeIn: Node.InPort[NumFrame] = addInPort(
-    new Node.InPort[NumFrame]("字号", TextSrc.frame(48), classOf[NumFrame]) {})
+  private final val fontSizeIn: Node.InPort[Double] = addInPort(
+    new Node.InPort[Double]("字号", 48.0, classOf[Double]) {})
   @transient private var fontRes: FontRes = uninitialized
   @transient private var font: BitmapFont = uninitialized
   /** 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体。 */
@@ -57,11 +56,11 @@ class TextSrc(text: String) extends Source[TextFrame] {
   }
 
   private def getFontSize: Int = {
-    fontSizeIn.getDefaultData.getVal.toInt
+    fontSizeIn.getDefaultData.toInt
   }
 
   def setFontSize(fontSize: Int): Unit = {
-    fontSizeIn.getDefaultData.setVal(fontSize.toDouble)
+    fontSizeIn.setDefaultData(fontSize.toDouble)
     invalidateFont()
   }
 
@@ -152,15 +151,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
   override def onDuplicate(original: Source[?]): Unit = {
     val src = original.asInstanceOf[TextSrc]
     this.textIn.setDefaultData(src.getText)
-    this.fontSizeIn.getDefaultData.setVal(src.getFontSize.toDouble)
+    this.fontSizeIn.setDefaultData(src.getFontSize.toDouble)
     this.fontRes = new FontRes(src.fontRes.getPath)
-  }
-}
-
-object TextSrc {
-  private def frame(v: Double): NumFrame = {
-    val f = new NumFrame(null)
-    f.setVal(v)
-    f
   }
 }

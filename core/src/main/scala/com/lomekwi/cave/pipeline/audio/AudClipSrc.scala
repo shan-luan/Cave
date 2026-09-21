@@ -3,7 +3,6 @@ package com.lomekwi.cave.pipeline.audio
 import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.num.NumFrame
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.tlarea.TlAudSrcActor
@@ -11,13 +10,8 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 
 @SerialVersionUID(1L)
 class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
-  addOutPort(new Node.OutPort[NumFrame]("时长", classOf[NumFrame]) {
-    private final val `val`: NumFrame = new NumFrame(null)
-
-    override def getData: NumFrame = {
-      `val`.setVal(getDuration.toDouble)
-      `val`
-    }
+  addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
+    override def getData: Double = getDuration.toDouble
   })
 
   def getAudRes: AudRes = {
