@@ -1,5 +1,7 @@
 # Cave — CAVE's Another Video Editor
 
+请注意，此README已经过时。一个更新的版本将在稍后提交。
+
 ![截图（差不多就是全部功能了）](screenshot.png)
 
 > **开发中，不可用于生产环境。**
