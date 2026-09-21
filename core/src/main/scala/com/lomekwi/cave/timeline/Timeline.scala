@@ -69,7 +69,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   // 编辑。轨道的编辑方法返回新版本，这里负责换上去并记账。
 
   def tryAdd(track: Track, source: Source[?], range: Interval, origin: Long): Long = {
-    val current = getTrack(track.index)
+    val current = getTrackOrCreate(track.index)
     val (next, shift) = current.tryAdd(source, range, origin)
     if (shift == 0) {
       setTrack(track.index, next)
@@ -79,7 +79,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   protected[timeline] def addOrThrow(track: Track, source: Source[?], range: Interval, origin: Long): Unit = {
-    val current = getTrack(track.index)
+    val current = getTrackOrCreate(track.index)
     val next = current.addOrThrow(source, range, origin)
     setTrack(track.index, next)
     push(AddSegCommand(this, track.index, current, next))
@@ -89,12 +89,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val track = findTrackOf(source)
     if (track != null) {
       val group = getGroup(source)
-      track.remove(source) match {
-        case Some(next) =>
-          setTrack(track.index, next)
-          push(RemoveSegCommand(this, track.index, track, next, source, group))
-        case None =>
-      }
+      val next = track.remove(source)
+      setTrack(track.index, next)
+      push(RemoveSegCommand(this, track.index, track, next, source, group))
     }
   }
 
@@ -107,12 +104,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       if (track != null) {
         val group = getGroup(s)
         val before = currentOf(track.index)
-        before.remove(s) match {
-          case Some(next) =>
-            working.put(track.index, next)
-            entries.add(RemoveSegsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
-          case None =>
-        }
+        val next = before.remove(s)
+        working.put(track.index, next)
+        entries.add(RemoveSegsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
       }
     }
     if (!entries.isEmpty) {
@@ -122,12 +116,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   def split(track: Track, time: Long): Unit = {
-    val current = getTrack(track.index)
-    current.split(time) match {
-      case Some(next) =>
-        setTrack(track.index, next)
-        push(SplitSegCommand(this, track.index, current, next))
-      case None =>
+    val current = getTrackOrCreate(track.index)
+    if (current.canSplit(time)) {
+      val next = current.split(time)
+      setTrack(track.index, next)
+      push(SplitSegCommand(this, track.index, current, next))
     }
   }
 
@@ -182,10 +175,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     for (i <- indices) {
       val before = tracks(i)
       // 先把该轨道上要移动的源全部摘掉，再按新位置放回；中途状态不对外发布
-      var next = before
-      for (s <- sources.asScala) {
-        if (next.contains(s)) next = next.remove(s).getOrElse(next)
-      }
+      var next = before.removeAll(sources)
       for (s <- sources.asScala) {
         if (before.contains(s)) {
           next = next.addOrThrow(s, before.getRange(s).shift(applied), before.getOrigin(s) + applied)
@@ -213,7 +203,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     for (s <- sources.asScala) {
       val from = findTrackOf(s)
       if (from != null) {
-        val to = getTrack(from.index + applied)
+        val to = getTrackOrCreate(from.index + applied)
         moves.add((s, from.index, to.index, from.getRange(s), from.getOrigin(s)))
       }
     }
@@ -228,8 +218,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
     // 先全部摘除再全部放回：源可能在成员之间换轨，摘除不完全会让放置被自己挡住
     for ((s, fromIndex, _, _, _) <- moves.asScala) {
-      val before = currentOf(fromIndex)
-      working.put(fromIndex, before.remove(s).getOrElse(before))
+      working.put(fromIndex, currentOf(fromIndex).remove(s))
     }
     for ((s, _, toIndex, range, origin) <- moves.asScala) {
       val before = currentOf(toIndex)
@@ -404,7 +393,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /** 获取指定索引的轨道，不存在则自动创建。 */
-  def getTrack(index: Int): Track = {
+  def getTrackOrCreate(index: Int): Track = {
     val ts = tracks
     if (index < ts.size) {
       ts(index)
@@ -427,7 +416,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   private[timeline] def getWorker(index: Int): TrackWorker = {
     var worker = workers.get(index)
     if (worker == null) {
-      getTrack(index) // 线程的 gapFrame 需要一个轨道
+      getTrackOrCreate(index) // 线程的 gapFrame 需要一个轨道
       worker = new TrackWorker(index)
       workers.put(index, worker)
     }

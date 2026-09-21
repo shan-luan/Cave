@@ -25,8 +25,8 @@ class PasteTemplateTest extends GdxTestBase {
 
   @Test
   def templateSnapshotsPlacementAndGroup(): Unit = {
-    val t0 = timeline.getTrack(0)
-    val t1 = timeline.getTrack(1)
+    val t0 = timeline.getTrackOrCreate(0)
+    val t1 = timeline.getTrackOrCreate(1)
     val a = new TestSource(100)
     val b = new TestSource(100)
     timeline.tryAdd(t0, a, Interval(0, 100), 1000)
@@ -67,8 +67,8 @@ class PasteTemplateTest extends GdxTestBase {
 
   @Test
   def templateCopyRefreshesSourcesButKeepsPlacementAndGroupShape(): Unit = {
-    val t0 = timeline.getTrack(0)
-    val t1 = timeline.getTrack(1)
+    val t0 = timeline.getTrackOrCreate(0)
+    val t1 = timeline.getTrackOrCreate(1)
     val a = new TestSource(100)
     val b = new TestSource(100)
     timeline.tryAdd(t0, a, Interval(0, 100), 1000)
@@ -99,7 +99,7 @@ class PasteTemplateTest extends GdxTestBase {
 
   @Test
   def templateSurvivesDeletionOfOriginals(): Unit = {
-    val t0 = timeline.getTrack(0)
+    val t0 = timeline.getTrackOrCreate(0)
     val a = new TestSource(100)
     timeline.tryAdd(t0, a, Interval(0, 100), 5000)
 

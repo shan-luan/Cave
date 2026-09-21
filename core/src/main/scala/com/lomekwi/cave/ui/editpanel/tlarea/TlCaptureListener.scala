@@ -28,7 +28,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     } else {
       val trackIndex: Int = timelineView.yToTrackIndex(y)
       val onSource: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
-        timelineView.timeline.getTrack(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
+        timelineView.timeline.getTrackOrCreate(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
           case _: Segment => true
           case _: Gap | null => false
         }
@@ -66,7 +66,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val toSelect: util.Set[Source[?]] = new util.HashSet[Source[?]]()
     var i = firstTrack
     while (i <= lastTrack) {
-      val track: Track = timelineView.timeline.getTrack(i)
+      val track: Track = timelineView.timeline.getTrackOrCreate(i)
       val trackTop: Float = timelineView.trackIndexToTopY(i)
       val trackBottom: Float = trackTop - timelineView.view.trackHeight
 

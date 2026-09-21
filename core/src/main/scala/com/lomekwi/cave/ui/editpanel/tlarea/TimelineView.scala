@@ -275,7 +275,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     if (stage != null) {
       val local = stageToLocalCoordinates(
         stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
-      val track = timeline.getTrack(yToTrackIndex(local.y))
+      val track = timeline.getTrackOrCreate(yToTrackIndex(local.y))
       track.get(xToAbsoluteTime(local.x)) match {
         case Segment(source) =>
           splitSource(source, xToAbsoluteTime(local.x))
@@ -303,7 +303,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
           timeline.split(memberTrack, time)
           beforeSources.add(member)
           // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
-          timeline.getTrack(memberTrack.index).get(time) match {
+          timeline.getTrackOrCreate(memberTrack.index).get(time) match {
             case Segment(right) => afterSources.add(right)
             case _: Gap | null =>
           }
@@ -328,7 +328,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     if (stage != null) {
       val local = stageToLocalCoordinates(
         stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
-      val track = timeline.getTrack(yToTrackIndex(local.y))
+      val track = timeline.getTrackOrCreate(yToTrackIndex(local.y))
       track.get(xToAbsoluteTime(local.x)) match {
         case Segment(source) =>
           Using.resource(timeline.record()) { h =>
@@ -487,12 +487,12 @@ class TimelineView(project0: Project) extends Group with Focusable {
         if (duration > 0) {
           val trackOffset = entry.trackIndex - minTrack
           var ti = baseTrack + trackOffset
-          var track = timeline.getTrack(ti)
+          var track = timeline.getTrackOrCreate(ti)
           val start = entry.range.lo + timeOffset
           var range = Interval(start, start + duration)
           while (!track.isFree(range, util.Set.of[Source[?]]())) {
             ti += 1
-            track = timeline.getTrack(ti)
+            track = timeline.getTrackOrCreate(ti)
             range = Interval(start, start + duration)
           }
 

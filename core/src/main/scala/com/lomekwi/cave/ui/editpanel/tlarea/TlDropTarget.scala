@@ -41,10 +41,10 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
             val range: Interval = Interval(startTime, startTime + duration)
-            while (!timelineView.timeline.getTrack(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
+            while (!timelineView.timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
               targetTrack += 1
             }
-            timelineView.timeline.tryAdd(timelineView.timeline.getTrack(targetTrack), src, range, startTime)
+            timelineView.timeline.tryAdd(timelineView.timeline.getTrackOrCreate(targetTrack), src, range, startTime)
             trackOffset = targetTrack - baseTrack + 1
             added.add(src)
           }

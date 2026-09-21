@@ -20,7 +20,7 @@ import scala.jdk.CollectionConverters.*
  * 当前版本由 {@link Timeline#setTrack} 发布，读取方永远从 {@link Timeline#getTrack} 取最新版本。
  */
 @SerialVersionUID(1L)
-final class Track private (final val timeline: Timeline, final val index: Int,
+final class Track private ( val timeline: Timeline,  val index: Int,
                            private val blockSource: BlockSrc,
                            private val byTime: immutable.TreeMap[Interval, Element],
                            private val placements: Map[Element, Interval],
@@ -76,32 +76,35 @@ final class Track private (final val timeline: Timeline, final val index: Int,
     derived(byTime.updated(r, segment), placements.updated(segment, r), origins.updated(source, origin)).relayout(r.lo, r.hi)
   }
 
-  /** 移除源。源不在本轨道时返回 None。 */
-  protected[timeline] def remove(source: Source[?]): Option[Track] = {
+  /** 移除源。源不在本轨道时原样返回本实例。 */
+  protected[timeline] def remove(source: Source[?]): Track = {
     val r = getRange(source)
     if (r == null) {
-      None
+      this
     } else {
-      Some(derived(byTime.removed(r), placements.removed(Segment(source)), origins.removed(source)).relayout(r.lo, r.hi))
+      derived(byTime.removed(r), placements.removed(Segment(source)), origins.removed(source)).relayout(r.lo, r.hi)
     }
   }
 
-  /** 在 time 处把片段一分为二。time 不在片段内部时返回 None。 */
-  protected[timeline] def split(time: Long): Option[Track] = entryAt(byTime, time) match {
-    case Some((r, Segment(source))) =>
-      val lo: Long = r.lo
-      val hi: Long = r.hi
-      if (time <= lo || time >= hi) {
-        None
-      } else {
-        val origin: Long = getOrigin(source)
-        val right = source.duplicate()
-        // 两半共用同一个 origin：源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
-        Some(derived(byTime.removed(r), placements.removed(Segment(source)), origins)
-          .addOrThrow(source, Interval(lo, time), origin)
-          .addOrThrow(right, Interval(time, hi), origin))
-      }
-    case _ => None
+  /** 移除这批源，返回新版本。不在本轨道的源会被忽略。 */
+  protected[timeline] def removeAll(sources: util.Collection[Source[?]]): Track = {
+    var t = this
+    for (s <- sources.asScala) {
+      t = t.remove(s)
+    }
+    t
+  }
+
+  /** 在 time 处把片段一分为二。time 不落在片段内部时原样返回本实例。 */
+  protected[timeline] def split(time: Long): Track = entryAt(byTime, time) match {
+    case Some((r, Segment(source))) if time > r.lo && time < r.hi =>
+      val origin: Long = getOrigin(source)
+      val right = source.duplicate()
+      // 两半共用同一个 origin：源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
+      derived(byTime.removed(r), placements.removed(Segment(source)), origins)
+        .addOrThrow(source, Interval(r.lo, time), origin)
+        .addOrThrow(right, Interval(time, r.hi), origin)
+    case _ => this
   }
 
   /** 裁切一组源的起始边缘（各自终点不变）。 */
@@ -187,10 +190,7 @@ final class Track private (final val timeline: Timeline, final val index: Int,
 
   // 探测
 
-  private def getShift(r: Interval): Long = getShift(r, null)
-  private def getShift(r: Interval, exclude: Interval): Long = pickShift(getShiftForward(r, exclude), getShiftBackward(r, exclude))
-  private def getShiftForward(r: Interval, exclude: Interval): Long = shiftScan(r, exclude, util.List.of[Source[?]](), true)
-  private def getShiftBackward(r: Interval, exclude: Interval): Long = shiftScan(r, exclude, util.List.of[Source[?]](), false)
+  private def getShift(r: Interval): Long = pickShift(shiftScan(r, true), shiftScan(r, false))
 
   private def pickShift(forward: Long, backward: Long): Long = {
     val fOk = forward != Long.MaxValue
@@ -206,17 +206,17 @@ final class Track private (final val timeline: Timeline, final val index: Int,
     }
   }
 
-  private def shiftScan(r: Interval, exclude: Interval, ignore: util.Collection[Source[?]], forward: Boolean): Long = {
+  private def shiftScan(r: Interval, forward: Boolean): Long = {
     val lo: Long = r.lo
     val hi: Long = r.hi
 
     @tailrec
     def scan(s: Long, step: Int): Long = {
-      if (step >= Track.MAX_SLIDE_STEPS || isFree(r.shift(s), exclude, ignore)) {
+      if (step >= Track.MAX_SLIDE_STEPS || noSegment(r.shift(s))) {
         s
       } else {
         val obstacles = intersectingEntries(byTime, r.shift(s))
-          .collect { case (interval, element) if !ignorable(exclude, ignore, interval, element) => interval }
+          .collect { case (interval, _: Segment) => interval }
         val candidate =
           if (forward) obstacles.map(_.hi).maxOption.map(_ - lo)
           else obstacles.map(_.lo).minOption.map(_ - hi)
@@ -232,14 +232,9 @@ final class Track private (final val timeline: Timeline, final val index: Int,
     scan(0L, 0)
   }
 
-  /** 该条目是否不构成障碍：空隙从不阻挡，片段则看是否与 exclude 相连或在 ignore 中。 */
-  private def ignorable(exclude: Interval, ignore: util.Collection[Source[?]], interval: Interval, element: Element): Boolean = element match {
-    case Segment(source) => (exclude != null && interval.isConnected(exclude)) || ignore.contains(source)
-    case _: Gap => true
-  }
-
-  private def isFree(range: Interval, exclude: Interval, ignore: util.Collection[Source[?]]): Boolean =
-    intersectingEntries(byTime, range).forall { case (interval, element) => ignorable(exclude, ignore, interval, element) }
+  /** 区间内没有片段。空隙从不构成障碍。 */
+  private def noSegment(range: Interval): Boolean =
+    intersectingEntries(byTime, range).forall { case (_, _: Gap) => true; case _ => false }
 
   /**
    * 检查指定时间范围是否空闲（忽略指定源集合中的源）
@@ -305,24 +300,23 @@ final class Track private (final val timeline: Timeline, final val index: Int,
   }
 
   /**
-   * 探测整组沿指定方向可平移多少：每个成员看后一个/前一个候选，
-   * 是拖拽成员则跳过（其自身会继续找），否则即最近障碍；取全体最严者。
-   * 左移还受时间轴 0 限制。
+   * 探测整组沿指定方向可平移多少：在摘掉整组之后的布局上看每个成员的最近障碍，取全体最严者。
+   * 整组刚性平移，成员之间不会互相成为障碍，因此直接在不含本组的版本上量即可。
+   * 左移还受时间轴 0 限制（由 0 点左侧的阻挡片段表达）。
    */
   protected[timeline] def probeMove(sources: util.Collection[Source[?]], forward: Boolean): Long = {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍 = 无界
+    val bare = removeAll(sources)
     sources.stream()
       .filter((s: Source[?]) => contains(s))
       .mapToLong((s: Source[?]) => {
         val r = getRange(s)
         if (forward) {
-          val next = nextOf(s)
-          if (next == null || sources.contains(next)) noBlock
-          else getRange(next).lo - r.hi
+          val next = bare.sourceAtOrAfter(r.hi)
+          if (next == null) noBlock else bare.getRange(next).lo - r.hi
         } else {
-          val prev = prevOf(s)
-          if (prev == null || sources.contains(prev)) noBlock
-          else getRange(prev).hi - r.lo
+          val prev = bare.sourceBefore(r.lo)
+          if (prev == null) noBlock else bare.getRange(prev).hi - r.lo
         }
       })
       .reduce(noBlock, Track.tighter)
@@ -333,27 +327,22 @@ final class Track private (final val timeline: Timeline, final val index: Int,
   /** 包含 time 的元素；轨道之外为空。 */
   def get(time: Long): Element = entryAt(byTime, time).map(_._2).orNull
 
+  /** time 是否落在某个片段内部，即能否在此分割。 */
+  def canSplit(time: Long): Boolean = entryAt(byTime, time) match {
+    case Some((r, _: Segment)) => time > r.lo && time < r.hi
+    case _ => false
+  }
+
   /** 同轨道上紧随其后的片段；没有时为空。 */
   def nextOf(source: Source[?]): Source[?] = {
     val r = getRange(source)
-    if (r == null) null
-    else intersectingEntries(byTime, Interval(r.hi, Long.MaxValue)).collectFirst { case (_, Segment(s)) => s }.orNull
+    if (r == null) null else sourceAtOrAfter(r.hi)
   }
 
   /** 同轨道上紧邻其前的片段；没有时为空。 */
   def prevOf(source: Source[?]): Source[?] = {
     val r = getRange(source)
-    if (r == null) null
-    else {
-      // 空隙互不相邻，故最多前进两步就能越过它
-      @tailrec
-      def scan(time: Long): Source[?] = lastBefore(byTime, time) match {
-        case null => null
-        case (_, Segment(s)) => s
-        case (gapRange, _: Gap) => scan(gapRange.lo)
-      }
-      scan(r.lo)
-    }
+    if (r == null) null else sourceBefore(r.lo)
   }
 
   def nextRangeOf(source: Source[?]): Option[Interval] = {
@@ -369,6 +358,18 @@ final class Track private (final val timeline: Timeline, final val index: Int,
   /** 起点不小于 time 的首个片段，取其源；没有时返回 null。 */
   private[timeline] def sourceAtOrAfter(time: Long): Source[?] = {
     byTime.iteratorFrom(Interval(time, time)).collectFirst { case (_, Segment(s)) => s }.orNull
+  }
+
+  /** 起点小于 time 的最后一个片段，取其源；没有时返回 null。 */
+  private[timeline] def sourceBefore(time: Long): Source[?] = {
+    // 空隙互不相邻，故最多退两步就能越过它
+    @tailrec
+    def scan(t: Long): Source[?] = lastBefore(byTime, t) match {
+      case null => null
+      case (_, Segment(s)) => s
+      case (gapRange, _: Gap) => scan(gapRange.lo)
+    }
+    scan(time)
   }
 
   /** 与 range 有公共点的用户条目，按区间升序；返回快照。 */

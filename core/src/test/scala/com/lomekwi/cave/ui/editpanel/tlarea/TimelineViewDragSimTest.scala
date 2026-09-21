@@ -94,7 +94,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   @Test
   def middleDragMovesBySameDeltaAndIsStableAndUndoable(): Unit = {
-    def t0 = timeline.getTrack(0)
+    def t0 = timeline.getTrackOrCreate(0)
     val s = newSrc(1000_000L) // 时长 1s
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
 
@@ -131,8 +131,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
   @Test
   def middleDragVerticalLandsOnMouseTrackAndIsStable(): Unit = {
     // 用 yToTrackIndex 反推：鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
-    def t0 = timeline.getTrack(0)
-    timeline.getTrack(3) // 确保轨道存在
+    def t0 = timeline.getTrackOrCreate(0)
+    timeline.getTrackOrCreate(3) // 确保轨道存在
     val s = newSrc(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 0L)
 
@@ -162,7 +162,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   @Test
   def frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable(): Unit = {
-    def t0 = timeline.getTrack(0)
+    def t0 = timeline.getTrackOrCreate(0)
     val s = newSrc(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 0L)
 
@@ -186,7 +186,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   @Test
   def behindResizeMovesEndBySameDeltaKeepsOriginAndIsStable(): Unit = {
-    def t0 = timeline.getTrack(0)
+    def t0 = timeline.getTrackOrCreate(0)
     val s = newSrc(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
 

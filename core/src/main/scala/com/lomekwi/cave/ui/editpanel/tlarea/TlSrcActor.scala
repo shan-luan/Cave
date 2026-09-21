@@ -30,7 +30,6 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   private var dragMembers: util.List[Source[?]] = uninitialized
   private var dragOrigStarts: Array[Long] = uninitialized
   private var dragOrigDurations: Array[Long] = uninitialized
-  private var dragOrigTracks: Array[Track] = uninitialized
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -229,7 +228,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
         if (target < 0) target = 0
         target = snapMoveTarget(target, duration)
 
-        val newTrack: Track = tl.timeline.getTrack(Math.max(0, tl.yToTrackIndex(targetY + tl.view.trackHeight / 2)))
+        val newTrack: Track = tl.timeline.getTrackOrCreate(Math.max(0, tl.yToTrackIndex(targetY + tl.view.trackHeight / 2)))
 
         handleMiddleDrag(target, newTrack)
       case _ => ()
@@ -310,11 +309,10 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       dragMembers = null
       dragOrigStarts = null
       dragOrigDurations = null
-      dragOrigTracks = null
     }
   }
 
-  /** 收集参与拖拽的成员并快照各自的起点/时长/轨道。 */
+  /** 收集参与拖拽的成员并快照各自的起点/时长。 */
   private def initDragMembers(): Unit = {
     val selected = tl.selectedSources
     if (selected.size() > 1 && selected.contains(source)) {
@@ -331,14 +329,12 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     val n: Int = dragMembers.size()
     dragOrigStarts = new Array[Long](n)
     dragOrigDurations = new Array[Long](n)
-    dragOrigTracks = new Array[Track](n)
     for (i <- 0 until n) {
       val member = dragMembers.get(i)
       val memberTrack = tl.timeline.findTrackOf(member)
       val r = memberTrack.getRange(member)
       dragOrigStarts(i) = r.lo
       dragOrigDurations(i) = r.hi - r.lo
-      dragOrigTracks(i) = memberTrack
     }
   }
 

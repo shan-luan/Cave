@@ -78,13 +78,13 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
     var targetTrack: Int = 0
     val range: Interval = Interval(time, time + duration)
-    while (!timelineView.getTimeline.getTrack(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
+    while (!timelineView.getTimeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
       targetTrack += 1
     }
 
     val timeline = timelineView.getTimeline
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(timeline.getTrack(targetTrack), source, range, time)
+      timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), source, range, time)
     }
 
     timelineView.markTimelineDirty()
@@ -106,11 +106,11 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
               val range: Interval = Interval(time, time + duration)
-              while (!timeline.getTrack(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
+              while (!timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
                 targetTrack += 1
               }
 
-              timeline.tryAdd(timeline.getTrack(targetTrack), src, range, time)
+              timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), src, range, time)
               trackOffset = targetTrack - baseTrack + 1
               added.add(src)
             }
