@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
-import org.junit.Assert.{assertEquals, assertFalse, assertTrue}
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertTrue}
+import org.junit.jupiter.api.Test
 
 class IntervalTest {
 

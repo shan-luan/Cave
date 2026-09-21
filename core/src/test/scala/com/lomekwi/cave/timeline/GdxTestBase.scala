@@ -4,7 +4,7 @@ import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.backends.headless.HeadlessApplication
 import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration
 
-import org.junit.BeforeClass
+import org.junit.jupiter.api.BeforeAll
 
 /**
  * 为纯模型测试提供 headless 的 libGDX 环境（Gdx.app 等），
@@ -16,7 +16,7 @@ abstract class GdxTestBase {
 object GdxTestBase {
   private var initialized: Boolean = false
 
-  @BeforeClass
+  @BeforeAll
   def initGdx(): Unit = this.synchronized {
     if (initialized) return
     initialized = true

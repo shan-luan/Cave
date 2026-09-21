@@ -3,8 +3,8 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.Assert.{assertEquals, assertTrue}
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
+import org.junit.jupiter.api.Test
 
 import java.util.{ArrayList, List, Random, Set}
 
@@ -81,8 +81,8 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       project.undoManager.undo()
       undoCalls += 1
     }
-    assertTrue("快照后至少应产生一条可撤销的命令", undoCalls > 0)
-    assertEquals("撤销后应恢复到序列化快照的状态", snapshot, timeline)
+    assertTrue(undoCalls > 0, "快照后至少应产生一条可撤销的命令")
+    assertEquals(snapshot, timeline, "撤销后应恢复到序列化快照的状态")
 
     // 6. 重做全部命令，时间线应回到操作后的状态
     var redoCalls = 0
@@ -90,8 +90,8 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       project.undoManager.redo()
       redoCalls += 1
     }
-    assertEquals("重做后应恢复到操作后的状态", afterOps, timeline)
-    assertEquals("撤销与重做的步数应一致", undoCalls, redoCalls)
+    assertEquals(afterOps, timeline, "重做后应恢复到操作后的状态")
+    assertEquals(undoCalls, redoCalls, "撤销与重做的步数应一致")
   }
 
   // 随机布局

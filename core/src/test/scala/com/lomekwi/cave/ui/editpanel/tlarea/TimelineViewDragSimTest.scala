@@ -9,10 +9,10 @@ import com.lomekwi.cave.timeline.TestSource
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
-import org.junit.Assert.assertEquals
+import org.junit.jupiter.api.Assertions.assertEquals
 
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.objenesis.ObjenesisStd
 
 import java.lang.reflect.Field
@@ -38,7 +38,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   private var tl: TimelineView = null
   private var view: TimelineView.ViewState = null
 
-  @Before
+  @BeforeEach
   def setUp(): Unit = {
     project = new TestProject()
     timeline = project.timeline

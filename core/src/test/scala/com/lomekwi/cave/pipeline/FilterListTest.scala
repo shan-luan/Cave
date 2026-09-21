@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
-import org.junit.Assert.{assertEquals, assertFalse, assertNull, assertSame}
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNull, assertSame}
+import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import java.util.List

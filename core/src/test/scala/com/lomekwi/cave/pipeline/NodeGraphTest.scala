@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
-import org.junit.Assert.{assertFalse, assertTrue}
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
+import org.junit.jupiter.api.Test
 
 import scala.jdk.CollectionConverters.*
 

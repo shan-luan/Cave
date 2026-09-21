@@ -2,9 +2,9 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.Assert.{assertEquals, assertNotSame, assertSame, assertTrue}
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertNotSame, assertSame, assertTrue}
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import java.util.{List, Set}
 
@@ -30,7 +30,7 @@ class TrackDragTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: Timeline = null
 
-  @Before
+  @BeforeEach
   def setUp(): Unit = {
     project = new TestProject()
     timeline = project.timeline

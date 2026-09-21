@@ -4,9 +4,9 @@ import com.lomekwi.cave.app.selection.SourceSet
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.{GdxTestBase, Interval, TestSource, Timeline}
 
-import org.junit.Assert.{assertEquals, assertNotSame, assertNull, assertSame, assertTrue}
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertNotSame, assertNull, assertSame, assertTrue}
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * 剪贴板模板。关键在于模板必须自带位置与组结构：
@@ -17,7 +17,7 @@ class PasteTemplateTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: Timeline = null
 
-  @Before
+  @BeforeEach
   def setUp(): Unit = {
     project = new TestProject()
     timeline = project.timeline

@@ -1,8 +1,8 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, FpSrc}
-import org.junit.Assert.{assertEquals, assertFalse, assertNotEquals, assertNotNull, assertNull, assertSame, assertTrue}
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotEquals, assertNotNull, assertNull, assertSame, assertTrue}
+import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import scala.jdk.CollectionConverters.*
