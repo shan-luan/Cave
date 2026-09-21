@@ -7,6 +7,8 @@ A video editor built on Scala 3. Or an effects tool. Or a DAW. Who cares?
 
 ![Screenshot](img.png)
 
+![Screenshot, another one](img_1.png)
+
 ## Architecture & Features
 - Almost everything is a node. Every modification is done by appending or in-place editing nodes (the UI does this automatically).
 - Persistent, immutable timeline. Complete with functional buzzwords. For instance, a track is a bijection between a sum-type ADT of Gap and Segment elements and half-open intervals.
