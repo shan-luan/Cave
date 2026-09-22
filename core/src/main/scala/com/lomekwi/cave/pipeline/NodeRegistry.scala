@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.image.TransNode
+import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode}
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}
@@ -12,13 +13,19 @@ import scala.jdk.CollectionConverters.*
  * 通用节点注册表：注册任意 {@link Node} 子类，并按目标帧类型动态匹配可用的节点。
  *
  * <p>兼容性规则：节点是 {@link Filter} 时，看它泛型声明的目标帧类型是否
- * {@code isAssignableFrom} 源帧类型；非 Filter 的普通节点视为始终兼容。</p>
+ * {@code isAssignableFrom} 源帧类型；非 Filter 的图内节点不参与帧类型匹配，
+ * 始终视为不兼容，因为兼容节点只会被挂到源的滤镜链上。</p>
  */
 class NodeRegistry {
   private final val entries: util.List[Class[? <: Node]] = new util.ArrayList[Class[? <: Node]]()
 
   register(classOf[TransNode])
   register(classOf[NodeGraphFilter])
+  register(classOf[RandomNode])
+  register(classOf[AddNode])
+  register(classOf[SubNode])
+  register(classOf[MulNode])
+  register(classOf[DivNode])
 
   def register(nodeClass: Class[? <: Node]): Unit = {
     entries.add(nodeClass)
@@ -44,8 +51,8 @@ class NodeRegistry {
   }
 
   /**
-   * 创建第 index 个兼容节点。返回类型按 Filter 使用方约定：非 Filter 节点
-   * 目前没有消费方，Inspector 只会把结果加入 filter 链。
+   * 创建第 index 个兼容节点。只会返回可挂到源滤镜链上的 {@link Filter} 节点，
+   * 非 Filter 的图内节点不参与匹配。
    */
   def createCompatible(source: Source[?], index: Int): Node = {
     val frameType: Class[?] = source.getFrameType
@@ -73,7 +80,7 @@ object NodeRegistry {
 
   private def isCompatible(nodeClass: Class[? <: Node], frameType: Class[?]): Boolean = {
     if (!classOf[Filter[?]].isAssignableFrom(nodeClass)) {
-      true
+      false
     } else {
       val asFilter: Class[? <: Filter[?]] = nodeClass.asSubclass(classOf[Filter[?]])
       targetTypeOf(asFilter).isAssignableFrom(frameType)
