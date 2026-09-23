@@ -33,19 +33,18 @@ import com.lomekwi.cave.app.App
 
 import java.io.File
 import java.io.IOException
-import java.util
-
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import com.badlogic.gdx.Input.Keys.*
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 class TopBar extends MenuBar {
   private final val toastTimeOut: Float = 2f
-  private final val actionItems: util.Map[TopActions, MenuItem] = new util.LinkedHashMap[TopActions, MenuItem]()
+  private final val actionItems: mutable.LinkedHashMap[TopActions, MenuItem] = mutable.LinkedHashMap.empty[TopActions, MenuItem]
 
   {
     val fileMenu: Menu = new MenuX(i18n("文件"))
@@ -123,8 +122,8 @@ class TopBar extends MenuBar {
       .withItem(new MenuItem(i18n("后台任务"), new ChangeListenerX(() => {
 
         val taskWin: VisDialog = new VisDialog(i18n("后台任务")) {
-          final val rows: util.HashMap[Task, VisTable] = new util.HashMap[Task, VisTable]()
-          final val current: util.HashSet[Task] = new util.HashSet[Task]()
+          final val rows: mutable.HashMap[Task, VisTable] = mutable.HashMap.empty[Task, VisTable]
+          final val current: mutable.HashSet[Task] = mutable.HashSet.empty[Task]
           var dirty: Boolean = false
 
           override def act(delta: Float): Unit = {
@@ -133,8 +132,8 @@ class TopBar extends MenuBar {
 
             current.clear()
             for (task <- App.taskPool.asScala) {
-              current.add(task)
-              var row: VisTable = rows.get(task)
+              current += task
+              var row: VisTable = rows.getOrElse(task, null)
               if (row == null) {
                 dirty = true
                 row = new VisTable()
@@ -149,15 +148,11 @@ class TopBar extends MenuBar {
               row.getUserObject.asInstanceOf[VisProgressBar].setValue(task.getProgress)
             }
 
-            rows.entrySet().removeIf((entry: util.Map.Entry[Task, VisTable]) => {
-              if (!current.contains(entry.getKey)) {
-                dirty = true
-                content.removeActor(entry.getValue)
-                true
-              } else {
-                false
-              }
-            })
+            for (task <- rows.keys.filterNot(current.contains).toList) {
+              dirty = true
+              content.removeActor(rows(task))
+              rows.remove(task)
+            }
             if (dirty) {
               content.pack()
               pack()
@@ -197,10 +192,10 @@ class TopBar extends MenuBar {
     ))
   }
   def applyCustomShortcuts(): Unit = {
-    for (e <- actionItems.entrySet().asScala) {
-      val keys = App.shortcutManager.getKeys(e.getKey)
+    for ((action, item) <- actionItems) {
+      val keys = App.shortcutManager.getKeys(action)
       val arr: Array[Int] = keys.stream.mapToInt((i: Integer) => i.intValue).toArray
-      e.getValue.setShortcut(arr*)
+      item.setShortcut(arr*)
     }
   }
 

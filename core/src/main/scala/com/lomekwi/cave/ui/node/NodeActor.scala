@@ -9,15 +9,15 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.widget.Card
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
-import java.util
 
 //TODO:WIP
 class NodeActor(node0: Node) extends Card(node0.getName) {
   private final val node: Node = node0
   private final val inTable: VisTable = new VisTable()
   private final val outTable: VisTable = new VisTable()
-  private final val portActors: util.Map[Node.Port, PortActor] = new util.HashMap[Node.Port, PortActor]()
+  private final val portActors: mutable.HashMap[Node.Port, PortActor] = mutable.HashMap.empty[Node.Port, PortActor]
 
   inTable.top().left()
   inTable.defaults().left()
@@ -45,7 +45,7 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
 
   /** 本卡片中承载指定端口的端口圆点，没有则返回 null。 */
   def getPortActor(port: Node.Port): PortActor = {
-    portActors.get(port)
+    portActors.getOrElse(port, null)
   }
 
   def getNode: Node = {

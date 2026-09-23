@@ -19,7 +19,7 @@ import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-import java.util
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 //TODO:WIP
@@ -27,7 +27,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   private final val nodeGraph: NodeGraph = nodeGraph0
   private val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
   private val canvas: Group = panZoom.getCanvas
-  private final val displayedNodes: util.Set[Node] = new util.HashSet[Node]()
+  private final val displayedNodes: mutable.HashSet[Node] = mutable.HashSet.empty[Node]
   private final val nodeMenu: PopupMenu = new PopupMenu()
   private final val spawnPos: Vector2 = new Vector2()
   private var dirty: Boolean = false
@@ -58,14 +58,14 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   }
 
   private def isUpToDate: Boolean = {
-    displayedNodes.size() == nodeGraph.size() && displayedNodes.containsAll(nodeGraph)
+    displayedNodes.size == nodeGraph.size() && displayedNodes.forall(node => nodeGraph.contains(node))
   }
 
   private def syncNodeActors(): Unit = {
-    val toAdd: util.Set[Node] = new util.HashSet[Node](nodeGraph)
-    toAdd.removeAll(displayedNodes)
-    val toRemove: util.Set[Node] = new util.HashSet[Node](displayedNodes)
-    toRemove.removeAll(nodeGraph)
+    val toAdd: mutable.HashSet[Node] = mutable.HashSet.from(nodeGraph.asScala)
+    toAdd --= displayedNodes
+    val toRemove: mutable.HashSet[Node] = mutable.HashSet.from(displayedNodes)
+    toRemove --= nodeGraph.asScala
 
     for (actor <- canvas.getChildren.asScala.toSeq) {
       actor match {
@@ -75,14 +75,14 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
       }
     }
 
-    for (node <- toAdd.asScala) {
+    for (node <- toAdd) {
       val actor = new NodeActor(node)
       actor.pack()
       canvas.addActor(actor)
     }
 
-    displayedNodes.removeAll(toRemove)
-    displayedNodes.addAll(toAdd)
+    displayedNodes --= toRemove
+    displayedNodes ++= toAdd
   }
 
   private def placeNodeActors(): Unit = {

@@ -15,8 +15,8 @@ import scala.jdk.CollectionConverters.*
 import java.util
 
 class UndoManager(@transient private val project: Project) {
-  private final val undoStack: util.Deque[UndoManager.UndoableCommand] = new util.ArrayDeque[UndoManager.UndoableCommand]()
-  private final val redoStack: util.Deque[UndoManager.UndoableCommand] = new util.ArrayDeque[UndoManager.UndoableCommand]()
+  private final val undoStack: mutable.ArrayDeque[UndoManager.UndoableCommand] = mutable.ArrayDeque.empty[UndoManager.UndoableCommand]
+  private final val redoStack: mutable.ArrayDeque[UndoManager.UndoableCommand] = mutable.ArrayDeque.empty[UndoManager.UndoableCommand]
 
   def execute(command: UndoManager.UndoableCommand): Unit = {
     val wasDirty = project.isDirty
@@ -39,17 +39,17 @@ class UndoManager(@transient private val project: Project) {
 
   private def push(command: UndoManager.UndoableCommand): Unit = {
     // 与栈顶同类型的可合并命令直接合并
-    val top = if (undoStack.isEmpty) null else undoStack.peek()
+    val top = if (undoStack.isEmpty) null else undoStack.head
     val merged = (command, top) match {
       case (_: UndoManager.MergeableCommand, topMc: UndoManager.MergeableCommand) =>
         topMc.getClass == command.getClass && topMc.merge(command)
       case _ => false
     }
     if (!merged) {
-      undoStack.push(command)
+      undoStack.prepend(command)
     }
     redoStack.clear()
-    if (undoStack.size() > UndoManager.MAX_UNDO) {
+    if (undoStack.size > UndoManager.MAX_UNDO) {
       undoStack.removeLast()
     }
   }
@@ -58,9 +58,9 @@ class UndoManager(@transient private val project: Project) {
     if (!undoStack.isEmpty) {
       val wasDirty = project.isDirty
       project.currentVersion = project.currentVersion - 1
-      val command = undoStack.pop()
+      val command = undoStack.removeHead()
       command.undo()
-      redoStack.push(command)
+      redoStack.prepend(command)
       if (wasDirty != project.isDirty) {
         project.projEventBus.post(ProjectDirtyChangedEvent)
       }
@@ -71,9 +71,9 @@ class UndoManager(@transient private val project: Project) {
     if (!redoStack.isEmpty) {
       val wasDirty = project.isDirty
       project.currentVersion = project.currentVersion + 1
-      val command = redoStack.pop()
+      val command = redoStack.removeHead()
       command.redo()
-      undoStack.push(command)
+      undoStack.prepend(command)
       if (wasDirty != project.isDirty) {
         project.projEventBus.post(ProjectDirtyChangedEvent)
       }

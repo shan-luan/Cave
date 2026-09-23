@@ -24,9 +24,9 @@ import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import com.lomekwi.cave.util.Units
 
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
-import java.util
 
 /**
  * 负责渲染和显示预览内容
@@ -37,7 +37,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.getCanvas
   //此列表仅应在主线程读取.
-  private final val frames: util.List[Frame] = new util.ArrayList[Frame]()
+  private final val frames: mutable.ArrayBuffer[Frame] = mutable.ArrayBuffer.empty[Frame]
   private var refViewportArea: Float = -1f
   private var lastWidth: Float = 0
   private var exportOpts: ExportOptionsSet = uninitialized
@@ -105,10 +105,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def setFrame(frame: Frame): Unit = {
     val idx: Int = frame.track.index
-    while (idx >= frames.size()) {
-      frames.add(null)
+    while (idx >= frames.size) {
+      frames.append(null)
     }
-    val legacy = frames.set(frame.track.index, frame)
+    val legacy = frames(idx)
+    frames(idx) = frame
     if (legacy != null) {
       val actor = PreviewArea.getFrameActor(legacy)
       if (actor != null) canvas.removeActor(actor)
@@ -118,11 +119,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   //TODO:减少对象分配开销
   private def clearFrames(idx: Int): Unit = {
     Gdx.app.postRunnable(() => {
-      val inBounds = idx >= 0 && idx < frames.size()
-      val frame = if (inBounds) frames.get(idx) else null
+      val inBounds = idx >= 0 && idx < frames.size
+      val frame = if (inBounds) frames(idx) else null
       val actor = if (frame != null) PreviewArea.getFrameActor(frame) else null
       if (actor != null) {
-        frames.set(idx, null)
+        frames(idx) = null
         canvas.removeActor(actor)
       }
     })
@@ -137,7 +138,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   def onSelectionChanged(event: SourceSetSelectedEvent): Unit = {
     // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
     if (!(event.set.getTimeline eq project.timeline)) return
-    for (frame <- frames.asScala) {
+    for (frame <- frames) {
       if (frame != null) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null) {
@@ -152,7 +153,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     super.act(delta)
     canvas.setZIndex(0)
     var i = 0
-    for (frame <- frames.asScala) {
+    for (frame <- frames) {
       if (!(frame == null || frame.isClosed)) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null && (actor.getParent eq canvas)) {

@@ -22,6 +22,7 @@ import com.lomekwi.cave.ui.{Colors, Focusable}
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
@@ -289,12 +290,12 @@ class TimelineView(project0: Project) extends Group with Focusable {
     val track = timeline.findTrackOf(source)
     if (track == null) return
     val group = timeline.getGroup(source)
-    val members: util.List[Source[?]] = if (group != null) util.List.copyOf(group) else util.List.of(source)
+    val members: Seq[Source[?]] = if (group != null) group.asScala.toList else List(source)
     val beforeSources: util.List[Source[?]] = new util.ArrayList[Source[?]]()
     val afterSources: util.List[Source[?]] = new util.ArrayList[Source[?]]()
     var splitAny = false
     Using.resource(timeline.record()) { h =>
-      for (member <- members.asScala) {
+      for (member <- members) {
         val memberTrack = timeline.findTrackOf(member)
         val range = memberTrack.getRange(member)
         val start: Long = range.lo
@@ -316,7 +317,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
       }
     }
     if (splitAny && group != null) {
-      for (member <- members.asScala) group.remove(member)
+      for (member <- members) group.remove(member)
       timeline.dropGroup(group)
       if (beforeSources.size() >= 2) regroup(beforeSources)
       if (afterSources.size() >= 2) regroup(afterSources)
@@ -467,11 +468,11 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
     val pasted = new util.ArrayList[Source[?]](entries.size())
 
-    val sorted = new util.ArrayList[PasteTemplate.Entry](entries)
-    sorted.sort(util.Comparator.comparingInt[PasteTemplate.Entry]((e: PasteTemplate.Entry) => e.trackIndex))
+    val sorted: mutable.ArrayBuffer[PasteTemplate.Entry] = mutable.ArrayBuffer.from(entries.asScala)
+    sorted.sortInPlaceBy(_.trackIndex)
 
-    val minTrack = sorted.get(0).trackIndex
-    val minStart = sorted.stream().mapToLong((e: PasteTemplate.Entry) => e.range.lo).min().orElse(baseTime)
+    val minTrack = sorted.head.trackIndex
+    val minStart = if (sorted.isEmpty) baseTime else sorted.iterator.map(_.range.lo).min
     val timeOffset = baseTime - minStart
 
     // 模板里的组要登记进本时间线，粘贴后的源才查得到自己的组
@@ -482,7 +483,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     }
 
     Using.resource(timeline.record()) { h =>
-      for (entry <- sorted.asScala) {
+      for (entry <- sorted) {
         val duration = entry.range.hi - entry.range.lo
         if (duration > 0) {
           val trackOffset = entry.trackIndex - minTrack

@@ -16,8 +16,8 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 
 import java.util
-import java.util.Collections
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
@@ -37,16 +37,16 @@ class ShortcutKeysTable extends EntryTable {
       } else if (ShortcutKeysTable.isModifier(keycode)) {
         true
       } else {
-        val keys: util.List[Integer] = new util.ArrayList[Integer]()
+        val keys: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.empty[Int]
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT))
-          keys.add(Input.Keys.CONTROL_LEFT)
+          keys += Input.Keys.CONTROL_LEFT
         if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT))
-          keys.add(Input.Keys.SHIFT_LEFT)
+          keys += Input.Keys.SHIFT_LEFT
         if (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))
-          keys.add(Input.Keys.ALT_LEFT)
-        keys.add(keycode)
+          keys += Input.Keys.ALT_LEFT
+        keys += keycode
 
-        App.shortcutManager.register(recordingAction, keys.stream().mapToInt((i: Integer) => i).toArray()*)
+        App.shortcutManager.register(recordingAction, keys.toSeq*)
         App.shortcutManager.persist()
         finishRecording(true)
         true
@@ -146,14 +146,14 @@ class ShortcutKeysTable extends EntryTable {
     if (keys.isEmpty) {
       i18n("未设置")
     } else {
-      val list: util.List[Integer] = new util.ArrayList[Integer](keys)
-      list.sort((a: Integer, b: Integer) => {
+      val list: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(keys.asScala.map(_.intValue))
+      list.sortInPlaceWith((a: Int, b: Int) => {
         val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1
         val bMod = if (ShortcutKeysTable.isModifier(b)) 0 else 1
-        if (aMod != bMod) aMod - bMod else 0
+        if (aMod != bMod) aMod < bMod else false
       })
       val sb = new StringBuilder()
-      for (k <- list.asScala) {
+      for (k <- list) {
         if (sb.length() > 0) sb.append(" + ")
         sb.append(ShortcutKeysTable.keyName(k))
       }
@@ -174,11 +174,10 @@ object ShortcutKeysTable {
     if (current.size() != defaults.length) {
       true
     } else {
-      val curSorted: util.List[Integer] = new util.ArrayList[Integer](current)
-      Collections.sort(curSorted)
-      val defSorted = defaults.clone()
-      util.Arrays.sort(defSorted)
-      curSorted.asScala.zipWithIndex.exists((k, i) => k != defSorted(i))
+      val curSorted: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(current.asScala.map(_.intValue))
+      curSorted.sortInPlace()
+      val defSorted: Array[Int] = defaults.sorted
+      curSorted.zipWithIndex.exists((k, i) => k != defSorted(i))
     }
   }
 

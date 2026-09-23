@@ -28,6 +28,7 @@ import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 import java.util
@@ -73,7 +74,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private var gizmoOldState: UndoManager.TransNodeState = uninitialized
 
   private var myStartBBox: Array[Float] = uninitialized
-  private var siblingBBoxes: util.List[Array[Float]] = uninitialized
+  private var siblingBBoxes: mutable.ArrayBuffer[Array[Float]] = uninitialized
 
   /** 移动吸附时的提示线位置（画布坐标），NaN 表示无吸附 */
   private var snapLineX: Float = Float.NaN
@@ -589,12 +590,12 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def captureSnapData(): Unit = {
     myStartBBox = computeCanvasBBox()
-    siblingBBoxes = new util.ArrayList[Array[Float]]()
+    siblingBBoxes = mutable.ArrayBuffer.empty[Array[Float]]
     getParent match {
       case g: com.badlogic.gdx.scenes.scene2d.Group =>
         g.getChildren.asScala.foreach {
           case other: TransFrameActor if other ne this =>
-            siblingBBoxes.add(other.computeCanvasBBox())
+            siblingBBoxes += other.computeCanvasBBox()
           case _ =>
         }
       case _ =>
@@ -606,7 +607,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         val r = opts.width.toFloat
         val b = 0f
         val t = opts.height.toFloat
-        siblingBBoxes.add(Array(l, r, b, t, (l + r) * 0.5f, (b + t) * 0.5f))
+        siblingBBoxes += Array(l, r, b, t, (l + r) * 0.5f, (b + t) * 0.5f)
       }
     }
   }
@@ -655,7 +656,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     var bestDistX = threshold
     var bestDistY = threshold
 
-    for (s <- siblingBBoxes.asScala) {
+    for (s <- siblingBBoxes) {
       var d = s(0) - pl
       if (Math.abs(d) < bestDistX) {
         bestDistX = Math.abs(d)

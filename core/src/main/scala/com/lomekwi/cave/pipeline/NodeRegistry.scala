@@ -5,9 +5,8 @@ import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, Sub
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}
-import java.util
 
-import scala.jdk.CollectionConverters.*
+import scala.collection.mutable
 
 /**
  * 通用节点注册表：注册任意 {@link Node} 子类，并按目标帧类型动态匹配可用的节点。
@@ -17,7 +16,7 @@ import scala.jdk.CollectionConverters.*
  * 始终视为不兼容，因为兼容节点只会被挂到源的滤镜链上。</p>
  */
 class NodeRegistry {
-  private final val entries: util.List[Class[? <: Node]] = new util.ArrayList[Class[? <: Node]]()
+  private final val entries: mutable.ArrayBuffer[Class[? <: Node]] = mutable.ArrayBuffer.empty[Class[? <: Node]]
 
   register(classOf[TransNode])
   register(classOf[NodeGraphFilter])
@@ -28,23 +27,23 @@ class NodeRegistry {
   register(classOf[DivNode])
 
   def register(nodeClass: Class[? <: Node]): Unit = {
-    entries.add(nodeClass)
+    entries += nodeClass
   }
 
   /** 已注册节点的数量（不做帧类型过滤）。 */
   def getCount: Int = {
-    entries.size()
+    entries.size
   }
 
   /** 按注册顺序创建第 index 个节点（不做帧类型过滤）。 */
   def create(index: Int): Node = {
-    NodeRegistry.create(entries.get(index))
+    NodeRegistry.create(entries(index))
   }
 
   def getCompatibleCount(source: Source[?]): Int = {
     val frameType: Class[?] = source.getFrameType
     var count = 0
-    for (nodeClass <- entries.asScala) {
+    for (nodeClass <- entries) {
       if (NodeRegistry.isCompatible(nodeClass, frameType)) count += 1
     }
     count
@@ -56,7 +55,7 @@ class NodeRegistry {
    */
   def createCompatible(source: Source[?], index: Int): Node = {
     val frameType: Class[?] = source.getFrameType
-    entries.asScala.iterator
+    entries.iterator
       .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))
       .zipWithIndex
       .collectFirst { case (nodeClass, i) if i == index => NodeRegistry.create(nodeClass) }

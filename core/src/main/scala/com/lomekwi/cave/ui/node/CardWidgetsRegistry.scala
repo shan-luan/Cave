@@ -5,10 +5,10 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.pipeline.Source
 
-import java.util
 import java.util.function.BiFunction
 import java.util.function.Function
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -19,8 +19,8 @@ object CardWidgetsRegistry {
 
   private case class OutEntry(`type`: Class[?], factory: Function[Node.OutPort[?], Actor])
 
-  private final val IN_ENTRIES: util.List[InEntry] = new util.ArrayList[InEntry]()
-  private final val OUT_ENTRIES: util.List[OutEntry] = new util.ArrayList[OutEntry]()
+  private final val IN_ENTRIES: mutable.ArrayBuffer[InEntry] = mutable.ArrayBuffer.empty[InEntry]
+  private final val OUT_ENTRIES: mutable.ArrayBuffer[OutEntry] = mutable.ArrayBuffer.empty[OutEntry]
 
   registerIn(classOf[Double], (port, source) => new NumPortEditor(port, source))
   registerIn(classOf[String], (port, source) => new TextPortEditor(port, source))
@@ -29,17 +29,17 @@ object CardWidgetsRegistry {
 
   /** 注册输入端口的 widget 工厂。目标类型为端口约束需能容纳的类型。 */
   private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor]): Unit = {
-    IN_ENTRIES.add(InEntry(`type`, factory))
+    IN_ENTRIES += InEntry(`type`, factory)
   }
 
   /** 注册输出端口的只读显示工厂。目标类型为端口声明类型的父类。 */
   private def registerOut(`type`: Class[?], factory: Function[Node.OutPort[?], Actor]): Unit = {
-    OUT_ENTRIES.add(OutEntry(`type`, factory))
+    OUT_ENTRIES += OutEntry(`type`, factory)
   }
 
   /** 为输入端口创建编辑 widget；没有注册对应类型的返回 null（该端口不显示）。 */
   def createEditor(port: Node.InPort[?], source: Source[?]): Actor = {
-    IN_ENTRIES.asScala
+    IN_ENTRIES
       .find(entry => accepts(port, entry.`type`))
       .map(entry => entry.factory.apply(port, source))
       .orNull
@@ -51,7 +51,7 @@ object CardWidgetsRegistry {
     if (`type` == null) {
       null
     } else {
-      OUT_ENTRIES.asScala
+      OUT_ENTRIES
         .find(entry => entry.`type`.isAssignableFrom(`type`))
         .map(entry => entry.factory.apply(port))
         .orNull
