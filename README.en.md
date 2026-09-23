@@ -18,6 +18,7 @@ A video editor built on Scala 3. Or an effects tool. Or a DAW. Who cares?
 - A task system reserved for time-consuming jobs. Currently only the export task is implemented. You can export video without blocking your editing.
 - Powerful codec support courtesy of JavaCV (FFmpeg). Handles roughly a hundred video formats.
 - GPU rendering courtesy of libgdx.
+- A Scene2D-based UI, the same one Spine uses. Forget CEF!
 - Completely free software.
 
 ## License
