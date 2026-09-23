@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
+import com.lomekwi.cave.ui.TextInputs
 import com.lomekwi.cave.ui.widget.Card
 
 import scala.collection.mutable
@@ -63,7 +64,8 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
     setButton(Input.Buttons.LEFT)
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      if (nodeGraph.isEmpty || !super.touchDown(event, x, y, pointer, button)) {
+      // 在端口编辑器的文本框上拖拽是在选字，不该把节点一起拖走
+      if (nodeGraph.isEmpty || TextInputs.contains(event.getTarget) || !super.touchDown(event, x, y, pointer, button)) {
         false
       } else {
         grabX = x

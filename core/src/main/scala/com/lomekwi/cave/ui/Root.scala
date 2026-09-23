@@ -136,7 +136,8 @@ class Root extends ApplicationListener {
     stage = new Stage(new ScreenViewport())
     stage.addCaptureListener(new InputListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-        if (button == Input.Buttons.LEFT) {
+        // 文本输入控件自己会接管键盘焦点，这里再抢一次会让它立刻失焦
+        if (button == Input.Buttons.LEFT && !TextInputs.contains(event.getTarget)) {
           var target: Actor = event.getTarget
           while (target != null && !target.isInstanceOf[Focusable]) {
             target = target.getParent

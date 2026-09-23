@@ -251,10 +251,12 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val extTop = h + handleOff
     if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false
 
-    val parent = getParent
-    val grand = if (parent != null) parent.getParent else null
-    if (!grand.isInstanceOf[PreviewArea]) return true
-    val preview = grand.asInstanceOf[PreviewArea]
+    // 帧 actor 挂在画布上，画布在 PanZoomCanvas 里，PreviewArea 还要更上几层，因此沿祖先链找
+    var preview: Actor = getParent
+    while (preview != null && !preview.isInstanceOf[PreviewArea]) {
+      preview = preview.getParent
+    }
+    if (preview == null) return true
 
     TransFrameActor.hitCorner1.set(extLeft, extBottom)
     TransFrameActor.hitCorner2.set(extRight, extBottom)
