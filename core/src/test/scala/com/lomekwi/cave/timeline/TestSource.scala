@@ -30,10 +30,6 @@ class TestSource(duration0: Long) extends Source[TestSource.TestFrame] {
     "test"
   }
 
-  override def getFrameType: Class[TestSource.TestFrame] = {
-    classOf[TestSource.TestFrame]
-  }
-
   override def createTlSrcActor(): TlSrcActor = {
     new TlTestSrcActor(this)
   }

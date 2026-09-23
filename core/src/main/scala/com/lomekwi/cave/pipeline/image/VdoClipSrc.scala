@@ -84,9 +84,6 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Source[ImgFrame] {
   override def getDuration: Long = {
     vdoRes.getDuration
   }
-  override def getFrameType: Class[ImgFrame] = {
-    classOf[ImgFrame]
-  }
   override def getDisplayName: String = {
     "视频源"
   }

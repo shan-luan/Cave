@@ -93,10 +93,6 @@ class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
     5 * SECOND
   }
 
-  override def getFrameType: Class[ImgFrame] = {
-    classOf[ImgFrame]
-  }
-
   override def getDisplayName: String = {
     "\u56fe\u7247\u6e90"
   }

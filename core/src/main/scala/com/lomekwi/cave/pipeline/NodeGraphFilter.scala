@@ -58,10 +58,6 @@ class NodeGraphFilter extends Filter[Object] {
   override def getName: String = {
     "节点图"
   }
-
-  override def getType: Class[Object] = {
-    classOf[Object]
-  }
 }
 
 object NodeGraphFilter {

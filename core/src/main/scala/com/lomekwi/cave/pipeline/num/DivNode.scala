@@ -14,7 +14,5 @@ final class DivNode extends Mixer[Double] {
   inA.setDefaultData(1.0)
   inB.setDefaultData(1.0)
 
-  override def getType: Class[Double] = classOf[Double]
-
   override def getName: String = "除法"
 }

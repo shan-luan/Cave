@@ -136,10 +136,6 @@ class TextSrc(text: String) extends Source[TextFrame] {
     5 * SECOND
   }
 
-  override def getFrameType: Class[TextFrame] = {
-    classOf[TextFrame]
-  }
-
   override def getDisplayName: String = {
     "文本源"
   }

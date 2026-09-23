@@ -14,7 +14,5 @@ final class SubNode extends Mixer[Double] {
   inA.setDefaultData(0.0)
   inB.setDefaultData(0.0)
 
-  override def getType: Class[Double] = classOf[Double]
-
   override def getName: String = "减法"
 }

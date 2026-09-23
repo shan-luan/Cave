@@ -103,10 +103,6 @@ class TransNode extends Filter[Transformable] {
     flipYState = v
   }
 
-  override def getType: Class[Transformable] = {
-    classOf[Transformable]
-  }
-
   override def getName: String = {
     "变换"
   }

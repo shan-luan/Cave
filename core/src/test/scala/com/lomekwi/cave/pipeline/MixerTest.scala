@@ -93,8 +93,6 @@ private final class SumMixer extends Mixer[Fpable] {
     }
   })
 
-  override def getType: Class[Fpable] = classOf[Fpable]
-
   override def getName: String = "求和混合"
 }
 
@@ -102,8 +100,6 @@ private final class ThreeInMixer extends Mixer[Fpable] {
   addInPort(new MixIn("A"))
   addInPort(new MixIn("B"))
   addInPort(new MixIn("C"))
-
-  override def getType: Class[Fpable] = classOf[Fpable]
 
   override def getName: String = "三入混合"
 }
@@ -117,8 +113,6 @@ private final class TwoOutMixer extends Mixer[Fpable] {
   addOutPort(new MixOut("输出2") {
     override def getData: Fpable = null
   })
-
-  override def getType: Class[Fpable] = classOf[Fpable]
 
   override def getName: String = "双出混合"
 }

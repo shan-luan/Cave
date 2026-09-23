@@ -224,10 +224,6 @@ object FilterListTest {
       }
     })
 
-    override def getType: Class[Fpable] = {
-      classOf[Fpable]
-    }
-
     override def getName: String = {
       "加数"
     }
@@ -254,10 +250,6 @@ object FilterListTest {
 
     override def getDisplayName: String = {
       "数字源"
-    }
-
-    override def getFrameType: Class[Fpable] = {
-      classOf[Fpable]
     }
 
     override def createTlSrcActor(): com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor = {

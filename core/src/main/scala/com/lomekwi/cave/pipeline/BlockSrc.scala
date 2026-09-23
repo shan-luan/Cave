@@ -19,7 +19,5 @@ class BlockSrc extends Source[Frame] {
 
   override def getDisplayName: String = ""
 
-  override def getFrameType: Class[Frame] = classOf[Frame]
-
   override def createTlSrcActor(): TlSrcActor = new TlBlockSrcActor(this)
 }

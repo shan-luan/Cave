@@ -41,7 +41,7 @@ class NodeRegistry {
   }
 
   def getCompatibleCount(source: Source[?]): Int = {
-    val frameType: Class[?] = source.getFrameType
+    val frameType: Class[?] = source.getType
     var count = 0
     for (nodeClass <- entries) {
       if (NodeRegistry.isCompatible(nodeClass, frameType)) count += 1
@@ -54,7 +54,7 @@ class NodeRegistry {
    * 非 Filter 的图内节点不参与匹配。
    */
   def createCompatible(source: Source[?], index: Int): Node = {
-    val frameType: Class[?] = source.getFrameType
+    val frameType: Class[?] = source.getType
     entries.iterator
       .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))
       .zipWithIndex

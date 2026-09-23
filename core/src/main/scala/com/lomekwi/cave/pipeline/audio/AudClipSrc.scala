@@ -44,9 +44,6 @@ class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
   override def getDuration: Long = {
     audRes.getDuration
   }
-  override def getFrameType: Class[AudFrame] = {
-    classOf[AudFrame]
-  }
   override def getDisplayName: String = {
     "音频源"
   }

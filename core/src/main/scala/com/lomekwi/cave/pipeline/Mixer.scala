@@ -5,6 +5,7 @@ import java.util
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import scala.reflect.ClassTag
 
 /**
  * 混合器节点：两个主输入端口 MixIn 与一个主输出端口 MixOut，两个输入与输出同为帧类型 T。
@@ -14,7 +15,7 @@ import scala.jdk.CollectionConverters.*
  * @author shan_luan_
  */
 @SerialVersionUID(1L)
-abstract class Mixer[T] extends Node with Serializable {
+abstract class Mixer[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
 
   private var mixInA: MixIn = uninitialized
   private var mixInB: MixIn = uninitialized
@@ -49,7 +50,7 @@ abstract class Mixer[T] extends Node with Serializable {
     port
   }
 
-  def getType: Class[T]
+  final def getType: Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
 
   def getMixInA: MixIn = mixInA
 

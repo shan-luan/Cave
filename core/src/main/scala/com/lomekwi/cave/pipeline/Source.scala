@@ -8,6 +8,7 @@ import com.lomekwi.cave.util.Duplicatable
 import java.io.Serializable
 import java.util
 import scala.compiletime.uninitialized
+import scala.reflect.ClassTag
 
 /**
  * 帧源。自身是 filter 链的头：
@@ -16,7 +17,7 @@ import scala.compiletime.uninitialized
  * @tparam T 帧类型
  */
 @SerialVersionUID(1L)
-abstract class Source[T <: Frame] extends Filter[T] with Serializable with Duplicatable[Source[T]] {
+abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] {
   @transient protected var frame: T = null.asInstanceOf[T]
   @transient private var srcActor: TlSrcActor = uninitialized
 
@@ -27,7 +28,7 @@ abstract class Source[T <: Frame] extends Filter[T] with Serializable with Dupli
     }
 
     override def getType: Class[? <: T] = {
-      getFrameType
+      classTag.runtimeClass.asInstanceOf[Class[? <: T]]
     }
   })
 
@@ -84,11 +85,6 @@ abstract class Source[T <: Frame] extends Filter[T] with Serializable with Dupli
     getDuration
   }
   def getDisplayName: String
-  def getFrameType: Class[T]
-
-  override def getType: Class[T] = {
-    getFrameType
-  }
   def onDuplicate(original: Source[?]): Unit = {
   }
   def getSourceActor: SourceActor = {

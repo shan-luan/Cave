@@ -5,6 +5,7 @@ import java.util
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
+import scala.reflect.ClassTag
 
 /**
  * 过滤器节点：单一 FilterIn/FilterOut，可挂载到某个 {@link Source} 的 filter 链上。
@@ -12,7 +13,7 @@ import scala.jdk.CollectionConverters.*
  * @author shan_luan_
  */
 @SerialVersionUID(1L)
-abstract class Filter[T] extends Node with Serializable {
+abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
 
   private var filterIn: FilterIn = uninitialized
   private var filterOut: FilterOut = uninitialized
@@ -42,7 +43,8 @@ abstract class Filter[T] extends Node with Serializable {
     }
     port
   }
-  def getType: Class[T]
+  final def getType: Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
+
   def getFilterIn: FilterIn = {
     filterIn
   }
