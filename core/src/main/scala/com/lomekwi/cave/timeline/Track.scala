@@ -6,14 +6,15 @@ import com.lomekwi.cave.pipeline.{BlockSrc, Frame, Source}
 import java.io.Serializable
 import java.util
 import java.util.Collections
-
 import scala.annotation.tailrec
 import scala.collection.immutable
+import scala.collection.immutable.TreeMap
 import scala.jdk.CollectionConverters.*
 
 /**
  * 轨道。轨道被元素（{@link Segment} 与 {@link Gap}）完整划分：任意时刻恰好由一个元素占据。
- * 区间是时间索引的键，源内偏移（origin）存在条目表里。
+ * 因为区间首尾相接，内容表只以区间起点为键，右端点取相邻条目的起点（末尾条目一直延伸到时间轴尽头）；
+ * 源内偏移（origin）与元素到起点的反查各存一张表。
  *
  * 不可变：每次编辑都返回新实例，原实例保持不变。内容表是持久化结构，新旧版本共享绝大部分节点，
  * 因此编辑成本只与改动路径有关，与轨道长度无关；旧版本可以安全地留给撤销栈与序列化快照。
@@ -22,8 +23,8 @@ import scala.jdk.CollectionConverters.*
 @SerialVersionUID(1L)
 final class Track private ( val timeline: Timeline,  val index: Int,
                            private val blockSource: BlockSrc,
-                           private val byTime: immutable.TreeMap[Interval, Element],
-                           private val placements: Map[Element, Interval],
+                           private val byTime: TreeMap[Long, Element],
+                           private val placements: Map[Element, Long],
                            private val origins: Map[Source[?], Long]) extends Serializable with java.lang.Iterable[Element] {
 
   /** 是否是占据 0 点左侧的阻挡片段。它只提供左边界，对遍历不可见。 */
@@ -39,7 +40,10 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   }
 
   /** 元素占用的区间；不在本轨道时返回 null。 */
-  def getRange(element: Element): Interval = placements.getOrElse(element, null)
+  def getRange(element: Element): Interval = placements.get(element) match {
+    case Some(lo) => Interval(lo, hiOf(byTime, lo))
+    case None => null
+  }
 
   /** 片段占用的区间；不在本轨道时返回 null。 */
   def getRange(source: Source[?]): Interval = getRange(Segment(source))
@@ -52,7 +56,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   def contains(source: Source[?]): Boolean = contains(Segment(source))
 
   /** 轨道长度：最后一个片段的终点；没有片段时为 0。 */
-  lazy val length: Long = byTime.iterator.collect { case (r, _: Segment) => r.hi }.maxOption.getOrElse(0L)
+  lazy val length: Long = byTime.iterator.collect { case (lo, _: Segment) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
 
   def getLength: Long = length
 
@@ -69,11 +73,28 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     if (shift == 0) (addOrThrow(source, r, origin), 0L) else (this, shift)
   }
 
-  /** 把源放到指定区间。origin 是源的 0 秒在时间轴中的位置。 */
+  /**
+   * 把源放到指定区间。origin 是源的 0 秒在时间轴中的位置。
+   * 要求区间空闲，因此落点所在的既有条目只可能是空隙：把该空隙按新片段切开。
+   */
   protected[timeline] def addOrThrow(source: Source[?], r: Interval, origin: Long): Track = {
     require(isFree(r, Collections.singleton[Source[?]](source)))
     val segment = Segment(source)
-    derived(byTime.updated(r, segment), placements.updated(segment, r), origins.updated(source, origin)).relayout(r.lo, r.hi)
+    val (hostLo, host) = lastAtOrBefore(byTime, r.lo)
+    val hostHi: Long = hiOf(byTime, hostLo)
+    var bt = byTime.removed(hostLo)
+    var pl = placements.removed(host)
+    if (hostLo < r.lo) {
+      val left = new Gap
+      bt = bt.updated(hostLo, left)
+      pl = pl.updated(left, hostLo)
+    }
+    if (r.hi < hostHi) {
+      val right = new Gap
+      bt = bt.updated(r.hi, right)
+      pl = pl.updated(right, r.hi)
+    }
+    derived(bt.updated(r.lo, segment), pl.updated(segment, r.lo), origins.updated(source, origin))
   }
 
   /** 移除源。源不在本轨道时原样返回本实例。 */
@@ -82,7 +103,9 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     if (r == null) {
       this
     } else {
-      derived(byTime.removed(r), placements.removed(Segment(source)), origins.removed(source)).relayout(r.lo, r.hi)
+      val gap = new Gap
+      derived(byTime.updated(r.lo, gap), placements.updated(gap, r.lo).removed(Segment(source)), origins.removed(source))
+        .relayout(r.lo, r.hi)
     }
   }
 
@@ -101,7 +124,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       val origin: Long = getOrigin(source)
       val right = source.duplicate()
       // 两半共用同一个 origin：源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
-      derived(byTime.removed(r), placements.removed(Segment(source)), origins)
+      remove(source)
         .addOrThrow(source, Interval(r.lo, time), origin)
         .addOrThrow(right, Interval(time, r.hi), origin)
     case _ => this
@@ -119,8 +142,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   protected[timeline] def setStart(source: Source[?], deltaTime: Long): Track = {
     val r = getRange(source)
     val origin = getOrigin(source)
-    derived(byTime.removed(r), placements.removed(Segment(source)), origins)
-      .addOrThrow(source, Interval(r.lo + deltaTime, r.hi), origin)
+    remove(source).addOrThrow(source, Interval(r.lo + deltaTime, r.hi), origin)
   }
 
   /** 裁切一组源的结束边缘（各自起点不变）。 */
@@ -135,56 +157,53 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   protected[timeline] def setEnd(source: Source[?], deltaTime: Long): Track = {
     val r = getRange(source)
     val origin = getOrigin(source)
-    derived(byTime.removed(r), placements.removed(Segment(source)), origins)
-      .addOrThrow(source, Interval(r.lo, r.hi + deltaTime), origin)
+    remove(source).addOrThrow(source, Interval(r.lo, r.hi + deltaTime), origin)
   }
 
   /**
-   * 重建 [lo, hi) 及其紧邻区域内的空隙，使 byTime 恢复完整划分。
-   * 范围向外扩到左右两侧紧邻的片段：删除元素后两侧的空隙才能合并成一个。
+   * 重建 [lo, hi) 及其紧邻区域内的空隙，使内容表恢复完整划分。
+   * 范围向外扩到左右两侧紧邻的片段：删掉元素后留下的空隙才能与相邻空隙合并成一个。
    * 要求 lo、hi 是元素区间的端点。幂等，重复调用结果不变。
    */
   private def relayout(lo: Long, hi: Long): Track = {
     val from: Long = lastBefore(byTime, lo) match {
       case null => -Long.MaxValue
-      case (r, _: Segment) => if (r.contains(lo)) r.lo else r.hi
-      case (r, _) => r.lo
+      case (k, _: Segment) => if (lo < hiOf(byTime, k)) k else hiOf(byTime, k)
+      case (k, _) => k
     }
     val to: Long = firstAtOrAfter(byTime, hi) match {
       case null => Long.MaxValue
-      case (r, _: Segment) => r.lo
-      case (r, _) => r.hi
+      case (k, _: Segment) => k
+      case (k, _) => hiOf(byTime, k)
     }
     if (from >= to) return this
-    val rng = Interval(from, to)
+    val region = byTime.rangeFrom(from).iterator.takeWhile(_._1 < to).toList
     var bt = byTime
     var pl = placements
-    for ((gapRange, gap) <- intersectingEntries(byTime, rng).collect { case (range, gap: Gap) => (range, gap) }.toList) {
-      bt = bt.removed(gapRange)
+    for (case (k, gap: Gap) <- region) {
+      bt = bt.removed(k)
       pl = pl.removed(gap)
     }
-    val segments = intersectingEntries(bt, rng).collect { case (segRange, _: Segment) => segRange }.toList
+    // 保留区间内的片段，用空隙补满它们之间与两端剩下的空间。片段的右端点取自原表，不受上面的删除影响
     var cursor: Long = from
-    for (r <- segments) {
-      if (cursor < r.lo) {
+    for (case (k, _: Segment) <- region) {
+      if (cursor < k) {
         val gap = new Gap
-        val gapRange = Interval(cursor, r.lo)
-        bt = bt.updated(gapRange, gap)
-        pl = pl.updated(gap, gapRange)
+        bt = bt.updated(cursor, gap)
+        pl = pl.updated(gap, cursor)
       }
-      cursor = r.hi
+      cursor = hiOf(byTime, k)
     }
     if (cursor < to) {
       val gap = new Gap
-      val gapRange = Interval(cursor, to)
-      bt = bt.updated(gapRange, gap)
-      pl = pl.updated(gap, gapRange)
+      bt = bt.updated(cursor, gap)
+      pl = pl.updated(gap, cursor)
     }
     derived(bt, pl, origins)
   }
 
-  private def derived(byTime: immutable.TreeMap[Interval, Element],
-                      placements: Map[Element, Interval],
+  private def derived(byTime: immutable.TreeMap[Long, Element],
+                      placements: Map[Element, Long],
                       origins: Map[Source[?], Long]): Track =
     new Track(timeline, index, blockSource, byTime, placements, origins)
 
@@ -357,7 +376,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 起点不小于 time 的首个片段，取其源；没有时返回 null。 */
   private[timeline] def sourceAtOrAfter(time: Long): Source[?] = {
-    byTime.iteratorFrom(Interval(time, time)).collectFirst { case (_, Segment(s)) => s }.orNull
+    byTime.rangeFrom(time).valuesIterator.collectFirst { case Segment(s) => s }.orNull
   }
 
   /** 起点小于 time 的最后一个片段，取其源；没有时返回 null。 */
@@ -367,7 +386,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     def scan(t: Long): Source[?] = lastBefore(byTime, t) match {
       case null => null
       case (_, Segment(s)) => s
-      case (gapRange, _: Gap) => scan(gapRange.lo)
+      case (lo, _: Gap) => scan(lo)
     }
     scan(time)
   }
@@ -400,7 +419,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 两条轨道相等，当且仅当轨道索引相同、条目逐项相同。
-   * 区间总是按起点从小到大迭代，因此两侧可以逐项对齐比较。
+   * 条目总是按起点从小到大迭代，因此两侧可以逐项对齐比较；起点两两相同也就意味着区间两两相同。
    */
   override def equals(o: Any): Boolean = {
     if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
@@ -413,7 +432,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
           val a = byTime.iterator.toIndexedSeq
           val b = other.byTime.iterator.toIndexedSeq
           a.size == b.size && a.zip(b).forall { case ((ia, ea), (ib, eb)) =>
-            ia.equals(ib) && entryEquals(ea, eb, other)
+            ia == ib && entryEquals(ea, eb, other)
           }
         }
       case _ => false
@@ -422,7 +441,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 两个条目相等：片段逐字段比源（类型/时长）连同 origin，空隙只比类型。
-   * 区间已经作为键比过了。逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
+   * 起点已经作为键比过了。逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
    */
   private def entryEquals(a: Element, b: Element, other: Track): Boolean = (a, b) match {
     case (Segment(sa), Segment(sb)) => Track.sourceEquals(sa, sb) && getOrigin(sa) == other.getOrigin(sb)
@@ -434,32 +453,46 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     Integer.hashCode(index)
   }
 
-  // 索引查询。做成接受内容表的函数，供 relayout 在候选状态上演练。
+  // 索引查询。都以内容表为参数。
 
-  /** 包含 time 的条目；没有时为空。 */
-  private def entryAt(bt: immutable.TreeMap[Interval, Element], time: Long): Option[(Interval, Element)] = {
-    bt.rangeTo(Interval(time, Long.MaxValue)).lastOption.filter(_._1.contains(time))
+  /** 包含 time 的条目；轨道之外为空。 */
+  private def entryAt(bt: immutable.TreeMap[Long, Element], time: Long): Option[(Interval, Element)] = {
+    bt.rangeTo(time).lastOption
+      .filter { case (lo, _) => time < hiOf(bt, lo) }
+      .map { case (lo, element) => (Interval(lo, hiOf(bt, lo)), element) }
   }
 
   /**
    * 与 range 有公共点的条目，按区间升序。轨道内区间互不重叠，因此按起点排序后这些条目是连续的一段。
    */
-  private def intersectingEntries(bt: immutable.TreeMap[Interval, Element], range: Interval): Iterator[(Interval, Element)] = {
+  private def intersectingEntries(bt: immutable.TreeMap[Long, Element], range: Interval): Iterator[(Interval, Element)] = {
     if (range.isEmpty) {
       Iterator.empty
     } else {
-      bt.rangeUntil(Interval(range.hi, range.hi)).iterator.dropWhile(_._1.hi <= range.lo)
+      bt.rangeUntil(range.hi).iterator
+        .map { case (lo, element) => (Interval(lo, hiOf(bt, lo)), element) }
+        .dropWhile(_._1.hi <= range.lo)
     }
   }
 
-  /** 起点不小于 time 的首个条目。 */
-  private def firstAtOrAfter(bt: immutable.TreeMap[Interval, Element], time: Long): (Interval, Element) = {
-    bt.iteratorFrom(Interval(time, time)).nextOption().orNull
+  /** 起点不小于 time 的首个条目；没有时返回 null。 */
+  private def firstAtOrAfter(bt: immutable.TreeMap[Long, Element], time: Long): (Long, Element) = {
+    bt.rangeFrom(time).iterator.nextOption().orNull
   }
 
-  /** 起点小于 time 的最后一个条目。 */
-  private def lastBefore(bt: immutable.TreeMap[Interval, Element], time: Long): (Interval, Element) = {
-    bt.rangeUntil(Interval(time, time)).lastOption.orNull
+  /** 起点小于 time 的最后一个条目；没有时返回 null。 */
+  private def lastBefore(bt: immutable.TreeMap[Long, Element], time: Long): (Long, Element) = {
+    bt.rangeUntil(time).lastOption.orNull
+  }
+
+  /** 起点不大于 time 的最后一个条目。时间轴被完整划分，因此对轨道内的时刻总是存在。 */
+  private def lastAtOrBefore(bt: immutable.TreeMap[Long, Element], time: Long): (Long, Element) = {
+    bt.rangeTo(time).lastOption.orNull
+  }
+
+  /** 以 lo 为起点的条目的右端点：下一个条目的起点；已是最后一个条目时延伸到时间轴尽头。 */
+  private def hiOf(bt: immutable.TreeMap[Long, Element], lo: Long): Long = {
+    bt.rangeFrom(lo).iterator.drop(1).nextOption().map(_._1).getOrElse(Long.MaxValue)
   }
 }
 
@@ -471,10 +504,10 @@ object Track {
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
     val blockSource = new BlockSrc
     val block = Segment(blockSource)
-    val byTime: immutable.TreeMap[Interval, Element] =
-      immutable.TreeMap[Interval, Element](Interval(-Long.MaxValue, 0L) -> block, Interval(0L, Long.MaxValue) -> new Gap)
+    val tail = new Gap
+    val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](-Long.MaxValue -> block, 0L -> tail)
     new Track(timeline, index, blockSource, byTime,
-      byTime.iterator.map { case (r, element) => element -> r }.toMap, Map[Source[?], Long](blockSource -> 0L))
+      Map[Element, Long](block -> -Long.MaxValue, tail -> 0L), Map[Source[?], Long](blockSource -> 0L))
   }
 
   /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */
