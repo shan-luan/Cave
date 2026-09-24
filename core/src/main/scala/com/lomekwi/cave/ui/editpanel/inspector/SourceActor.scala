@@ -8,7 +8,7 @@ import com.lomekwi.cave.ui.widget.Card
 import scala.jdk.CollectionConverters.*
 
 /**
- * 通用源信息卡：显示源名称、输入端口与信息输出端口（不含参与 filter 链的 FilterOut）。
+ * 通用源信息卡，显示源名称、输入端口与信息输出端口（不含参与 filter 链的 FilterOut）。
  * 类型 → widget 的映射由 {@link CardWidgetsRegistry} 维护。
  */
 final class SourceActor(private val source: Source[?]) extends Card(source.getDisplayName) {

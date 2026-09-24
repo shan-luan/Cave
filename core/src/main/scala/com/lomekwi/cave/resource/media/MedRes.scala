@@ -23,7 +23,7 @@ import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
- *媒体资源类，指代一个在磁盘中存在，占有编解码器的资源
+ * 指代一个在磁盘中存在、占有编解码器的资源。
  */
 @SerialVersionUID(1L)
 abstract class MedRes(private val path: String) extends Resource with Serializable {

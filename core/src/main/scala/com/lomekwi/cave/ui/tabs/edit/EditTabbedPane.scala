@@ -44,7 +44,6 @@ class EditTabbedPane extends AutoHideTabbedPane {
     contentHost
   }
 
-  //TODO:WIP
   /** 打开绑定到指定节点图的编辑器标签页；已为同一个节点图打开过则直接切换过去。 */
   def openNodeEditor(nodeGraph: NodeGraph): Unit = {
     val tabs = getTabs

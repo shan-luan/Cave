@@ -14,13 +14,13 @@ import scala.util.Using
 import UndoRedoRobustnessTest.*
 
 /**
- * 时间线撤销/重做系统的鲁棒性测试：
+ * 时间线撤销/重做系统的鲁棒性测试。
  * 新建时间线，随机生成大量模拟源、随机组合为组，再随机执行各种"拖拽"（整体移动、
  * 头/尾裁切、分割、删除、新增）。在随机时刻对时间线做序列化快照，继续随机操作后
  * 把快照之后产生的全部命令撤销掉，断言撤销回来的时间线与快照相等（再重做一遍，
  * 断言与操作后的状态相等）。
  *
- * 依赖 {@link Timeline#equals} / {@link Track#equals} 做结构化比较：按轨道、按区间
+ * 依赖 {@link Timeline#equals} / {@link Track#equals} 做结构化比较，按轨道、按区间
  * 逐项比对源（类型/时长、origin、区间），不依赖对象身份，因此能直接和深拷贝的
  * 快照对比。
  */
@@ -44,13 +44,10 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     groups.clear()
     val rnd = new Random(seed)
 
-    // 1. 随机创建大量源并摆放到不重叠的区间
     createRandomSources(rnd)
 
-    // 2. 随机把源组合为组
     randomGrouping(rnd)
 
-    // 3. 随机拖拽若干步（全部可撤销）
     val preSteps = 20 + rnd.nextInt(21)
     var i = 0
     while (i < preSteps) {
@@ -58,10 +55,9 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       i += 1
     }
 
-    // 4. 在随机时刻做序列化快照。
-    //    同时清空命令历史：快照之后每执行一步就压入一条命令，
-    //    之后"撤销同样的步数"即等价于撤销快照之后的全部操作，
-    //    避免跨快照边界时同类型命令在撤销栈顶合并而污染步数统计。
+    // 清空命令历史，快照之后每执行一步就压入一条命令，
+    // 之后"撤销同样的步数"即等价于撤销快照之后的全部操作，
+    // 避免跨快照边界时同类型命令在撤销栈顶合并而污染步数统计。
     val snapshot = timeline.duplicate()
     project.undoManager.clear()
 
@@ -75,7 +71,6 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     // 再拍一份快照，稍后用于验证 redo
     val afterOps = timeline.duplicate()
 
-    // 5. 撤销快照之后执行的全部命令，时间线应回到快照状态
     var undoCalls = 0
     while (project.undoManager.canUndo) {
       project.undoManager.undo()
@@ -84,7 +79,6 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     assertTrue(undoCalls > 0, "快照后至少应产生一条可撤销的命令")
     assertEquals(snapshot, timeline, "撤销后应恢复到序列化快照的状态")
 
-    // 6. 重做全部命令，时间线应回到操作后的状态
     var redoCalls = 0
     while (project.undoManager.canRedo) {
       project.undoManager.redo()
@@ -93,8 +87,6 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     assertEquals(afterOps, timeline, "重做后应恢复到操作后的状态")
     assertEquals(undoCalls, redoCalls, "撤销与重做的步数应一致")
   }
-
-  // 随机布局
 
   private def createRandomSources(rnd: Random): Unit = {
     val occupied: List[List[Interval]] = new ArrayList[List[Interval]]()
@@ -171,7 +163,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       if (project.currentVersion != before) return // 成功记录了一步
       attempt += 1
     }
-    forceChange(rnd) // 兜底：保证一定有可撤销的命令
+    forceChange(rnd) // 兜底，保证一定有可撤销的命令
   }
 
   private def performRandomOp(rnd: Random): Unit = {
@@ -187,7 +179,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  /** 与 UI 一致：拖拽锚点源时，其所在组的成员会一起被操作。 */
+  /** 与 UI 一致，拖拽锚点源时，其所在组的成员会一起被操作。 */
   private def dragMembers(source: Source[?]): List[Source[?]] = {
     val group = timeline.getGroup(source)
     if (group != null) List.copyOf(group) else List.of(source)
@@ -204,7 +196,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     if (minIdx + trackDelta < 0) trackDelta = 0
     val deltaTime = rnd.nextLong(UndoRedoRobustnessTest.SPAN / 2) - UndoRedoRobustnessTest.SPAN / 4
     Using.resource(timeline.record()) { h =>
-      // 与 UI 一致：时间与轨道维度各自截断到最大可用偏移后应用
+      // 与 UI 一致，时间与轨道维度各自截断到最大可用偏移后应用
       timeline.moveTime(members, deltaTime)
       timeline.moveTrack(members, trackDelta)
     }

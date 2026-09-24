@@ -22,7 +22,6 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   private[tlarea] var tl: TimelineView = uninitialized
   private[tlarea] var dragSide: DragSide = DragSide.NONE
 
-  // 拖拽状态
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
   private var dragOldStart: Long = 0L
@@ -188,7 +187,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
 
   // 拖拽会话由本 actor 驱动，actor 位置是模型的纯投影。
 
-  /** 按下时调用：快照参与拖拽的成员并开始录制 undo。 */
+  /** 按下时调用，快照参与拖拽的成员并开始录制 undo。 */
   private[tlarea] def initDrag(diffToActorX: Float, diffToActorY: Float): Unit = {
     val r = range
     dragOldStart = r.lo
@@ -199,7 +198,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     initDragMembers()
   }
 
-  /** 拖拽中：每次鼠标移动都会调用，按 dragSide 分派到三种分支（含吸附）。 */
+  /** 拖拽中，每次鼠标移动都会调用，按 dragSide 分派到三种分支（含吸附）。 */
   private[tlarea] def dragTo(diffToActorX: Float, diffToActorY: Float): Unit = {
     if (tl == null || dragSide == DragSide.NONE) return
 
@@ -247,7 +246,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     App.shortcutManager.isActive(TimelineView.Actions.SNAP_IGNORE)
   }
 
-  /** 裁切吸附：忽略 drag 成员与同轨道源，返回吸附后的时间并设置指示线。 */
+  /** 裁切吸附，忽略 drag 成员与同轨道源，返回吸附后的时间并设置指示线。 */
   private def snapResizeTime(rawTime: Long): Long = {
     if (snapDisabled()) {
       rawTime
@@ -268,7 +267,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     }
   }
 
-  /** 整体移动吸附：起点与终点各求吸附点，取更近者。 */
+  /** 整体移动吸附，起点与终点各求吸附点，取更近者。 */
   private def snapMoveTarget(target: Long, duration: Long): Long = {
     if (snapDisabled()) {
       target
@@ -300,7 +299,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     }
   }
 
-  /** 松手时调用：提交 undo 并清空会话。 */
+  /** 松手时调用，提交 undo 并清空会话。 */
   private[tlarea] def finishDrag(): Unit = {
     if (tl != null) {
       tl.dirty = true

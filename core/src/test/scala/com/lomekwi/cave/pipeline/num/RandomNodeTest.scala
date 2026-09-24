@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 验证随机数节点的取值语义：输出 [0,1) 的 Double，且每次求值都重新随机。
+ * 验证随机数节点的取值语义，输出 [0,1) 的 Double，且每次求值都重新随机。
  */
 class RandomNodeTest {
 

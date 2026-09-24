@@ -4,7 +4,6 @@ import com.badlogic.gdx.math.Vector2
 
 import java.io.ObjectInputStream
 
-//TODO:WIP
 @SerialVersionUID(1L)
 class NodeGraphFilter extends Filter[Object] {
   private final val innerSink: Sink = new Sink()

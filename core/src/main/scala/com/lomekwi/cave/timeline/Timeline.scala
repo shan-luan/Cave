@@ -18,11 +18,11 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 时间线。它是这套结构里唯一可变的地方：轨道本身不可变，编辑产生新版本，
+ * 时间线。它是这套结构里唯一可变的地方，轨道本身不可变，编辑产生新版本，
  * 由这里把当前版本指针换掉。所有读取方（界面、播放线程、导出）都从这里取最新版本，
  * 因此不需要对轨道加锁。
  *
- * 轨道存放在一个不可变向量里，替换整条向量后一次性发布：
+ * 轨道存放在一个不可变向量里，替换整条向量后一次性发布。
  * 跨轨道的批量操作（整组平移、换轨）因此对读者是原子的，不会看到只做了一半的中间态。
  */
 @SerialVersionUID(1L)
@@ -42,8 +42,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     recorded = new util.ArrayList[UndoableCommand]()
     workers = new util.HashMap[Integer, TrackWorker]()
   }
-
-  // 版本发布
 
   /** 把 index 处的轨道替换为新版本，并唤醒其轨迹线程。 */
   protected[timeline] def setTrack(index: Int, track: Track): Unit = publish(Seq(index -> track))
@@ -65,8 +63,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       getWorker(i).onTrackChanged()
     }
   }
-
-  // 编辑。轨道的编辑方法返回新版本，这里负责换上去并记账。
 
   def tryAdd(track: Track, source: Source[?], range: Interval, origin: Long): Long = {
     val current = getTrackOrCreate(track.index)
@@ -159,7 +155,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     applied
   }
 
-  /** 仅按时间平移源（轨道不变）。deltaTime 截断到最大可用量后应用：整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
+  /** 仅按时间平移源（轨道不变）。deltaTime 截断到最大可用量后应用，整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
   def moveTime(sources: util.Collection[Source[?]], deltaTime: Long): Long = {
     if (deltaTime == 0 || sources.isEmpty) return 0L
     val forward = deltaTime > 0
@@ -190,7 +186,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
   /**
    * 仅按轨道索引平移源（时间区间不变）。deltaTrack 会被同向截断到最大可用的
-   * 轨道偏移后应用：从请求的目标轨道起沿该方向逐条回退，落在第一条整组可放置的
+   * 轨道偏移后应用。从请求的目标轨道起沿该方向逐条回退，落在第一条整组可放置的
    * 轨道上（不反向、不超过请求量），保持组内成员相对间距。
    * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
    */
@@ -216,7 +212,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       beforeOf.getOrElseUpdate(fromIndex, tracks(fromIndex))
       beforeOf.getOrElseUpdate(toIndex, tracks(toIndex))
     }
-    // 先全部摘除再全部放回：源可能在成员之间换轨，摘除不完全会让放置被自己挡住
+    // 先全部摘除再全部放回。源可能在成员之间换轨，摘除不完全会让放置被自己挡住
     for ((s, fromIndex, _, _, _) <- moves.asScala) {
       working.put(fromIndex, currentOf(fromIndex).remove(s))
     }
@@ -245,7 +241,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）：
+   * 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。
    * 从请求量开始向 0 逐级回退探测，返回第一条可放置轨道对应的偏移。
    * 索引越大的轨道越可能为空，且 getTrack 会按需创建，因此正向探测总能找到落点；
    * 反向受 0 限制，找不到时返回 0（保持原位）。
@@ -354,7 +350,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 开始记录：此后到 {@link #submit()} 之间对时间轴的每次修改都会记录一条命令，
+   * 开始记录，此后到 {@link #submit()} 之间对时间轴的每次修改都会记录一条命令，
    * 最终在 close/submit 时合并为一条命令提交。
    */
   def record(): Timeline.Recording = {
@@ -437,7 +433,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 两个时间线相等，当且仅当每个轨道对应相等：按索引逐位比较轨道内容。
+   * 两个时间线相等，当且仅当每个轨道对应相等，按索引逐位比较轨道内容。
    * 由于 {@link #getTrack(int)} 会按需自动创建空轨道、而撤销不会删除轨道，
    * 比较时把"缺失"与"空轨道"视为相等（只允许尾部为空的差异）。
    */
@@ -499,10 +495,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 轨迹线程：按时间独立推进播放头，把帧投到项目事件总线上，
+   * 轨迹线程，按时间独立推进播放头，把帧投到项目事件总线上，
    * 并用 Phaser 与消费方（预览、音频混音）做握手。
    *
-   * 它按轨道索引唯一、由时间线持有：轨道换版本时线程、Phaser 与注册的消费方
+   * 它按轨道索引唯一、由时间线持有，轨道换版本时线程、Phaser 与注册的消费方
    * 都不必跟着换。内容则每轮从 {@link #tracks} 现取，拿到的一定是当前版本。
    */
   class TrackWorker(private val index: Int) extends Runnable {
@@ -636,7 +632,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 }
 
 object Timeline {
-  /** 记录句柄，用于 try-with-resources：close() 即 {@link #submit()}。 */
+  /** 记录句柄，用于 try-with-resources，close() 即 {@link #submit()}。 */
   trait Recording extends AutoCloseable {
     override def close(): Unit
   }

@@ -53,7 +53,6 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     pathRow.add(fileChooserField).growX()
     form.add(pathRow).growX().pad(4).row()
 
-    // 分辨率
     val dims: Array[Int] = detectDimensions()
     widthModel = new IntSpinnerModel(dims(0), 1, 7680, 1)
     heightModel = new IntSpinnerModel(dims(1), 1, 4320, 1)
@@ -65,7 +64,6 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     dimRow.add(new Spinner("", heightModel)).width(100)
     form.add(dimRow).growX().pad(4).row()
 
-    // 帧率
     fpsModel = new SimpleFloatSpinnerModel(30f, 1, 120, 1, 1)
 
     val fpsRow: VisTable = new VisTable()
@@ -74,7 +72,6 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     fpsRow.add(new VisLabel("fps")).padLeft(4)
     form.add(fpsRow).growX().pad(4).row()
 
-    // 码率
     bitrateModel = new SimpleFloatSpinnerModel(6f, 0.1f, 100, 0.5f, 1)
 
     val bitrateRow: VisTable = new VisTable()
@@ -87,12 +84,10 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     scrollPane.setFadeScrollBars(false)
     content.add(scrollPane).size(500, 280).row()
 
-    // 加载已保存的预设
     if (presetSet.current().width > 0) {
       applyOptions(presetSet.current())
     }
 
-    // 导出按钮
     addCloseButton()
 
     val exportBtn: VisTextButton = new VisTextButton(i18n("导出"))
@@ -106,7 +101,6 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     btnRow.add(exportBtn)
     content.add(btnRow).padTop(12).row()
 
-    // 预设
     val presetRow: VisTable = new VisTable()
     val presetLabel: VisLabel = new VisLabel(presetLabelText())
     val prevBtn: VisTextButton = new VisTextButton("-")

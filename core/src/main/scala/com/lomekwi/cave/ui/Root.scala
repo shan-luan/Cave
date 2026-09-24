@@ -102,7 +102,6 @@ class Root extends ApplicationListener {
           App.copyManager.copy()
           true
         } else if (App.shortcutManager.isActive(TimelineView.Actions.UNDO)) {
-          // 撤销 / 重做
           project.undoManager.undo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()
           true

@@ -183,7 +183,7 @@ trait PortActor extends Actor with PortHolder {
   }
 
   /**
-   * 绘制坐标系：绘制时批次所在的坐标系。分组默认关闭变换，改为把自身 x/y 折算进子 actor，
+   * 绘制坐标系，即绘制时批次所在的坐标系。分组默认关闭变换，改为把自身 x/y 折算进子 actor，
    * 因此坐标系由更上层第一个开启变换的祖先决定。
    */
   private def drawingFrame: Group = {

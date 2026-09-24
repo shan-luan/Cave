@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 验证节点注册表的两条消费路径：滤镜链菜单只列 Filter，节点编辑器菜单列全部节点。
+ * 验证节点注册表的两条消费路径，滤镜链菜单只列 Filter，节点编辑器菜单列全部节点。
  */
 class NodeRegistryTest {
 

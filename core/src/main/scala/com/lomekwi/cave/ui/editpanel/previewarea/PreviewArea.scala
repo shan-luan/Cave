@@ -28,15 +28,12 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-/**
- * 负责渲染和显示预览内容
- */
 class PreviewArea(project0: Project) extends Group with Focusable {
 
   private final val project: Project = project0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.getCanvas
-  //此列表仅应在主线程读取.
+  // 此列表仅应在主线程读取。
   private final val frames: mutable.ArrayBuffer[Frame] = mutable.ArrayBuffer.empty[Frame]
   private var refViewportArea: Float = -1f
   private var lastWidth: Float = 0

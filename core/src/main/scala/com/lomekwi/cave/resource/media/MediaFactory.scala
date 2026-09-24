@@ -31,7 +31,6 @@ class MediaFactory {
       throw new IllegalArgumentException("Unsupported mime type: " + mimeType)
     }
 
-    // 视频文件如果包含音频流，额外创建 AudRes
     if (typeWildcard.equals("video/*") && hasAudioStream(path)) {
       List(constructor(path), new AudRes(path))
     } else {
@@ -57,9 +56,6 @@ class MediaFactory {
 }
 
 object MediaFactory {
-  /**
-   * 轻量探测文件是否包含音频流
-   */
   private def hasAudioStream(path: String): Boolean = {
     val g = new FFmpegFrameGrabber(path)
     try {

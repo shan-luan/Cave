@@ -15,7 +15,7 @@ object Units {
   final val DAY = 24 * HOUR
 
   /**
-   * Nice Scale 算法：把原始区间值舍入到最近的"整齐"数（1、2 或 5 × 10^n），
+   * Nice Scale 算法，把原始区间值舍入到最近的"整齐"数（1、2 或 5 × 10^n），
    * 适合作为坐标轴刻度间距。
    */
   def niceScale(raw: Long): Long = {
@@ -31,7 +31,7 @@ object Units {
   }
 
   /**
-   * niceScale 的浮点版本：把原始区间舍入到最近的"整齐"数（1、2、5、10 × 10^n）。
+   * niceScale 的浮点版本，把原始区间舍入到最近的"整齐"数（1、2、5、10 × 10^n）。
    */
   def niceInterval(raw: Float): Float = {
     val mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-10f)))).toFloat

@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
- * 混合器节点：两个主输入端口 MixIn 与一个主输出端口 MixOut，两个输入与输出同为帧类型 T。
+ * 混合器节点，两个主输入端口 MixIn 与一个主输出端口 MixOut，两个输入与输出同为帧类型 T。
  *
  * <p>混合器有两条主输入，不参与 {@link FilterList} 的单向链，只用于节点图内部。</p>
  *

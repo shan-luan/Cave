@@ -6,7 +6,6 @@ import com.badlogic.gdx.math.Vector2
 
 import scala.jdk.CollectionConverters.*
 
-//TODO:WIP
 @SerialVersionUID(1L)
 class NodeGraph extends util.AbstractSet[Node] with Serializable {
   private val delegate: util.Set[Node] = new util.HashSet[Node]()

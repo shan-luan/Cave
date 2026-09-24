@@ -7,7 +7,7 @@ import scala.compiletime.uninitialized
 
 /**
  * 有序的 filter 链表。链表本身是 {@code Source}（作为头）与各 {@link Filter} 组成的
- * 节点链，并维护相邻端口连接：
+ * 节点链，并维护相邻端口连接。
  *
  * <pre>
  * source.FilterOut → f1.FilterIn → f1.FilterOut → f2.FilterIn → ...
@@ -34,8 +34,6 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   headEntry.next = tailEntry
   tailEntry.prev = headEntry
 
-  // AbstractSequentialList 接口
-
   override def size(): Int = {
     _size
   }
@@ -47,10 +45,8 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     new FilterListIterator(index)
   }
 
-  // 链表结构
-
   /**
-   * 把 filter 插入到 succ 之前，并维护连接：
+   * 把 filter 插入到 succ 之前，并维护连接。
    * 断开 pred.out → succ.in，改为 pred.out → filter.in → filter.out → succ.in。
    * pred 可能为 headEntry（此时 pred.out = head.FilterOut），
    * succ 可能为 tailEntry（此时 succ.in = tail.FilterIn）。
@@ -139,8 +135,6 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     }
     x
   }
-
-  // List 变体（保持连接）
 
   override def add(filter: Filter[? >: T]): Boolean = {
     linkBefore(filter, tailEntry)

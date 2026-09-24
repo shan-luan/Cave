@@ -88,7 +88,7 @@ class TextSrc(text: String) extends Source[TextFrame] {
       initialized = false
     }
     if (font != null && generatedFontSize != getFontSize) {
-      // spinner 等外部直接改了端口值：丢弃旧字体，重建帧
+      // spinner 等外部直接改了端口值，丢弃旧字体并重建帧
       font = null
       initialized = false
     }

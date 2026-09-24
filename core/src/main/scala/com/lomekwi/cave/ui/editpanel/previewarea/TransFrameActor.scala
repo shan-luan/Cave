@@ -371,7 +371,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       case Gizmo.Handle.ROTATE =>
     }
 
-    // 锚点在 stage 坐标下的固定位置
     TransFrameActor.tmp1.set(gizmoAnchorLocalX, gizmoAnchorLocalY)
     localToStageCoordinates(TransFrameActor.tmp1)
     gizmoAnchorStageX = TransFrameActor.tmp1.x
@@ -460,7 +459,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val scaleChangeW = newScaleX / gizmoStartScaleX
     val scaleChangeH = newScaleY / gizmoStartScaleY
 
-    // 锚点补偿（画布空间）：锚点相对中心偏移随缩放变化，扣掉中心位移后保持锚点不动
+    // 锚点补偿（画布空间）。锚点相对中心偏移随缩放变化，扣掉中心位移后保持锚点不动
     val halfW = gizmoStartW * 0.5f
     val halfH = gizmoStartH * 0.5f
     val compX = (scaleChangeW - 1f) * (halfW - gizmoAnchorLocalX)
@@ -913,7 +912,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       val handleHalf = 6f
       val rotateRadius = 5f
 
-      // 选中边框
       val bl = localToStageCoordinates(TransFrameActor.tmp1.set(0f, 0f))
       val br = localToStageCoordinates(TransFrameActor.tmp2.set(w, 0f))
       val tr = localToStageCoordinates(TransFrameActor.tmp3.set(w, h))
@@ -923,7 +921,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       sd.line(tr.x, tr.y, tl.x, tl.y, Colors.FRAME_OUTLINE, 2f)
       sd.line(tl.x, tl.y, bl.x, bl.y, Colors.FRAME_OUTLINE, 2f)
 
-      // gizmo 线条
       var a = localToStageCoordinates(TransFrameActor.tmp1.set(0f, 0f))
       var b = localToStageCoordinates(TransFrameActor.tmp2.set(w, 0f))
       sd.line(a.x, a.y, b.x, b.y, Colors.FRAME_OUTLINE, lineWidth)
@@ -951,7 +948,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       sd.line(a.x, a.y, stickX, stickY, Colors.ACCENT, lineWidth)
       sd.filledCircle(stickX, stickY, rotateRadius, Colors.ACCENT)
 
-      // 控制点
       for (handle <- Gizmo.Handle.values) {
         if (handle != Gizmo.Handle.ROTATE) {
           val hx: Float = handle match {

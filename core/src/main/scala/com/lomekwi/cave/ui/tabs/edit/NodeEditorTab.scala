@@ -6,7 +6,6 @@ import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.node.NodeEditorView
 import com.lomekwi.cave.util.i18n.I18N
 
-//TODO:WIP
 class NodeEditorTab(nodeGraph0: NodeGraph) extends Tab(false, true) {
   private final val nodeGraph: NodeGraph = nodeGraph0
   private final val content: Table = new NodeEditorView(nodeGraph)

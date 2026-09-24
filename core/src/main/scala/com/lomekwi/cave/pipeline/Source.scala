@@ -11,7 +11,7 @@ import scala.compiletime.uninitialized
 import scala.reflect.ClassTag
 
 /**
- * 帧源。自身是 filter 链的头：
+ * 帧源。自身是 filter 链的头，
  * 提供 FilterOut（链起点，输出 generate() 生成的帧）。
  *
  * @tparam T 帧类型
@@ -21,7 +21,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   @transient protected var frame: T = null.asInstanceOf[T]
   @transient private var srcActor: TlSrcActor = uninitialized
 
-  /** 链头输出端口：输出本源生成的最新帧，供第一个 filter 消费。 */
+  /** 链头输出端口，输出本源生成的最新帧供第一个 filter 消费。 */
   final val headOut: FilterOut = addOutPort(new FilterOut {
     override def getData: T = {
       frame
@@ -41,7 +41,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   def sync(time: Long, track: Track): Unit
 
   /**
-   * 获取指定时间的产品：生成帧后沿 filter 链（端口连接）求值，
+   * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
    * 返回链上最后一个 filter 的输出；无 filter 时返回原生帧。
    * @param time 源内时间
    * @return 产品
@@ -53,14 +53,11 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   }
 
   /**
-   * 播放头离开本源的片段时调用：自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
+   * 播放头离开本源的片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
    * @param time 源内时间，即离开时播放头所在的片段内位置
    */
   def onStepOut(time: Long, track: Track): Unit = {}
 
-  /**
-   * 建议进行预取数据的耗时操作。
-   */
   def prefetch(): Unit = {}
 
   protected def generate(time: Long, track: Track): T

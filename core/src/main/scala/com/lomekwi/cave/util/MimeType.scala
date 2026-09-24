@@ -9,7 +9,6 @@ import java.nio.file.Path
 object MimeType {
 
   private final val extensionToMimeType: Map[String, String] = Map(
-    // 视频格式
     "mkv" -> "video/x-matroska",
     "mp4" -> "video/mp4",
     "avi" -> "video/x-msvideo",
@@ -21,7 +20,6 @@ object MimeType {
     "mpeg" -> "video/mpeg",
     "mpg" -> "video/mpeg",
     "3gp" -> "video/3gpp",
-    // 图片格式
     "png" -> "image/png",
     "jpg" -> "image/jpeg",
     "jpeg" -> "image/jpeg",
@@ -30,7 +28,6 @@ object MimeType {
     "webp" -> "image/webp",
     "tiff" -> "image/tiff",
     "tif" -> "image/tiff",
-    // 音频格式
     "mp3" -> "audio/mpeg",
     "wav" -> "audio/wav",
     "flac" -> "audio/flac",
@@ -38,7 +35,6 @@ object MimeType {
     "ogg" -> "audio/ogg",
     "wma" -> "audio/x-ms-wma",
     "m4a" -> "audio/x-m4a",
-    // Cave 项目文件
     "cave" -> "application/x-cave-project"
   )
 
@@ -53,18 +49,15 @@ object MimeType {
     } else {
       val path: Path = file.toPath
 
-      // 首先尝试使用系统检测
       val systemMimeType = try {
         Files.probeContentType(path)
       } catch {
-        // 系统检测失败，继续使用扩展名检测
         case _: Exception => null
       }
 
       if (systemMimeType != null && !systemMimeType.isEmpty) {
         systemMimeType
       } else {
-        // 使用文件扩展名进行匹配
         val fileName = file.getName.toLowerCase()
         val lastDotIndex = fileName.lastIndexOf('.')
         if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {

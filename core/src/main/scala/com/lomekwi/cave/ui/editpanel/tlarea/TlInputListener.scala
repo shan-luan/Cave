@@ -9,7 +9,7 @@ import com.badlogic.gdx.Input.Keys.*
 
 import com.lomekwi.cave.app.App
 
-/** 时间线空白区输入监听器：处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
+/** 时间线空白区输入监听器，处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
 class TlInputListener(private final val timelineView: TimelineView) extends InputListener {
 
   override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {

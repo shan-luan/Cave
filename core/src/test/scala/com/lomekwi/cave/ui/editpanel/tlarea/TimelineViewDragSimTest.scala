@@ -20,12 +20,12 @@ import java.lang.reflect.Field
 import TimelineViewDragSimTest.*
 
 /**
- * 用真实 TlSrcActor 拖拽会话模拟"鼠标拖拽"交互，验证重构后的 UI 拖拽逻辑：
+ * 用真实 TlSrcActor 拖拽会话模拟"鼠标拖拽"交互，验证 UI 拖拽逻辑。
  * 1) 小幅拖拽不应被放大成大幅移动；
  * 2) 拖拽边缘裁切时不该改变源内偏移 origin；
- * 3) act() 重建是模型的纯投影：重建不得改动模型，模型状态必须稳定。
+ * 3) act() 重建是模型的纯投影，重建不得改动模型，模型状态必须稳定。
  *
- * 说明：TimelineView 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
+ * TimelineView 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
  * 在 headless 测试里不便构造。因此这里用 Objenesis 绕过构造函数实例化，
  * 再反射填入拖拽逻辑真正依赖的模型/视图字段，其余 UI 保持空。
  * actor 不挂 parent（Group 内部 children 未初始化），直接注入 TimelineView 引用，
@@ -81,7 +81,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor
   }
 
-  /** 模拟 act() 重建：actor 纯粹按模型摆位，不得改动模型。 */
+  /** 模拟 act() 重建，actor 纯粹按模型摆位，不得改动模型。 */
   private def rebuildFromModel(actor: TlSrcActor): Unit = {
     val src = actor.getSource
     val track = timeline.findTrackOf(src)
@@ -90,7 +90,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
   }
 
-  // 中部整体移动：小幅拖拽不应被放大
+  // 中部整体移动，小幅拖拽不应被放大
 
   @Test
   def middleDragMovesBySameDeltaAndIsStableAndUndoable(): Unit = {
@@ -106,11 +106,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalX = actor.getX + firstX + 100f // 右移 100px
     val mouseLocalY = actor.getY + firstY
 
-    // 事件驱动一次：应恰好移动 100_000µs
+    // 事件驱动一次，应恰好移动 100_000µs
     actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
     assertEquals(Interval(100_000L, 1000_000L + 100_000L), t0.getRange(s))
 
-    // 鼠标不动，多帧重建（纯投影）：模型与 origin 必须稳定
+    // 鼠标不动，多帧重建（纯投影），模型与 origin 必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
@@ -126,11 +126,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(5_000_000L, t0.getOrigin(s))
   }
 
-  // 竖直方向整个移动：拖动一小段距离不应跳到极远轨道
+  // 竖直方向整个移动，拖动一小段距离不应跳到极远轨道
 
   @Test
   def middleDragVerticalLandsOnMouseTrackAndIsStable(): Unit = {
-    // 用 yToTrackIndex 反推：鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
+    // 用 yToTrackIndex 反推，鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
     def t0 = timeline.getTrackOrCreate(0)
     timeline.getTrackOrCreate(3) // 确保轨道存在
     val s = newSrc(1000_000L)
@@ -149,7 +149,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     // 应恰好落到轨道 2，而不是越跳越远
     assertEquals(2, timeline.findTrackOf(s).index)
 
-    // 鼠标不动，多帧重建（纯投影）：轨道必须稳定
+    // 鼠标不动，多帧重建（纯投影），轨道必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
@@ -158,7 +158,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
   }
 
-  // 边缘裁切：小幅拖拽不应放大，且不改变 origin
+  // 边缘裁切，小幅拖拽不应放大，且不改变 origin
 
   @Test
   def frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable(): Unit = {
@@ -174,7 +174,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(Interval(50_000L, 1000_000L), t0.getRange(s))
     assertEquals(0, t0.getOrigin(s))
 
-    // 鼠标不动（停在裁切后的新起点 absX(50000)），多帧重建：起点与 origin 都必须稳定
+    // 鼠标不动（停在裁切后的新起点 absX(50000)），多帧重建，起点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
@@ -198,7 +198,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(Interval(0L, 1000_000L + 60_000L), t0.getRange(s))
     assertEquals(5_000_000L, t0.getOrigin(s))
 
-    // 鼠标不动，多帧重建：终点与 origin 都必须稳定
+    // 鼠标不动，多帧重建，终点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)

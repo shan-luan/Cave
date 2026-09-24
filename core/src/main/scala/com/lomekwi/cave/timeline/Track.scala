@@ -12,11 +12,11 @@ import scala.collection.immutable.TreeMap
 import scala.jdk.CollectionConverters.*
 
 /**
- * 轨道。轨道被元素（{@link Segment} 与 {@link Gap}）完整划分：任意时刻恰好由一个元素占据。
+ * 轨道。轨道被元素（{@link Segment} 与 {@link Gap}）完整划分，任意时刻恰好由一个元素占据。
  * 因为区间首尾相接，内容表只以区间起点为键，右端点取相邻条目的起点（末尾条目一直延伸到时间轴尽头）；
  * 源内偏移（origin）与元素到起点的反查各存一张表。
  *
- * 不可变：每次编辑都返回新实例，原实例保持不变。内容表是持久化结构，新旧版本共享绝大部分节点，
+ * 不可变。每次编辑都返回新实例，原实例保持不变。内容表是持久化结构，新旧版本共享绝大部分节点，
  * 因此编辑成本只与改动路径有关，与轨道长度无关；旧版本可以安全地留给撤销栈与序列化快照。
  * 当前版本由 {@link Timeline#setTrack} 发布，读取方永远从 {@link Timeline#getTrack} 取最新版本。
  */
@@ -55,16 +55,14 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   def contains(source: Source[?]): Boolean = contains(Segment(source))
 
-  /** 轨道长度：最后一个片段的终点；没有片段时为 0。 */
+  /** 最后一个片段的终点；没有片段时为 0。 */
   lazy val length: Long = byTime.iterator.collect { case (lo, _: Segment) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
 
   def getLength: Long = length
 
-  // 编辑。全部返回新实例，原实例不变。
-
   /**
    * 尝试在轨道中加入一个源。仅当可加入时才会被真的加入。
-   * @return `(新轨道, 最大可用偏移量)`：偏移量为 0 表示目标区间空闲、已按原位加入，返回的轨道是加入后的版本；
+   * @return `(新轨道, 最大可用偏移量)`，偏移量为 0 表示目标区间空闲、已按原位加入，返回的轨道是加入后的版本；
    *         非 0 表示被占用、未加入，返回的是原轨道，且偏移量是能放下该区间的最近偏移（调用方可偏移这么多后再试）。
    *         此语义专用于放置/粘贴。
    */
@@ -75,7 +73,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 把源放到指定区间。origin 是源的 0 秒在时间轴中的位置。
-   * 要求区间空闲，因此落点所在的既有条目只可能是空隙：把该空隙按新片段切开。
+   * 要求区间空闲，因此落点所在的既有条目只可能是空隙。把该空隙按新片段切开。
    */
   protected[timeline] def addOrThrow(source: Source[?], r: Interval, origin: Long): Track = {
     require(isFree(r, Collections.singleton[Source[?]](source)))
@@ -123,7 +121,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     case (r, Segment(source)) if time > r.lo && time < r.hi =>
       val origin: Long = getOrigin(source)
       val right = source.duplicate()
-      // 两半共用同一个 origin：源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
+      // 两半共用同一个 origin，源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
       remove(source)
         .addOrThrow(source, Interval(r.lo, time), origin)
         .addOrThrow(right, Interval(time, r.hi), origin)
@@ -162,7 +160,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 重建 [lo, hi) 及其紧邻区域内的空隙，使内容表恢复完整划分。
-   * 范围向外扩到左右两侧紧邻的片段：删掉元素后留下的空隙才能与相邻空隙合并成一个。
+   * 范围向外扩到左右两侧紧邻的片段，删掉元素后留下的空隙才能与相邻空隙合并成一个。
    * 要求 lo、hi 是元素区间的端点。幂等，重复调用结果不变。
    */
   private def relayout(lo: Long, hi: Long): Track = {
@@ -206,8 +204,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
                       placements: Map[Element, Long],
                       origins: Map[Source[?], Long]): Track =
     new Track(timeline, index, blockSource, byTime, placements, origins)
-
-  // 探测
 
   private def getShift(r: Interval): Long = pickShift(shiftScan(r, true), shiftScan(r, false))
 
@@ -288,12 +284,11 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
   }
 
-  /** 拉伸头时允许的最小起点：源的 0 秒不能越过时间轴 0 点。 */
+  /** 拉伸头时允许的最小起点，源的 0 秒不能越过时间轴 0 点。 */
   private def minStartOf(source: Source[?]): Long = {
     Math.max(0, getOrigin(source))
   }
 
-  /** 拉伸尾时允许的最大终点。 */
   private def maxEndOf(source: Source[?]): Long = {
     val duration = source.getDuration
     if (duration == Long.MaxValue) Long.MaxValue else getOrigin(source) + duration
@@ -319,7 +314,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   }
 
   /**
-   * 探测整组沿指定方向可平移多少：在摘掉整组之后的布局上看每个成员的最近障碍，取全体最严者。
+   * 探测整组沿指定方向可平移多少，在摘掉整组之后的布局上看每个成员的最近障碍，取全体最严者。
    * 整组刚性平移，成员之间不会互相成为障碍，因此直接在不含本组的版本上量即可。
    * 左移还受时间轴 0 限制（由 0 点左侧的阻挡片段表达）。
    */
@@ -340,8 +335,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       })
       .reduce(noBlock, Track.tighter)
   }
-
-  // 查询
 
   /** 包含 time 的元素。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
   def get(time: Long): Element = entryAt(byTime, time)._2
@@ -407,7 +400,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     source.sync(time - getOrigin(source), this)
   }
 
-  /** 轨迹线程：按轨道索引唯一，由 {@link Timeline} 持有，故轨道换版本时它保持不变。 */
+  /** 轨迹线程，按轨道索引唯一，由 {@link Timeline} 持有，故轨道换版本时它保持不变。 */
   def getWorker: timeline.TrackWorker = timeline.getWorker(index)
 
   def getTimeline: Timeline = timeline
@@ -440,7 +433,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   }
 
   /**
-   * 两个条目相等：片段逐字段比源（类型/时长）连同 origin，空隙只比类型。
+   * 两个条目相等，片段逐字段比源（类型/时长）连同 origin，空隙只比类型。
    * 起点已经作为键比过了。逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
    */
   private def entryEquals(a: Element, b: Element, other: Track): Boolean = (a, b) match {
@@ -452,8 +445,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   override def hashCode(): Int = {
     Integer.hashCode(index)
   }
-
-  // 索引查询。都以内容表为参数。
 
   /** 包含 time 的条目。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
   private def entryAt(bt: immutable.TreeMap[Long, Element], time: Long): (Interval, Element) = {
@@ -489,7 +480,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     bt.rangeTo(time).lastOption.orNull
   }
 
-  /** 以 lo 为起点的条目的右端点：下一个条目的起点；已是最后一个条目时延伸到时间轴尽头。 */
+  /** 以 lo 为起点的条目的右端点，下一个条目的起点；已是最后一个条目时延伸到时间轴尽头。 */
   private def hiOf(bt: immutable.TreeMap[Long, Element], lo: Long): Long = {
     bt.rangeFrom(lo).iterator.drop(1).nextOption().map(_._1).getOrElse(Long.MaxValue)
   }
@@ -497,7 +488,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
 object Track {
   /**
-   * 新建空轨道：0 点左侧是阻挡片段（地基），0 点右侧是无界空隙，
+   * 新建空轨道，0 点左侧是阻挡片段（地基），0 点右侧是无界空隙，
    * 因此时间轴被元素完整划分，拖拽与裁切不必再单独判断左边界。
    */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {

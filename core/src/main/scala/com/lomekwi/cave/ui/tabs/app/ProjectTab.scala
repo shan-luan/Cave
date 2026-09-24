@@ -44,7 +44,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
     setDirty(project.isDirty)
   }
 
-  //FIXME：当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
+  //FIXME 当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
   override def save(): Boolean = {
     if (project.getSavePath == null) {
       val conf = new NativeFileChooserConfiguration()

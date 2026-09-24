@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
- * 剪贴板模板。关键在于模板必须自带位置与组结构：
+ * 剪贴板模板。关键在于模板必须自带位置与组结构，
  * 选中集只描述"当前时间线里的哪些对象"，而模板要能脱离原对象、在时间轴任意位置重放。
  */
 class PasteTemplateTest extends GdxTestBase {
@@ -53,7 +53,7 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(Interval(500, 600), eb.range)
     assertEquals(2000, eb.origin)
 
-    // 组结构在模板里保留：成员共享同一个模板组
+    // 组结构在模板里保留，成员共享同一个模板组
     assertTrue(ea.group != null)
     assertSame(ea.group, eb.group)
     assertEquals(2, ea.group.size())
@@ -91,7 +91,6 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(first.getEntries.get(1).range, second.getEntries.get(1).range)
     assertEquals(first.getEntries.get(1).origin, second.getEntries.get(1).origin)
 
-    // 组也是新建的，结构一致
     assertNotSame(first.getEntries.get(0).group, second.getEntries.get(0).group)
     assertSame(second.getEntries.get(0).group, second.getEntries.get(1).group)
     assertEquals(2, second.getEntries.get(0).group.size())

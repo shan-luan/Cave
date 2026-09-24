@@ -15,15 +15,15 @@ import scala.util.Using
 
 /**
  * 拖拽 API 的模型级测试。
- * 目标：验证截断式（clamp）的探测/应用语义：执行方法一次调用即把 deltaTime
+ * 目标为验证截断式（clamp）的探测/应用语义，执行方法一次调用即把 deltaTime
  * 同向截断到最大可用偏移量并应用，返回实际应用的偏移量（0 = 未移动）。
  *
- * 覆盖：
+ * 覆盖如下。
  *  - add/remove 基础放置与覆盖
- *  - move（整体平移）：无阻碍时精确落位 + origin 同步；有阻碍时截断到与障碍贴合或原地不动
- *  - setStart/setEnd（头/尾裁切）：只动对应端点；越界/受阻时截断到边界
- *  - split：一分为二，两侧区间正确
- *  - Undo/redo：统一经 UndoManager 还原/重放
+ *  - move（整体平移），无阻碍时精确落位 + origin 同步；有阻碍时截断到与障碍贴合或原地不动
+ *  - setStart/setEnd（头/尾裁切），只动对应端点；越界/受阻时截断到边界
+ *  - split，一分为二，两侧区间正确
+ *  - Undo/redo，统一经 UndoManager 还原/重放
  */
 class TrackDragTest extends GdxTestBase {
 
@@ -53,8 +53,6 @@ class TrackDragTest extends GdxTestBase {
     case Segment(source) => source
     case _: Gap => null
   }
-
-  // 添加 / 移除
 
   @Test
   def freshTrackIsEmptyCoveredBySingleGap(): Unit = {
@@ -154,8 +152,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(0, timeline.getLength)
   }
 
-  // move（整体平移）
-
   @Test
   def moveSingleSourceByTimePreservesDurationAndOffsetsOrigin(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
@@ -179,7 +175,6 @@ class TrackDragTest extends GdxTestBase {
 
     val applied: Int = timeline.moveTrack(List.of(s), 1)
 
-    // 返回实际落位的轨道偏移
     assertEquals(1, applied)
     assertSame(t1, timeline.findTrackOf(s))
     assertEquals(TrackDragTest.rng(0, 100), t1.getRange(s))
@@ -213,7 +208,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.rng(50, 150))
     place(t0, b, TrackDragTest.rng(200, 300))
 
-    // 锚定 b 拖到 0（整体偏移 -200）：组内更靠前的 a 起点 50 只能到 0，
+    // 锚定 b 拖到 0（整体偏移 -200），组内更靠前的 a 起点 50 只能到 0，
     // 整组偏移被夹到 -50，a/b 都不能越过时间轴 0
     val applied: Long = timeline.moveTime(List.of(a, b), -200)
 
@@ -231,7 +226,7 @@ class TrackDragTest extends GdxTestBase {
     // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会撞上它
     place(t0, obstacle, TrackDragTest.rng(100, 1100))
 
-    // 右侧紧贴障碍：最大可用偏移为 0，完全无法移动
+    // 右侧紧贴障碍，最大可用偏移为 0，完全无法移动
     val applied: Long = timeline.moveTime(List.of(mover), 150)
 
     assertEquals(0, applied)
@@ -247,7 +242,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, mover, TrackDragTest.rng(0, 100))
     place(t0, obstacle, TrackDragTest.rng(300, 400))
 
-    // 请求 +250：最多移到与障碍贴合（+200），一次调用直接应用
+    // 请求 +250，最多移到与障碍贴合（+200），一次调用直接应用
     val applied: Long = timeline.moveTime(List.of(mover), 250)
     assertEquals(200, applied)
     assertEquals(TrackDragTest.rng(200, 300), t0.getRange(mover))
@@ -267,7 +262,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, mover, TrackDragTest.rng(0, 100))
     place(t1, obstacle, TrackDragTest.rng(0, 1000)) // 目标轨道同区间被占据
 
-    // 目标轨道被占据且方向上无更近的可落点：偏移截断为 0，保持原位
+    // 目标轨道被占据且方向上无更近的可落点，偏移截断为 0，保持原位
     val applied: Int = timeline.moveTrack(List.of(mover), 1)
 
     assertEquals(0, applied)
@@ -275,8 +270,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(mover))
     assertSame(obstacle, segAt(t1, 50))
   }
-
-  // setStart / setEnd（头/尾裁切）
 
   @Test
   def setStartSlidesFrontKeepsEndFixed(): Unit = {
@@ -289,7 +282,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(30, applied)
     assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
     assertSame(t0, timeline.findTrackOf(s))
-    // 裁切不改 origin
     assertEquals(0, t0.getOrigin(s))
   }
 
@@ -325,7 +317,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, obstacle, TrackDragTest.rng(0, 100)) // 左侧障碍占住 [0,100)
     place(t0, s, TrackDragTest.rng(100, 200))      // 把 s 起点往左推到 50 会撞上它
 
-    // 左侧紧贴障碍：最大可用偏移为 0，完全无法移动
+    // 左侧紧贴障碍，最大可用偏移为 0，完全无法移动
     val applied: Long = timeline.setStart(List.of(s), -50)
 
     assertEquals(0, applied)
@@ -341,7 +333,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.rng(50, 100))      // 前端已被裁切，origin=0 → minStart=0
     place(t0, obstacle, TrackDragTest.rng(0, 30)) // 占住 [0,30)
 
-    // 想把前端拖到 -10（delta=-60）：minStart 允许回到 0，但 obstacle 终点 30 更近，
+    // 想把前端拖到 -10（delta=-60），minStart 允许回到 0，但 obstacle 终点 30 更近，
     // 一次调用直接左移到与障碍贴合（起点 30，偏移 -20）
     val applied: Long = timeline.setStart(List.of(s), -60)
 
@@ -358,7 +350,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.rng(0, 50))
     place(t0, obstacle, TrackDragTest.rng(80, 120)) // 占住 [80,120)
 
-    // 想把尾端拖到 250（delta=200）：maxEnd=100 与 obstacle 起点 80 相比 80 更近，
+    // 想把尾端拖到 250（delta=200），maxEnd=100 与 obstacle 起点 80 相比 80 更近，
     // 一次调用直接右移到与障碍贴合（终点 80，偏移 +30）
     val applied: Long = timeline.setEnd(List.of(s), 200)
 
@@ -375,7 +367,7 @@ class TrackDragTest extends GdxTestBase {
     placeAt(t0, a, TrackDragTest.rng(0, 100), 500)   // 允许尾端伸展
     placeAt(t0, b, TrackDragTest.rng(100, 200), 600) // 与 a 相邻
 
-    // 伸展被后一个成员的起点挡住：整组偏移截断为 0，模型不变
+    // 伸展被后一个成员的起点挡住，整组偏移截断为 0，模型不变
     val applied: Long = timeline.setEnd(List.of(a, b), 50)
     assertEquals(0, applied)
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(a))
@@ -397,7 +389,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.rng(100, 200))
     place(t0, b, TrackDragTest.rng(200, 300)) // 与 a 相邻
 
-    // 前移被前一个成员的终点挡住：整组偏移截断为 0，模型不变
+    // 前移被前一个成员的终点挡住，整组偏移截断为 0，模型不变
     val applied: Long = timeline.setStart(List.of(a, b), -50)
     assertEquals(0, applied)
     assertEquals(TrackDragTest.rng(100, 200), t0.getRange(a))
@@ -411,8 +403,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(200, 300), t0.getRange(b))
   }
 
-  // snapTime（吸附点获取）
-
   @Test
   def snapTimeSnapsToNearestEdgeWithinThreshold(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
@@ -421,13 +411,13 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.rng(100, 200))
     place(t0, b, TrackDragTest.rng(400, 500))
 
-    // 距 a 起点 100 仅 5：吸附到 100
+    // 距 a 起点 100 仅 5，吸附到 100
     assertEquals(100, timeline.snapTime(105, 10, Set.of[Source[?]]()))
-    // 距 b 终点 500 仅 3：吸附到 500
+    // 距 b 终点 500 仅 3，吸附到 500
     assertEquals(500, timeline.snapTime(497, 10, Set.of[Source[?]]()))
-    // 阈值内无更近端点：返回原值
+    // 阈值内无更近端点，返回原值
     assertEquals(300, timeline.snapTime(300, 10, Set.of[Source[?]]()))
-    // 阈值外：不吸附
+    // 阈值外，不吸附
     assertEquals(120, timeline.snapTime(120, 10, Set.of[Source[?]]()))
   }
 
@@ -439,11 +429,9 @@ class TrackDragTest extends GdxTestBase {
 
     // ignore 中的源不参与吸附
     assertEquals(150, timeline.snapTime(150, 10, Set.of(a)))
-    // 距 0 比距任何端点都近：吸附到 0
+    // 距 0 比距任何端点都近，吸附到 0
     assertEquals(0, timeline.snapTime(5, 10, Set.of[Source[?]]()))
   }
-
-  // 分割
 
   @Test
   def splitSplitsSourceIntoTwoHalvesWithCorrectRanges(): Unit = {
@@ -453,22 +441,17 @@ class TrackDragTest extends GdxTestBase {
 
     timeline.split(t0, 40)
 
-    // 原始源被压缩到左半
     assertEquals(TrackDragTest.rng(0, 40), t0.getRange(s))
     assertSame(s, segAt(t0, 20))
     assertEquals(1000, t0.getOrigin(s))
-    // 右半是不相同的另一个源
     val right: Source[?] = segAt(t0, 60)
     assertNotSame(s, right)
     assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
     assertSame(t0, timeline.findTrackOf(right))
-    // 右半的 origin 与左半一致：源内时间是绝对时间减 origin，两半才接得上
+    // 右半的 origin 与左半一致，源内时间是绝对时间减 origin，两半才接得上
     assertEquals(1000, t0.getOrigin(right))
-    // 轨道上总共 2 个源
     assertEquals(2, countOn(t0))
   }
-
-  // Undo / redo
 
   @Test
   def undoRedoMoveSegsCommandRestoresState(): Unit = {
@@ -528,7 +511,7 @@ class TrackDragTest extends GdxTestBase {
 
     project.undoManager.execute(new UndoManager.SplitSegCommand(timeline, 0, before, after))
 
-    // execute 已应用分割：一分为二
+    // execute 已应用分割，一分为二
     assertEquals(TrackDragTest.rng(0, 40), t0.getRange(s))
     assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
     assertEquals(2, countOn(t0))
@@ -548,7 +531,7 @@ class TrackDragTest extends GdxTestBase {
     val b: Source[?] = newSrc(100)
     placeAt(t1, b, TrackDragTest.rng(500, 600), 2000)
 
-    // 模拟 UI 拖拽：record 期间直接改动模型，关闭时合并为一条复合命令
+    // 模拟 UI 拖拽，record 期间直接改动模型，关闭时合并为一条复合命令
     Using.resource(timeline.record()) { h =>
       timeline.moveTime(List.of(a, b), 1000)
     }

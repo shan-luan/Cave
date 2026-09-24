@@ -12,7 +12,7 @@ import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track}
 import scala.jdk.CollectionConverters.*
 import java.util
 
-/** 时间线捕获阶段监听器：处理框选与空白区播放头 seek。 */
+/** 时间线捕获阶段监听器，处理框选与空白区播放头 seek。 */
 class TlCaptureListener(private final val timelineView: TimelineView) extends InputListener {
 
   override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {

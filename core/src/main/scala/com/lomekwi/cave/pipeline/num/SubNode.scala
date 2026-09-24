@@ -2,7 +2,6 @@ package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.pipeline.Mixer
 
-/** 减法节点：输出 A - B。 */
 @SerialVersionUID(1L)
 final class SubNode extends Mixer[Double] {
   private final val inA: MixIn = addInPort(new MixIn("A"))

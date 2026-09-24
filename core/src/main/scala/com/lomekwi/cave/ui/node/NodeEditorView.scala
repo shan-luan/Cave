@@ -22,7 +22,6 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
-//TODO:WIP
 class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   private final val nodeGraph: NodeGraph = nodeGraph0
   private val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)

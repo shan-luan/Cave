@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 验证四个基本运算节点作为 Mixer 实现的行为：默认值、各运算符语义、与随机数节点连线。
+ * 验证四个基本运算节点作为 Mixer 实现的行为，包括默认值、各运算符语义、与随机数节点连线。
  */
 class NumOpsTest {
 

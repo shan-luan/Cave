@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import java.util
 
 /**
- * 验证 Mixer 抽象节点：两个主输入 MixIn 与一个主输出 MixOut 的数量约束、类型推断与求值。
+ * 验证 Mixer 抽象节点，两个主输入 MixIn 与一个主输出 MixOut 的数量约束、类型推断与求值。
  */
 class MixerTest {
 
@@ -78,7 +78,7 @@ class MixerTest {
   }
 }
 
-/** 最小可测混合器：把两个输入的 val 相加。 */
+/** 最小可测混合器，把两个输入的 val 相加。 */
 private final class SumMixer extends Mixer[Fpable] {
   private final val inA: MixIn = addInPort(new MixIn("A"))
   private final val inB: MixIn = addInPort(new MixIn("B"))

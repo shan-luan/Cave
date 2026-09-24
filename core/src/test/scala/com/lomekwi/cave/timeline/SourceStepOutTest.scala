@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 播放头离开片段时 `Source.onStepOut` 的触发时机：自然播放越过片段终点，
+ * 播放头离开片段时 `Source.onStepOut` 的触发时机，自然播放越过片段终点，
  * 以及 seek 把播放头挪到片段区间之外（暂停状态下同样如此）。
  */
 class SourceStepOutTest extends GdxTestBase {
@@ -27,19 +27,16 @@ class SourceStepOutTest extends GdxTestBase {
     thread.setDaemon(true)
     thread.start()
     try {
-      // 暂停时 seek 到片段内部：播放头没有离开片段
       project.playhead.seek(duration / 2)
       Thread.sleep(SETTLE_MILLIS)
       assertTrue(source.getSyncCount > 0, "轨迹线程应已处理暂停后的位置")
       assertEquals(0, source.getStepOutCount, "片段内的 seek 不应触发 onStepOut")
 
-      // 暂停时 seek 到片段之外：播放头离开片段
       project.playhead.seek(duration + SECOND / 10)
       assertTrue(source.awaitStepOut(SETTLE_MILLIS * 4), "暂停时 seek 离开片段应触发 onStepOut")
       assertEquals(1, source.getStepOutCount)
       assertEquals(duration + SECOND / 10, source.getLastStepOutTime, "应报告离开时的源内时间")
 
-      // 回到片段内播放，播放头自然越过片段终点
       project.playhead.seek(0)
       project.playhead.setPlaying(true)
       assertTrue(source.awaitStepOut(SECOND), "自然播放越过片段终点应触发 onStepOut")

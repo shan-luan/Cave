@@ -48,7 +48,7 @@ class SourceSet(@transient private var timeline: Timeline) extends util.Abstract
   }
 
   /**
-   * 抓一份剪贴板模板：源深拷贝，位置与组结构一并带走。
+   * 抓一份剪贴板模板，源深拷贝，位置与组结构一并带走。
    * 位置必须随模板走，否则原对象被删除后粘贴就失去了落点依据。
    */
   override def copy(): Copyable = {

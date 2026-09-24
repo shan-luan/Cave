@@ -5,9 +5,6 @@ import scala.util.Using
 
 trait Duplicatable[T <: Duplicatable[T]] extends Serializable {
 
-  /*
-   * 创建一个深拷贝
-   */
   def duplicate(): T = {
     try {
       Using.resource(new ByteArrayOutputStream()) { baos =>

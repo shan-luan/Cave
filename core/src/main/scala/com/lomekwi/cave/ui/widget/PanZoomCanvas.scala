@@ -14,7 +14,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 
 /**
- * 可平移/缩放的画布容器：内部持有 canvas Group，滚轮以光标为中心缩放，
+ * 可平移/缩放的画布容器，内部持有 canvas Group，滚轮以光标为中心缩放，
  * 键盘焦点获得时按 SCROLL_* 热键平移。缩放由 zoom * baseScale 构成，
  * baseScale 供外部按视口尺寸适配（如预览区），默认 1。
  */

@@ -16,7 +16,7 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import java.util
 
 /**
- * 数值输入端口编辑 widget：Spinner 行。直接持有端口模型，修改写默认值记 undo，
+ * 数值输入端口编辑 widget，Spinner 行。直接持有端口模型，修改写默认值记 undo，
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
 final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {

@@ -8,7 +8,6 @@ import com.lomekwi.cave.resource.media.MedRes
 import org.bytedeco.javacv.FFmpegFrameGrabber
 
 /**
- * 解码器类。
  * @tparam F 产生的帧类型
  */
 abstract class DecRes[F <: Frame] protected (protected val source: MedRes) extends Resource {

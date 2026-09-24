@@ -14,7 +14,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
 
   override def getPort: Node.InPort[?] = port
 
-  /** 输入端口只有一条连接，拖动即把它从原地提起：落空断开，落在别的输出端口则改接。 */
+  /** 输入端口只有一条连接，拖动即把它从原地提起，落空断开，落在别的输出端口则改接。 */
   override protected def detachForDrag(): PortActor = {
     val prev: Node.OutPort[?] = port.getPrev
     port.unlink()

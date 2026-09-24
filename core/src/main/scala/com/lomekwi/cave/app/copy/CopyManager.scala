@@ -9,7 +9,7 @@ class CopyManager {
   private var clipboard: Copyable = uninitialized
   private var latestCopyable: Copyable = uninitialized
 
-  /** 复制以"当前选中集"为单位：单选也是只有一项的集合。 */
+  /** 复制以"当前选中集"为单位，单选也是只有一项的集合。 */
   @Subscribe
   def onSelection(e: SourceSetSelectedEvent): Unit = {
     latestCopyable = e.set

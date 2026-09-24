@@ -14,9 +14,6 @@ import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
-/**
- * 一个长的像window的table.
- */
 class Card(title: String) extends VisTable {
   private var titleLabel: Label = uninitialized
   private var titleTable: Table = uninitialized

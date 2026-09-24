@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 /**
- * 节点图的入口节点：把图外连入上游的帧提供给图内节点。
+ * 节点图的入口节点，把图外连入上游的帧提供给图内节点。
  *
  * @param upstream 宿主 filter 的输入端口，即节点图外部连入的帧
  */

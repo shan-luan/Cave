@@ -38,7 +38,6 @@ class UndoManager(@transient private val project: Project) {
   }
 
   private def push(command: UndoManager.UndoableCommand): Unit = {
-    // 与栈顶同类型的可合并命令直接合并
     val top = if (undoStack.isEmpty) null else undoStack.head
     val merged = (command, top) match {
       case (_: UndoManager.MergeableCommand, topMc: UndoManager.MergeableCommand) =>
@@ -99,7 +98,7 @@ object UndoManager {
   }
 
   /**
-   * 可合并命令：同类型命令可合并为一个，避免栈中存在连续的同类型记录。
+   * 可合并命令，同类型命令可合并为一个，避免栈中存在连续的同类型记录。
    */
   trait MergeableCommand extends UndoableCommand {
     /**
@@ -111,7 +110,7 @@ object UndoManager {
   }
 
   /**
-   * 一条轨道的一次版本替换：撤销即换回 before，重做即换成 after。
+   * 一条轨道的一次版本替换，撤销即换回 before，重做即换成 after。
    * 轨道不可变，两端版本即完整描述一次改动，且新旧版本共享绝大部分节点，
    * 因此快照本身很轻。
    */
@@ -171,10 +170,8 @@ object UndoManager {
     source.getFilters.asInstanceOf[util.List[Filter[?]]]
   }
 
-  // 批量命令（可合并）
-
   /**
-   * 批量轨道替换命令：一次操作在若干轨道上留下的版本变化。
+   * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
    * 撤销时把涉及的轨道整体换回旧版本，因此不必逐源回放。
    */
   private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
@@ -183,7 +180,7 @@ object UndoManager {
 
     override def redo(): Unit = timeline.setTracks(UndoManager.foldAfter(edits.asScala))
 
-    /** 合并：同一轨道保留最早的 before、取最新的 after。 */
+    /** 合并时同一轨道保留最早的 before、取最新的 after。 */
     protected def mergeEdits(other: util.List[TrackEdit]): Unit = {
       for (ne <- other.asScala) {
         val idx = edits.asScala.indexWhere(e => e.index == ne.index)
@@ -196,7 +193,6 @@ object UndoManager {
     }
   }
 
-  /** 批量移动命令。 */
   final class MoveSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
@@ -209,7 +205,6 @@ object UndoManager {
     }
   }
 
-  /** 批量调整区间命令。 */
   final class ResizeSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
@@ -222,7 +217,6 @@ object UndoManager {
     }
   }
 
-  /** 批量删除命令。合并时直接追加新条目（去重）。 */
   final class RemoveSegsCommand(private val timeline: Timeline, entries0: util.List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
     private final val entries: util.List[RemoveSegsCommand.RemoveEntry] = new util.ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
 
@@ -257,7 +251,7 @@ object UndoManager {
     case class RemoveEntry(edit: TrackEdit, source: Source[?], group: SourceGroup)
   }
 
-  /** 节点图被改动后通知界面重建：只在源确实位于时间轴上时通知。 */
+  /** 节点图被改动后通知界面重建，只在源确实位于时间轴上时通知。 */
   private def postRefresh(project: Project, source: Source[?]): Unit = {
     if (source != null && project.timeline.findTrackOf(source) != null) {
       project.projEventBus.post(SourceNodeChangedEvent(source))
@@ -303,7 +297,6 @@ object UndoManager {
     }
   }
 
-  /** 数值输入端口默认值变更命令。 */
   case class FpPortValueCommand(project: Project, port: Node.InPort[?], source: Source[?], oldValue: Double, newValue: Double) extends UndoableCommand {
     override def undo(): Unit = {
       setValue(oldValue)

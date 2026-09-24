@@ -14,7 +14,6 @@ import com.lomekwi.cave.ui.widget.Card
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
-//TODO:WIP
 class NodeActor(node0: Node) extends Card(node0.getName) {
   private final val node: Node = node0
   private final val inTable: VisTable = new VisTable()

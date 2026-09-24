@@ -138,7 +138,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
       if (acted) dirty = true
     }
 
-    // dirty 时按模型重建 UI；所有 Actor（含拖拽中）都是模型的纯投影：
+    // dirty 时按模型重建 UI，所有 Actor（含拖拽中）都是模型的纯投影。
     // 拖拽只改模型并置 dirty，不做手动摆位，拖拽目标只依赖鼠标轨迹与按下锚点。
     if (dirty) {
       clearChildren(false)
@@ -270,7 +270,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     dirty = true
   }
 
-  /** 快捷键分割入口：按当前鼠标位置定位分割点。 */
+  /** 快捷键分割入口，按当前鼠标位置定位分割点。 */
   private[tlarea] def splitAtCursor(): Unit = {
     val stage = getStage
     if (stage != null) {
@@ -461,7 +461,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     }
   }
 
-  /** 把剪贴板模板整批放进时间轴：保持成员相对间距，冲突时整组顺移轨道。 */
+  /** 把剪贴板模板整批放进时间轴，保持成员相对间距，冲突时整组顺移轨道。 */
   private def pasteTemplate(template: PasteTemplate, baseTime: Long, baseTrack: Int): util.List[Source[?]] = {
     val entries = template.getEntries
     if (entries.isEmpty) return util.List.of[Source[?]]()
