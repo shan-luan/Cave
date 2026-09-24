@@ -51,7 +51,7 @@ class TrackDragTest extends GdxTestBase {
   /** 该时间点上的片段源；落在空隙或轨道外时为 null。 */
   private def segAt(track: Track, time: Long): Source[?] = track.get(time) match {
     case Segment(source) => source
-    case _: Gap | null => null
+    case _: Gap => null
   }
 
   // 添加 / 移除

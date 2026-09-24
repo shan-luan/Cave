@@ -120,7 +120,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 在 time 处把片段一分为二。time 不落在片段内部时原样返回本实例。 */
   protected[timeline] def split(time: Long): Track = entryAt(byTime, time) match {
-    case Some((r, Segment(source))) if time > r.lo && time < r.hi =>
+    case (r, Segment(source)) if time > r.lo && time < r.hi =>
       val origin: Long = getOrigin(source)
       val right = source.duplicate()
       // 两半共用同一个 origin：源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
@@ -167,7 +167,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    */
   private def relayout(lo: Long, hi: Long): Track = {
     val from: Long = lastBefore(byTime, lo) match {
-      case null => -Long.MaxValue
+      case null => Long.MinValue
       case (k, _: Segment) => if (lo < hiOf(byTime, k)) k else hiOf(byTime, k)
       case (k, _) => k
     }
@@ -343,13 +343,13 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   // 查询
 
-  /** 包含 time 的元素；轨道之外为空。 */
-  def get(time: Long): Element = entryAt(byTime, time).map(_._2).orNull
+  /** 包含 time 的元素。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
+  def get(time: Long): Element = entryAt(byTime, time)._2
 
   /** time 是否落在某个片段内部，即能否在此分割。 */
   def canSplit(time: Long): Boolean = entryAt(byTime, time) match {
-    case Some((r, _: Segment)) => time > r.lo && time < r.hi
-    case _ => false
+    case (r, _: Segment) => time > r.lo && time < r.hi
+    case (_, _: Gap) => false
   }
 
   /** 同轨道上紧随其后的片段；没有时为空。 */
@@ -455,11 +455,10 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   // 索引查询。都以内容表为参数。
 
-  /** 包含 time 的条目；轨道之外为空。 */
-  private def entryAt(bt: immutable.TreeMap[Long, Element], time: Long): Option[(Interval, Element)] = {
-    bt.rangeTo(time).lastOption
-      .filter { case (lo, _) => time < hiOf(bt, lo) }
-      .map { case (lo, element) => (Interval(lo, hiOf(bt, lo)), element) }
+  /** 包含 time 的条目。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
+  private def entryAt(bt: immutable.TreeMap[Long, Element], time: Long): (Interval, Element) = {
+    val (lo, element) = bt.rangeTo(time).last
+    (Interval(lo, hiOf(bt, lo)), element)
   }
 
   /**
@@ -505,9 +504,9 @@ object Track {
     val blockSource = new BlockSrc
     val block = Segment(blockSource)
     val tail = new Gap
-    val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](-Long.MaxValue -> block, 0L -> tail)
+    val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> block, 0L -> tail)
     new Track(timeline, index, blockSource, byTime,
-      Map[Element, Long](block -> -Long.MaxValue, tail -> 0L), Map[Source[?], Long](blockSource -> 0L))
+      Map[Element, Long](block -> Long.MinValue, tail -> 0L), Map[Source[?], Long](blockSource -> 0L))
   }
 
   /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */

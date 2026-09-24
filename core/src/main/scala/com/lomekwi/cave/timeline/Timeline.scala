@@ -554,7 +554,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                 activeSource = source
                 activeRange = track.getRange(source)
                 f = track.frameAt(source, t)
-              case _: Gap | null =>
+              case _: Gap =>
             }
             project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
 
@@ -583,7 +583,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                     }
                   }
                 }
-              case _: Gap | null =>
+              case _: Gap =>
                 project.projEventBus.post(gapFrame)
                 var parkTime: Long = Long.MaxValue
                 val next = track.sourceAtOrAfter(t)

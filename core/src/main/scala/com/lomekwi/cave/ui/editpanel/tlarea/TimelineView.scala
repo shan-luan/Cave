@@ -281,7 +281,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
         case Segment(source) =>
           splitSource(source, xToAbsoluteTime(local.x))
           dirty = true
-        case _: Gap | null =>
+        case _: Gap =>
       }
     }
   }
@@ -306,7 +306,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
           // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
           timeline.getTrackOrCreate(memberTrack.index).get(time) match {
             case Segment(right) => afterSources.add(right)
-            case _: Gap | null =>
+            case _: Gap =>
           }
           splitAny = true
         } else if (end <= time) {
@@ -336,7 +336,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
             timeline.remove(source)
           }
           dirty = true
-        case _: Gap | null =>
+        case _: Gap =>
       }
     }
   }

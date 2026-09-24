@@ -77,7 +77,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           if (src == null || activeRange == null || !activeRange.contains(t)) {
             src = track.get(t) match {
               case Segment(source) => source
-              case _: Gap | null => null
+              case _: Gap => null
             }
             if (src != null) {
               track.syncAt(src, t)
@@ -120,7 +120,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           if (src == null || activeRange == null || !activeRange.contains(audioT)) {
             src = tracks(i).get(audioT) match {
               case Segment(source) => source
-              case _: Gap | null => null
+              case _: Gap => null
             }
             if (src != null && src.isInstanceOf[AudClipSrc]) {
               tracks(i).syncAt(src, audioT)

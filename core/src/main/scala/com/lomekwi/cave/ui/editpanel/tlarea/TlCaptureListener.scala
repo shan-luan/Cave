@@ -30,7 +30,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val onSource: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
         timelineView.timeline.getTrackOrCreate(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
           case _: Segment => true
-          case _: Gap | null => false
+          case _: Gap => false
         }
       }
       if (!onSource) {
