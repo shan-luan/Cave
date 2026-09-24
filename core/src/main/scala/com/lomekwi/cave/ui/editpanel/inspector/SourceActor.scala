@@ -1,8 +1,8 @@
 package com.lomekwi.cave.ui.editpanel.inspector
 
 import com.badlogic.gdx.utils.Align
+import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.ui.node.CardWidgetsRegistry
 import com.lomekwi.cave.ui.widget.Card
 
 import scala.jdk.CollectionConverters.*
@@ -15,14 +15,14 @@ final class SourceActor(private val source: Source[?]) extends Card(source.getDi
   align(Align.top | Align.left)
   defaults().left()
   for (in <- source.getInPorts.asScala) {
-    val widget = CardWidgetsRegistry.createEditor(in, source)
+    val widget = App.cardWidgetsRegistry.createEditor(in, source)
     // 未注册该端口类型的 widget，不显示
     if (widget != null) {
       add(widget).growX().pad(2).row()
     }
   }
   for (out <- source.getOutPorts.asScala) {
-    val row = CardWidgetsRegistry.createOutputRow(out)
+    val row = App.cardWidgetsRegistry.createOutputRow(out)
     // FilterOut 与未知类型的输出端口不显示
     if (row != null) {
       add(row).pad(2).left().row()

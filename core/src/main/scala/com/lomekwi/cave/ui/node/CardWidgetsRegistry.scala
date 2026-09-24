@@ -14,10 +14,8 @@ import scala.jdk.CollectionConverters.*
 /**
  * 输入端口默认值编辑器和输出端口显示行的 widget 注册表
  */
-object CardWidgetsRegistry {
-  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor])
-
-  private case class OutEntry(`type`: Class[?], factory: Function[Node.OutPort[?], Actor])
+class CardWidgetsRegistry {
+  import CardWidgetsRegistry.*
 
   private final val IN_ENTRIES: mutable.ArrayBuffer[InEntry] = mutable.ArrayBuffer.empty[InEntry]
   private final val OUT_ENTRIES: mutable.ArrayBuffer[OutEntry] = mutable.ArrayBuffer.empty[OutEntry]
@@ -57,6 +55,12 @@ object CardWidgetsRegistry {
         .orNull
     }
   }
+}
+
+object CardWidgetsRegistry {
+  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor])
+
+  private case class OutEntry(`type`: Class[?], factory: Function[Node.OutPort[?], Actor])
 
   /** 端口约束为交叉类型：目标类型必须满足全部约束；无约束端口视为无可编辑类型。 */
   private def accepts(port: Node.InPort[?], `type`: Class[?]): Boolean = {

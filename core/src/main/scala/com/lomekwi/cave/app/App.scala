@@ -8,6 +8,7 @@ import com.lomekwi.cave.pipeline.NodeRegistry
 import com.lomekwi.cave.resource.media.MediaFactory
 import com.lomekwi.cave.task.TaskPool
 import com.lomekwi.cave.ui.Root
+import com.lomekwi.cave.ui.node.CardWidgetsRegistry
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser
 
@@ -29,5 +30,6 @@ object App {
   final val copyManager = new CopyManager()
   final val mediaFactory = new MediaFactory()
   final val nodeRegistry = new NodeRegistry()
+  final val cardWidgetsRegistry = new CardWidgetsRegistry()
 
 }

@@ -15,7 +15,6 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
-import com.lomekwi.cave.ui.node.CardWidgetsRegistry
 import com.lomekwi.cave.ui.widget.Card
 
 
@@ -72,7 +71,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   for (in <- filter.getInPorts.asScala) {
     // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
     if (in != filter.getFilterIn) {
-      val widget = CardWidgetsRegistry.createEditor(in, source)
+      val widget = App.cardWidgetsRegistry.createEditor(in, source)
       // 未注册该端口类型的 widget，不显示
       if (widget != null) {
         add(widget).growX().pad(2).row()

@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.kotcrab.vis.ui.widget.VisTable
+import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.TextInputs
@@ -28,14 +29,14 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
   add(outTable).top().right().growX()
 
   for (in <- node.getInPorts.asScala) {
-    val editor: Actor = CardWidgetsRegistry.createEditor(in, null)
+    val editor: Actor = App.cardWidgetsRegistry.createEditor(in, null)
     val portActor = new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])
     portActors.put(in, portActor)
     inTable.add(portActor).growX().row()
   }
 
   for (out <- node.getOutPorts.asScala) {
-    val row: Actor = CardWidgetsRegistry.createOutputRow(out)
+    val row: Actor = App.cardWidgetsRegistry.createOutputRow(out)
     if (row != null) {
       outTable.add(row).growX()
     }
