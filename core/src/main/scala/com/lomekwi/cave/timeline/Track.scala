@@ -39,17 +39,21 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     case _: Gap => false
   }
 
-  /** 元素占用的区间；不在本轨道时返回 null。 */
-  def getRange(element: Element): Interval = placements.get(element) match {
-    case Some(lo) => Interval(lo, hiOf(byTime, lo))
-    case None => null
+  /** 元素占用的区间。要求元素在本轨道，否则抛 IllegalArgumentException。 */
+  def getRange(element: Element): Interval = {
+    require(placements.contains(element))
+    val lo = placements(element)
+    Interval(lo, hiOf(byTime, lo))
   }
 
-  /** 片段占用的区间；不在本轨道时返回 null。 */
+  /** 片段占用的区间。要求源在本轨道，否则抛 IllegalArgumentException。 */
   def getRange(source: Source[?]): Interval = getRange(Segment(source))
 
-  /** 片段的 0 秒在时间轴中的位置；不在本轨道时返回 0。 */
-  def getOrigin(source: Source[?]): Long = origins.getOrElse(source, 0L)
+  /** 片段的 0 秒在时间轴中的位置。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  def getOrigin(source: Source[?]): Long = {
+    require(origins.contains(source))
+    origins(source)
+  }
 
   def contains(element: Element): Boolean = placements.contains(element)
 
@@ -97,10 +101,10 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 移除源。源不在本轨道时原样返回本实例。 */
   protected[timeline] def remove(source: Source[?]): Track = {
-    val r = getRange(source)
-    if (r == null) {
+    if (!contains(source)) {
       this
     } else {
+      val r = getRange(source)
       val gap = new Gap
       derived(byTime.updated(r.lo, gap), placements.updated(gap, r.lo).removed(Segment(source)), origins.removed(source))
         .relayout(r.lo, r.hi)
@@ -345,17 +349,11 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     case (_, _: Gap) => false
   }
 
-  /** 同轨道上紧随其后的片段；没有时为空。 */
-  def nextOf(source: Source[?]): Source[?] = {
-    val r = getRange(source)
-    if (r == null) null else sourceAtOrAfter(r.hi)
-  }
+  /** 同轨道上紧随其后的片段；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  def nextOf(source: Source[?]): Source[?] = sourceAtOrAfter(getRange(source).hi)
 
-  /** 同轨道上紧邻其前的片段；没有时为空。 */
-  def prevOf(source: Source[?]): Source[?] = {
-    val r = getRange(source)
-    if (r == null) null else sourceBefore(r.lo)
-  }
+  /** 同轨道上紧邻其前的片段；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  def prevOf(source: Source[?]): Source[?] = sourceBefore(getRange(source).lo)
 
   def nextRangeOf(source: Source[?]): Option[Interval] = {
     val next = nextOf(source)

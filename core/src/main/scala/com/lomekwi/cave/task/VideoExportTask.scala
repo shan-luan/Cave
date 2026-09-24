@@ -74,7 +74,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
         for (track <- timeline.asScala) {
           var src = activeSources(i)
           val activeRange = if (src == null) null else track.getRange(src)
-          if (src == null || activeRange == null || !activeRange.contains(t)) {
+          if (src == null || !activeRange.contains(t)) {
             src = track.get(t) match {
               case Segment(source) => source
               case _: Gap => null
@@ -117,7 +117,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
         if (tracks(i).getLength != 0) {
           var src = active(i)
           val activeRange = if (src == null) null else tracks(i).getRange(src)
-          if (src == null || activeRange == null || !activeRange.contains(audioT)) {
+          if (src == null || !activeRange.contains(audioT)) {
             src = tracks(i).get(audioT) match {
               case Segment(source) => source
               case _: Gap => null
