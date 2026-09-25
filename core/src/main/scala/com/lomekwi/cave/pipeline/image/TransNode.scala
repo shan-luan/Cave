@@ -31,8 +31,8 @@ class TransNode extends Filter[Transformable] {
           t = new Transform()
           frame.setTransform(t)
         }
-        t.applyLocal(TransNode.`val`(dx).toFloat, TransNode.`val`(dy).toFloat, TransNode.`val`(scaleX).toFloat, TransNode.`val`(scaleY).toFloat,
-                TransNode.`val`(dRotation).toFloat, flipXState, flipYState)
+        t.applyLocal(TransNode.value(dx).toFloat, TransNode.value(dy).toFloat, TransNode.value(scaleX).toFloat, TransNode.value(scaleY).toFloat,
+                TransNode.value(dRotation).toFloat, flipXState, flipYState)
       }
       frame
     }
@@ -48,7 +48,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def getDx: Double = {
-    TransNode.`val`(dx)
+    TransNode.value(dx)
   }
 
   def setDx(v: Double): Unit = {
@@ -56,7 +56,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def getDy: Double = {
-    TransNode.`val`(dy)
+    TransNode.value(dy)
   }
 
   def setDy(v: Double): Unit = {
@@ -64,7 +64,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def getScaleX: Double = {
-    TransNode.`val`(scaleX)
+    TransNode.value(scaleX)
   }
 
   def setScaleX(v: Double): Unit = {
@@ -72,7 +72,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def getScaleY: Double = {
-    TransNode.`val`(scaleY)
+    TransNode.value(scaleY)
   }
 
   def setScaleY(v: Double): Unit = {
@@ -80,7 +80,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def getDRotation: Double = {
-    TransNode.`val`(dRotation)
+    TransNode.value(dRotation)
   }
 
   def setDRotation(v: Double): Unit = {
@@ -109,7 +109,7 @@ class TransNode extends Filter[Transformable] {
 }
 
 object TransNode {
-  private def `val`(p: Node.InPort[Double]): Double = {
+  private def value(p: Node.InPort[Double]): Double = {
     p.getData
   }
 }
