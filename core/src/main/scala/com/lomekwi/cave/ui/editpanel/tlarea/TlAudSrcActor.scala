@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.audio.AudClipSrc
+import com.lomekwi.cave.pipeline.audio.AudClipCont
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.ui.Colors
 import scala.compiletime.uninitialized
@@ -15,7 +15,7 @@ class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
 
-    val res: AudRes = getSource.asInstanceOf[AudClipSrc].getAudRes
+    val res: AudRes = getSource.asInstanceOf[AudClipCont].getAudRes
     val wf: res.Waveformer = res.waveformer()
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.pipeline.FilterListTest.{Fpable, FpSrc}
+import com.lomekwi.cave.pipeline.FilterListTest.{Fpable, FpCont}
 import org.junit.jupiter.api.Assertions.{assertEquals, assertNotNull, assertNotSame, assertNull, assertSame, assertThrows}
 import org.junit.jupiter.api.Test
 
@@ -39,7 +39,7 @@ class MixerTest {
 
   @Test
   def outputType_followsInputA(): Unit = {
-    val src = new FpSrc(1)
+    val src = new FpCont(1)
     val mixer = new SumMixer()
     mixer.getMixInA.linkFrom(src.headOut)
     assertSame(classOf[Fpable], mixer.getMixOut.getType)
@@ -47,7 +47,7 @@ class MixerTest {
 
   @Test
   def outputType_fallsBackToInputB(): Unit = {
-    val src = new FpSrc(1)
+    val src = new FpCont(1)
     val mixer = new SumMixer()
     mixer.getMixInB.linkFrom(src.headOut)
     assertSame(classOf[Fpable], mixer.getMixOut.getType)
@@ -66,8 +66,8 @@ class MixerTest {
 
   @Test
   def evaluatesBothInputs(): Unit = {
-    val a = new FpSrc(2)
-    val b = new FpSrc(3)
+    val a = new FpCont(2)
+    val b = new FpCont(3)
     val mixer = new SumMixer()
     mixer.getMixInA.linkFrom(a.headOut)
     mixer.getMixInB.linkFrom(b.headOut)

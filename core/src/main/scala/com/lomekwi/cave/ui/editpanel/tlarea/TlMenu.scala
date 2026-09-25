@@ -8,9 +8,10 @@ import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.text.TextSrc
+import com.lomekwi.cave.pipeline.text.TextCont
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.Interval
+import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
 
@@ -73,11 +74,11 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val source: Source[?] = new TextSrc()
+    val source: Source[?] = new TextCont()
     val duration: Long = source.getDefaultDuration
 
     var targetTrack: Int = 0
-    val range: Interval = Interval(time, time + duration)
+    val range: Interval = time ~~ (time + duration)
     while (!timelineView.getTimeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
       targetTrack += 1
     }
@@ -105,7 +106,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
             val duration: Long = src.getDefaultDuration
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
-              val range: Interval = Interval(time, time + duration)
+              val range: Interval = time ~~ (time + duration)
               while (!timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
                 targetTrack += 1
               }

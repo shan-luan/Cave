@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.pipeline.FilterListTest.FpSrc
+import com.lomekwi.cave.pipeline.FilterListTest.FpCont
 import com.lomekwi.cave.pipeline.num.{AddNode, RandomNode}
 import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
 import org.junit.jupiter.api.Test
@@ -13,7 +13,7 @@ class NodeRegistryTest {
   @Test
   def filterMenu_excludesNonFilters(): Unit = {
     val registry = new NodeRegistry()
-    val source = new FpSrc(1)
+    val source = new FpCont(1)
     val compatible = (0 until registry.getCompatibleCount(source))
       .map(i => registry.createCompatible(source, i))
 

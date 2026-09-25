@@ -19,9 +19,9 @@ class SourceStepOutTest extends GdxTestBase {
     val project = new TestProject()
     val timeline = project.timeline
     val duration = SECOND / 100
-    val source = new SourceStepOutTest.RecordingSource(duration)
+    val source = new SourceStepOutTest.RecordingCont(duration)
     val track = timeline.getTrackOrCreate(0)
-    assertEquals(0L, timeline.tryAdd(track, source, Interval(0, duration), 0), "片段应被加入轨道")
+    assertEquals(0L, timeline.tryAdd(track, source, 0 ~~ duration, 0), "片段应被加入轨道")
 
     val thread = new Thread(track.getWorker, "step-out-test")
     thread.setDaemon(true)
@@ -54,7 +54,7 @@ class SourceStepOutTest extends GdxTestBase {
 object SourceStepOutTest {
 
   /** 记录 sync / onStepOut 的调用，供断言检查。 */
-  class RecordingSource(duration: Long) extends TestSource(duration) {
+  class RecordingCont(duration: Long) extends TestCont(duration) {
     private var syncCount = 0
     private var stepOutCount = 0
     private var lastStepOutTime = 0L

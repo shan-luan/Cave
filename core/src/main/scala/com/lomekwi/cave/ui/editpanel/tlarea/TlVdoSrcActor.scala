@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.image.VdoClipSrc
+import com.lomekwi.cave.pipeline.image.VdoClipCont
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
@@ -24,7 +24,7 @@ class TlVdoSrcActor(source: Source[?]) extends TlSrcActor(source) {
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (segDuration > 0) {
-      val res: VdoRes = getSource.asInstanceOf[VdoClipSrc].getVdoRes
+      val res: VdoRes = getSource.asInstanceOf[VdoClipCont].getVdoRes
 
       val pxPerUs: Float = getWidth / segDuration.toFloat
       val aspect: Float = res.getWidth.toFloat / res.getHeight

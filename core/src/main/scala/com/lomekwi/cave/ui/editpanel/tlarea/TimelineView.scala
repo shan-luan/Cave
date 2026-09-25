@@ -13,6 +13,7 @@ import com.lomekwi.cave.app.selection.{SourceSet, SourceSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 import com.lomekwi.cave.pipeline.{Gap, Source}
 import com.lomekwi.cave.timeline.{Interval, SourceGroup, Timeline, Track, UndoManager}
+import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.playback.Playhead
 
@@ -490,11 +491,11 @@ class TimelineView(project0: Project) extends Group with Focusable {
           var ti = baseTrack + trackOffset
           var track = timeline.getTrackOrCreate(ti)
           val start = entry.range.lo + timeOffset
-          var range = Interval(start, start + duration)
+          var range = start ~~ (start + duration)
           while (!track.isFree(range, util.Set.of[Source[?]]())) {
             ti += 1
             track = timeline.getTrackOrCreate(ti)
-            range = Interval(start, start + duration)
+            range = start ~~ (start + duration)
           }
 
           timeline.tryAdd(track, entry.source, range, entry.origin + timeOffset)
@@ -639,7 +640,7 @@ object TimelineView {
     }
 
     private[tlarea] def visibleRange(): Interval = {
-      Interval(startTime, startTime + durationTime)
+      startTime ~~ (startTime + durationTime)
     }
 
     private[tlarea] def zoom(amountY: Float, anchorXRatio: Float): Boolean = {

@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.math.Matrix4
 import com.lomekwi.cave.pipeline.{Frame, Gap, Source}
-import com.lomekwi.cave.pipeline.audio.AudClipSrc
+import com.lomekwi.cave.pipeline.audio.AudClipCont
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.resource.decoder.AudDecRes
@@ -121,7 +121,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
               case s: Source[?] => s
               case _: Gap => null
             }
-            if (src != null && src.isInstanceOf[AudClipSrc]) {
+            if (src != null && src.isInstanceOf[AudClipCont]) {
               tracks(i).syncAt(src, audioT)
             }
             active(i) = src

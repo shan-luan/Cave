@@ -286,7 +286,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val searchStart: Long = Math.max(0, time - threshold)
     val searchEnd: Long = time + threshold
     if (searchEnd <= searchStart) return time
-    val searchRange: Interval = Interval(searchStart, searchEnd)
+    val searchRange: Interval = searchStart ~~ searchEnd
     for (track <- tracks) {
       for (element <- track.getIntersecting(searchRange).asScala) {
         element match {

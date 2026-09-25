@@ -7,7 +7,7 @@ class IntervalTest {
 
   @Test
   def contains_excludesUpperEndpoint(): Unit = {
-    val r = Interval(100, 200)
+    val r = 100 ~~ 200
     assertTrue(r.contains(100))
     assertTrue(r.contains(199))
     assertFalse(r.contains(200))
@@ -16,33 +16,33 @@ class IntervalTest {
 
   @Test
   def emptyInterval_containsNothing(): Unit = {
-    val r = Interval(100, 100)
+    val r = 100 ~~ 100
     assertTrue(r.isEmpty)
     assertFalse(r.contains(100))
   }
 
   @Test
   def intersects_requiresCommonPoint(): Unit = {
-    assertTrue(Interval(0, 10).intersects(Interval(5, 15)))
-    assertFalse(Interval(0, 10).intersects(Interval(10, 20)))
+    assertTrue((0 ~~ 10).intersects(5 ~~ 15))
+    assertFalse((0 ~~ 10).intersects(10 ~~ 20))
   }
 
   @Test
   def isConnected_countsAdjacent(): Unit = {
-    assertTrue(Interval(0, 10).isConnected(Interval(5, 15)))
-    assertTrue(Interval(0, 10).isConnected(Interval(10, 20)))
-    assertFalse(Interval(0, 10).isConnected(Interval(11, 20)))
+    assertTrue((0 ~~ 10).isConnected(5 ~~ 15))
+    assertTrue((0 ~~ 10).isConnected(10 ~~ 20))
+    assertFalse((0 ~~ 10).isConnected(11 ~~ 20))
   }
 
   @Test
   def shift_movesBothEndpoints(): Unit = {
-    assertEquals(Interval(110, 210), Interval(100, 200).shift(10))
-    assertEquals(Interval(90, 190), Interval(100, 200).shift(-10))
+    assertEquals(110 ~~ 210, (100 ~~ 200).shift(10))
+    assertEquals(90 ~~ 190, (100 ~~ 200).shift(-10))
   }
 
   @Test
   def ordering_isLexicographic(): Unit = {
-    val sorted = List(Interval(10, 20), Interval(0, 5), Interval(0, 3)).sorted
-    assertEquals(List(Interval(0, 3), Interval(0, 5), Interval(10, 20)), sorted)
+    val sorted = List(10 ~~ 20, 0 ~~ 5, 0 ~~ 3).sorted
+    assertEquals(List(0 ~~ 3, 0 ~~ 5, 10 ~~ 20), sorted)
   }
 }

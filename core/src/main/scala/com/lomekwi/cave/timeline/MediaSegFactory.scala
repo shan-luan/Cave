@@ -3,9 +3,9 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.audio.AudClipSrc
-import com.lomekwi.cave.pipeline.image.ImgSrc
-import com.lomekwi.cave.pipeline.image.VdoClipSrc
+import com.lomekwi.cave.pipeline.audio.AudClipCont
+import com.lomekwi.cave.pipeline.image.ImgCont
+import com.lomekwi.cave.pipeline.image.VdoClipCont
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.resource.media.AudRes
@@ -33,9 +33,9 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
   }
 
   private def initDefaultMappings(): Unit = {
-    register(classOf[VdoRes], (source: Resource) => new VdoClipSrc(source.asInstanceOf[VdoRes]))
-    register(classOf[AudRes], (source: Resource) => new AudClipSrc(source.asInstanceOf[AudRes]))
-    register(classOf[ImgRes], (source: Resource) => new ImgSrc(source.asInstanceOf[ImgRes]))
+    register(classOf[VdoRes], (source: Resource) => new VdoClipCont(source.asInstanceOf[VdoRes]))
+    register(classOf[AudRes], (source: Resource) => new AudClipCont(source.asInstanceOf[AudRes]))
+    register(classOf[ImgRes], (source: Resource) => new ImgCont(source.asInstanceOf[ImgRes]))
   }
   def register(clazz: Class[? <: Resource], constructor: Function[? <: Resource, Source[?]]): Unit = {
     map.put(clazz, constructor)

@@ -7,6 +7,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.timeline.Interval
+import com.lomekwi.cave.timeline.~~
 
 import java.io.File
 import java.io.IOException
@@ -40,7 +41,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
           val duration: Long = src.getDefaultDuration
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
-            val range: Interval = Interval(startTime, startTime + duration)
+            val range: Interval = startTime ~~ (startTime + duration)
             while (!timelineView.timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
               targetTrack += 1
             }

@@ -22,3 +22,10 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
 object Interval {
   given Ordering[Interval] = Ordering.by(i => (i.lo, i.hi))
 }
+
+/** 区间字面量的语法糖，`1 ~~ 10` 等价于 `Interval(1, 10)`。 */
+extension (lo: Int)
+  def ~~(hi: Long): Interval = Interval(lo, hi)
+
+extension (lo: Long)
+  def ~~(hi: Long): Interval = Interval(lo, hi)

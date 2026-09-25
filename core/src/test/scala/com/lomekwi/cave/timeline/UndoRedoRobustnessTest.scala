@@ -103,7 +103,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       if (range == null) {
         // 该轨道放不下就跳过
       } else {
-        val src = new TestSource(duration)
+        val src = new TestCont(duration)
         timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), src, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN * 2))
       }
       i += 1
@@ -114,7 +114,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(UndoRedoRobustnessTest.SPAN - duration + 1)
-      val range: Interval = Interval(start, start + duration)
+      val range: Interval = start ~~ (start + duration)
       var free = true
       val it = occupied.iterator()
       while (it.hasNext && free) {
@@ -248,9 +248,9 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     var attempt = 0
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, UndoRedoRobustnessTest.SPAN - duration))
-      val range: Interval = Interval(start, start + duration)
+      val range: Interval = start ~~ (start + duration)
       if (track.isFree(range, Set.of[Source[?]]())) {
-        val src = new TestSource(duration)
+        val src = new TestCont(duration)
         Using.resource(timeline.record()) { h =>
           timeline.tryAdd(track, src, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN))
         }

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, FpSrc}
+import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, FpCont}
 import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotEquals, assertNotNull, assertNull, assertSame, assertTrue}
 import org.junit.jupiter.api.Test
 
@@ -46,14 +46,14 @@ class NodeGraphFilterTest {
     val ngf = new NodeGraphFilter()
     assertNull(graphIn(ngf).getOut.getType)
 
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     src.getFilters.add(ngf)
     assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).getOut.getType)
   }
 
   @Test
   def graphInput_forwardsFrameToInnerFilter(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val ngf = new NodeGraphFilter()
     src.getFilters.add(ngf)
 
@@ -68,7 +68,7 @@ class NodeGraphFilterTest {
 
   @Test
   def serialization_roundTrip_keepsGraphInput(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val ngf = new NodeGraphFilter()
     src.getFilters.add(ngf)
     val add = new AddFilter()
@@ -76,7 +76,7 @@ class NodeGraphFilterTest {
     add.getFilterIn.linkFrom(graphIn(ngf).getOut)
     sink(ngf).getInPorts.get(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.getFilterOut)
 
-    val copy: FpSrc = roundTrip(src)
+    val copy: FpCont = roundTrip(src)
 
     val copyNgf = copy.getFilters.get(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))

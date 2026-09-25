@@ -26,13 +26,13 @@ class FilterListTest {
 
   @Test
   def empty_chain_returnsSourceFrame(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     assertEquals(10.0, src.get(0, null).`val`, 0)
   }
 
   @Test
   def add_linksPortsInOrder(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
     src.getFilters.add(f1)
@@ -49,7 +49,7 @@ class FilterListTest {
 
   @Test
   def addAtIndex_keepsChain(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
@@ -70,7 +70,7 @@ class FilterListTest {
 
   @Test
   def add_atSize_appendsToTail(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -84,7 +84,7 @@ class FilterListTest {
 
   @Test
   def remove_rewiresNeighbors(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
@@ -111,7 +111,7 @@ class FilterListTest {
 
   @Test
   def set_replacesAndUnlinksOld(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -133,7 +133,7 @@ class FilterListTest {
 
   @Test
   def clear_returnsToEmptyChain(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     src.getFilters.add(a)
@@ -147,7 +147,7 @@ class FilterListTest {
 
   @Test
   def listIterator_add_remove_keepsChain(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val filters: List[Filter[Fpable]] = src.getFilters.asInstanceOf[List[Filter[Fpable]]]
@@ -176,7 +176,7 @@ class FilterListTest {
 
   @Test
   def serialization_roundTrip_restoresChain(): Unit = {
-    val src = new FpSrc(10)
+    val src = new FpCont(10)
     val f1 = new AddFilter()
     f1.delta.setDefaultData(3)
     src.getFilters.add(f1)
@@ -185,8 +185,8 @@ class FilterListTest {
     Using.resource(new ObjectOutputStream(bos)) { oos =>
       oos.writeObject(src)
     }
-    val copy: FpSrc = Using.resource(new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) { ois =>
-      ois.readObject().asInstanceOf[FpSrc]
+    val copy: FpCont = Using.resource(new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) { ois =>
+      ois.readObject().asInstanceOf[FpCont]
     }
 
     assertEquals(1, copy.getFilters.size())
@@ -222,7 +222,7 @@ object FilterListTest {
   /** 可复用帧，以 val 为内容。 */
   private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(null)
 
-  private[pipeline] final class FpSrc(private val base: Double) extends Content[Fpable] {
+  private[pipeline] final class FpCont(private val base: Double) extends Content[Fpable] {
     override protected def generate(time: Long, track: com.lomekwi.cave.timeline.Track): Fpable = {
       return new Fpable(base)
     }

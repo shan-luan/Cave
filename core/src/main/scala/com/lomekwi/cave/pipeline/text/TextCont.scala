@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class TextSrc(text: String) extends Content[TextFrame] {
+class TextCont(text: String) extends Content[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
     new Node.InPort[String]("文本", "请输入文本", classOf[String]) {})
   private final val fontSizeIn: Node.InPort[Double] = addInPort(
@@ -145,7 +145,7 @@ class TextSrc(text: String) extends Content[TextFrame] {
   }
 
   override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[TextSrc]
+    val src = original.asInstanceOf[TextCont]
     this.textIn.setDefaultData(src.getText)
     this.fontSizeIn.setDefaultData(src.getFontSize.toDouble)
     this.fontRes = new FontRes(src.fontRes.getPath)

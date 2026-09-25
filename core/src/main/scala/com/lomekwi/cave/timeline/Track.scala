@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.google.common.primitives.Longs
-import com.lomekwi.cave.pipeline.{BlockSrc, Element, Frame, Gap, Source}
+import com.lomekwi.cave.pipeline.{BlockCont, Element, Frame, Gap, Source}
 
 import java.io.Serializable
 import java.util
@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters.*
  */
 @SerialVersionUID(1L)
 final class Track private ( val timeline: Timeline,  val index: Int,
-                           private val blockSource: BlockSrc,
+                           private val blockSource: BlockCont,
                            private val byTime: TreeMap[Long, Element],
                            private val placements: Map[Element, Long],
                            private val origins: Map[Source[?], Long]) extends Serializable with java.lang.Iterable[Element] {
@@ -43,7 +43,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   def getRange(element: Element): Interval = {
     require(placements.contains(element))
     val lo = placements(element)
-    Interval(lo, hiOf(byTime, lo))
+    lo ~~ hiOf(byTime, lo)
   }
 
   /** 片段的 0 秒在时间轴中的位置。要求源在本轨道，否则抛 IllegalArgumentException。 */
@@ -121,8 +121,8 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       val right = s.duplicate()
       // 两半共用同一个 origin，源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
       remove(s)
-        .addOrThrow(s, Interval(r.lo, time), origin)
-        .addOrThrow(right, Interval(time, r.hi), origin)
+        .addOrThrow(s, r.lo ~~ time, origin)
+        .addOrThrow(right, time ~~ r.hi, origin)
     case _ => this
   }
 
@@ -138,7 +138,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   protected[timeline] def setStart(source: Source[?], deltaTime: Long): Track = {
     val r = getRange(source)
     val origin = getOrigin(source)
-    remove(source).addOrThrow(source, Interval(r.lo + deltaTime, r.hi), origin)
+    remove(source).addOrThrow(source, (r.lo + deltaTime) ~~ r.hi, origin)
   }
 
   /** 裁切一组源的结束边缘（各自起点不变）。 */
@@ -153,7 +153,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   protected[timeline] def setEnd(source: Source[?], deltaTime: Long): Track = {
     val r = getRange(source)
     val origin = getOrigin(source)
-    remove(source).addOrThrow(source, Interval(r.lo, r.hi + deltaTime), origin)
+    remove(source).addOrThrow(source, r.lo ~~ (r.hi + deltaTime), origin)
   }
 
   /**
@@ -441,7 +441,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   /** 包含 time 的条目。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
   private def entryAt(bt: immutable.TreeMap[Long, Element], time: Long): (Interval, Element) = {
     val (lo, element) = bt.rangeTo(time).last
-    (Interval(lo, hiOf(bt, lo)), element)
+    (lo ~~ hiOf(bt, lo), element)
   }
 
   /**
@@ -452,7 +452,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       Iterator.empty
     } else {
       bt.rangeUntil(range.hi).iterator
-        .map { case (lo, element) => (Interval(lo, hiOf(bt, lo)), element) }
+        .map { case (lo, element) => (lo ~~ hiOf(bt, lo), element) }
         .dropWhile(_._1.hi <= range.lo)
     }
   }
@@ -484,7 +484,7 @@ object Track {
    * 因此时间轴被元素完整划分，拖拽与裁切不必再单独判断左边界。
    */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
-    val blockSource = new BlockSrc
+    val blockSource = new BlockCont
     val tail = new Gap
     val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> blockSource, 0L -> tail)
     new Track(timeline, index, blockSource, byTime,

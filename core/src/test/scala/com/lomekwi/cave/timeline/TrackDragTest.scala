@@ -37,7 +37,7 @@ class TrackDragTest extends GdxTestBase {
   }
 
   private def newSrc(duration: Long): Source[?] = {
-    new TestSource(duration)
+    new TestCont(duration)
   }
 
   private def place(track: Track, src: Source[?], range: Interval): Unit = {
@@ -74,7 +74,7 @@ class TrackDragTest extends GdxTestBase {
 
     val tail = t0.get(100)
     assertTrue(tail.isInstanceOf[Gap])
-    assertEquals(Interval(100, Long.MaxValue), t0.getRange(tail))
+    assertEquals(100 ~~ Long.MaxValue, t0.getRange(tail))
   }
 
   @Test
@@ -561,6 +561,6 @@ class TrackDragTest extends GdxTestBase {
 
 object TrackDragTest {
   private def rng(lo: Long, hi: Long): Interval = {
-    Interval(lo, hi)
+    lo ~~ hi
   }
 }

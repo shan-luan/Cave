@@ -7,7 +7,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSrcActor, TlSrcActor}
  * 阻挡源。它填充时间轴 0 点左侧，使左边界由普通障碍表达，
  * 拖拽与裁切因此不必再单独判断"不能小于 0"。
  */
-class BlockSrc extends Content[Frame] {
+class BlockCont extends Content[Frame] {
 
   override def sync(time: Long, track: Track): Unit = {}
 

@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.{Gap, Source}
 import com.lomekwi.cave.timeline.{Interval, Track}
+import com.lomekwi.cave.timeline.~~
 
 
 import scala.jdk.CollectionConverters.*
@@ -79,7 +80,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
           rangeEndTime = t
         }
 
-        val timeRange: Interval = Interval(rangeStartTime, rangeEndTime)
+        val timeRange: Interval = rangeStartTime ~~ rangeEndTime
         for (element <- track.getIntersecting(timeRange).asScala) {
           element match {
             case s: Source[?] =>

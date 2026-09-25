@@ -9,7 +9,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlAudSrcActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 
 @SerialVersionUID(1L)
-class AudClipSrc(private var audRes: AudRes) extends Content[AudFrame] {
+class AudClipCont(private var audRes: AudRes) extends Content[AudFrame] {
   addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
@@ -48,7 +48,7 @@ class AudClipSrc(private var audRes: AudRes) extends Content[AudFrame] {
     "音频源"
   }
   override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[AudClipSrc]
+    val src = original.asInstanceOf[AudClipCont]
     this.audRes = src.audRes
   }
   override def createTlSrcActor(): TlSrcActor = {

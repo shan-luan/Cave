@@ -15,7 +15,7 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class VdoClipSrc(private var vdoRes: VdoRes) extends Content[ImgFrame] {
+class VdoClipCont(private var vdoRes: VdoRes) extends Content[ImgFrame] {
   @transient private var texture: Texture = uninitialized
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
@@ -88,7 +88,7 @@ class VdoClipSrc(private var vdoRes: VdoRes) extends Content[ImgFrame] {
     "视频源"
   }
   override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[VdoClipSrc]
+    val src = original.asInstanceOf[VdoClipCont]
     this.vdoRes = src.vdoRes
   }
   override def createTlSrcActor(): TlSrcActor = {

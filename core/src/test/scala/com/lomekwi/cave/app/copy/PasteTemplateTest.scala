@@ -2,7 +2,8 @@ package com.lomekwi.cave.app.copy
 
 import com.lomekwi.cave.app.selection.SourceSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{GdxTestBase, Interval, TestSource, Timeline}
+import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, Timeline}
+import com.lomekwi.cave.timeline.~~
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertNotSame, assertNull, assertSame, assertTrue}
 import org.junit.jupiter.api.BeforeEach
@@ -27,10 +28,10 @@ class PasteTemplateTest extends GdxTestBase {
   def templateSnapshotsPlacementAndGroup(): Unit = {
     val t0 = timeline.getTrackOrCreate(0)
     val t1 = timeline.getTrackOrCreate(1)
-    val a = new TestSource(100)
-    val b = new TestSource(100)
-    timeline.tryAdd(t0, a, Interval(0, 100), 1000)
-    timeline.tryAdd(t1, b, Interval(500, 600), 2000)
+    val a = new TestCont(100)
+    val b = new TestCont(100)
+    timeline.tryAdd(t0, a, 0 ~~ 100, 1000)
+    timeline.tryAdd(t1, b, 500 ~~ 600, 2000)
     val group = timeline.newGroup()
     group.add(a)
     group.add(b)
@@ -45,12 +46,12 @@ class PasteTemplateTest extends GdxTestBase {
 
     val ea = entries.get(0)
     assertEquals(0, ea.trackIndex)
-    assertEquals(Interval(0, 100), ea.range)
+    assertEquals(0 ~~ 100, ea.range)
     assertEquals(1000, ea.origin)
 
     val eb = entries.get(1)
     assertEquals(1, eb.trackIndex)
-    assertEquals(Interval(500, 600), eb.range)
+    assertEquals(500 ~~ 600, eb.range)
     assertEquals(2000, eb.origin)
 
     // 组结构在模板里保留，成员共享同一个模板组
@@ -69,10 +70,10 @@ class PasteTemplateTest extends GdxTestBase {
   def templateCopyRefreshesSourcesButKeepsPlacementAndGroupShape(): Unit = {
     val t0 = timeline.getTrackOrCreate(0)
     val t1 = timeline.getTrackOrCreate(1)
-    val a = new TestSource(100)
-    val b = new TestSource(100)
-    timeline.tryAdd(t0, a, Interval(0, 100), 1000)
-    timeline.tryAdd(t1, b, Interval(500, 600), 2000)
+    val a = new TestCont(100)
+    val b = new TestCont(100)
+    timeline.tryAdd(t0, a, 0 ~~ 100, 1000)
+    timeline.tryAdd(t1, b, 500 ~~ 600, 2000)
     val group = timeline.newGroup()
     group.add(a)
     group.add(b)
@@ -99,8 +100,8 @@ class PasteTemplateTest extends GdxTestBase {
   @Test
   def templateSurvivesDeletionOfOriginals(): Unit = {
     val t0 = timeline.getTrackOrCreate(0)
-    val a = new TestSource(100)
-    timeline.tryAdd(t0, a, Interval(0, 100), 5000)
+    val a = new TestCont(100)
+    timeline.tryAdd(t0, a, 0 ~~ 100, 5000)
 
     val selection = new SourceSet(timeline)
     selection.add(a)
@@ -109,7 +110,7 @@ class PasteTemplateTest extends GdxTestBase {
     timeline.remove(a)
 
     assertEquals(1, template.getEntries.size())
-    assertEquals(Interval(0, 100), template.getEntries.get(0).range)
+    assertEquals(0 ~~ 100, template.getEntries.get(0).range)
     assertEquals(5000, template.getEntries.get(0).origin)
   }
 }

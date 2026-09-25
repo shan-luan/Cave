@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class ImgSrc(private var imgRes: ImgRes) extends Content[ImgFrame] {
+class ImgCont(private var imgRes: ImgRes) extends Content[ImgFrame] {
   @transient private var texture: Texture = uninitialized
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
@@ -98,7 +98,7 @@ class ImgSrc(private var imgRes: ImgRes) extends Content[ImgFrame] {
   }
 
   override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[ImgSrc]
+    val src = original.asInstanceOf[ImgCont]
     this.imgRes = src.imgRes
   }
 

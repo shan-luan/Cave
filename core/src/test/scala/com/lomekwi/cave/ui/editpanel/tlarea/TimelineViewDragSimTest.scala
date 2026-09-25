@@ -4,8 +4,8 @@ import com.lomekwi.cave.app.selection.SourceSet
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.GdxTestBase
-import com.lomekwi.cave.timeline.Interval
-import com.lomekwi.cave.timeline.TestSource
+import com.lomekwi.cave.timeline.~~
+import com.lomekwi.cave.timeline.TestCont
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
@@ -60,7 +60,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   }
 
   private def newSrc(duration: Long): Source[?] = {
-    new TestSource(duration)
+    new TestCont(duration)
   }
 
   private def absX(time: Long): Float = {
@@ -73,7 +73,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   /** 在模型上放置一个源，并按 act() 的重建逻辑摆好 Actor。 */
   private def place(track: Track, src: Source[?], start: Long, end: Long, origin: Long): TlSrcActor = {
-    timeline.tryAdd(track, src, Interval(start, end), origin)
+    timeline.tryAdd(track, src, start ~~ end, origin)
     val actor = src.getTlSrcActor
     actor.tl = tl
     actor.setPosition(absX(start), trackTopY(track.index))
@@ -108,13 +108,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     // 事件驱动一次，应恰好移动 100_000µs
     actor.dragTo(mouseLocalX - actor.getX, mouseLocalY - actor.getY)
-    assertEquals(Interval(100_000L, 1000_000L + 100_000L), t0.getRange(s))
+    assertEquals(100_000L ~~ (1000_000L + 100_000L), t0.getRange(s))
 
     // 鼠标不动，多帧重建（纯投影），模型与 origin 必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(100_000L, 1000_000L + 100_000L), t0.getRange(s))
+      assertEquals(100_000L ~~ (1000_000L + 100_000L), t0.getRange(s))
       assertEquals(5_000_000L + 100_000L, t0.getOrigin(s))
       i += 1
     }
@@ -122,7 +122,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.finishDrag()
 
     project.undoManager.undo()
-    assertEquals(Interval(0L, 1000_000L), t0.getRange(s))
+    assertEquals(0L ~~ 1000_000L, t0.getRange(s))
     assertEquals(5_000_000L, t0.getOrigin(s))
   }
 
@@ -171,14 +171,14 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newFrontLocalX = 50f // 起点右移 50px=50ms
     actor.dragTo(newFrontLocalX, view.trackHeight / 2)
-    assertEquals(Interval(50_000L, 1000_000L), t0.getRange(s))
+    assertEquals(50_000L ~~ 1000_000L, t0.getRange(s))
     assertEquals(0, t0.getOrigin(s))
 
     // 鼠标不动（停在裁切后的新起点 absX(50000)），多帧重建，起点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(50_000L, 1000_000L), t0.getRange(s))
+      assertEquals(50_000L ~~ 1000_000L, t0.getRange(s))
       assertEquals(0, t0.getOrigin(s))
       i += 1
     }
@@ -195,14 +195,14 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newWidth = actor.getWidth + 60f // 终点右移 60px=60ms
     actor.dragTo(newWidth, view.trackHeight / 2)
-    assertEquals(Interval(0L, 1000_000L + 60_000L), t0.getRange(s))
+    assertEquals(0L ~~ (1000_000L + 60_000L), t0.getRange(s))
     assertEquals(5_000_000L, t0.getOrigin(s))
 
     // 鼠标不动，多帧重建，终点与 origin 都必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Interval(0L, 1000_000L + 60_000L), t0.getRange(s))
+      assertEquals(0L ~~ (1000_000L + 60_000L), t0.getRange(s))
       assertEquals(5_000_000L, t0.getOrigin(s))
       i += 1
     }
