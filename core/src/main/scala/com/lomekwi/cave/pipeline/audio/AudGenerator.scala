@@ -1,15 +1,13 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.app.AppAudioOut
-import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.{Content, Source}
+import com.lomekwi.cave.pipeline.{Generator, Node, Source}
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.ui.editpanel.tlarea.TlAudSrcActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSrcActor, TlSrcActor}
 
 @SerialVersionUID(1L)
-class AudClipCont(private var audRes: AudRes) extends Content[AudFrame] {
+class AudGenerator(private var audRes: AudRes) extends Generator[AudFrame] {
   addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
@@ -22,11 +20,10 @@ class AudClipCont(private var audRes: AudRes) extends Content[AudFrame] {
     audRes.sync(track.index, time)
   }
 
-  override protected def generate(time: Long, track: Track): AudFrame = {
-
+  override protected def produce(time: Long, track: Track, source: Source[AudFrame]): AudFrame = {
     // 轨道按索引唯一，帧携带的轨道只要索引相同就仍然对应当前的轨迹线程，可以接着用
     if (frame == null || frame.track.index != track.index) {
-      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track, this)
+      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track, source)
     }
 
     try {
@@ -41,17 +38,21 @@ class AudClipCont(private var audRes: AudRes) extends Content[AudFrame] {
   override def getLengthPerExportFrame: Long = {
     audRes.getFrameLength
   }
+
   override def getDuration: Long = {
     audRes.getDuration
   }
+
   override def getDisplayName: String = {
     "音频源"
   }
-  override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[AudClipCont]
-    this.audRes = src.audRes
+
+  override def createTlSrcActor(source: Source[?]): TlSrcActor = {
+    new TlAudSrcActor(source)
   }
-  override def createTlSrcActor(): TlSrcActor = {
-    new TlAudSrcActor(this)
+
+  override def onDuplicate(original: Generator[?]): Unit = {
+    val src = original.asInstanceOf[AudGenerator]
+    this.audRes = src.audRes
   }
 }

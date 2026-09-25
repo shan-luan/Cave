@@ -1,44 +1,44 @@
 package com.lomekwi.cave.pipeline.image
 
+import com.lomekwi.cave.util.Units.SECOND
+
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.{Content, Source}
-import com.lomekwi.cave.resource.media.VdoRes
+import com.lomekwi.cave.pipeline.{Generator, Node, Source}
+import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TlVdoSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.{TlImgSrcActor, TlSrcActor}
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class VdoClipCont(private var vdoRes: VdoRes) extends Content[ImgFrame] {
+class ImgGenerator(private var imgRes: ImgRes) extends Generator[ImgFrame] {
   @transient private var texture: Texture = uninitialized
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
-    override def getData: Double = vdoRes.getWidth.toDouble
+    override def getData: Double = imgRes.getWidth.toDouble
   })
   addOutPort(new Node.OutPort[Double]("高度", classOf[Double]) {
-    override def getData: Double = vdoRes.getHeight.toDouble
+    override def getData: Double = imgRes.getHeight.toDouble
   })
   addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
 
-  def getVdoRes: VdoRes = {
-    vdoRes
+  def getImgRes: ImgRes = {
+    imgRes
   }
 
   override def sync(time: Long, track: Track): Unit = {
-    vdoRes.sync(track.index, time)
+    imgRes.sync(track.index, time)
   }
 
-  override def generate(time: Long, track: Track): ImgFrame = {
+  override protected def produce(time: Long, track: Track, source: Source[ImgFrame]): ImgFrame = {
     if (frame != null && frame.track.index != track.index) {
       initialized = false
     }
@@ -46,9 +46,9 @@ class VdoClipCont(private var vdoRes: VdoRes) extends Content[ImgFrame] {
     if (!initialized) {
       Gdx.app.postRunnable(() => {
         if (texture == null) {
-          texture = new Texture(vdoRes.getWidth, vdoRes.getHeight, Pixmap.Format.RGBA8888)
+          texture = new Texture(imgRes.getWidth, imgRes.getHeight, Pixmap.Format.RGBA8888)
         }
-        frame = new ImgFrame(track, this)
+        frame = new ImgFrame(track, source)
         frame.setTexture(texture)
           .setTransform(new Transform(0, 0, 0))
         if (actor == null) {
@@ -69,7 +69,7 @@ class VdoClipCont(private var vdoRes: VdoRes) extends Content[ImgFrame] {
       }
     }
     try {
-      vdoRes.get(track.index, time, frame)
+      imgRes.get(track.index, time, frame)
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -78,20 +78,29 @@ class VdoClipCont(private var vdoRes: VdoRes) extends Content[ImgFrame] {
     frame.getTransform.reset(0, 0)
     frame
   }
+
   override def getLengthPerExportFrame: Long = {
-    vdoRes.getFrameLength
+    imgRes.getFrameLength
   }
+
   override def getDuration: Long = {
-    vdoRes.getDuration
+    Long.MaxValue
   }
+
+  override def getDefaultDuration: Long = {
+    5 * SECOND
+  }
+
   override def getDisplayName: String = {
-    "视频源"
+    "图片源"
   }
-  override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[VdoClipCont]
-    this.vdoRes = src.vdoRes
+
+  override def createTlSrcActor(source: Source[?]): TlSrcActor = {
+    new TlImgSrcActor(source)
   }
-  override def createTlSrcActor(): TlSrcActor = {
-    new TlVdoSrcActor(this)
+
+  override def onDuplicate(original: Generator[?]): Unit = {
+    val src = original.asInstanceOf[ImgGenerator]
+    this.imgRes = src.imgRes
   }
 }

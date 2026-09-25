@@ -124,7 +124,7 @@ class Inspector extends VisTable {
   }
 
   private def appendSourceInfo(source: Source[?]): Unit = {
-    content.add(new SourceActor(source)).growX().pad(4).row()
+    content.add(new GeneratorActor(source)).growX().pad(4).row()
     for (filter <- source.getFilters.asScala) {
       val actor = new FilterActor(source, filter)
       actor.setRebuildCallback(() => rebuildContent())

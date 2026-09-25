@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.google.common.primitives.Longs
-import com.lomekwi.cave.pipeline.{BlockCont, Element, Frame, Gap, Source}
+import com.lomekwi.cave.pipeline.{BlockGenerator, Content, Element, Frame, Gap, Source}
 
 import java.io.Serializable
 import java.util
@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters.*
  */
 @SerialVersionUID(1L)
 final class Track private ( val timeline: Timeline,  val index: Int,
-                           private val blockSource: BlockCont,
+                           private val blockSource: Source[Frame],
                            private val byTime: TreeMap[Long, Element],
                            private val placements: Map[Element, Long],
                            private val origins: Map[Source[?], Long]) extends Serializable with java.lang.Iterable[Element] {
@@ -484,7 +484,7 @@ object Track {
    * 因此时间轴被元素完整划分，拖拽与裁切不必再单独判断左边界。
    */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
-    val blockSource = new BlockCont
+    val blockSource: Source[Frame] = new Content[Frame](new BlockGenerator)
     val tail = new Gap
     val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> blockSource, 0L -> tail)
     new Track(timeline, index, blockSource, byTime,

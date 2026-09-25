@@ -4,20 +4,18 @@ import com.lomekwi.cave.util.Units.SECOND
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.{Content, Source}
+import com.lomekwi.cave.pipeline.{Generator, Node, Source}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
-import com.lomekwi.cave.ui.editpanel.tlarea.TlTextSrcActor
+import com.lomekwi.cave.ui.editpanel.tlarea.{TlSrcActor, TlTextSrcActor}
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class TextCont(text: String) extends Content[TextFrame] {
+class TextGenerator(text: String) extends Generator[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
     new Node.InPort[String]("文本", "请输入文本", classOf[String]) {})
   private final val fontSizeIn: Node.InPort[Double] = addInPort(
@@ -81,9 +79,7 @@ class TextCont(text: String) extends Content[TextFrame] {
     initialized = false
   }
 
-  override def sync(time: Long, track: Track): Unit = {}
-
-  override protected def generate(time: Long, track: Track): TextFrame = {
+  override protected def produce(time: Long, track: Track, source: Source[TextFrame]): TextFrame = {
     if (frame != null && frame.track.index != track.index) {
       initialized = false
     }
@@ -99,7 +95,7 @@ class TextCont(text: String) extends Content[TextFrame] {
           font = fontRes.getFont(getFontSize)
           generatedFontSize = getFontSize
         }
-        frame = new TextFrame(track, this)
+        frame = new TextFrame(track, source)
         frame.setFont(font)
         frame.setTransform(new Transform(0, 0, 0))
         if (actor == null) {
@@ -140,12 +136,12 @@ class TextCont(text: String) extends Content[TextFrame] {
     "文本源"
   }
 
-  override def createTlSrcActor(): TlSrcActor = {
-    new TlTextSrcActor(this)
+  override def createTlSrcActor(source: Source[?]): TlSrcActor = {
+    new TlTextSrcActor(source)
   }
 
-  override def onDuplicate(original: Source[?]): Unit = {
-    val src = original.asInstanceOf[TextCont]
+  override def onDuplicate(original: Generator[?]): Unit = {
+    val src = original.asInstanceOf[TextGenerator]
     this.textIn.setDefaultData(src.getText)
     this.fontSizeIn.setDefaultData(src.getFontSize.toDouble)
     this.fontRes = new FontRes(src.fontRes.getPath)

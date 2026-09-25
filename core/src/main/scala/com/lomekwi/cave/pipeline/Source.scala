@@ -1,18 +1,17 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.ui.editpanel.inspector.SourceActor
+import com.lomekwi.cave.ui.editpanel.inspector.GeneratorActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.Serializable
 import java.util
 import scala.compiletime.uninitialized
-import scala.reflect.ClassTag
 
 /**
- * 帧源。自身是 filter 链的头，
- * 提供 FilterOut（链起点，输出 generate() 生成的帧）。
+ * 帧源。由 {@link Generator}（帧的产出）与 {@link FilterList}（过滤链）组合而成，
+ * 自身只持有这两者并转发对外门面，不参与生成。
  *
  * 它是 {@link Element} 中承载内容的那一支，内部再分内容与转场。
  * 只关心"这里是不是源"的调用方匹配 Source 即可，不必往下看那一层。
@@ -20,28 +19,14 @@ import scala.reflect.ClassTag
  * @tparam T 帧类型
  */
 @SerialVersionUID(1L)
-sealed abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] with Element {
-  @transient protected var frame: T = null.asInstanceOf[T]
+sealed abstract class Source[T <: Frame](private val generator: Generator[T])
+  extends Element with Serializable with Duplicatable[Source[T]] {
+  private final val filters: util.List[Filter[? >: T]] = new FilterList[T](generator)
   @transient private var srcActor: TlSrcActor = uninitialized
 
-  /** 链头输出端口，输出本源生成的最新帧供第一个 filter 消费。 */
-  final val headOut: FilterOut = addOutPort(new FilterOut {
-    override def getData: T = {
-      frame
-    }
-
-    override def getType: Class[? <: T] = {
-      classTag.runtimeClass.asInstanceOf[Class[? <: T]]
-    }
-  })
-
-  private final val filters: util.List[Filter[? >: T]] = new FilterList[T](this)
-
-  /**
-   * 同步到指定时间
-   * @param time 源内时间
-   */
-  def sync(time: Long, track: Track): Unit
+  def getGenerator: Generator[T] = {
+    generator
+  }
 
   /**
    * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
@@ -50,20 +35,30 @@ sealed abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] wi
    * @return 产品
    */
   final def get(time: Long, track: Track): T = {
-    frame = generate(time, track)
-    if (filters.isEmpty) frame
+    val generated = generator.generate(time, track, this)
+    if (filters.isEmpty) generated
     else filters.get(filters.size() - 1).getFilterOut.getData.asInstanceOf[T]
+  }
+
+  /**
+   * 同步到指定时间
+   * @param time 源内时间
+   */
+  def sync(time: Long, track: Track): Unit = {
+    generator.sync(time, track)
   }
 
   /**
    * 播放头离开本源的片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
    * @param time 源内时间，即离开时播放头所在的片段内位置
    */
-  def onStepOut(time: Long, track: Track): Unit = {}
+  def onStepOut(time: Long, track: Track): Unit = {
+    generator.onStepOut(time, track)
+  }
 
-  def prefetch(): Unit = {}
-
-  protected def generate(time: Long, track: Track): T
+  def prefetch(): Unit = {
+    generator.prefetch()
+  }
 
   def getFilters: util.List[Filter[? >: T]] = {
     filters
@@ -74,23 +69,38 @@ sealed abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] wi
     this
   }
 
-  def getLengthPerExportFrame: Long
+  def getType: Class[T] = {
+    generator.getType
+  }
+
+  def getLengthPerExportFrame: Long = {
+    generator.getLengthPerExportFrame
+  }
+
   /** 媒体源的总时长（微秒） */
-  def getDuration: Long
+  def getDuration: Long = {
+    generator.getDuration
+  }
+
   /**
    * 插入时间轴时片段使用的默认时长。时长无界（{@link #getDuration()} 为
    * {@link Long#MAX_VALUE}）的源必须返回有限值。
    */
   def getDefaultDuration: Long = {
-    getDuration
+    generator.getDefaultDuration
   }
-  def getDisplayName: String
-  def onDuplicate(original: Source[?]): Unit = {
+
+  def getDisplayName: String = {
+    generator.getDisplayName
   }
-  def getSourceActor: SourceActor = {
-    new SourceActor(this)
+
+  def getGeneratorActor: GeneratorActor = {
+    new GeneratorActor(this)
   }
-  def createTlSrcActor(): TlSrcActor
+
+  def createTlSrcActor(): TlSrcActor = {
+    generator.createTlSrcActor(this)
+  }
 
   /** 本源在时间线上的可视化 actor，随取随建。 */
   def getTlSrcActor: TlSrcActor = {
@@ -100,20 +110,17 @@ sealed abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] wi
 
   override def duplicate(): Source[T] = {
     val copy = super[Duplicatable].duplicate()
-    copy.onDuplicate(this)
+    copy.getGenerator.onDuplicate(generator)
     copy
-  }
-
-  override def getName: String = {
-    getDisplayName
   }
 }
 
 /**
- * 内容源，时间线上承载实际素材的那些。
+ * 内容源，时间线上承载实际素材的那些。不同素材由构造时注入的 {@link Generator} 组合而来，
+ * 不再需要为此开放继承。
  */
 @SerialVersionUID(1L)
-abstract class Content[T <: Frame](using ClassTag[T]) extends Source[T]
+class Content[T <: Frame](generator: Generator[T]) extends Source[T](generator)
 
 /**
  * 转场，连接前后两段内容。片段之间如何接、能不能接，是拓扑规则，
@@ -121,7 +128,7 @@ abstract class Content[T <: Frame](using ClassTag[T]) extends Source[T]
  * WIP.
  */
 @SerialVersionUID(1L)
-abstract class Transition[T <: Frame](using ClassTag[T]) extends Source[T]
+abstract class Transition[T <: Frame](generator: Generator[T]) extends Source[T](generator)
 
 /**
  * 轨道元素，一个ADT。轨道被元素完整划分，任意时刻恰好由一个元素占据。

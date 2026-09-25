@@ -7,8 +7,8 @@ import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.text.TextCont
+import com.lomekwi.cave.pipeline.{Content, Source}
+import com.lomekwi.cave.pipeline.text.{TextFrame, TextGenerator}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.Interval
 import com.lomekwi.cave.timeline.~~
@@ -74,7 +74,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val source: Source[?] = new TextCont()
+    val source: Source[?] = new Content[TextFrame](new TextGenerator())
     val duration: Long = source.getDefaultDuration
 
     var targetTrack: Int = 0
