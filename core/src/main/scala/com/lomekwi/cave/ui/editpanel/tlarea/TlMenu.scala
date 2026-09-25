@@ -94,7 +94,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.getProject
     try {
-      val sources: util.List[Source[?]] = project.mediaSegFactory.getAll(file)
+      val sources: util.List[Source[?]] = project.sourceFactory.getAll(file)
       if (!sources.isEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0

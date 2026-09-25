@@ -20,27 +20,33 @@ import java.util.function.Function
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
+/**
+ * 源构造厂。按资源类型登记构造器，据此把 {@link Resource} 变成时间线上可用的 {@link Source}。
+ * 项目中还没有资源的文件先由 {@link App#mediaFactory} 建出资源。
+ */
 @SerialVersionUID(1L)
-class MediaSegFactory(@transient private var project: Project) extends Serializable {
-  @transient private var map: util.Map[Class[? <: Resource], Function[? <: Resource, Source[?]]] = uninitialized
+class SourceFactory(@transient private var project: Project) extends Serializable {
+  import SourceFactory.*
 
-  this.map = new util.HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
-  initDefaultMappings()
+  @transient private var constructors: util.Map[ResourceClass, SourceCtor] = uninitialized
+
+  this.constructors = new util.HashMap[ResourceClass, SourceCtor]()
+  initDefaultConstructors()
 
   def setProject(project: Project): Unit = {
     this.project = project
   }
 
-  private def initDefaultMappings(): Unit = {
+  private def initDefaultConstructors(): Unit = {
     register(classOf[VdoRes], (source: Resource) => new Content[ImgFrame](new VdoGenerator(source.asInstanceOf[VdoRes])))
     register(classOf[AudRes], (source: Resource) => new Content[AudFrame](new AudGenerator(source.asInstanceOf[AudRes])))
     register(classOf[ImgRes], (source: Resource) => new Content[ImgFrame](new ImgGenerator(source.asInstanceOf[ImgRes])))
   }
-  def register(clazz: Class[? <: Resource], constructor: Function[? <: Resource, Source[?]]): Unit = {
-    map.put(clazz, constructor)
+  def register(clazz: ResourceClass, constructor: SourceCtor): Unit = {
+    constructors.put(clazz, constructor)
   }
-  def unregister(clazz: Class[? <: Resource]): Unit = {
-    map.remove(clazz)
+  def unregister(clazz: ResourceClass): Unit = {
+    constructors.remove(clazz)
   }
 
   /**
@@ -65,7 +71,7 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
 
     val sources: util.List[Source[?]] = new util.ArrayList[Source[?]]()
     for (resource <- existing.asScala) {
-      sources.add(applyUnchecked(map.get(resource.getClass), resource))
+      sources.add(applyUnchecked(constructors.get(resource.getClass), resource))
     }
     sources
   }
@@ -76,13 +82,21 @@ class MediaSegFactory(@transient private var project: Project) extends Serializa
   def get(file: File): Source[?] = {
     getAll(file).get(0)
   }
-  private def applyUnchecked[R <: Resource](fn: Function[? <: Resource, Source[?]], resource: R): Source[?] = {
+  private def applyUnchecked[R <: Resource](fn: SourceCtor, resource: R): Source[?] = {
     fn.asInstanceOf[Function[R, Source[?]]].apply(resource)
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
     ois.defaultReadObject()
-    this.map = new util.HashMap[Class[? <: Resource], Function[? <: Resource, Source[?]]]()
-    initDefaultMappings()
+    this.constructors = new util.HashMap[ResourceClass, SourceCtor]()
+    initDefaultConstructors()
   }
+}
+
+object SourceFactory {
+  /** 资源类型，构造器登记表的键。 */
+  private type ResourceClass = Class[? <: Resource]
+
+  /** 由单个资源构造源。 */
+  private type SourceCtor = Function[? <: Resource, Source[?]]
 }
