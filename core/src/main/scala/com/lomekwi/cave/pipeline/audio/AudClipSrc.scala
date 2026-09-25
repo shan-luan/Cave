@@ -2,14 +2,14 @@ package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Content, Source}
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.tlarea.TlAudSrcActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 
 @SerialVersionUID(1L)
-class AudClipSrc(private var audRes: AudRes) extends Source[AudFrame] {
+class AudClipSrc(private var audRes: AudRes) extends Content[AudFrame] {
   addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })

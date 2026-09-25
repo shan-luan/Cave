@@ -5,7 +5,7 @@ import com.lomekwi.cave.util.Units.SECOND
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Content, Source}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
 import com.lomekwi.cave.timeline.Track
@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class TextSrc(text: String) extends Source[TextFrame] {
+class TextSrc(text: String) extends Content[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
     new Node.InPort[String]("文本", "请输入文本", classOf[String]) {})
   private final val fontSizeIn: Node.InPort[Double] = addInPort(

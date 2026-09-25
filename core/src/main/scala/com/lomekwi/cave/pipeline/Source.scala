@@ -14,10 +14,13 @@ import scala.reflect.ClassTag
  * 帧源。自身是 filter 链的头，
  * 提供 FilterOut（链起点，输出 generate() 生成的帧）。
  *
+ * 它是 {@link Element} 中承载内容的那一支，内部再分内容与转场。
+ * 只关心"这里是不是源"的调用方匹配 Source 即可，不必往下看那一层。
+ *
  * @tparam T 帧类型
  */
 @SerialVersionUID(1L)
-abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] with Element {
+sealed abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] with Element {
   @transient protected var frame: T = null.asInstanceOf[T]
   @transient private var srcActor: TlSrcActor = uninitialized
 
@@ -105,6 +108,19 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
     getDisplayName
   }
 }
+
+/**
+ * 内容源，时间线上承载实际素材的那些。
+ */
+@SerialVersionUID(1L)
+abstract class Content[T <: Frame](using ClassTag[T]) extends Source[T]
+
+/**
+ * 转场，连接前后两段内容。片段之间如何接、能不能接，是拓扑规则，
+ * 由关心它的调用方按这个子类型分辨，不关心的调用方看到的是 {@link Source}。
+ */
+@SerialVersionUID(1L)
+abstract class Transition[T <: Frame](using ClassTag[T]) extends Source[T]
 
 /**
  * 轨道元素，一个ADT。轨道被元素完整划分，任意时刻恰好由一个元素占据。

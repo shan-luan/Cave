@@ -6,7 +6,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Content, Source}
 import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class ImgSrc(private var imgRes: ImgRes) extends Source[ImgFrame] {
+class ImgSrc(private var imgRes: ImgRes) extends Content[ImgFrame] {
   @transient private var texture: Texture = uninitialized
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
