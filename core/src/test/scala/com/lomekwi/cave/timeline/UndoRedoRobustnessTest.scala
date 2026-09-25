@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Gap, Source}
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
@@ -136,7 +136,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     for (track <- timeline.getTracks.asScala) {
       for (element <- track.asScala) {
         element match {
-          case Segment(source) =>
+          case s: Source[?] =>
             if (rnd.nextFloat() < 0.35f) {
               var group: SourceGroup = null
               if (!groups.isEmpty && rnd.nextFloat() < 0.5f) {
@@ -145,7 +145,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
                 group = timeline.newGroup()
                 groups.add(group)
               }
-              group.add(source)
+              group.add(s)
             }
           case _: Gap =>
         }
@@ -277,7 +277,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     for (track <- timeline.getTracks.asScala) {
       for (element <- track.asScala) {
         element match {
-          case Segment(source) => out.add(source)
+          case s: Source[?] => out.add(s)
           case _: Gap =>
         }
       }

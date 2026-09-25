@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 import java.util.{List, Set}
 
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Gap, Source}
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -50,7 +50,7 @@ class TrackDragTest extends GdxTestBase {
 
   /** 该时间点上的片段源；落在空隙或轨道外时为 null。 */
   private def segAt(track: Track, time: Long): Source[?] = track.get(time) match {
-    case Segment(source) => source
+    case s: Source[?] => s
     case _: Gap => null
   }
 
@@ -70,7 +70,7 @@ class TrackDragTest extends GdxTestBase {
     val s: Source[?] = newSrc(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(Segment(s)))
+    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
 
     val tail = t0.get(100)
     assertTrue(tail.isInstanceOf[Gap])
@@ -551,7 +551,7 @@ class TrackDragTest extends GdxTestBase {
     var c = 0
     for (element <- track.asScala) {
       element match {
-        case _: Segment => c += 1
+        case _: Source[?] => c += 1
         case _: Gap =>
       }
     }

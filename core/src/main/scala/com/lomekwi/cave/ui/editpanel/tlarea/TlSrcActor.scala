@@ -6,8 +6,8 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.timeline.{Gap, Interval, Segment, SourceGroup, Track}
+import com.lomekwi.cave.pipeline.{Gap, Source}
+import com.lomekwi.cave.timeline.{Interval, SourceGroup, Track}
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.Colors
@@ -256,7 +256,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       if (t != null) {
         for (element <- t.asScala) {
           element match {
-            case Segment(source) => ignore.add(source)
+            case s: Source[?] => ignore.add(s)
             case _: Gap =>
           }
         }

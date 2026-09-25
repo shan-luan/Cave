@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
  * @tparam T 帧类型
  */
 @SerialVersionUID(1L)
-abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] {
+abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Serializable with Duplicatable[Source[T]] with Element {
   @transient protected var frame: T = null.asInstanceOf[T]
   @transient private var srcActor: TlSrcActor = uninitialized
 
@@ -105,3 +105,19 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
     getDisplayName
   }
 }
+
+/**
+ * 轨道元素，一个ADT。轨道被元素完整划分，任意时刻恰好由一个元素占据。
+ * 元素不持有区间，区间与元素的对应由 {@link Track} 维护。
+ *
+ * 源就是承载内容的那一支，空隙是另一支。它和 {@link Gap} 与 {@link Source}
+ * 声明在同一个文件里，是为了让元素保持 sealed，sealed 只认同源文件的直接子类。
+ */
+sealed trait Element extends Serializable
+
+/**
+ * 空隙。每个占位区间一个独立实例，因此不能用 case。
+ * 它的相等必须是身份相等，否则无法充当"元素到区间"那张反向表的键。
+ */
+@SerialVersionUID(1L)
+final class Gap extends Element

@@ -11,8 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SourceSet, SourceSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.timeline.{Gap, Interval, Segment, SourceGroup, Timeline, Track, UndoManager}
+import com.lomekwi.cave.pipeline.{Gap, Source}
+import com.lomekwi.cave.timeline.{Interval, SourceGroup, Timeline, Track, UndoManager}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.playback.Playhead
 
@@ -149,10 +149,10 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
         for (element <- track.getIntersecting(visibleRange).asScala) {
           element match {
-            case Segment(source) =>
-              val actor = source.getTlSrcActor
+            case s: Source[?] =>
+              val actor = s.getTlSrcActor
               actor.tl = this
-              val r = track.getRange(source)
+              val r = track.getRange(s)
               actor.setPosition(
                 absoluteTimeToX(r.lo),
                 getHeight + view.trackYShift - (i + 1) * view.trackHeight
@@ -278,8 +278,8 @@ class TimelineView(project0: Project) extends Group with Focusable {
         stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
       val track = timeline.getTrackOrCreate(yToTrackIndex(local.y))
       track.get(xToAbsoluteTime(local.x)) match {
-        case Segment(source) =>
-          splitSource(source, xToAbsoluteTime(local.x))
+        case s: Source[?] =>
+          splitSource(s, xToAbsoluteTime(local.x))
           dirty = true
         case _: Gap =>
       }
@@ -305,7 +305,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
           beforeSources.add(member)
           // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
           timeline.getTrackOrCreate(memberTrack.index).get(time) match {
-            case Segment(right) => afterSources.add(right)
+            case s: Source[?] => afterSources.add(s)
             case _: Gap =>
           }
           splitAny = true
@@ -331,9 +331,9 @@ class TimelineView(project0: Project) extends Group with Focusable {
         stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
       val track = timeline.getTrackOrCreate(yToTrackIndex(local.y))
       track.get(xToAbsoluteTime(local.x)) match {
-        case Segment(source) =>
+        case s: Source[?] =>
           Using.resource(timeline.record()) { h =>
-            timeline.remove(source)
+            timeline.remove(s)
           }
           dirty = true
         case _: Gap =>

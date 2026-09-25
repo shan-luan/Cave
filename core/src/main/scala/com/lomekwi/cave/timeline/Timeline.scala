@@ -2,7 +2,7 @@ package com.lomekwi.cave.timeline
 
 import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.pipeline.{GapFrame, Source}
+import com.lomekwi.cave.pipeline.{Gap, GapFrame, Source}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager.{AddSegCommand, CompoundCommand, MergeableCommand, MoveSegsCommand, RemoveSegCommand, RemoveSegsCommand, ResizeSegsCommand, SplitSegCommand, TrackEdit, UndoableCommand}
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
@@ -290,9 +290,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     for (track <- tracks) {
       for (element <- track.getIntersecting(searchRange).asScala) {
         element match {
-          case Segment(source) =>
-            if (!ignore.contains(source)) {
-              val r = track.getRange(source)
+          case s: Source[?] =>
+            if (!ignore.contains(s)) {
+              val r = track.getRange(s)
               var dist = Math.abs(r.lo - time)
               if (dist < bestDist) {
                 best = r.lo
@@ -545,11 +545,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
             var f: com.lomekwi.cave.pipeline.Frame = null
             track.get(t) match {
-              case Segment(source) =>
-                track.syncAt(source, t)
-                activeSource = source
-                activeRange = track.getRange(source)
-                f = track.frameAt(source, t)
+              case s: Source[?] =>
+                track.syncAt(s, t)
+                activeSource = s
+                activeRange = track.getRange(s)
+                f = track.frameAt(s, t)
               case _: Gap =>
             }
             project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
@@ -558,16 +558,16 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
           } else {
             updateNeeded = false
             track.get(t) match {
-              case Segment(source) =>
-                val r = track.getRange(source)
-                Gdx.app.debug("Track" + index, "找到源: " + source)
-                track.syncAt(source, t)
-                activeSource = source
+              case s: Source[?] =>
+                val r = track.getRange(s)
+                Gdx.app.debug("Track" + index, "找到源: " + s)
+                track.syncAt(s, t)
+                activeSource = s
                 activeRange = r
                 val end: Long = r.hi
                 while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
                   t = project.playhead.getTime
-                  val frame = track.frameAt(source, t)
+                  val frame = track.frameAt(s, t)
                   if (!updateNeeded && frame != null) {
                     project.projEventBus.post(frame)
                     val phase = sinkPhaser.arrive()
@@ -579,15 +579,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                     }
                   }
                 }
-              case _: Gap =>
+              case gap: Gap =>
                 project.projEventBus.post(gapFrame)
-                var parkTime: Long = Long.MaxValue
-                val next = track.sourceAtOrAfter(t)
-                if (next != null) {
-                  parkTime = track.getRange(next).lo - t
-                  parkTime *= 1000
-                  parkTime = Math.max(parkTime, 1)
-                }
+                val gapEnd: Long = track.getRange(gap).hi
+                val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
                 Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
                 LockSupport.parkNanos(parkTime)
             }

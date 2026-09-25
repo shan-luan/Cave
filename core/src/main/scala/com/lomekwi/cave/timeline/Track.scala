@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.google.common.primitives.Longs
-import com.lomekwi.cave.pipeline.{BlockSrc, Frame, Source}
+import com.lomekwi.cave.pipeline.{BlockSrc, Element, Frame, Gap, Source}
 
 import java.io.Serializable
 import java.util
@@ -12,7 +12,7 @@ import scala.collection.immutable.TreeMap
 import scala.jdk.CollectionConverters.*
 
 /**
- * 轨道。轨道被元素（{@link Segment} 与 {@link Gap}）完整划分，任意时刻恰好由一个元素占据。
+ * 轨道。轨道被元素（{@link Source} 与 {@link Gap}）完整划分，任意时刻恰好由一个元素占据。
  * 因为区间首尾相接，内容表只以区间起点为键，右端点取相邻条目的起点（末尾条目一直延伸到时间轴尽头）；
  * 源内偏移（origin）与元素到起点的反查各存一张表。
  *
@@ -29,13 +29,13 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 是否是占据 0 点左侧的阻挡片段。它只提供左边界，对遍历不可见。 */
   private def isBlock(element: Element): Boolean = element match {
-    case Segment(source) => source.eq(blockSource)
+    case s: Source[?] => s.eq(blockSource)
     case _: Gap => false
   }
 
   /** 轨道是否没有用户内容。阻挡片段是地基，不算。 */
   protected[timeline] def isEmpty: Boolean = !byTime.valuesIterator.exists {
-    case Segment(source) => !source.eq(blockSource)
+    case s: Source[?] => !s.eq(blockSource)
     case _: Gap => false
   }
 
@@ -46,9 +46,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     Interval(lo, hiOf(byTime, lo))
   }
 
-  /** 片段占用的区间。要求源在本轨道，否则抛 IllegalArgumentException。 */
-  def getRange(source: Source[?]): Interval = getRange(Segment(source))
-
   /** 片段的 0 秒在时间轴中的位置。要求源在本轨道，否则抛 IllegalArgumentException。 */
   def getOrigin(source: Source[?]): Long = {
     require(origins.contains(source))
@@ -57,10 +54,8 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   def contains(element: Element): Boolean = placements.contains(element)
 
-  def contains(source: Source[?]): Boolean = contains(Segment(source))
-
   /** 最后一个片段的终点；没有片段时为 0。 */
-  lazy val length: Long = byTime.iterator.collect { case (lo, _: Segment) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
+  lazy val length: Long = byTime.iterator.collect { case (lo, _: Source[?]) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
 
   def getLength: Long = length
 
@@ -81,7 +76,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    */
   protected[timeline] def addOrThrow(source: Source[?], r: Interval, origin: Long): Track = {
     require(isFree(r, Collections.singleton[Source[?]](source)))
-    val segment = Segment(source)
     val (hostLo, host) = lastAtOrBefore(byTime, r.lo)
     val hostHi: Long = hiOf(byTime, hostLo)
     var bt = byTime.removed(hostLo)
@@ -96,7 +90,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       bt = bt.updated(r.hi, right)
       pl = pl.updated(right, r.hi)
     }
-    derived(bt.updated(r.lo, segment), pl.updated(segment, r.lo), origins.updated(source, origin))
+    derived(bt.updated(r.lo, source), pl.updated(source, r.lo), origins.updated(source, origin))
   }
 
   /** 移除源。源不在本轨道时原样返回本实例。 */
@@ -106,7 +100,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     } else {
       val r = getRange(source)
       val gap = new Gap
-      derived(byTime.updated(r.lo, gap), placements.updated(gap, r.lo).removed(Segment(source)), origins.removed(source))
+      derived(byTime.updated(r.lo, gap), placements.updated(gap, r.lo).removed(source), origins.removed(source))
         .relayout(r.lo, r.hi)
     }
   }
@@ -122,12 +116,12 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 在 time 处把片段一分为二。time 不落在片段内部时原样返回本实例。 */
   protected[timeline] def split(time: Long): Track = entryAt(byTime, time) match {
-    case (r, Segment(source)) if time > r.lo && time < r.hi =>
-      val origin: Long = getOrigin(source)
-      val right = source.duplicate()
+    case (r, s: Source[?]) if time > r.lo && time < r.hi =>
+      val origin: Long = getOrigin(s)
+      val right = s.duplicate()
       // 两半共用同一个 origin，源内时间 = 绝对时间 - origin，右半才能接着左半的内容播
-      remove(source)
-        .addOrThrow(source, Interval(r.lo, time), origin)
+      remove(s)
+        .addOrThrow(s, Interval(r.lo, time), origin)
         .addOrThrow(right, Interval(time, r.hi), origin)
     case _ => this
   }
@@ -170,12 +164,12 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   private def relayout(lo: Long, hi: Long): Track = {
     val from: Long = lastBefore(byTime, lo) match {
       case null => Long.MinValue
-      case (k, _: Segment) => if (lo < hiOf(byTime, k)) k else hiOf(byTime, k)
+      case (k, _: Source[?]) => if (lo < hiOf(byTime, k)) k else hiOf(byTime, k)
       case (k, _) => k
     }
     val to: Long = firstAtOrAfter(byTime, hi) match {
       case null => Long.MaxValue
-      case (k, _: Segment) => k
+      case (k, _: Source[?]) => k
       case (k, _) => hiOf(byTime, k)
     }
     if (from >= to) return this
@@ -188,7 +182,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     }
     // 保留区间内的片段，用空隙补满它们之间与两端剩下的空间。片段的右端点取自原表，不受上面的删除影响
     var cursor: Long = from
-    for (case (k, _: Segment) <- region) {
+    for (case (k, _: Source[?]) <- region) {
       if (cursor < k) {
         val gap = new Gap
         bt = bt.updated(cursor, gap)
@@ -235,7 +229,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
         s
       } else {
         val obstacles = intersectingEntries(byTime, r.shift(s))
-          .collect { case (interval, _: Segment) => interval }
+          .collect { case (interval, _: Source[?]) => interval }
         val candidate =
           if (forward) obstacles.map(_.hi).maxOption.map(_ - lo)
           else obstacles.map(_.lo).minOption.map(_ - hi)
@@ -264,7 +258,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    */
   def isFree(range: Interval, ignore: util.Collection[Source[?]]): Boolean = {
     intersectingEntries(byTime, range).forall {
-      case (_, Segment(source)) => ignore.contains(source)
+      case (_, s: Source[?]) => ignore.contains(s)
       case (_, _: Gap) => true
     }
   }
@@ -345,7 +339,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** time 是否落在某个片段内部，即能否在此分割。 */
   def canSplit(time: Long): Boolean = entryAt(byTime, time) match {
-    case (r, _: Segment) => time > r.lo && time < r.hi
+    case (r, _: Source[?]) => time > r.lo && time < r.hi
     case (_, _: Gap) => false
   }
 
@@ -367,7 +361,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 起点不小于 time 的首个片段，取其源；没有时返回 null。 */
   private[timeline] def sourceAtOrAfter(time: Long): Source[?] = {
-    byTime.rangeFrom(time).valuesIterator.collectFirst { case Segment(s) => s }.orNull
+    byTime.rangeFrom(time).valuesIterator.collectFirst { case s: Source[?] => s }.orNull
   }
 
   /** 起点小于 time 的最后一个片段，取其源；没有时返回 null。 */
@@ -376,7 +370,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     @tailrec
     def scan(t: Long): Source[?] = lastBefore(byTime, t) match {
       case null => null
-      case (_, Segment(s)) => s
+      case (_, s: Source[?]) => s
       case (lo, _: Gap) => scan(lo)
     }
     scan(time)
@@ -435,7 +429,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    * 起点已经作为键比过了。逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
    */
   private def entryEquals(a: Element, b: Element, other: Track): Boolean = (a, b) match {
-    case (Segment(sa), Segment(sb)) => Track.sourceEquals(sa, sb) && getOrigin(sa) == other.getOrigin(sb)
+    case (sa: Source[?], sb: Source[?]) => Track.sourceEquals(sa, sb) && getOrigin(sa) == other.getOrigin(sb)
     case (_: Gap, _: Gap) => true
     case _ => false
   }
@@ -491,11 +485,10 @@ object Track {
    */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
     val blockSource = new BlockSrc
-    val block = Segment(blockSource)
     val tail = new Gap
-    val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> block, 0L -> tail)
+    val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> blockSource, 0L -> tail)
     new Track(timeline, index, blockSource, byTime,
-      Map[Element, Long](block -> Long.MinValue, tail -> 0L), Map[Source[?], Long](blockSource -> 0L))
+      Map[Element, Long](blockSource -> Long.MinValue, tail -> 0L), Map[Source[?], Long](blockSource -> 0L))
   }
 
   /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */

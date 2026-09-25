@@ -10,13 +10,12 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.math.Matrix4
-import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.{Frame, Gap, Source}
 import com.lomekwi.cave.pipeline.audio.AudClipSrc
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.resource.decoder.AudDecRes
-import com.lomekwi.cave.timeline.{Gap, Segment, Timeline, Track}
+import com.lomekwi.cave.timeline.{Timeline, Track}
 
 import org.bytedeco.javacv.FFmpegFrameRecorder
 
@@ -76,7 +75,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           val activeRange = if (src == null) null else track.getRange(src)
           if (src == null || !activeRange.contains(t)) {
             src = track.get(t) match {
-              case Segment(source) => source
+              case s: Source[?] => s
               case _: Gap => null
             }
             if (src != null) {
@@ -119,7 +118,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           val activeRange = if (src == null) null else tracks(i).getRange(src)
           if (src == null || !activeRange.contains(audioT)) {
             src = tracks(i).get(audioT) match {
-              case Segment(source) => source
+              case s: Source[?] => s
               case _: Gap => null
             }
             if (src != null && src.isInstanceOf[AudClipSrc]) {

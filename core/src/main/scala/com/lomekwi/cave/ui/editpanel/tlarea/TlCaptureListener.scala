@@ -5,8 +5,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track}
+import com.lomekwi.cave.pipeline.{Gap, Source}
+import com.lomekwi.cave.timeline.{Interval, Track}
 
 
 import scala.jdk.CollectionConverters.*
@@ -29,7 +29,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val trackIndex: Int = timelineView.yToTrackIndex(y)
       val onSource: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
         timelineView.timeline.getTrackOrCreate(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
-          case _: Segment => true
+          case _: Source[?] => true
           case _: Gap => false
         }
       }
@@ -82,17 +82,17 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         val timeRange: Interval = Interval(rangeStartTime, rangeEndTime)
         for (element <- track.getIntersecting(timeRange).asScala) {
           element match {
-            case Segment(source) =>
-              val r = track.getRange(source)
+            case s: Source[?] =>
+              val r = track.getRange(s)
               val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
               val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 
               if (sourceRight > minX && sourceLeft < maxX) {
-                val group = timelineView.timeline.getGroup(source)
+                val group = timelineView.timeline.getGroup(s)
                 if (group != null) {
                   toSelect.addAll(group)
                 } else {
-                  toSelect.add(source)
+                  toSelect.add(s)
                 }
               }
             case _: Gap =>

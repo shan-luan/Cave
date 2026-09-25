@@ -15,7 +15,7 @@ class SourceStepOutTest extends GdxTestBase {
   private final val SETTLE_MILLIS = 300L
 
   @Test
-  def stepOutFiresOnlyWhenPlayheadLeavesSegment(): Unit = {
+  def stepOutFiresOnlyWhenPlayheadLeavesSource(): Unit = {
     val project = new TestProject()
     val timeline = project.timeline
     val duration = SECOND / 100
