@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.{Gap, GapFrame, Source}
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.UndoManager.{AddSegCommand, CompoundCommand, MergeableCommand, MoveSegsCommand, RemoveSegCommand, RemoveSegsCommand, ResizeSegsCommand, SplitSegCommand, TrackEdit, UndoableCommand}
+import com.lomekwi.cave.timeline.UndoManager.{AddSourceCommand, CompoundCommand, MergeableCommand, MoveSourcesCommand, RemoveSourceCommand, RemoveSourcesCommand, ResizeSourcesCommand, SplitSourceCommand, TrackEdit, UndoableCommand}
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
 import com.lomekwi.cave.util.Duplicatable
 
@@ -69,7 +69,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val (next, shift) = current.tryAdd(source, range, origin)
     if (shift == 0) {
       setTrack(track.index, next)
-      push(AddSegCommand(this, track.index, current, next))
+      push(AddSourceCommand(this, track.index, current, next))
     }
     shift
   }
@@ -78,7 +78,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val current = getTrackOrCreate(track.index)
     val next = current.addOrThrow(source, range, origin)
     setTrack(track.index, next)
-    push(AddSegCommand(this, track.index, current, next))
+    push(AddSourceCommand(this, track.index, current, next))
   }
 
   def remove(source: Source[?]): Unit = {
@@ -87,14 +87,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       val group = getGroup(source)
       val next = track.remove(source)
       setTrack(track.index, next)
-      push(RemoveSegCommand(this, track.index, track, next, source, group))
+      push(RemoveSourceCommand(this, track.index, track, next, source, group))
     }
   }
 
   def remove(sources: util.Collection[Source[?]]): Unit = {
     val working = mutable.HashMap.empty[Int, Track]
     def currentOf(i: Int): Track = working.getOrElse(i, tracks(i))
-    val entries = new util.ArrayList[RemoveSegsCommand.RemoveEntry](sources.size())
+    val entries = new util.ArrayList[RemoveSourcesCommand.RemoveEntry](sources.size())
     for (s <- sources.asScala) {
       val track = findTrackOf(s)
       if (track != null) {
@@ -102,12 +102,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
         val before = currentOf(track.index)
         val next = before.remove(s)
         working.put(track.index, next)
-        entries.add(RemoveSegsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
+        entries.add(RemoveSourcesCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
       }
     }
     if (!entries.isEmpty) {
       setTracks(working.toSeq)
-      push(new RemoveSegsCommand(this, entries))
+      push(new RemoveSourcesCommand(this, entries))
     }
   }
 
@@ -116,7 +116,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     if (current.canSplit(time)) {
       val next = current.split(time)
       setTrack(track.index, next)
-      push(SplitSegCommand(this, track.index, current, next))
+      push(SplitSourceCommand(this, track.index, current, next))
     }
   }
 
@@ -125,7 +125,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     applyPerTrack(sources, deltaTime, false)
   }
 
-  /** 裁切一组源的结束边缘（各自起点不变）。@return 同 {@link #setStart}。 */
+  /** 裁切一组源的结束边缘（各自起点不变）。@return 同 [[Timeline.setStart]]。 */
   def setEnd(sources: util.Collection[Source[?]], deltaTime: Long): Long = {
     applyPerTrack(sources, deltaTime, true)
   }
@@ -151,7 +151,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       edits.add(TrackEdit(i, before, after))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new ResizeSegsCommand(this, edits))
+    push(new ResizeSourcesCommand(this, edits))
     applied
   }
 
@@ -180,7 +180,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       edits.add(TrackEdit(i, before, next))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new MoveSegsCommand(this, edits))
+    push(new MoveSourcesCommand(this, edits))
     applied
   }
 
@@ -226,7 +226,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       edits.add(TrackEdit(i, before, currentOf(i)))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new MoveSegsCommand(this, edits))
+    push(new MoveSourcesCommand(this, edits))
     applied
   }
 
@@ -339,7 +339,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     group
   }
 
-  /** 把组移出注册表，此后 {@link #getGroup} 不再能查到它。 */
+  /** 把组移出注册表，此后 [[Timeline.getGroup]] 不再能查到它。 */
   def dropGroup(group: SourceGroup): Unit = {
     groups.remove(group)
   }
@@ -350,7 +350,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 开始记录，此后到 {@link #submit()} 之间对时间轴的每次修改都会记录一条命令，
+   * 开始记录，此后到 [[Timeline.submit]] 之间对时间轴的每次修改都会记录一条命令，
    * 最终在 close/submit 时合并为一条命令提交。
    */
   def record(): Timeline.Recording = {
@@ -434,7 +434,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
   /**
    * 两个时间线相等，当且仅当每个轨道对应相等，按索引逐位比较轨道内容。
-   * 由于 {@link #getTrack(int)} 会按需自动创建空轨道、而撤销不会删除轨道，
+   * 由于 [[Timeline.getTrackOrCreate]] 会按需自动创建空轨道、而撤销不会删除轨道，
    * 比较时把"缺失"与"空轨道"视为相等（只允许尾部为空的差异）。
    */
   override def equals(o: Any): Boolean = {
@@ -499,7 +499,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 并用 Phaser 与消费方（预览、音频混音）做握手。
    *
    * 它按轨道索引唯一、由时间线持有，轨道换版本时线程、Phaser 与注册的消费方
-   * 都不必跟着换。内容则每轮从 {@link #tracks} 现取，拿到的一定是当前版本。
+   * 都不必跟着换。内容则每轮从 [[Timeline.getTracks]] 现取，拿到的一定是当前版本。
    */
   class TrackWorker(private val index: Int) extends Runnable {
     private final val gapFrame: GapFrame = new GapFrame(tracks(index))
@@ -528,7 +528,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       Gdx.app.log("Track" + index, "轨道线程启动: " + tracks(index))
       try {
         val p = project.playhead
-        // 播放头当前所在的片段。播放头离开它时在该源上收尾。
+        // 播放头当前所在的源。播放头离开它时在该源上收尾。
         var activeSource: Source[?] = null
         var activeRange: Interval = null
         while (!Thread.currentThread().isInterrupted) {
@@ -627,7 +627,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 }
 
 object Timeline {
-  /** 记录句柄，用于 try-with-resources，close() 即 {@link #submit()}。 */
+  /** 记录句柄，用于 try-with-resources，close() 即 [[Timeline.submit]]。 */
   trait Recording extends AutoCloseable {
     override def close(): Unit
   }

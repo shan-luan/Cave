@@ -69,7 +69,7 @@ class Inspector extends VisTable {
     currentSet = null
     content.clear()
     content.setFillParent(true)
-    content.add(new VisLabel(i18n("未选择片段"))).expand().center()
+    content.add(new VisLabel(i18n("未选择源"))).expand().center()
   }
 
   private def showMultiInfo(set: SourceSet): Unit = {

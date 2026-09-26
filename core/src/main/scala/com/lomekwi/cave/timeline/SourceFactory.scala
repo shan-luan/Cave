@@ -21,8 +21,8 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 源构造厂。按资源类型登记构造器，据此把 {@link Resource} 变成时间线上可用的 {@link Source}。
- * 项目中还没有资源的文件先由 {@link App#mediaFactory} 建出资源。
+ * 源构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Source]]。
+ * 项目中还没有资源的文件先由 [[App.mediaFactory]] 建出资源。
  */
 @SerialVersionUID(1L)
 class SourceFactory(@transient private var project: Project) extends Serializable {

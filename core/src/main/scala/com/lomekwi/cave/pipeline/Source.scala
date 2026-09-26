@@ -10,10 +10,10 @@ import java.util
 import scala.compiletime.uninitialized
 
 /**
- * 帧源。由 {@link Generator}（帧的产出）与 {@link FilterList}（过滤链）组合而成，
+ * 帧源。由 [[Generator]]（帧的产出）与 [[FilterList]]（过滤链）组合而成，
  * 自身只持有这两者并转发对外门面，不参与生成。
  *
- * 它是 {@link Element} 中承载内容的那一支，内部再分内容与转场。
+ * 它是 [[Element]] 中承载内容的那一支，内部再分内容与转场。
  * 只关心"这里是不是源"的调用方匹配 Source 即可，不必往下看那一层。
  *
  * @tparam T 帧类型
@@ -49,8 +49,8 @@ sealed abstract class Source[T <: Frame](private val generator: Generator[T])
   }
 
   /**
-   * 播放头离开本源的片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
-   * @param time 源内时间，即离开时播放头所在的片段内位置
+   * 播放头离开本源时调用。自然播放越过源终点，或 seek 使播放头落到源区间之外。
+   * @param time 源内时间，即离开时播放头所在的源内位置
    */
   def onStepOut(time: Long, track: Track): Unit = {
     generator.onStepOut(time, track)
@@ -83,8 +83,8 @@ sealed abstract class Source[T <: Frame](private val generator: Generator[T])
   }
 
   /**
-   * 插入时间轴时片段使用的默认时长。时长无界（{@link #getDuration()} 为
-   * {@link Long#MAX_VALUE}）的源必须返回有限值。
+   * 插入时间轴时源使用的默认时长。时长无界（[[Source.getDuration]] 为
+   * [[Long.MAX_VALUE]]）的源必须返回有限值。
    */
   def getDefaultDuration: Long = {
     generator.getDefaultDuration
@@ -116,15 +116,15 @@ sealed abstract class Source[T <: Frame](private val generator: Generator[T])
 }
 
 /**
- * 内容源，时间线上承载实际素材的那些。不同素材由构造时注入的 {@link Generator} 组合而来，
+ * 内容源，时间线上承载实际素材的那些。不同素材由构造时注入的 [[Generator]] 组合而来，
  * 不再需要为此开放继承。
  */
 @SerialVersionUID(1L)
 class Content[T <: Frame](generator: Generator[T]) extends Source[T](generator)
 
 /**
- * 转场，连接前后两段内容。片段之间如何接、能不能接，是拓扑规则，
- * 由关心它的调用方按这个子类型分辨，不关心的调用方看到的是 {@link Source}。
+ * 转场，连接前后两段内容。源之间如何接、能不能接，是拓扑规则，
+ * 由关心它的调用方按这个子类型分辨，不关心的调用方看到的是 [[Source]]。
  * WIP.
  */
 @SerialVersionUID(1L)
@@ -132,9 +132,9 @@ abstract class Transition[T <: Frame](generator: Generator[T]) extends Source[T]
 
 /**
  * 轨道元素，一个ADT。轨道被元素完整划分，任意时刻恰好由一个元素占据。
- * 元素不持有区间，区间与元素的对应由 {@link Track} 维护。
+ * 元素不持有区间，区间与元素的对应由 [[Track]] 维护。
  *
- * 源就是承载内容的那一支，空隙是另一支。它和 {@link Gap} 与 {@link Source}
+ * 源就是承载内容的那一支，空隙是另一支。它和 [[Gap]] 与 [[Source]]
  * 声明在同一个文件里，是为了让元素保持 sealed，sealed 只认同源文件的直接子类。
  */
 sealed trait Element extends Serializable

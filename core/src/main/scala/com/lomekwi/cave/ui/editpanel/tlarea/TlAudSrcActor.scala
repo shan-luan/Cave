@@ -22,19 +22,19 @@ class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
 
     val contentRange = range
     val contentOrigin = origin
-    val segLocalStart: Long = contentRange.lo - contentOrigin
-    val segLocalEnd: Long = contentRange.hi - contentOrigin
-    val segDuration: Long = segLocalEnd - segLocalStart
-    if (segDuration <= 0) return
+    val srcLocalStart: Long = contentRange.lo - contentOrigin
+    val srcLocalEnd: Long = contentRange.hi - contentOrigin
+    val srcDuration: Long = srcLocalEnd - srcLocalStart
+    if (srcDuration <= 0) return
 
     val step: Long = wf.bucketDuration
-    val pxPerUs: Float = getWidth / segDuration.toFloat
-    val gridOrigin: Long = (segLocalStart / step) * step
-    val absVisibleStart: Long = segLocalStart + (visibleStartX / pxPerUs).toLong
-    val absVisibleEnd: Long = segLocalStart + (visibleEndX / pxPerUs).toLong
+    val pxPerUs: Float = getWidth / srcDuration.toFloat
+    val gridOrigin: Long = (srcLocalStart / step) * step
+    val absVisibleStart: Long = srcLocalStart + (visibleStartX / pxPerUs).toLong
+    val absVisibleEnd: Long = srcLocalStart + (visibleEndX / pxPerUs).toLong
     var firstT: Long = ((absVisibleStart - gridOrigin) / step) * step + gridOrigin
     firstT = Math.max(gridOrigin, firstT)
-    val lastT: Long = Math.min(segLocalEnd, absVisibleEnd)
+    val lastT: Long = Math.min(srcLocalEnd, absVisibleEnd)
     var t: Long = firstT
     while (t < lastT) {
       res.getPreview(t)
@@ -50,8 +50,8 @@ class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
     val totalBuckets: Int = wf.totalBuckets
     if (totalBuckets <= 0) return
 
-    val startBucket: Float = segLocalStart.toFloat / bucketUs
-    val endBucket: Float = startBucket + segDuration.toFloat / bucketUs
+    val startBucket: Float = srcLocalStart.toFloat / bucketUs
+    val endBucket: Float = startBucket + srcDuration.toFloat / bucketUs
 
     val shader: ShaderProgram = TlAudSrcActor.getWaveShader
     if (!shader.isCompiled) return

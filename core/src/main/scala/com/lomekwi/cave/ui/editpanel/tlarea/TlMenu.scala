@@ -33,8 +33,8 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   {
     val addMenu: PopupMenu = new PopupMenu()
-    addMenu.addItem(new MenuItem("媒体片段", new ChangeListenerX(() => onAddMedia())))
-    addMenu.addItem(new MenuItem("文本片段", new ChangeListenerX(() => onAddText())))
+    addMenu.addItem(new MenuItem("媒体源", new ChangeListenerX(() => onAddMedia())))
+    addMenu.addItem(new MenuItem("文本源", new ChangeListenerX(() => onAddText())))
     val addItem: MenuItem = new MenuItem("新增...")
     addItem.setSubMenu(addMenu)
     this.addItem(addItem)
@@ -129,7 +129,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
       }
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlMenu", "添加媒体片段失败: " + e.getMessage)
+        Gdx.app.error("TlMenu", "添加媒体源失败: " + e.getMessage)
     }
   }
 }

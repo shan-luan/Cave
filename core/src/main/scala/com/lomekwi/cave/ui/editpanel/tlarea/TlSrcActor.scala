@@ -273,9 +273,9 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       target
     } else {
       val ignore: util.Set[Source[?]] = new util.HashSet[Source[?]](dragMembers)
-      val segEnd: Long = target + duration
+      val srcEnd: Long = target + duration
       val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
-      var snappedEnd: Long = tl.timeline.snapTime(segEnd, snapThreshold(), ignore) - duration
+      var snappedEnd: Long = tl.timeline.snapTime(srcEnd, snapThreshold(), ignore) - duration
       if (snappedEnd < 0) snappedEnd = 0
       val startMoved: Boolean = snappedStart != target
       val endMoved: Boolean = snappedEnd != target

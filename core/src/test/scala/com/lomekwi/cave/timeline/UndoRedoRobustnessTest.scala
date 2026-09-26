@@ -20,7 +20,7 @@ import UndoRedoRobustnessTest.*
  * 把快照之后产生的全部命令撤销掉，断言撤销回来的时间线与快照相等（再重做一遍，
  * 断言与操作后的状态相等）。
  *
- * 依赖 {@link Timeline#equals} / {@link Track#equals} 做结构化比较，按轨道、按区间
+ * 依赖 [[Timeline.equals]] / [[Track.equals]] 做结构化比较，按轨道、按区间
  * 逐项比对源（类型/时长、origin、区间），不依赖对象身份，因此能直接和深拷贝的
  * 快照对比。
  */

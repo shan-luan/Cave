@@ -12,13 +12,13 @@ import scala.collection.immutable.TreeMap
 import scala.jdk.CollectionConverters.*
 
 /**
- * 轨道。轨道被元素（{@link Source} 与 {@link Gap}）完整划分，任意时刻恰好由一个元素占据。
+ * 轨道。轨道被元素（[[Source]] 与 [[Gap]]）完整划分，任意时刻恰好由一个元素占据。
  * 因为区间首尾相接，内容表只以区间起点为键，右端点取相邻条目的起点（末尾条目一直延伸到时间轴尽头）；
  * 源内偏移（origin）与元素到起点的反查各存一张表。
  *
  * 不可变。每次编辑都返回新实例，原实例保持不变。内容表是持久化结构，新旧版本共享绝大部分节点，
  * 因此编辑成本只与改动路径有关，与轨道长度无关；旧版本可以安全地留给撤销栈与序列化快照。
- * 当前版本由 {@link Timeline#setTrack} 发布，读取方永远从 {@link Timeline#getTrack} 取最新版本。
+ * 当前版本由 [[Timeline.setTrack]] 发布，读取方永远从 [[Timeline.getTrackOrCreate]] 取最新版本。
  */
 @SerialVersionUID(1L)
 final class Track private ( val timeline: Timeline,  val index: Int,
@@ -27,13 +27,13 @@ final class Track private ( val timeline: Timeline,  val index: Int,
                            private val placements: Map[Element, Long],
                            private val origins: Map[Source[?], Long]) extends Serializable with java.lang.Iterable[Element] {
 
-  /** 是否是占据 0 点左侧的阻挡片段。它只提供左边界，对遍历不可见。 */
+  /** 是否是占据 0 点左侧的阻挡源。它只提供左边界，对遍历不可见。 */
   private def isBlock(element: Element): Boolean = element match {
     case s: Source[?] => s.eq(blockSource)
     case _: Gap => false
   }
 
-  /** 轨道是否没有用户内容。阻挡片段是地基，不算。 */
+  /** 轨道是否没有用户内容。阻挡源是地基，不算。 */
   protected[timeline] def isEmpty: Boolean = !byTime.valuesIterator.exists {
     case s: Source[?] => !s.eq(blockSource)
     case _: Gap => false
@@ -46,7 +46,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     lo ~~ hiOf(byTime, lo)
   }
 
-  /** 片段的 0 秒在时间轴中的位置。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  /** 源的 0 秒在时间轴中的位置。要求源在本轨道，否则抛 IllegalArgumentException。 */
   def getOrigin(source: Source[?]): Long = {
     require(origins.contains(source))
     origins(source)
@@ -54,7 +54,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   def contains(element: Element): Boolean = placements.contains(element)
 
-  /** 最后一个片段的终点；没有片段时为 0。 */
+  /** 最后一个源的终点；没有源时为 0。 */
   lazy val length: Long = byTime.iterator.collect { case (lo, _: Source[?]) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
 
   def getLength: Long = length
@@ -72,7 +72,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 把源放到指定区间。origin 是源的 0 秒在时间轴中的位置。
-   * 要求区间空闲，因此落点所在的既有条目只可能是空隙。把该空隙按新片段切开。
+   * 要求区间空闲，因此落点所在的既有条目只可能是空隙。把该空隙按新源切开。
    */
   protected[timeline] def addOrThrow(source: Source[?], r: Interval, origin: Long): Track = {
     require(isFree(r, Collections.singleton[Source[?]](source)))
@@ -114,7 +114,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     t
   }
 
-  /** 在 time 处把片段一分为二。time 不落在片段内部时原样返回本实例。 */
+  /** 在 time 处把源一分为二。time 不落在源的区间内部时原样返回本实例。 */
   protected[timeline] def split(time: Long): Track = entryAt(byTime, time) match {
     case (r, s: Source[?]) if time > r.lo && time < r.hi =>
       val origin: Long = getOrigin(s)
@@ -158,7 +158,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /**
    * 重建 [lo, hi) 及其紧邻区域内的空隙，使内容表恢复完整划分。
-   * 范围向外扩到左右两侧紧邻的片段，删掉元素后留下的空隙才能与相邻空隙合并成一个。
+   * 范围向外扩到左右两侧紧邻的源，删掉元素后留下的空隙才能与相邻空隙合并成一个。
    * 要求 lo、hi 是元素区间的端点。幂等，重复调用结果不变。
    */
   private def relayout(lo: Long, hi: Long): Track = {
@@ -180,7 +180,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
       bt = bt.removed(k)
       pl = pl.removed(gap)
     }
-    // 保留区间内的片段，用空隙补满它们之间与两端剩下的空间。片段的右端点取自原表，不受上面的删除影响
+    // 保留区间内的源，用空隙补满它们之间与两端剩下的空间。源的右端点取自原表，不受上面的删除影响
     var cursor: Long = from
     for (case (k, _: Source[?]) <- region) {
       if (cursor < k) {
@@ -225,7 +225,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
     @tailrec
     def scan(s: Long, step: Int): Long = {
-      if (step >= Track.MAX_SLIDE_STEPS || noSegment(r.shift(s))) {
+      if (step >= Track.MAX_SLIDE_STEPS || noSource(r.shift(s))) {
         s
       } else {
         val obstacles = intersectingEntries(byTime, r.shift(s))
@@ -245,8 +245,8 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     scan(0L, 0)
   }
 
-  /** 区间内没有片段。空隙从不构成障碍。 */
-  private def noSegment(range: Interval): Boolean =
+  /** 区间内没有源。空隙从不构成障碍。 */
+  private def noSource(range: Interval): Boolean =
     intersectingEntries(byTime, range).forall { case (_, _: Gap) => true; case _ => false }
 
   /**
@@ -314,7 +314,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   /**
    * 探测整组沿指定方向可平移多少，在摘掉整组之后的布局上看每个成员的最近障碍，取全体最严者。
    * 整组刚性平移，成员之间不会互相成为障碍，因此直接在不含本组的版本上量即可。
-   * 左移还受时间轴 0 限制（由 0 点左侧的阻挡片段表达）。
+   * 左移还受时间轴 0 限制（由 0 点左侧的阻挡源表达）。
    */
   protected[timeline] def probeMove(sources: util.Collection[Source[?]], forward: Boolean): Long = {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍 = 无界
@@ -337,16 +337,16 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   /** 包含 time 的元素。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
   def get(time: Long): Element = entryAt(byTime, time)._2
 
-  /** time 是否落在某个片段内部，即能否在此分割。 */
+  /** time 是否落在某个源的区间内部，即能否在此分割。 */
   def canSplit(time: Long): Boolean = entryAt(byTime, time) match {
     case (r, _: Source[?]) => time > r.lo && time < r.hi
     case (_, _: Gap) => false
   }
 
-  /** 同轨道上紧随其后的片段；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  /** 同轨道上紧随其后的源；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
   def nextOf(source: Source[?]): Source[?] = sourceAtOrAfter(getRange(source).hi)
 
-  /** 同轨道上紧邻其前的片段；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
+  /** 同轨道上紧邻其前的源；没有时为空。要求源在本轨道，否则抛 IllegalArgumentException。 */
   def prevOf(source: Source[?]): Source[?] = sourceBefore(getRange(source).lo)
 
   def nextRangeOf(source: Source[?]): Option[Interval] = {
@@ -359,12 +359,12 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     if (prev != null) Some(getRange(prev)) else None
   }
 
-  /** 起点不小于 time 的首个片段，取其源；没有时返回 null。 */
+  /** 起点不小于 time 的首个源；没有时返回 null。 */
   private[timeline] def sourceAtOrAfter(time: Long): Source[?] = {
     byTime.rangeFrom(time).valuesIterator.collectFirst { case s: Source[?] => s }.orNull
   }
 
-  /** 起点小于 time 的最后一个片段，取其源；没有时返回 null。 */
+  /** 起点小于 time 的最后一个源；没有时返回 null。 */
   private[timeline] def sourceBefore(time: Long): Source[?] = {
     // 空隙互不相邻，故最多退两步就能越过它
     @tailrec
@@ -392,12 +392,12 @@ final class Track private ( val timeline: Timeline,  val index: Int,
     source.sync(time - getOrigin(source), this)
   }
 
-  /** 轨迹线程，按轨道索引唯一，由 {@link Timeline} 持有，故轨道换版本时它保持不变。 */
+  /** 轨迹线程，按轨道索引唯一，由 [[Timeline]] 持有，故轨道换版本时它保持不变。 */
   def getWorker: timeline.TrackWorker = timeline.getWorker(index)
 
   def getTimeline: Timeline = timeline
 
-  /** 轨道上的用户条目；阻挡片段对遍历不可见。 */
+  /** 轨道上的用户条目；阻挡源对遍历不可见。 */
   override def iterator(): util.Iterator[Element] = {
     byTime.valuesIterator.filterNot(isBlock).asJava
   }
@@ -425,7 +425,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   }
 
   /**
-   * 两个条目相等，片段逐字段比源（类型/时长）连同 origin，空隙只比类型。
+   * 两个条目相等，源条目逐字段比类型/时长，连同 origin；空隙只比类型。
    * 起点已经作为键比过了。逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
    */
   private def entryEquals(a: Element, b: Element, other: Track): Boolean = (a, b) match {
@@ -480,7 +480,7 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
 object Track {
   /**
-   * 新建空轨道，0 点左侧是阻挡片段（地基），0 点右侧是无界空隙，
+   * 新建空轨道，0 点左侧是阻挡源（地基），0 点右侧是无界空隙，
    * 因此时间轴被元素完整划分，拖拽与裁切不必再单独判断左边界。
    */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {

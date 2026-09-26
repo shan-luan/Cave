@@ -9,9 +9,9 @@ import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedT
 import scala.collection.mutable
 
 /**
- * 通用节点注册表，注册任意 {@link Node} 子类，并按目标帧类型动态匹配可用的节点。
+ * 通用节点注册表，注册任意 [[Node]] 子类，并按目标帧类型动态匹配可用的节点。
  *
- * <p>兼容性规则，节点是 {@link Filter} 时，看它泛型声明的目标帧类型是否
+ * <p>兼容性规则，节点是 [[Filter]] 时，看它泛型声明的目标帧类型是否
  * {@code isAssignableFrom} 源帧类型；非 Filter 的图内节点不参与帧类型匹配，
  * 始终视为不兼容，因为兼容节点只会被挂到源的滤镜链上。</p>
  */
@@ -50,7 +50,7 @@ class NodeRegistry {
   }
 
   /**
-   * 创建第 index 个兼容节点。只会返回可挂到源滤镜链上的 {@link Filter} 节点，
+   * 创建第 index 个兼容节点。只会返回可挂到源滤镜链上的 [[Filter]] 节点，
    * 非 Filter 的图内节点不参与匹配。
    */
   def createCompatible(source: Source[?], index: Int): Node = {

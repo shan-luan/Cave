@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
  * 输出 produce() 生成的帧供第一个 filter 消费。
  *
  * 驱动（sync/onStepOut/prefetch）与时长等元数据也由它承担，
- * {@link Source} 只做这两者的持有与对外门面。
+ * [[Source]] 只做这两者的持有与对外门面。
  *
  * @tparam T 帧类型
  */
@@ -54,8 +54,8 @@ abstract class Generator[T <: Frame](using ClassTag[T]) extends Filter[T] with S
   def sync(time: Long, track: Track): Unit = {}
 
   /**
-   * 播放头离开本源的片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
-   * @param time 源内时间，即离开时播放头所在的片段内位置
+   * 播放头离开本源时调用。自然播放越过源终点，或 seek 使播放头落到源区间之外。
+   * @param time 源内时间，即离开时播放头所在的源内位置
    */
   def onStepOut(time: Long, track: Track): Unit = {}
 
@@ -67,8 +67,8 @@ abstract class Generator[T <: Frame](using ClassTag[T]) extends Filter[T] with S
   def getDuration: Long
 
   /**
-   * 插入时间轴时片段使用的默认时长。时长无界（{@link #getDuration()} 为
-   * {@link Long#MAX_VALUE}）的源必须返回有限值。
+   * 插入时间轴时源使用的默认时长。时长无界（[[Generator.getDuration]] 为
+   * [[Long.MAX_VALUE]]）的源必须返回有限值。
    */
   def getDefaultDuration: Long = {
     getDuration

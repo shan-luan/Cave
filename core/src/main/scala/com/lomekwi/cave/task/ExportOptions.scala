@@ -6,7 +6,7 @@ import com.lomekwi.cave.util.Units
 import scala.compiletime.uninitialized
 
 /**
- * 导出参数数据模型，使用 libGDX {@link Json} 序列化。
+ * 导出参数数据模型，使用 libGDX [[Json]] 序列化。
  */
 class ExportOptions extends Json.Serializable {
   var outputPath: String = uninitialized

@@ -6,14 +6,14 @@ import java.util.{AbstractSequentialList, NoSuchElementException}
 import scala.compiletime.uninitialized
 
 /**
- * 有序的 filter 链表。链表本身是 {@link Generator}（作为头）与各 {@link Filter} 组成的
+ * 有序的 filter 链表。链表本身是 [[Generator]]（作为头）与各 [[Filter]] 组成的
  * 节点链，并维护相邻端口连接。
  *
  * <pre>
  * generator.FilterOut → f1.FilterIn → f1.FilterOut → f2.FilterIn → ...
  * </pre>
  *
- * <p>列表每个元素都是 {@link Filter}；第 0 个元素的 FilterIn 连到头 filter（Generator）的
+ * <p>列表每个元素都是 [[Filter]]；第 0 个元素的 FilterIn 连到头 filter（Generator）的
  * FilterOut。链的末端就是最后一个元素自身的 FilterOut（不额外连接端口），
  * {@code Source.get()} 直接从它取数据。添加/移除/重排时自动维护连接。</p>
  *

@@ -11,7 +11,7 @@ import scala.util.Using
 import FilterListTest.*
 
 /**
- * 验证 {@link FilterList}，双向链表行为 + 端口连接自动维护。
+ * 验证 [[FilterList]]，双向链表行为 + 端口连接自动维护。
  *
  * 覆盖如下。
  * 1) 空列表，Source.get() 无 filter 时返回源自身帧；

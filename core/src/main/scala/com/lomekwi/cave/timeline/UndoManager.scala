@@ -129,14 +129,14 @@ object UndoManager {
     m.toSeq
   }
 
-  case class AddSegCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+  case class AddSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
     override def undo(): Unit = timeline.setTrack(index, before)
 
     override def redo(): Unit = timeline.setTrack(index, after)
   }
 
-  case class RemoveSegCommand(timeline: Timeline, index: Int, before: Track, after: Track,
-                              source: Source[?], group: SourceGroup) extends UndoableCommand {
+  case class RemoveSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track,
+                                 source: Source[?], group: SourceGroup) extends UndoableCommand {
     override def undo(): Unit = {
       timeline.setTrack(index, before)
       if (group != null) group.add(source)
@@ -148,7 +148,7 @@ object UndoManager {
     }
   }
 
-  case class SplitSegCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+  case class SplitSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
     override def undo(): Unit = timeline.setTrack(index, before)
 
     override def redo(): Unit = timeline.setTrack(index, after)
@@ -193,11 +193,11 @@ object UndoManager {
     }
   }
 
-  final class MoveSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+  final class MoveSourcesCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
-      case o: MoveSegsCommand =>
+      case o: MoveSourcesCommand =>
         mergeEdits(o.edits)
         true
       case _ =>
@@ -205,11 +205,11 @@ object UndoManager {
     }
   }
 
-  final class ResizeSegsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+  final class ResizeSourcesCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
-      case o: ResizeSegsCommand =>
+      case o: ResizeSourcesCommand =>
         mergeEdits(o.edits)
         true
       case _ =>
@@ -217,8 +217,8 @@ object UndoManager {
     }
   }
 
-  final class RemoveSegsCommand(private val timeline: Timeline, entries0: util.List[RemoveSegsCommand.RemoveEntry]) extends MergeableCommand {
-    private final val entries: util.List[RemoveSegsCommand.RemoveEntry] = new util.ArrayList[RemoveSegsCommand.RemoveEntry](entries0)
+  final class RemoveSourcesCommand(private val timeline: Timeline, entries0: util.List[RemoveSourcesCommand.RemoveEntry]) extends MergeableCommand {
+    private final val entries: util.List[RemoveSourcesCommand.RemoveEntry] = new util.ArrayList[RemoveSourcesCommand.RemoveEntry](entries0)
 
     override def undo(): Unit = {
       timeline.setTracks(UndoManager.foldBefore(entries.asScala.map(_.edit)))
@@ -236,7 +236,7 @@ object UndoManager {
 
     override def merge(other: UndoableCommand): Boolean = {
       other match {
-        case o: RemoveSegsCommand =>
+        case o: RemoveSourcesCommand =>
           for (ne <- o.entries.asScala) {
             if (!entries.asScala.exists(e => e.source eq ne.source)) entries.add(ne)
           }
@@ -247,7 +247,7 @@ object UndoManager {
     }
   }
 
-  object RemoveSegsCommand {
+  object RemoveSourcesCommand {
     case class RemoveEntry(edit: TrackEdit, source: Source[?], group: SourceGroup)
   }
 

@@ -16,7 +16,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.jdk.CollectionConverters.*
 
 /**
- * 端口圆点。圆点位置由 {@link #getAnchor} 单一定义，绘制与拖拽都以它为端点。
+ * 端口圆点。圆点位置由 [[PortActor.getAnchor]] 单一定义，绘制与拖拽都以它为端点。
  */
 trait PortActor extends Actor with PortHolder {
   private final val anchorTmp: Vector2 = new Vector2()

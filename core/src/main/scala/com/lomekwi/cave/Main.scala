@@ -30,7 +30,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooser
 import scala.compiletime.uninitialized
 
 
-/** 各平台共用的 {@link com.badlogic.gdx.ApplicationListener} 实现。 */
+/** 各平台共用的 [[com.badlogic.gdx.ApplicationListener]] 实现。 */
 class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   private var ui: Root = uninitialized
   private var backgrounded: Boolean = false

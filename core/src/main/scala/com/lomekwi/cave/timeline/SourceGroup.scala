@@ -7,7 +7,7 @@ import java.util
 
 /**
  * 一组被同时操作（拖动/分割）的源。组可以跨轨道，因此不归属于任何轨道，
- * 由 {@link Timeline} 统一登记。
+ * 由 [[Timeline]] 统一登记。
  */
 @SerialVersionUID(1L)
 class SourceGroup extends util.AbstractCollection[Source[?]] with Serializable {

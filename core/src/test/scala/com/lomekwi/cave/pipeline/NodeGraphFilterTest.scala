@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
- * 验证 {@link NodeGraphFilter} 的图边界，入口节点把图外连入的帧送给图内节点，
+ * 验证 [[NodeGraphFilter]] 的图边界，入口节点把图外连入的帧送给图内节点，
  * 总输出节点把图内的结果送出图外。
  *
  * 覆盖如下。

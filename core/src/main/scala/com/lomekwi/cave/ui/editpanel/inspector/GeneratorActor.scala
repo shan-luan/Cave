@@ -9,8 +9,8 @@ import scala.jdk.CollectionConverters.*
 
 /**
  * 生成器信息卡，显示生成器名称与输入端口、信息输出端口（不含参与 filter 链的 FilterOut）。
- * 一个源的信息由这张卡与紧随其后的各 {@link FilterActor} 共同呈现。
- * 类型 → widget 的映射由 {@link CardWidgetsRegistry} 维护。
+ * 一个源的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
+ * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
 final class GeneratorActor(private val source: Source[?]) extends Card(source.getDisplayName) {
   private final val generator: Generator[?] = source.getGenerator
