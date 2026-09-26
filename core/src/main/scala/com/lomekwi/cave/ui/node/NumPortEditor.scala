@@ -21,6 +21,7 @@ import java.util
  */
 final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
+  private final val label: VisLabel = new VisLabel(port.getName)
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(
     defaultValue.toFloat, -99999f, 99999f, 1f, 2)
   private final val spinner: Spinner = new Spinner("", model)
@@ -40,10 +41,14 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
   })
   align(Align.topLeft)
   defaults().left()
-  add(new VisLabel(port.getName)).pad(2f)
+  add(label).pad(2f)
   add(spinner).width(90f).pad(2f)
 
   override def getPort: Node.InPort[?] = port
+
+  override def getLabel: Actor = label
+
+  override def getControl: Actor = spinner
 
   override def act(delta: Float): Unit = {
     super.act(delta)

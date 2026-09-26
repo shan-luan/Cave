@@ -41,6 +41,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   private var projMatrix: Matrix4 = uninitialized
 
   recorder = new FFmpegFrameRecorder(outputFile, width, height)
+
   {
     var i = 0
     for (_ <- timeline.asScala) {
