@@ -77,31 +77,31 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   @Subscribe
   def sink(frame: ImgFrame): Unit = {
-    val track: Track = frame.track
-    track.getWorker.getSinkPhaser.register()
+    val idx: Int = frame.trackIndex
+    project.timeline.getWorker(idx).getSinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
       frame.upload()
       val i: TransFrameActor = frame.getActor
       canvas.addActor(i)
-      track.getWorker.getSinkPhaser.arriveAndDeregister()
+      project.timeline.getWorker(idx).getSinkPhaser.arriveAndDeregister()
     })
   }
 
   @Subscribe
   def sink(frame: TextFrame): Unit = {
-    val track: Track = frame.track
-    track.getWorker.getSinkPhaser.register()
+    val idx: Int = frame.trackIndex
+    project.timeline.getWorker(idx).getSinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
       val i: TransFrameActor = frame.getActor
       canvas.addActor(i)
-      track.getWorker.getSinkPhaser.arriveAndDeregister()
+      project.timeline.getWorker(idx).getSinkPhaser.arriveAndDeregister()
     })
   }
 
   private def setFrame(frame: Frame): Unit = {
-    val idx: Int = frame.track.index
+    val idx: Int = frame.trackIndex
     while (idx >= frames.size) {
       frames.append(null)
     }
@@ -128,7 +128,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   @Subscribe
   def clear(event: GapFrame): Unit = {
-    clearFrames(event.track.index)
+    clearFrames(event.trackIndex)
   }
 
   @Subscribe

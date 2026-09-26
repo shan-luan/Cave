@@ -36,7 +36,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     val idr = metadataDecRes.asInstanceOf[ImgDecRes]
     width = idr.getWidth
     height = idr.getHeight
-    val tmp = new ImgFrame(null)
+    val tmp = new ImgFrame(-1)
     try {
       idr.get(0, tmp)
       cachedPixels = idr.getCachedPixels
@@ -64,7 +64,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     if (!decoded) {
       Using.resource(new ImgDecRes(this)) { dec =>
         dec.start()
-        val tmp = new ImgFrame(null)
+        val tmp = new ImgFrame(-1)
         dec.get(0, tmp)
         cachedPixels = dec.getCachedPixels
         unpackRowLength = dec.getUnpackRowLength

@@ -9,13 +9,13 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor
 class TestCont(duration0: Long) extends Content[TestCont.TestFrame](new TestCont.TestGenerator(duration0))
 
 object TestCont {
-  class TestFrame(track: Track) extends Frame(track) {
+  class TestFrame(trackIndex: Int) extends Frame(trackIndex) {
   }
 
   /** 按给定总时长产出空帧的最小生成器。 */
   private final class TestGenerator(duration: Long) extends Generator[TestFrame] {
     override protected def produce(time: Long, track: Track, source: Source[TestFrame]): TestFrame = {
-      new TestFrame(track)
+      new TestFrame(track.index)
     }
 
     override def getLengthPerExportFrame: Long = {

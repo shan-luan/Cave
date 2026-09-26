@@ -220,7 +220,7 @@ object FilterListTest {
   }
 
   /** 可复用帧，以 val 为内容。 */
-  private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(null)
+  private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(-1)
 
   private[pipeline] final class FpCont(base: Double) extends Content[Fpable](new FpGenerator(base))
 

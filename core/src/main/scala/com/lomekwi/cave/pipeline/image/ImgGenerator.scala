@@ -39,7 +39,7 @@ class ImgGenerator(private var imgRes: ImgRes) extends Generator[ImgFrame] {
   }
 
   override protected def produce(time: Long, track: Track, source: Source[ImgFrame]): ImgFrame = {
-    if (frame != null && frame.track.index != track.index) {
+    if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
     val cd = new CountDownLatch(1)
@@ -48,7 +48,7 @@ class ImgGenerator(private var imgRes: ImgRes) extends Generator[ImgFrame] {
         if (texture == null) {
           texture = new Texture(imgRes.getWidth, imgRes.getHeight, Pixmap.Format.RGBA8888)
         }
-        frame = new ImgFrame(track, source)
+        frame = new ImgFrame(track.index, source)
         frame.setTexture(texture)
           .setTransform(new Transform(0, 0, 0))
         if (actor == null) {

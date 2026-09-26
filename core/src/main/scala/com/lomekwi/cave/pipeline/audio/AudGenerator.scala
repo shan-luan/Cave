@@ -22,8 +22,8 @@ class AudGenerator(private var audRes: AudRes) extends Generator[AudFrame] {
 
   override protected def produce(time: Long, track: Track, source: Source[AudFrame]): AudFrame = {
     // 轨道按索引唯一，帧携带的轨道只要索引相同就仍然对应当前的轨迹线程，可以接着用
-    if (frame == null || frame.track.index != track.index) {
-      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track, source)
+    if (frame == null || frame.trackIndex != track.index) {
+      frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track.index, source)
     }
 
     try {

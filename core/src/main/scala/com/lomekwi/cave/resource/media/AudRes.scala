@@ -103,7 +103,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
     private def generate(): Unit = {
       val dec = newDecoder()
-      val frame = new AudFrame(44100, null)
+      val frame = new AudFrame(44100, -1)
       val peaks = new Array[Float](W)
       try {
         dec.start()
@@ -247,7 +247,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         if (!dec.isInitialized) {
           dec.start()
         }
-        val frame = new AudFrame(44100, null)
+        val frame = new AudFrame(44100, -1)
         val slots = new Array[Int](BATCH_SIZE)
 
         var running = true

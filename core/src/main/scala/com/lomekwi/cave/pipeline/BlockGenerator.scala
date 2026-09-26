@@ -11,7 +11,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSrcActor, TlSrcActor}
 class BlockGenerator extends Generator[Frame] {
 
   override protected def produce(time: Long, track: Track, source: Source[Frame]): Frame = {
-    new GapFrame(track)
+    new GapFrame(track.index)
   }
 
   override def getLengthPerExportFrame: Long = 0L

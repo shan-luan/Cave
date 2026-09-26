@@ -409,7 +409,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   def getTrackCount: Int = tracks.size
 
   /** 指定索引的轨迹线程，不存在则创建。 */
-  private[timeline] def getWorker(index: Int): TrackWorker = {
+  private[cave] def getWorker(index: Int): TrackWorker = {
     var worker = workers.get(index)
     if (worker == null) {
       getTrackOrCreate(index) // 线程的 gapFrame 需要一个轨道
@@ -502,7 +502,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 都不必跟着换。内容则每轮从 [[Timeline.getTracks]] 现取，拿到的一定是当前版本。
    */
   class TrackWorker(private val index: Int) extends Runnable {
-    private final val gapFrame: GapFrame = new GapFrame(tracks(index))
+    private final val gapFrame: GapFrame = new GapFrame(index)
     private var sinkPhaser: Phaser = uninitialized
     private var future: Future[?] = uninitialized
     @volatile private var workerThread: Thread = uninitialized

@@ -2,28 +2,27 @@ package com.lomekwi.cave.pipeline.audio
 
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.project.ProjectBackgroundedEvent
-import com.lomekwi.cave.project.ProjectFrontedEvent
+import com.lomekwi.cave.project.{Project, ProjectBackgroundedEvent, ProjectFrontedEvent}
 import com.lomekwi.cave.resource.decoder.AudDecRes
 
 import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
 import scala.compiletime.uninitialized
 
-class AudioFrameSink {
-  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer()
+class AudioFrameSink(private val project: Project) {
+  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(project)
   private var currentFuture: Future[?] = uninitialized
 
   @Subscribe
   def sink(frame: AudFrame): Unit = {
-    frame.track.getWorker.getSinkPhaser.register()
+    project.timeline.getWorker(frame.trackIndex).getSinkPhaser.register()
     afm.submit(frame)
   }
 
   @Subscribe
   def onProjectFronted(event: ProjectFrontedEvent): Unit = {
     stopMixer()
-    afm = new AudioFrameSink.AudioFrameMixer()
+    afm = new AudioFrameSink.AudioFrameMixer(project)
     currentFuture = App.workerExecutor.submit(afm)
   }
 
@@ -48,7 +47,7 @@ class AudioFrameSink {
 }
 
 object AudioFrameSink {
-  private[audio] class AudioFrameMixer extends Runnable {
+  private[audio] class AudioFrameMixer(private val project: Project) extends Runnable {
     private final val frames: LinkedBlockingQueue[AudFrame] = new LinkedBlockingQueue[AudFrame]()
     private final val output: Array[Float] = new Array[Float](AudDecRes.FRAME_SIZE)
     @volatile private var stopped: Boolean = false
@@ -75,7 +74,7 @@ object AudioFrameSink {
               output(j) += sample
               j += 1
             }
-            f.track.getWorker.getSinkPhaser.arriveAndDeregister()
+            project.timeline.getWorker(f.trackIndex).getSinkPhaser.arriveAndDeregister()
             if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {

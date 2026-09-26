@@ -13,7 +13,7 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
-class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) with Transformable with Renderable {
+class ImgFrame(trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) with Transformable with Renderable {
   private var transform: Transform = uninitialized
   private var pixels: ByteBuffer = uninitialized
   @volatile private var pixelsDirty: Boolean = false
@@ -21,8 +21,8 @@ class ImgFrame(track: Track, source: Source[?]) extends Frame(track, source) wit
   private var actor: TransFrameActor = uninitialized
   private var unpackRowLength: Int = 0
 
-  def this(track: Track) = {
-    this(track, null)
+  def this(trackIndex: Int) = {
+    this(trackIndex, null)
   }
   override def getTransform: Transform = {
     transform

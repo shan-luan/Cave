@@ -1,6 +1,4 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.timeline.Track
-
-class GapFrame(track: Track) extends Frame(track) {
+class GapFrame(trackIndex: Int) extends Frame(trackIndex) {
 }

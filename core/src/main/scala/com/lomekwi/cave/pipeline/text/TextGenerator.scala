@@ -80,7 +80,7 @@ class TextGenerator(text: String) extends Generator[TextFrame] {
   }
 
   override protected def produce(time: Long, track: Track, source: Source[TextFrame]): TextFrame = {
-    if (frame != null && frame.track.index != track.index) {
+    if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
     if (font != null && generatedFontSize != getFontSize) {
@@ -95,7 +95,7 @@ class TextGenerator(text: String) extends Generator[TextFrame] {
           font = fontRes.getFont(getFontSize)
           generatedFontSize = getFontSize
         }
-        frame = new TextFrame(track, source)
+        frame = new TextFrame(track.index, source)
         frame.setFont(font)
         frame.setTransform(new Transform(0, 0, 0))
         if (actor == null) {

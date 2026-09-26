@@ -16,7 +16,7 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) with Transformable {
+class TextFrame(trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) with Transformable {
   @volatile private var text: String = uninitialized
   @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()
@@ -30,8 +30,8 @@ class TextFrame(track: Track, source: Source[?]) extends Frame(track, source) wi
   @volatile private var version: Int = 0
   private var layoutVersion: Int = 0
 
-  def this(track: Track) = {
-    this(track, null)
+  def this(trackIndex: Int) = {
+    this(trackIndex, null)
   }
 
   def setText(text: CharSequence): Unit = {
