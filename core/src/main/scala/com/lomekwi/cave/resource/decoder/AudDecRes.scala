@@ -11,7 +11,7 @@ import java.nio.FloatBuffer
 import java.util
 import scala.annotation.tailrec
 
-class AudDecRes(source: AudRes) extends DecRes[AudFrame](source) {
+class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
   import AudDecRes.*
 
   private final val sampleBuf: Array[Float] = new Array[Float](FRAME_SIZE * 8)

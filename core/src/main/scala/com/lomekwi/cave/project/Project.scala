@@ -7,7 +7,7 @@ import com.google.common.eventbus.EventBus
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.resource.Resource
-import com.lomekwi.cave.timeline.SourceFactory
+import com.lomekwi.cave.timeline.SegmentFactory
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.Playhead
@@ -31,7 +31,7 @@ class Project protected[project] extends Serializable with AutoCloseable {
   var timeline: Timeline = uninitialized
   @transient var playhead: Playhead = uninitialized
   final val resources: Multimap[File, Resource] = ArrayListMultimap.create[File, Resource]()
-  final val sourceFactory: SourceFactory = new SourceFactory(this)
+  final val sourceFactory: SegmentFactory = new SegmentFactory(this)
   @transient var projEventBus: EventBus = uninitialized
   @transient var undoManager: UndoManager = uninitialized
   var name: String = uninitialized

@@ -8,7 +8,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextArea
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 
@@ -17,7 +17,7 @@ import java.util.Objects
 /**
  * String 输入端口编辑 widget，VisTextArea 行。直接持有端口模型，修改写默认值并刷新预览。
  */
-final class TextPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
+final class TextPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
   private final val label: VisLabel = new VisLabel(port.getName)
   private final val textArea: VisTextArea = {

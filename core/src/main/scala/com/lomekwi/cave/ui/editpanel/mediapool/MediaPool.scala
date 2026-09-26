@@ -41,7 +41,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
           if (!resources.containsKey(file)) {
             val item = new MediaPoolItem(file, findShowable(file))
             addActor(item)
-            registerDragSource(item)
+            registerDragSegment(item)
           }
         }
       }
@@ -50,7 +50,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
     for (file <- resources.keySet().asScala) {
       val item = new MediaPoolItem(file, findShowable(file))
       addActor(item)
-      registerDragSource(item)
+      registerDragSegment(item)
     }
 
     eventBus.register(this)
@@ -74,11 +74,11 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       }
       val item = new MediaPoolItem(file, pv)
       addActor(item)
-      registerDragSource(item)
+      registerDragSegment(item)
     }
   }
 
-  private def registerDragSource(item: MediaPoolItem): Unit = {
+  private def registerDragSegment(item: MediaPoolItem): Unit = {
     dnd.addSource(new DragAndDrop.Source(item) {
       override def dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload = {
         val payload = new DragAndDrop.Payload()

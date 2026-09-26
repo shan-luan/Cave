@@ -14,50 +14,50 @@ import FilterListTest.*
  * 验证 [[FilterList]]，双向链表行为 + 端口连接自动维护。
  *
  * 覆盖如下。
- * 1) 空列表，Source.get() 无 filter 时返回源自身帧；
- * 2) add 后端口链 source.out → f.in → f.out → …；
+ * 1) 空列表，Segment.get() 无 filter 时返回源自身帧；
+ * 2) add 后端口链 segment.out → f.in → f.out → …；
  * 3) 按索引 add/remove 后连接保持；
  * 4) set 替换后连接更新；
  * 5) clear 后回到空链状态；
  * 6) listIterator 的 add/remove/set 维护连接；
- * 7) 求值，Source.get() 沿链传播。
+ * 7) 求值，Segment.get() 沿链传播。
  */
 class FilterListTest {
 
   @Test
-  def empty_chain_returnsSourceFrame(): Unit = {
-    val src = new FpCont(10)
-    assertEquals(10.0, src.get(0, null).`val`, 0)
+  def empty_chain_returnsSegmentFrame(): Unit = {
+    val segment = new FpCont(10)
+    assertEquals(10.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def add_linksPortsInOrder(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
-    src.getFilters.add(f1)
-    src.getFilters.add(f2)
+    segment.getFilters.add(f1)
+    segment.getFilters.add(f2)
 
-    assertSame(src.getGenerator.headOut, f1.getFilterIn.getPrev)
+    assertSame(segment.getSource.headOut, f1.getFilterIn.getPrev)
     assertSame(f1.getFilterOut, f2.getFilterIn.getPrev)
     assertFalse(f2.getFilterOut.isLinked)
 
     f1.delta.setDefaultData(1)
     f2.delta.setDefaultData(2)
-    assertEquals(13.0, src.get(0, null).`val`, 0)
+    assertEquals(13.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def addAtIndex_keepsChain(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    src.getFilters.add(a)
-    src.getFilters.add(c)
-    src.getFilters.add(1, b)
+    segment.getFilters.add(a)
+    segment.getFilters.add(c)
+    segment.getFilters.add(1, b)
 
-    assertSame(src.getGenerator.headOut, a.getFilterIn.getPrev)
+    assertSame(segment.getSource.headOut, a.getFilterIn.getPrev)
     assertSame(a.getFilterOut, b.getFilterIn.getPrev)
     assertSame(b.getFilterOut, c.getFilterIn.getPrev)
     assertFalse(c.getFilterOut.isLinked)
@@ -65,36 +65,36 @@ class FilterListTest {
     a.delta.setDefaultData(1)
     b.delta.setDefaultData(2)
     c.delta.setDefaultData(3)
-    assertEquals(16.0, src.get(0, null).`val`, 0)
+    assertEquals(16.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def add_atSize_appendsToTail(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters.add(a)
-    src.getFilters.add(1, b)
+    segment.getFilters.add(a)
+    segment.getFilters.add(1, b)
 
-    assertEquals(2, src.getFilters.size())
-    assertEquals(a, src.getFilters.get(0))
-    assertEquals(b, src.getFilters.get(1))
+    assertEquals(2, segment.getFilters.size())
+    assertEquals(a, segment.getFilters.get(0))
+    assertEquals(b, segment.getFilters.get(1))
     assertSame(a.getFilterOut, b.getFilterIn.getPrev)
   }
 
   @Test
   def remove_rewiresNeighbors(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    src.getFilters.add(a)
-    src.getFilters.add(b)
-    src.getFilters.add(c)
-    src.getFilters.remove(b)
+    segment.getFilters.add(a)
+    segment.getFilters.add(b)
+    segment.getFilters.add(c)
+    segment.getFilters.remove(b)
 
-    assertEquals(2, src.getFilters.size())
-    assertSame(src.getGenerator.headOut, a.getFilterIn.getPrev)
+    assertEquals(2, segment.getFilters.size())
+    assertSame(segment.getSource.headOut, a.getFilterIn.getPrev)
     assertSame(a.getFilterOut, c.getFilterIn.getPrev)
     assertFalse(c.getFilterOut.isLinked)
     assertNull(b.getFilterIn.getPrev)
@@ -102,25 +102,25 @@ class FilterListTest {
 
     a.delta.setDefaultData(1)
     c.delta.setDefaultData(2)
-    assertEquals(13.0, src.get(0, null).`val`, 0)
+    assertEquals(13.0, segment.get(0, null).`val`, 0)
 
     // 链表顺序正确
-    assertEquals(a, src.getFilters.get(0))
-    assertEquals(c, src.getFilters.get(1))
+    assertEquals(a, segment.getFilters.get(0))
+    assertEquals(c, segment.getFilters.get(1))
   }
 
   @Test
   def set_replacesAndUnlinksOld(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters.add(a)
-    src.getFilters.add(b)
+    segment.getFilters.add(a)
+    segment.getFilters.add(b)
 
     val c = new AddFilter()
-    src.getFilters.set(0, c)
+    segment.getFilters.set(0, c)
 
-    assertSame(src.getGenerator.headOut, c.getFilterIn.getPrev)
+    assertSame(segment.getSource.headOut, c.getFilterIn.getPrev)
     assertSame(c.getFilterOut, b.getFilterIn.getPrev)
     assertFalse(b.getFilterOut.isLinked)
     assertNull(a.getFilterIn.getPrev)
@@ -128,29 +128,29 @@ class FilterListTest {
 
     c.delta.setDefaultData(5)
     b.delta.setDefaultData(1)
-    assertEquals(16.0, src.get(0, null).`val`, 0)
+    assertEquals(16.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def clear_returnsToEmptyChain(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    src.getFilters.add(a)
-    src.getFilters.add(b)
-    src.getFilters.clear()
+    segment.getFilters.add(a)
+    segment.getFilters.add(b)
+    segment.getFilters.clear()
 
-    assertEquals(0, src.getFilters.size())
-    assertFalse(src.getGenerator.headOut.isLinked)
-    assertEquals(10.0, src.get(0, null).`val`, 0)
+    assertEquals(0, segment.getFilters.size())
+    assertFalse(segment.getSource.headOut.isLinked)
+    assertEquals(10.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def listIterator_add_remove_keepsChain(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    val filters: List[Filter[Fpable]] = src.getFilters.asInstanceOf[List[Filter[Fpable]]]
+    val filters: List[Filter[Fpable]] = segment.getFilters.asInstanceOf[List[Filter[Fpable]]]
 
     filters.add(a)
     filters.add(b)
@@ -160,7 +160,7 @@ class FilterListTest {
     lit.add(mid)
 
     assertEquals(3, filters.size())
-    assertSame(src.getGenerator.headOut, a.getFilterIn.getPrev)
+    assertSame(segment.getSource.headOut, a.getFilterIn.getPrev)
     assertSame(a.getFilterOut, mid.getFilterIn.getPrev)
     assertSame(mid.getFilterOut, b.getFilterIn.getPrev)
     assertFalse(b.getFilterOut.isLinked)
@@ -176,21 +176,21 @@ class FilterListTest {
 
   @Test
   def serialization_roundTrip_restoresChain(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val f1 = new AddFilter()
     f1.delta.setDefaultData(3)
-    src.getFilters.add(f1)
+    segment.getFilters.add(f1)
 
     val bos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(bos)) { oos =>
-      oos.writeObject(src)
+      oos.writeObject(segment)
     }
     val copy: FpCont = Using.resource(new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()))) { ois =>
       ois.readObject().asInstanceOf[FpCont]
     }
 
     assertEquals(1, copy.getFilters.size())
-    assertSame(copy.getGenerator.headOut, copy.getFilters.get(0).getFilterIn.getPrev)
+    assertSame(copy.getSource.headOut, copy.getFilters.get(0).getFilterIn.getPrev)
     assertFalse(copy.getFilters.get(0).getFilterOut.isLinked)
     assertEquals(13.0, copy.get(0, null).`val`, 0)
   }
@@ -222,11 +222,11 @@ object FilterListTest {
   /** 可复用帧，以 val 为内容。 */
   private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(-1)
 
-  private[pipeline] final class FpCont(base: Double) extends Content[Fpable](new FpGenerator(base))
+  private[pipeline] final class FpCont(base: Double) extends Content[Fpable](new FpSource(base))
 
-  /** 以固定 val 产出帧的最小生成器。 */
-  private[pipeline] final class FpGenerator(private val base: Double) extends Generator[Fpable] {
-    override protected def produce(time: Long, track: com.lomekwi.cave.timeline.Track, source: Source[Fpable]): Fpable = {
+  /** 以固定 val 产出帧的最小源。 */
+  private[pipeline] final class FpSource(private val base: Double) extends Source[Fpable] {
+    override protected def produce(time: Long, track: com.lomekwi.cave.timeline.Track, segment: Segment[Fpable]): Fpable = {
       return new Fpable(base)
     }
 
@@ -242,7 +242,7 @@ object FilterListTest {
       "数字源"
     }
 
-    override def createTlSrcActor(source: Source[?]): com.lomekwi.cave.ui.editpanel.tlarea.TlSrcActor = {
+    override def createTlSegmentActor(segment: Segment[?]): com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor = {
       null
     }
   }

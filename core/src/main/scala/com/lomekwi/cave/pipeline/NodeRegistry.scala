@@ -12,8 +12,8 @@ import scala.collection.mutable
  * 通用节点注册表，注册任意 [[Node]] 子类，并按目标帧类型动态匹配可用的节点。
  *
  * <p>兼容性规则，节点是 [[Filter]] 时，看它泛型声明的目标帧类型是否
- * {@code isAssignableFrom} 源帧类型；非 Filter 的图内节点不参与帧类型匹配，
- * 始终视为不兼容，因为兼容节点只会被挂到源的滤镜链上。</p>
+ * {@code isAssignableFrom} 该片段的帧类型；非 Filter 的图内节点不参与帧类型匹配，
+ * 始终视为不兼容，因为兼容节点只会被挂到片段的滤镜链上。</p>
  */
 class NodeRegistry {
   private final val entries: mutable.ArrayBuffer[Class[? <: Node]] = mutable.ArrayBuffer.empty[Class[? <: Node]]
@@ -40,8 +40,8 @@ class NodeRegistry {
     NodeRegistry.create(entries(index))
   }
 
-  def getCompatibleCount(source: Source[?]): Int = {
-    val frameType: Class[?] = source.getType
+  def getCompatibleCount(segment: Segment[?]): Int = {
+    val frameType: Class[?] = segment.getType
     var count = 0
     for (nodeClass <- entries) {
       if (NodeRegistry.isCompatible(nodeClass, frameType)) count += 1
@@ -50,11 +50,11 @@ class NodeRegistry {
   }
 
   /**
-   * 创建第 index 个兼容节点。只会返回可挂到源滤镜链上的 [[Filter]] 节点，
+   * 创建第 index 个兼容节点。只会返回可挂到片段滤镜链上的 [[Filter]] 节点，
    * 非 Filter 的图内节点不参与匹配。
    */
-  def createCompatible(source: Source[?], index: Int): Node = {
-    val frameType: Class[?] = source.getType
+  def createCompatible(segment: Segment[?], index: Int): Node = {
+    val frameType: Class[?] = segment.getType
     entries.iterator
       .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))
       .zipWithIndex

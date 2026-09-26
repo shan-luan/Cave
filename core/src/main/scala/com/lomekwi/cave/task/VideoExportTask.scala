@@ -10,8 +10,8 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.math.Matrix4
-import com.lomekwi.cave.pipeline.{Frame, Gap, Source}
-import com.lomekwi.cave.pipeline.audio.AudGenerator
+import com.lomekwi.cave.pipeline.{Frame, Gap, Segment}
+import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.resource.decoder.AudDecRes
@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters.*
 class VideoExportTask(private val timeline: Timeline, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
   private var recorder: FFmpegFrameRecorder = uninitialized
   private var frames: AtomicReferenceArray[Frame] = uninitialized
-  private var activeSources: Array[Source[?]] = uninitialized
+  private var activeSegments: Array[Segment[?]] = uninitialized
   private var fb: FrameBuffer = uninitialized
   private var batch: SpriteBatch = uninitialized
   @volatile private var t: Long = 0
@@ -48,7 +48,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       i += 1
     }
     frames = new AtomicReferenceArray[Frame](i)
-    activeSources = new Array[Source[?]](i)
+    activeSegments = new Array[Segment[?]](i)
   }
   fb = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true)
   batch = new SpriteBatch()
@@ -72,22 +72,22 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       while (t < timeline.getLength) {
         i = 0
         for (track <- timeline.asScala) {
-          var src = activeSources(i)
-          val activeRange = if (src == null) null else track.getRange(src)
-          if (src == null || !activeRange.contains(t)) {
-            src = track.get(t) match {
-              case s: Source[?] => s
+          var segment = activeSegments(i)
+          val activeRange = if (segment == null) null else track.getRange(segment)
+          if (segment == null || !activeRange.contains(t)) {
+            segment = track.get(t) match {
+              case s: Segment[?] => s
               case _: Gap => null
             }
-            if (src != null) {
-              track.syncAt(src, t)
+            if (segment != null) {
+              track.syncAt(segment, t)
             }
-            activeSources(i) = src
+            activeSegments(i) = segment
           }
-          if (src == null) {
+          if (segment == null) {
             frames.set(i, null)
           } else {
-            frames.set(i, track.frameAt(src, t))
+            frames.set(i, track.frameAt(segment, t))
           }
           i += 1
         }
@@ -105,7 +105,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
 
   private def exportAudio(): Unit = {
     val tracks: Array[Track] = timeline.getTracks.toArray(new Array[Track](0))
-    val active: Array[Source[?]] = new Array[Source[?]](tracks.length)
+    val active: Array[Segment[?]] = new Array[Segment[?]](tracks.length)
     val mixBuf: Array[Float] = new Array[Float](VideoExportTask.AUDIO_FRAME_SIZE)
 
     var audioT: Long = 0
@@ -115,20 +115,20 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       var i = 0
       while (i < tracks.length) {
         if (tracks(i).getLength != 0) {
-          var src = active(i)
-          val activeRange = if (src == null) null else tracks(i).getRange(src)
-          if (src == null || !activeRange.contains(audioT)) {
-            src = tracks(i).get(audioT) match {
-              case s: Source[?] => s
+          var segment = active(i)
+          val activeRange = if (segment == null) null else tracks(i).getRange(segment)
+          if (segment == null || !activeRange.contains(audioT)) {
+            segment = tracks(i).get(audioT) match {
+              case s: Segment[?] => s
               case _: Gap => null
             }
-            if (src != null && src.getGenerator.isInstanceOf[AudGenerator]) {
-              tracks(i).syncAt(src, audioT)
+            if (segment != null && segment.getSource.isInstanceOf[AudSource]) {
+              tracks(i).syncAt(segment, audioT)
             }
-            active(i) = src
+            active(i) = segment
           }
-          if (src != null) {
-            val frame = tracks(i).frameAt(src, audioT)
+          if (segment != null) {
+            val frame = tracks(i).frameAt(segment, audioT)
             frame match {
               case af: AudFrame if af.getSamples != null =>
                 val samples = af.getSamples

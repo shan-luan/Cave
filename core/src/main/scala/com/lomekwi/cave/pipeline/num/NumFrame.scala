@@ -1,9 +1,9 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 
-class NumFrame(trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) {
+class NumFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) {
   private var value: Double = 0
 
   def this(trackIndex: Int) = {

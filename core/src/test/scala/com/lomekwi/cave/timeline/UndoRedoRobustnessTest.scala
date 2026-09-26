@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Gap, Source}
+import com.lomekwi.cave.pipeline.{Gap, Segment}
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
@@ -15,20 +15,20 @@ import UndoRedoRobustnessTest.*
 
 /**
  * 时间线撤销/重做系统的鲁棒性测试。
- * 新建时间线，随机生成大量模拟源、随机组合为组，再随机执行各种"拖拽"（整体移动、
+ * 新建时间线，随机生成大量模拟片段、随机组合为组，再随机执行各种"拖拽"（整体移动、
  * 头/尾裁切、分割、删除、新增）。在随机时刻对时间线做序列化快照，继续随机操作后
  * 把快照之后产生的全部命令撤销掉，断言撤销回来的时间线与快照相等（再重做一遍，
  * 断言与操作后的状态相等）。
  *
  * 依赖 [[Timeline.equals]] / [[Track.equals]] 做结构化比较，按轨道、按区间
- * 逐项比对源（类型/时长、origin、区间），不依赖对象身份，因此能直接和深拷贝的
+ * 逐项比对片段（类型/时长、origin、区间），不依赖对象身份，因此能直接和深拷贝的
  * 快照对比。
  */
 class UndoRedoRobustnessTest extends GdxTestBase {
 
   private var project: TestProject = null
   private var timeline: Timeline = null
-  private final val groups: List[SourceGroup] = new ArrayList[SourceGroup]()
+  private final val groups: List[SegmentGroup] = new ArrayList[SegmentGroup]()
 
   @Test
   def undoAfterRandomDragsRestoresSnapshot(): Unit = {
@@ -44,7 +44,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     groups.clear()
     val rnd = new Random(seed)
 
-    createRandomSources(rnd)
+    createRandomSegments(rnd)
 
     randomGrouping(rnd)
 
@@ -88,7 +88,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     assertEquals(undoCalls, redoCalls, "撤销与重做的步数应一致")
   }
 
-  private def createRandomSources(rnd: Random): Unit = {
+  private def createRandomSegments(rnd: Random): Unit = {
     val occupied: List[List[Interval]] = new ArrayList[List[Interval]]()
     var i = 0
     while (i < TRACK_COUNT) {
@@ -103,8 +103,8 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       if (range == null) {
         // 该轨道放不下就跳过
       } else {
-        val src = new TestCont(duration)
-        timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), src, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN * 2))
+        val segment = new TestCont(duration)
+        timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), segment, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN * 2))
       }
       i += 1
     }
@@ -136,9 +136,9 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     for (track <- timeline.getTracks.asScala) {
       for (element <- track.asScala) {
         element match {
-          case s: Source[?] =>
+          case s: Segment[?] =>
             if (rnd.nextFloat() < 0.35f) {
-              var group: SourceGroup = null
+              var group: SegmentGroup = null
               if (!groups.isEmpty && rnd.nextFloat() < 0.5f) {
                 group = groups.get(rnd.nextInt(groups.size()))
               } else {
@@ -167,7 +167,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def performRandomOp(rnd: Random): Unit = {
-    val placed = placedSources()
+    val placed = placedSegments()
     val op = rnd.nextInt(7)
     op match {
       case 0 | 1 => moveOp(rnd, placed)
@@ -179,13 +179,13 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  /** 与 UI 一致，拖拽锚点源时，其所在组的成员会一起被操作。 */
-  private def dragMembers(source: Source[?]): List[Source[?]] = {
-    val group = timeline.getGroup(source)
-    if (group != null) List.copyOf(group) else List.of(source)
+  /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
+  private def dragMembers(segment: Segment[?]): List[Segment[?]] = {
+    val group = timeline.getGroup(segment)
+    if (group != null) List.copyOf(group) else List.of(segment)
   }
 
-  private def moveOp(rnd: Random, placed: List[Source[?]]): Unit = {
+  private def moveOp(rnd: Random, placed: List[Segment[?]]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     var minIdx = Integer.MAX_VALUE
@@ -202,7 +202,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def frontResizeOp(rnd: Random, placed: List[Source[?]]): Unit = {
+  private def frontResizeOp(rnd: Random, placed: List[Segment[?]]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(UndoRedoRobustnessTest.MAX_DURATION) - UndoRedoRobustnessTest.MAX_DURATION / 2
@@ -211,7 +211,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def behindResizeOp(rnd: Random, placed: List[Source[?]]): Unit = {
+  private def behindResizeOp(rnd: Random, placed: List[Segment[?]]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(UndoRedoRobustnessTest.MAX_DURATION) - UndoRedoRobustnessTest.MAX_DURATION / 2
@@ -220,11 +220,11 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def splitOp(rnd: Random, placed: List[Source[?]]): Unit = {
+  private def splitOp(rnd: Random, placed: List[Segment[?]]): Unit = {
     if (placed.isEmpty) return
-    val src = placed.get(rnd.nextInt(placed.size()))
-    val track = timeline.findTrackOf(src)
-    val r = track.getRange(src)
+    val segment = placed.get(rnd.nextInt(placed.size()))
+    val track = timeline.findTrackOf(segment)
+    val r = track.getRange(segment)
     val lo: Long = r.lo
     val hi: Long = r.hi
     if (hi - lo < 2) return
@@ -234,7 +234,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def removeOp(rnd: Random, placed: List[Source[?]]): Unit = {
+  private def removeOp(rnd: Random, placed: List[Segment[?]]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     Using.resource(timeline.record()) { h =>
@@ -249,10 +249,10 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, UndoRedoRobustnessTest.SPAN - duration))
       val range: Interval = start ~~ (start + duration)
-      if (track.isFree(range, Set.of[Source[?]]())) {
-        val src = new TestCont(duration)
+      if (track.isFree(range, Set.of[Segment[?]]())) {
+        val segment = new TestCont(duration)
         Using.resource(timeline.record()) { h =>
-          timeline.tryAdd(track, src, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN))
+          timeline.tryAdd(track, segment, range, rnd.nextLong(UndoRedoRobustnessTest.SPAN))
         }
         return
       }
@@ -261,9 +261,9 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   }
 
   private def forceChange(rnd: Random): Unit = {
-    val placed = placedSources()
+    val placed = placedSegments()
     if (placed.isEmpty) {
-      addOp(rnd) // 全空时补一个源；仍失败则放弃这一步
+      addOp(rnd) // 全空时补一个片段；仍失败则放弃这一步
       return
     }
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
@@ -272,12 +272,12 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
   }
 
-  private def placedSources(): List[Source[?]] = {
-    val out: List[Source[?]] = new ArrayList[Source[?]]()
+  private def placedSegments(): List[Segment[?]] = {
+    val out: List[Segment[?]] = new ArrayList[Segment[?]]()
     for (track <- timeline.getTracks.asScala) {
       for (element <- track.asScala) {
         element match {
-          case s: Source[?] => out.add(s)
+          case s: Segment[?] => out.add(s)
           case _: Gap =>
         }
       }

@@ -1,10 +1,10 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import scala.compiletime.uninitialized
 
-class AudFrame(sampleRate0: Int, trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) {
+class AudFrame(sampleRate0: Int, trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) {
   private var samples: Array[Float] = uninitialized
   private final val sampleRate: Int = sampleRate0
   private var time: Long = 0

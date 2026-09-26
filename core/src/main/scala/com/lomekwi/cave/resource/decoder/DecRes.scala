@@ -10,13 +10,13 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
 /**
  * @tparam F 产生的帧类型
  */
-abstract class DecRes[F <: Frame] protected (protected val source: MedRes) extends Resource {
-  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(source.getPath)
+abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) extends Resource {
+  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(segment.getPath)
   @volatile protected var initialized: Boolean = false
 
   def start(): Unit = this.synchronized {
     if (!initialized) {
-      if (source.getCodecName != null) {
+      if (segment.getCodecName != null) {
         grabber.setVideoCodecName(tryGetDecoder())
       }
       configure()

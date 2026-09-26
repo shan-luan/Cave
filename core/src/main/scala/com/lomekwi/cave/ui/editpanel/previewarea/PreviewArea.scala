@@ -13,7 +13,7 @@ import com.lomekwi.cave.pipeline.GapFrame
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.pipeline.image.ImgFrame
 import com.lomekwi.cave.pipeline.text.TextFrame
-import com.lomekwi.cave.app.selection.SourceSetSelectedEvent
+import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.task.ExportOptionsSet
@@ -132,14 +132,14 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   @Subscribe
-  def onSelectionChanged(event: SourceSetSelectedEvent): Unit = {
+  def onSelectionChanged(event: SegmentSetSelectedEvent): Unit = {
     // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
     if (!(event.set.getTimeline eq project.timeline)) return
     for (frame <- frames) {
       if (frame != null) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null) {
-          val selected = frame.getSource != null && event.set.contains(frame.getSource)
+          val selected = frame.getSegment != null && event.set.contains(frame.getSegment)
           actor.setSelected(selected)
         }
       }

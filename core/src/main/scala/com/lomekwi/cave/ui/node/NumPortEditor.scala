@@ -9,7 +9,7 @@ import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
@@ -19,7 +19,7 @@ import java.util
  * 数值输入端口编辑 widget，Spinner 行。直接持有端口模型，修改写默认值记 undo，
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
-final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisTable with PortEditor {
+final class NumPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
   private final val port: Node.InPort[?] = port0
   private final val label: VisLabel = new VisLabel(port.getName)
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(
@@ -32,7 +32,7 @@ final class NumPortEditor(port0: Node.InPort[?], source: Source[?]) extends VisT
       if (oldVal != newVal) {
         val p: Project = App.root.getFrontendProject
         if (p != null) {
-          p.undoManager.record(UndoManager.FpPortValueCommand(p, port, source, oldVal, newVal))
+          p.undoManager.record(UndoManager.FpPortValueCommand(p, port, segment, oldVal, newVal))
           p.projEventBus.post(RefreshRequestEvent)
         }
         setDefaultValue(newVal)

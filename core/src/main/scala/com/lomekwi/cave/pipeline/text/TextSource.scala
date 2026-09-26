@@ -4,18 +4,18 @@ import com.lomekwi.cave.util.Units.SECOND
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.lomekwi.cave.pipeline.{Generator, Node, Source}
+import com.lomekwi.cave.pipeline.{Source, Node, Segment}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
-import com.lomekwi.cave.ui.editpanel.tlarea.{TlSrcActor, TlTextSrcActor}
+import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTextSegmentActor}
 
 import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class TextGenerator(text: String) extends Generator[TextFrame] {
+class TextSource(text: String) extends Source[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
     new Node.InPort[String]("文本", "请输入文本", classOf[String]) {})
   private final val fontSizeIn: Node.InPort[Double] = addInPort(
@@ -79,7 +79,7 @@ class TextGenerator(text: String) extends Generator[TextFrame] {
     initialized = false
   }
 
-  override protected def produce(time: Long, track: Track, source: Source[TextFrame]): TextFrame = {
+  override protected def produce(time: Long, track: Track, segment: Segment[TextFrame]): TextFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -95,7 +95,7 @@ class TextGenerator(text: String) extends Generator[TextFrame] {
           font = fontRes.getFont(getFontSize)
           generatedFontSize = getFontSize
         }
-        frame = new TextFrame(track.index, source)
+        frame = new TextFrame(track.index, segment)
         frame.setFont(font)
         frame.setTransform(new Transform(0, 0, 0))
         if (actor == null) {
@@ -136,14 +136,14 @@ class TextGenerator(text: String) extends Generator[TextFrame] {
     "文本源"
   }
 
-  override def createTlSrcActor(source: Source[?]): TlSrcActor = {
-    new TlTextSrcActor(source)
+  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+    new TlTextSegmentActor(segment)
   }
 
-  override def onDuplicate(original: Generator[?]): Unit = {
-    val src = original.asInstanceOf[TextGenerator]
-    this.textIn.setDefaultData(src.getText)
-    this.fontSizeIn.setDefaultData(src.getFontSize.toDouble)
-    this.fontRes = new FontRes(src.fontRes.getPath)
+  override def onDuplicate(original: Source[?]): Unit = {
+    val source = original.asInstanceOf[TextSource]
+    this.textIn.setDefaultData(source.getText)
+    this.fontSizeIn.setDefaultData(source.getFontSize.toDouble)
+    this.fontRes = new FontRes(source.fontRes.getPath)
   }
 }

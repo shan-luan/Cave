@@ -7,21 +7,21 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 播放头离开源时 `Source.onStepOut` 的触发时机，自然播放越过源终点，
- * 以及 seek 把播放头挪到源区间之外（暂停状态下同样如此）。
+ * 播放头离开片段时 `Segment.onStepOut` 的触发时机，自然播放越过片段终点，
+ * 以及 seek 把播放头挪到片段区间之外（暂停状态下同样如此）。
  */
-class SourceStepOutTest extends GdxTestBase {
+class SegmentStepOutTest extends GdxTestBase {
 
   private final val SETTLE_MILLIS = 300L
 
   @Test
-  def stepOutFiresOnlyWhenPlayheadLeavesSource(): Unit = {
+  def stepOutFiresOnlyWhenPlayheadLeavesSegment(): Unit = {
     val project = new TestProject()
     val timeline = project.timeline
     val duration = SECOND / 100
-    val source = new SourceStepOutTest.RecordingCont(duration)
+    val segment = new SegmentStepOutTest.RecordingCont(duration)
     val track = timeline.getTrackOrCreate(0)
-    assertEquals(0L, timeline.tryAdd(track, source, 0 ~~ duration, 0), "源应被加入轨道")
+    assertEquals(0L, timeline.tryAdd(track, segment, 0 ~~ duration, 0), "源应被加入轨道")
 
     val thread = new Thread(track.getWorker, "step-out-test")
     thread.setDaemon(true)
@@ -29,19 +29,19 @@ class SourceStepOutTest extends GdxTestBase {
     try {
       project.playhead.seek(duration / 2)
       Thread.sleep(SETTLE_MILLIS)
-      assertTrue(source.getSyncCount > 0, "轨迹线程应已处理暂停后的位置")
-      assertEquals(0, source.getStepOutCount, "源内的 seek 不应触发 onStepOut")
+      assertTrue(segment.getSyncCount > 0, "轨迹线程应已处理暂停后的位置")
+      assertEquals(0, segment.getStepOutCount, "源内的 seek 不应触发 onStepOut")
 
       project.playhead.seek(duration + SECOND / 10)
-      assertTrue(source.awaitStepOut(SETTLE_MILLIS * 4), "暂停时 seek 离开源应触发 onStepOut")
-      assertEquals(1, source.getStepOutCount)
-      assertEquals(duration + SECOND / 10, source.getLastStepOutTime, "应报告离开时的源内时间")
+      assertTrue(segment.awaitStepOut(SETTLE_MILLIS * 4), "暂停时 seek 离开源应触发 onStepOut")
+      assertEquals(1, segment.getStepOutCount)
+      assertEquals(duration + SECOND / 10, segment.getLastStepOutTime, "应报告离开时的源内时间")
 
       project.playhead.seek(0)
       project.playhead.setPlaying(true)
-      assertTrue(source.awaitStepOut(SECOND), "自然播放越过源终点应触发 onStepOut")
-      assertEquals(2, source.getStepOutCount)
-      assertTrue(source.getLastStepOutTime >= duration, "越界时间不应早于源终点")
+      assertTrue(segment.awaitStepOut(SECOND), "自然播放越过源终点应触发 onStepOut")
+      assertEquals(2, segment.getStepOutCount)
+      assertTrue(segment.getLastStepOutTime >= duration, "越界时间不应早于源终点")
       project.playhead.setPlaying(false)
     } finally {
       thread.interrupt()
@@ -51,7 +51,7 @@ class SourceStepOutTest extends GdxTestBase {
   }
 }
 
-object SourceStepOutTest {
+object SegmentStepOutTest {
 
   /** 记录 sync / onStepOut 的调用，供断言检查。 */
   class RecordingCont(duration: Long) extends TestCont(duration) {

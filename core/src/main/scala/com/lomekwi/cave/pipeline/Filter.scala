@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
- * 过滤器节点，单一 FilterIn/FilterOut，可挂载到某个 [[Source]] 的 filter 链上。
+ * 过滤器节点，单一 FilterIn/FilterOut，可挂载到某个 [[Segment]] 的 filter 链上。
  *
  * @author shan_luan_
  */

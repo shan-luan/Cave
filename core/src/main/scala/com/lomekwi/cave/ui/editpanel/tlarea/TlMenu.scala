@@ -7,8 +7,8 @@ import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
-import com.lomekwi.cave.pipeline.{Content, Source}
-import com.lomekwi.cave.pipeline.text.{TextFrame, TextGenerator}
+import com.lomekwi.cave.pipeline.{Content, Segment}
+import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.Interval
 import com.lomekwi.cave.timeline.~~
@@ -74,18 +74,18 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val source: Source[?] = new Content[TextFrame](new TextGenerator())
-    val duration: Long = source.getDefaultDuration
+    val segment: Segment[?] = new Content[TextFrame](new TextSource())
+    val duration: Long = segment.getDefaultDuration
 
     var targetTrack: Int = 0
     val range: Interval = time ~~ (time + duration)
-    while (!timelineView.getTimeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
+    while (!timelineView.getTimeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
       targetTrack += 1
     }
 
     val timeline = timelineView.getTimeline
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), source, range, time)
+      timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time)
     }
 
     timelineView.markTimelineDirty()
@@ -94,34 +94,34 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.getProject
     try {
-      val sources: util.List[Source[?]] = project.sourceFactory.getAll(file)
-      if (!sources.isEmpty) {
+      val segments: util.List[Segment[?]] = project.sourceFactory.getAll(file)
+      if (!segments.isEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
-        val added: util.List[Source[?]] = new util.ArrayList[Source[?]]()
+        val added: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
 
         val timeline = timelineView.getTimeline
         Using.resource(timeline.record()) { h =>
-          for (src <- sources.asScala) {
-            val duration: Long = src.getDefaultDuration
+          for (segment <- segments.asScala) {
+            val duration: Long = segment.getDefaultDuration
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
               val range: Interval = time ~~ (time + duration)
-              while (!timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Source[?]]())) {
+              while (!timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
                 targetTrack += 1
               }
 
-              timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), src, range, time)
+              timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time)
               trackOffset = targetTrack - baseTrack + 1
-              added.add(src)
+              added.add(segment)
             }
           }
         }
 
         if (added.size() >= 2) {
           val group = timeline.newGroup()
-          for (src <- added.asScala) {
-            group.add(src)
+          for (segment <- added.asScala) {
+            group.add(segment)
           }
         }
 

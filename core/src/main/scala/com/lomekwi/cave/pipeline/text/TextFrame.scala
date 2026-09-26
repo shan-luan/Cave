@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.math.Matrix4
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.timeline.Track
@@ -16,7 +16,7 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class TextFrame(trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) with Transformable {
+class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) with Transformable {
   @volatile private var text: String = uninitialized
   @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()

@@ -3,7 +3,7 @@ package com.lomekwi.cave.ui.node
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 
 import java.util.function.BiFunction
 import java.util.function.Function
@@ -20,13 +20,13 @@ class CardWidgetsRegistry {
   private final val IN_ENTRIES: mutable.ArrayBuffer[InEntry] = mutable.ArrayBuffer.empty[InEntry]
   private final val OUT_ENTRIES: mutable.ArrayBuffer[OutEntry] = mutable.ArrayBuffer.empty[OutEntry]
 
-  registerIn(classOf[Double], (port, source) => new NumPortEditor(port, source))
-  registerIn(classOf[String], (port, source) => new TextPortEditor(port, source))
-  registerIn(classOf[NodeGraph], (port, source) => new NodeGraphPortEditor(port, source))
+  registerIn(classOf[Double], (port, segment) => new NumPortEditor(port, segment))
+  registerIn(classOf[String], (port, segment) => new TextPortEditor(port, segment))
+  registerIn(classOf[NodeGraph], (port, segment) => new NodeGraphPortEditor(port, segment))
   registerOut(classOf[Double], port => new FpOutputRow(port))
 
   /** 注册输入端口的 widget 工厂。目标类型为端口约束需能容纳的类型。 */
-  private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor]): Unit = {
+  private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment[?], Actor]): Unit = {
     IN_ENTRIES += InEntry(`type`, factory)
   }
 
@@ -36,10 +36,10 @@ class CardWidgetsRegistry {
   }
 
   /** 为输入端口创建编辑 widget；没有注册对应类型的返回 null（该端口不显示）。 */
-  def createEditor(port: Node.InPort[?], source: Source[?]): Actor = {
+  def createEditor(port: Node.InPort[?], segment: Segment[?]): Actor = {
     IN_ENTRIES
       .find(entry => accepts(port, entry.`type`))
-      .map(entry => entry.factory.apply(port, source))
+      .map(entry => entry.factory.apply(port, segment))
       .orNull
   }
 
@@ -58,7 +58,7 @@ class CardWidgetsRegistry {
 }
 
 object CardWidgetsRegistry {
-  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Source[?], Actor])
+  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment[?], Actor])
 
   private case class OutEntry(`type`: Class[?], factory: Function[Node.OutPort[?], Actor])
 

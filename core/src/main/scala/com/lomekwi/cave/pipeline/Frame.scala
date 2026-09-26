@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline
 import java.io.Serializable
 
 @SerialVersionUID(1L)
-abstract class Frame(final val trackIndex: Int, private val source: Source[?]) extends AutoCloseable with Serializable {
+abstract class Frame(final val trackIndex: Int, private val segment: Segment[?]) extends AutoCloseable with Serializable {
 
   @volatile var timestamp: Long = 0L
   @volatile private var closed: Boolean = false
@@ -12,7 +12,7 @@ abstract class Frame(final val trackIndex: Int, private val source: Source[?]) e
     this(trackIndex, null)
   }
 
-  def getSource: Source[?] = source
+  def getSegment: Segment[?] = segment
 
   def withTime(timestamp: Long): Frame = {
     this.timestamp = timestamp

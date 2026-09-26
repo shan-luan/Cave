@@ -5,13 +5,13 @@ import com.lomekwi.cave.util.Units.niceScale
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.image.VdoGenerator
+import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.pipeline.image.VdoSource
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-class TlVdoSrcActor(source: Source[?]) extends TlSrcActor(source) {
+class TlVdoSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     val sd: ShapeDrawer = App.root.getShapeDrawer
@@ -24,7 +24,7 @@ class TlVdoSrcActor(source: Source[?]) extends TlSrcActor(source) {
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (srcDuration > 0) {
-      val res: VdoRes = getSource.getGenerator.asInstanceOf[VdoGenerator].getVdoRes
+      val res: VdoRes = getSegment.getSource.asInstanceOf[VdoSource].getVdoRes
 
       val pxPerUs: Float = getWidth / srcDuration.toFloat
       val aspect: Float = res.getWidth.toFloat / res.getHeight

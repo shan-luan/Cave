@@ -1,7 +1,7 @@
 package com.lomekwi.cave.app.copy
 
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.app.selection.SourceSetSelectedEvent
+import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
 
 import scala.compiletime.uninitialized
 
@@ -11,7 +11,7 @@ class CopyManager {
 
   /** 复制以"当前选中集"为单位，单选也是只有一项的集合。 */
   @Subscribe
-  def onSelection(e: SourceSetSelectedEvent): Unit = {
+  def onSelection(e: SegmentSetSelectedEvent): Unit = {
     latestCopyable = e.set
   }
 

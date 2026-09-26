@@ -6,14 +6,14 @@ import com.badlogic.gdx.graphics.GL30
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
 import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
-class ImgFrame(trackIndex: Int, source: Source[?]) extends Frame(trackIndex, source) with Transformable with Renderable {
+class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) with Transformable with Renderable {
   private var transform: Transform = uninitialized
   private var pixels: ByteBuffer = uninitialized
   @volatile private var pixelsDirty: Boolean = false

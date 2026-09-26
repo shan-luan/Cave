@@ -4,18 +4,18 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
-import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.pipeline.audio.AudGenerator
+import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.ui.Colors
 import scala.compiletime.uninitialized
 
-class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
+class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
 
-    val res: AudRes = getSource.getGenerator.asInstanceOf[AudGenerator].getAudRes
+    val res: AudRes = getSegment.getSource.asInstanceOf[AudSource].getAudRes
     val wf: res.Waveformer = res.waveformer()
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return
@@ -53,7 +53,7 @@ class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
     val startBucket: Float = srcLocalStart.toFloat / bucketUs
     val endBucket: Float = startBucket + srcDuration.toFloat / bucketUs
 
-    val shader: ShaderProgram = TlAudSrcActor.getWaveShader
+    val shader: ShaderProgram = TlAudSegmentActor.getWaveShader
     if (!shader.isCompiled) return
 
     batch.setShader(shader)
@@ -70,14 +70,14 @@ class TlAudSrcActor(source: Source[?]) extends TlSrcActor(source) {
   }
 }
 
-object TlAudSrcActor {
+object TlAudSegmentActor {
   private var waveShader: ShaderProgram = uninitialized
 
   private def getWaveShader: ShaderProgram = {
     if (waveShader == null) {
       waveShader = new ShaderProgram(VERT, FRAG)
       if (!waveShader.isCompiled) {
-        Gdx.app.error("TlAudSrcActor", "Wave shader failed:\n" + waveShader.getLog)
+        Gdx.app.error("TlAudSegmentActor", "Wave shader failed:\n" + waveShader.getLog)
       }
     }
     waveShader

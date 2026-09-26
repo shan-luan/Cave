@@ -2,9 +2,9 @@ package com.lomekwi.cave.timeline
 
 import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.pipeline.{Gap, GapFrame, Source}
+import com.lomekwi.cave.pipeline.{Gap, GapFrame, Segment}
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.UndoManager.{AddSourceCommand, CompoundCommand, MergeableCommand, MoveSourcesCommand, RemoveSourceCommand, RemoveSourcesCommand, ResizeSourcesCommand, SplitSourceCommand, TrackEdit, UndoableCommand}
+import com.lomekwi.cave.timeline.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
 import com.lomekwi.cave.util.Duplicatable
 
@@ -34,7 +34,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   /** 轨迹线程。按轨道索引唯一，因此轨道换版本时线程与 Phaser 都不受影响。 */
   @transient private var workers: util.Map[Integer, TrackWorker] = new util.HashMap[Integer, TrackWorker]()
   /** 分组注册表。组是跨轨道的，故不归属任何单条轨道。 */
-  private final val groups: util.List[SourceGroup] = new util.ArrayList[SourceGroup]()
+  private final val groups: util.List[SegmentGroup] = new util.ArrayList[SegmentGroup]()
 
   private def readObject(in: ObjectInputStream): Unit = {
     in.defaultReadObject()
@@ -64,50 +64,50 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
   }
 
-  def tryAdd(track: Track, source: Source[?], range: Interval, origin: Long): Long = {
+  def tryAdd(track: Track, segment: Segment[?], range: Interval, origin: Long): Long = {
     val current = getTrackOrCreate(track.index)
-    val (next, shift) = current.tryAdd(source, range, origin)
+    val (next, shift) = current.tryAdd(segment, range, origin)
     if (shift == 0) {
       setTrack(track.index, next)
-      push(AddSourceCommand(this, track.index, current, next))
+      push(AddSegmentCommand(this, track.index, current, next))
     }
     shift
   }
 
-  protected[timeline] def addOrThrow(track: Track, source: Source[?], range: Interval, origin: Long): Unit = {
+  protected[timeline] def addOrThrow(track: Track, segment: Segment[?], range: Interval, origin: Long): Unit = {
     val current = getTrackOrCreate(track.index)
-    val next = current.addOrThrow(source, range, origin)
+    val next = current.addOrThrow(segment, range, origin)
     setTrack(track.index, next)
-    push(AddSourceCommand(this, track.index, current, next))
+    push(AddSegmentCommand(this, track.index, current, next))
   }
 
-  def remove(source: Source[?]): Unit = {
-    val track = findTrackOf(source)
+  def remove(segment: Segment[?]): Unit = {
+    val track = findTrackOf(segment)
     if (track != null) {
-      val group = getGroup(source)
-      val next = track.remove(source)
+      val group = getGroup(segment)
+      val next = track.remove(segment)
       setTrack(track.index, next)
-      push(RemoveSourceCommand(this, track.index, track, next, source, group))
+      push(RemoveSegmentCommand(this, track.index, track, next, segment, group))
     }
   }
 
-  def remove(sources: util.Collection[Source[?]]): Unit = {
+  def remove(segments: util.Collection[Segment[?]]): Unit = {
     val working = mutable.HashMap.empty[Int, Track]
     def currentOf(i: Int): Track = working.getOrElse(i, tracks(i))
-    val entries = new util.ArrayList[RemoveSourcesCommand.RemoveEntry](sources.size())
-    for (s <- sources.asScala) {
+    val entries = new util.ArrayList[RemoveSegmentsCommand.RemoveEntry](segments.size())
+    for (s <- segments.asScala) {
       val track = findTrackOf(s)
       if (track != null) {
         val group = getGroup(s)
         val before = currentOf(track.index)
         val next = before.remove(s)
         working.put(track.index, next)
-        entries.add(RemoveSourcesCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
+        entries.add(RemoveSegmentsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
       }
     }
     if (!entries.isEmpty) {
       setTracks(working.toSeq)
-      push(new RemoveSourcesCommand(this, entries))
+      push(new RemoveSegmentsCommand(this, entries))
     }
   }
 
@@ -116,29 +116,29 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     if (current.canSplit(time)) {
       val next = current.split(time)
       setTrack(track.index, next)
-      push(SplitSourceCommand(this, track.index, current, next))
+      push(SplitSegmentCommand(this, track.index, current, next))
     }
   }
 
-  /** 裁切一组源的起始边缘（各自终点不变）。@return 实际应用的偏移量（截断到最大可用量），0 表示未移动。 */
-  def setStart(sources: util.Collection[Source[?]], deltaTime: Long): Long = {
-    applyPerTrack(sources, deltaTime, false)
+  /** 裁切一组片段的起始边缘（各自终点不变）。@return 实际应用的偏移量（截断到最大可用量），0 表示未移动。 */
+  def setStart(segments: util.Collection[Segment[?]], deltaTime: Long): Long = {
+    applyPerTrack(segments, deltaTime, false)
   }
 
-  /** 裁切一组源的结束边缘（各自起点不变）。@return 同 [[Timeline.setStart]]。 */
-  def setEnd(sources: util.Collection[Source[?]], deltaTime: Long): Long = {
-    applyPerTrack(sources, deltaTime, true)
+  /** 裁切一组片段的结束边缘（各自起点不变）。@return 同 [[Timeline.setStart]]。 */
+  def setEnd(segments: util.Collection[Segment[?]], deltaTime: Long): Long = {
+    applyPerTrack(segments, deltaTime, true)
   }
 
   /** 各轨道 probe 后取限制最严者，把 deltaTime 同向截断并应用。@return 实际应用的偏移量，0 表示未移动。 */
-  private def applyPerTrack(sources: util.Collection[Source[?]], deltaTime: Long, end: Boolean): Long = {
-    if (deltaTime == 0 || sources.isEmpty) return 0L
+  private def applyPerTrack(segments: util.Collection[Segment[?]], deltaTime: Long, end: Boolean): Long = {
+    if (deltaTime == 0 || segments.isEmpty) return 0L
     val forward = deltaTime > 0
-    val indices = trackIndicesOf(sources)
+    val indices = trackIndicesOf(segments)
     if (indices.isEmpty) return 0L
 
     val bound: Long = indices
-      .map((i: Int) => { val t = tracks(i); if (end) t.probeSetEnd(sources, forward) else t.probeSetStart(sources, forward) })
+      .map((i: Int) => { val t = tracks(i); if (end) t.probeSetEnd(segments, forward) else t.probeSetStart(segments, forward) })
       .reduce(Track.tighter)
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
@@ -147,22 +147,22 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val edits = new util.ArrayList[TrackEdit]()
     for (i <- indices) {
       val before = tracks(i)
-      val after = if (end) before.setEnd(sources, applied) else before.setStart(sources, applied)
+      val after = if (end) before.setEnd(segments, applied) else before.setStart(segments, applied)
       edits.add(TrackEdit(i, before, after))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new ResizeSourcesCommand(this, edits))
+    push(new ResizeSegmentsCommand(this, edits))
     applied
   }
 
-  /** 仅按时间平移源（轨道不变）。deltaTime 截断到最大可用量后应用，整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
-  def moveTime(sources: util.Collection[Source[?]], deltaTime: Long): Long = {
-    if (deltaTime == 0 || sources.isEmpty) return 0L
+  /** 仅按时间平移片段（轨道不变）。deltaTime 截断到最大可用量后应用，整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
+  def moveTime(segments: util.Collection[Segment[?]], deltaTime: Long): Long = {
+    if (deltaTime == 0 || segments.isEmpty) return 0L
     val forward = deltaTime > 0
-    val indices = trackIndicesOf(sources)
+    val indices = trackIndicesOf(segments)
     if (indices.isEmpty) return 0L
 
-    val bound: Long = indices.map((i: Int) => tracks(i).probeMove(sources, forward)).reduce(Track.tighter)
+    val bound: Long = indices.map((i: Int) => tracks(i).probeMove(segments, forward)).reduce(Track.tighter)
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
     if (applied == 0) return 0L
@@ -170,9 +170,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val edits = new util.ArrayList[TrackEdit]()
     for (i <- indices) {
       val before = tracks(i)
-      // 先把该轨道上要移动的源全部摘掉，再按新位置放回；中途状态不对外发布
-      var next = before.removeAll(sources)
-      for (s <- sources.asScala) {
+      // 先把该轨道上要移动的片段全部摘掉，再按新位置放回；中途状态不对外发布
+      var next = before.removeAll(segments)
+      for (s <- segments.asScala) {
         if (before.contains(s)) {
           next = next.addOrThrow(s, before.getRange(s).shift(applied), before.getOrigin(s) + applied)
         }
@@ -180,23 +180,23 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       edits.add(TrackEdit(i, before, next))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new MoveSourcesCommand(this, edits))
+    push(new MoveSegmentsCommand(this, edits))
     applied
   }
 
   /**
-   * 仅按轨道索引平移源（时间区间不变）。deltaTrack 会被同向截断到最大可用的
+   * 仅按轨道索引平移片段（时间区间不变）。deltaTrack 会被同向截断到最大可用的
    * 轨道偏移后应用。从请求的目标轨道起沿该方向逐条回退，落在第一条整组可放置的
    * 轨道上（不反向、不超过请求量），保持组内成员相对间距。
    * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
    */
-  def moveTrack(sources: util.Collection[Source[?]], deltaTrack: Int): Int = {
-    val applied = findPlaceableTrack(sources, deltaTrack)
+  def moveTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
+    val applied = findPlaceableTrack(segments, deltaTrack)
     if (applied == 0) return 0
 
-    /** 源、原轨道索引、目标轨道索引、原区间、原 origin */
-    val moves = new util.ArrayList[(Source[?], Int, Int, Interval, Long)]()
-    for (s <- sources.asScala) {
+    /** 片段、原轨道索引、目标轨道索引、原区间、原 origin */
+    val moves = new util.ArrayList[(Segment[?], Int, Int, Interval, Long)]()
+    for (s <- segments.asScala) {
       val from = findTrackOf(s)
       if (from != null) {
         val to = getTrackOrCreate(from.index + applied)
@@ -212,7 +212,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       beforeOf.getOrElseUpdate(fromIndex, tracks(fromIndex))
       beforeOf.getOrElseUpdate(toIndex, tracks(toIndex))
     }
-    // 先全部摘除再全部放回。源可能在成员之间换轨，摘除不完全会让放置被自己挡住
+    // 先全部摘除再全部放回。片段可能在成员之间换轨，摘除不完全会让放置被自己挡住
     for ((s, fromIndex, _, _, _) <- moves.asScala) {
       working.put(fromIndex, currentOf(fromIndex).remove(s))
     }
@@ -226,14 +226,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       edits.add(TrackEdit(i, before, currentOf(i)))
     }
     setTracks(edits.asScala.map(e => e.index -> e.after).toSeq)
-    push(new MoveSourcesCommand(this, edits))
+    push(new MoveSegmentsCommand(this, edits))
     applied
   }
 
   /** 涉及到的轨道索引，按出现顺序去重。 */
-  private def trackIndicesOf(sources: util.Collection[Source[?]]): mutable.LinkedHashSet[Int] = {
+  private def trackIndicesOf(segments: util.Collection[Segment[?]]): mutable.LinkedHashSet[Int] = {
     val indices = mutable.LinkedHashSet.empty[Int]
-    for (s <- sources.asScala) {
+    for (s <- segments.asScala) {
       val t = findTrackOf(s)
       if (t != null) indices.add(t.index)
     }
@@ -246,41 +246,41 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * 索引越大的轨道越可能为空，且 getTrack 会按需创建，因此正向探测总能找到落点；
    * 反向受 0 限制，找不到时返回 0（保持原位）。
    */
-  private def findPlaceableTrack(sources: util.Collection[Source[?]], deltaTrack: Int): Int = {
-    if (deltaTrack == 0 || sources.isEmpty) return 0
-    val minIdx = sources.stream().mapToInt((s: Source[?]) => findTrackOf(s).index).min().orElseThrow()
+  private def findPlaceableTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
+    if (deltaTrack == 0 || segments.isEmpty) return 0
+    val minIdx = segments.stream().mapToInt((s: Segment[?]) => findTrackOf(s).index).min().orElseThrow()
     val step = if (deltaTrack > 0) 1 else -1
     val span = Math.abs(deltaTrack)
     var k = span
     while (k > 0) {
       // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲
       val target = minIdx + deltaTrack - step * (span - k)
-      if (canPlaceGroupOnTrack(sources, target)) return step * k
+      if (canPlaceGroupOnTrack(segments, target)) return step * k
       k -= 1
     }
     0
   }
 
   /**
-   * 整组按统一偏移移动后，是否每个成员在各自目标轨道上都不与既有源冲突。
+   * 整组按统一偏移移动后，是否每个成员在各自目标轨道上都不与既有片段冲突。
    * 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
    */
-  private def canPlaceGroupOnTrack(sources: util.Collection[Source[?]], target: Int): Boolean = {
+  private def canPlaceGroupOnTrack(segments: util.Collection[Segment[?]], target: Int): Boolean = {
     if (target < 0) {
       false
     } else {
-      var refIdx = findTrackOf(sources.iterator().next()).index
-      for (s <- sources.asScala) refIdx = Math.min(refIdx, findTrackOf(s).index)
-      sources.asScala.forall { s =>
+      var refIdx = findTrackOf(segments.iterator().next()).index
+      for (s <- segments.asScala) refIdx = Math.min(refIdx, findTrackOf(s).index)
+      segments.asScala.forall { s =>
         val from = findTrackOf(s)
         val ti = from.index + (target - refIdx)
-        ti >= tracks.size || tracks(ti).isFree(from.getRange(s), sources)
+        ti >= tracks.size || tracks(ti).isFree(from.getRange(s), segments)
       }
     }
   }
 
   /** 在 [time±threshold] 内扫描所有轨道条目，返回最近的起点/终点（无则原值）；ignore 不参与。 */
-  def snapTime(time: Long, threshold: Long, ignore: util.Collection[Source[?]]): Long = {
+  def snapTime(time: Long, threshold: Long, ignore: util.Collection[Segment[?]]): Long = {
     var best = time
     var bestDist = threshold
     val searchStart: Long = Math.max(0, time - threshold)
@@ -290,7 +290,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     for (track <- tracks) {
       for (element <- track.getIntersecting(searchRange).asScala) {
         element match {
-          case s: Source[?] =>
+          case s: Segment[?] =>
             if (!ignore.contains(s)) {
               val r = track.getRange(s)
               var dist = Math.abs(r.lo - time)
@@ -314,10 +314,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     best
   }
 
-  /** 持有该源的轨道；未放置时返回 null。 */
-  def findTrackOf(source: Source[?]): Track = {
+  /** 持有该片段的轨道；未放置时返回 null。 */
+  def findTrackOf(segment: Segment[?]): Track = {
     for (track <- tracks) {
-      if (track.contains(source)) return track
+      if (track.contains(segment)) return track
     }
     null
   }
@@ -325,14 +325,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   /**
    * 新建一个组并纳入注册表。组跨轨道，因此注册表在时间线一级。
    */
-  def newGroup(): SourceGroup = {
-    val group = new SourceGroup()
+  def newGroup(): SegmentGroup = {
+    val group = new SegmentGroup()
     groups.add(group)
     group
   }
 
   /** 把外部构造的组（如剪贴板模板）纳入注册表。 */
-  def adoptGroup(group: SourceGroup): SourceGroup = {
+  def adoptGroup(group: SegmentGroup): SegmentGroup = {
     if (!groups.contains(group)) {
       groups.add(group)
     }
@@ -340,13 +340,13 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /** 把组移出注册表，此后 [[Timeline.getGroup]] 不再能查到它。 */
-  def dropGroup(group: SourceGroup): Unit = {
+  def dropGroup(group: SegmentGroup): Unit = {
     groups.remove(group)
   }
 
-  /** 源所属的组；不属于任何组时返回 null。 */
-  def getGroup(source: Source[?]): SourceGroup = {
-    groups.asScala.find(_.contains(source)).orNull
+  /** 片段所属的组；不属于任何组时返回 null。 */
+  def getGroup(segment: Segment[?]): SegmentGroup = {
+    groups.asScala.find(_.contains(segment)).orNull
   }
 
   /**
@@ -528,15 +528,15 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       Gdx.app.log("Track" + index, "轨道线程启动: " + tracks(index))
       try {
         val p = project.playhead
-        // 播放头当前所在的源。播放头离开它时在该源上收尾。
-        var activeSource: Source[?] = null
+        // 播放头当前所在的片段。播放头离开它时在该片段上收尾。
+        var activeSegment: Segment[?] = null
         var activeRange: Interval = null
         while (!Thread.currentThread().isInterrupted) {
           val track = tracks(index)
           var t: Long = p.getTime
-          if (activeSource != null && !activeRange.contains(t)) {
-            val out = activeSource
-            activeSource = null
+          if (activeSegment != null && !activeRange.contains(t)) {
+            val out = activeSegment
+            activeSegment = null
             activeRange = null
             out.onStepOut(t - track.getOrigin(out), track)
           }
@@ -545,9 +545,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 
             var f: com.lomekwi.cave.pipeline.Frame = null
             track.get(t) match {
-              case s: Source[?] =>
+              case s: Segment[?] =>
                 track.syncAt(s, t)
-                activeSource = s
+                activeSegment = s
                 activeRange = track.getRange(s)
                 f = track.frameAt(s, t)
               case _: Gap =>
@@ -558,11 +558,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
           } else {
             updateNeeded = false
             track.get(t) match {
-              case s: Source[?] =>
+              case s: Segment[?] =>
                 val r = track.getRange(s)
                 Gdx.app.debug("Track" + index, "找到源: " + s)
                 track.syncAt(s, t)
-                activeSource = s
+                activeSegment = s
                 activeRange = r
                 val end: Long = r.hi
                 while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {

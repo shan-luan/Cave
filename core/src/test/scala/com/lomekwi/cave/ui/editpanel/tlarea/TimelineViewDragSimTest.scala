@@ -1,7 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
-import com.lomekwi.cave.app.selection.SourceSet
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.app.selection.SegmentSet
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.GdxTestBase
 import com.lomekwi.cave.timeline.~~
@@ -20,9 +20,9 @@ import java.lang.reflect.Field
 import TimelineViewDragSimTest.*
 
 /**
- * 用真实 TlSrcActor 拖拽会话模拟"鼠标拖拽"交互，验证 UI 拖拽逻辑。
+ * 用真实 TlSegmentActor 拖拽会话模拟"鼠标拖拽"交互，验证 UI 拖拽逻辑。
  * 1) 小幅拖拽不应被放大成大幅移动；
- * 2) 拖拽边缘裁切时不该改变源内偏移 origin；
+ * 2) 拖拽边缘裁切时不该改变片段内偏移 origin；
  * 3) act() 重建是模型的纯投影，重建不得改动模型，模型状态必须稳定。
  *
  * TimelineView 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
@@ -48,7 +48,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     setField(tl, "timeline", timeline)
     setField(tl, "project", project)
-    setField(tl, "selectedSources", new SourceSet(timeline))
+    setField(tl, "selectedSegments", new SegmentSet(timeline))
     setField(tl, "dirty", true)
 
     view = new TimelineView.ViewState()
@@ -59,7 +59,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     setField(tl, "view", view)
   }
 
-  private def newSrc(duration: Long): Source[?] = {
+  private def newSegment(duration: Long): Segment[?] = {
     new TestCont(duration)
   }
 
@@ -71,10 +71,10 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tl.getHeight + view.trackYShift - (index + 1) * view.trackHeight
   }
 
-  /** 在模型上放置一个源，并按 act() 的重建逻辑摆好 Actor。 */
-  private def place(track: Track, src: Source[?], start: Long, end: Long, origin: Long): TlSrcActor = {
-    timeline.tryAdd(track, src, start ~~ end, origin)
-    val actor = src.getTlSrcActor
+  /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
+  private def place(track: Track, segment: Segment[?], start: Long, end: Long, origin: Long): TlSegmentActor = {
+    timeline.tryAdd(track, segment, start ~~ end, origin)
+    val actor = segment.getTlSegmentActor
     actor.tl = tl
     actor.setPosition(absX(start), trackTopY(track.index))
     actor.setSize(absX(end) - absX(start), view.trackHeight)
@@ -82,10 +82,10 @@ class TimelineViewDragSimTest extends GdxTestBase {
   }
 
   /** 模拟 act() 重建，actor 纯粹按模型摆位，不得改动模型。 */
-  private def rebuildFromModel(actor: TlSrcActor): Unit = {
-    val src = actor.getSource
-    val track = timeline.findTrackOf(src)
-    val r = track.getRange(src)
+  private def rebuildFromModel(actor: TlSegmentActor): Unit = {
+    val segment = actor.getSegment
+    val track = timeline.findTrackOf(segment)
+    val r = track.getRange(segment)
     actor.setPosition(absX(r.lo), trackTopY(track.index))
     actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
   }
@@ -95,7 +95,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   @Test
   def middleDragMovesBySameDeltaAndIsStableAndUndoable(): Unit = {
     def t0 = timeline.getTrackOrCreate(0)
-    val s = newSrc(1000_000L) // 时长 1s
+    val s = newSegment(1000_000L) // 时长 1s
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
 
     val firstX = actor.getWidth / 2
@@ -133,7 +133,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     // 用 yToTrackIndex 反推，鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
     def t0 = timeline.getTrackOrCreate(0)
     timeline.getTrackOrCreate(3) // 确保轨道存在
-    val s = newSrc(1000_000L)
+    val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 0L)
 
     val firstX = actor.getWidth / 2
@@ -163,7 +163,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   @Test
   def frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable(): Unit = {
     def t0 = timeline.getTrackOrCreate(0)
-    val s = newSrc(1000_000L)
+    val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 0L)
 
     actor.dragSide = DragSide.FRONT
@@ -187,7 +187,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   @Test
   def behindResizeMovesEndBySameDeltaKeepsOriginAndIsStable(): Unit = {
     def t0 = timeline.getTrackOrCreate(0)
-    val s = newSrc(1000_000L)
+    val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
 
     actor.dragSide = DragSide.BEHIND

@@ -46,16 +46,16 @@ class NodeGraphFilterTest {
     val ngf = new NodeGraphFilter()
     assertNull(graphIn(ngf).getOut.getType)
 
-    val src = new FpCont(10)
-    src.getFilters.add(ngf)
+    val segment = new FpCont(10)
+    segment.getFilters.add(ngf)
     assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).getOut.getType)
   }
 
   @Test
   def graphInput_forwardsFrameToInnerFilter(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    src.getFilters.add(ngf)
+    segment.getFilters.add(ngf)
 
     val add = new AddFilter()
     setDelta(add, 5)
@@ -63,20 +63,20 @@ class NodeGraphFilterTest {
     val sinkIn = sink(ngf).getInPorts.get(0).asInstanceOf[Node.InPort[Object]]
     sinkIn.linkFrom(add.getFilterOut)
 
-    assertEquals(15.0, src.get(0, null).`val`, 0)
+    assertEquals(15.0, segment.get(0, null).`val`, 0)
   }
 
   @Test
   def serialization_roundTrip_keepsGraphInput(): Unit = {
-    val src = new FpCont(10)
+    val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    src.getFilters.add(ngf)
+    segment.getFilters.add(ngf)
     val add = new AddFilter()
     setDelta(add, 5)
     add.getFilterIn.linkFrom(graphIn(ngf).getOut)
     sink(ngf).getInPorts.get(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.getFilterOut)
 
-    val copy: FpCont = roundTrip(src)
+    val copy: FpCont = roundTrip(segment)
 
     val copyNgf = copy.getFilters.get(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))

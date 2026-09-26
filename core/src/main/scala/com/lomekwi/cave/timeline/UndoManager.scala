@@ -1,9 +1,9 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.app.selection.SourceNodeChangedEvent
+import com.lomekwi.cave.app.selection.SegmentNodeChangedEvent
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.TransNode
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent
@@ -129,26 +129,26 @@ object UndoManager {
     m.toSeq
   }
 
-  case class AddSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+  case class AddSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
     override def undo(): Unit = timeline.setTrack(index, before)
 
     override def redo(): Unit = timeline.setTrack(index, after)
   }
 
-  case class RemoveSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track,
-                                 source: Source[?], group: SourceGroup) extends UndoableCommand {
+  case class RemoveSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track,
+                                 segment: Segment[?], group: SegmentGroup) extends UndoableCommand {
     override def undo(): Unit = {
       timeline.setTrack(index, before)
-      if (group != null) group.add(source)
+      if (group != null) group.add(segment)
     }
 
     override def redo(): Unit = {
       timeline.setTrack(index, after)
-      if (group != null) group.remove(source)
+      if (group != null) group.remove(segment)
     }
   }
 
-  case class SplitSourceCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
+  case class SplitSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
     override def undo(): Unit = timeline.setTrack(index, before)
 
     override def redo(): Unit = timeline.setTrack(index, after)
@@ -166,13 +166,13 @@ object UndoManager {
     }
   }
 
-  private def filterList(source: Source[?]): util.List[Filter[?]] = {
-    source.getFilters.asInstanceOf[util.List[Filter[?]]]
+  private def filterList(segment: Segment[?]): util.List[Filter[?]] = {
+    segment.getFilters.asInstanceOf[util.List[Filter[?]]]
   }
 
   /**
    * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
-   * 撤销时把涉及的轨道整体换回旧版本，因此不必逐源回放。
+   * 撤销时把涉及的轨道整体换回旧版本，因此不必逐片段回放。
    */
   private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
                                                      protected val edits: util.List[TrackEdit]) extends MergeableCommand {
@@ -193,11 +193,11 @@ object UndoManager {
     }
   }
 
-  final class MoveSourcesCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+  final class MoveSegmentsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
-      case o: MoveSourcesCommand =>
+      case o: MoveSegmentsCommand =>
         mergeEdits(o.edits)
         true
       case _ =>
@@ -205,11 +205,11 @@ object UndoManager {
     }
   }
 
-  final class ResizeSourcesCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
+  final class ResizeSegmentsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
     extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
-      case o: ResizeSourcesCommand =>
+      case o: ResizeSegmentsCommand =>
         mergeEdits(o.edits)
         true
       case _ =>
@@ -217,28 +217,28 @@ object UndoManager {
     }
   }
 
-  final class RemoveSourcesCommand(private val timeline: Timeline, entries0: util.List[RemoveSourcesCommand.RemoveEntry]) extends MergeableCommand {
-    private final val entries: util.List[RemoveSourcesCommand.RemoveEntry] = new util.ArrayList[RemoveSourcesCommand.RemoveEntry](entries0)
+  final class RemoveSegmentsCommand(private val timeline: Timeline, entries0: util.List[RemoveSegmentsCommand.RemoveEntry]) extends MergeableCommand {
+    private final val entries: util.List[RemoveSegmentsCommand.RemoveEntry] = new util.ArrayList[RemoveSegmentsCommand.RemoveEntry](entries0)
 
     override def undo(): Unit = {
       timeline.setTracks(UndoManager.foldBefore(entries.asScala.map(_.edit)))
       for (e <- entries.asScala.reverseIterator) {
-        if (e.group != null) e.group.add(e.source)
+        if (e.group != null) e.group.add(e.segment)
       }
     }
 
     override def redo(): Unit = {
       timeline.setTracks(UndoManager.foldAfter(entries.asScala.map(_.edit)))
       for (e <- entries.asScala) {
-        if (e.group != null) e.group.remove(e.source)
+        if (e.group != null) e.group.remove(e.segment)
       }
     }
 
     override def merge(other: UndoableCommand): Boolean = {
       other match {
-        case o: RemoveSourcesCommand =>
+        case o: RemoveSegmentsCommand =>
           for (ne <- o.entries.asScala) {
-            if (!entries.asScala.exists(e => e.source eq ne.source)) entries.add(ne)
+            if (!entries.asScala.exists(e => e.segment eq ne.segment)) entries.add(ne)
           }
           true
         case _ =>
@@ -247,57 +247,57 @@ object UndoManager {
     }
   }
 
-  object RemoveSourcesCommand {
-    case class RemoveEntry(edit: TrackEdit, source: Source[?], group: SourceGroup)
+  object RemoveSegmentsCommand {
+    case class RemoveEntry(edit: TrackEdit, segment: Segment[?], group: SegmentGroup)
   }
 
-  /** 节点图被改动后通知界面重建，只在源确实位于时间轴上时通知。 */
-  private def postRefresh(project: Project, source: Source[?]): Unit = {
-    if (source != null && project.timeline.findTrackOf(source) != null) {
-      project.projEventBus.post(SourceNodeChangedEvent(source))
+  /** 节点图被改动后通知界面重建，只在片段确实位于时间轴上时通知。 */
+  private def postRefresh(project: Project, segment: Segment[?]): Unit = {
+    if (segment != null && project.timeline.findTrackOf(segment) != null) {
+      project.projEventBus.post(SegmentNodeChangedEvent(segment))
       project.projEventBus.post(RefreshRequestEvent)
     }
   }
 
-  case class AddFilterCommand(project: Project, source: Source[?], filter: Filter[?]) extends UndoableCommand {
+  case class AddFilterCommand(project: Project, segment: Segment[?], filter: Filter[?]) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(source).remove(filter)
-      postRefresh(project, source)
+      filterList(segment).remove(filter)
+      postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(source).add(filter)
-      postRefresh(project, source)
+      filterList(segment).add(filter)
+      postRefresh(project, segment)
     }
   }
 
-  case class RemoveFilterCommand(project: Project, source: Source[?], filter: Filter[?], index: Int) extends UndoableCommand {
+  case class RemoveFilterCommand(project: Project, segment: Segment[?], filter: Filter[?], index: Int) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(source).add(index, filter)
-      postRefresh(project, source)
+      filterList(segment).add(index, filter)
+      postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(source).remove(filter)
-      postRefresh(project, source)
+      filterList(segment).remove(filter)
+      postRefresh(project, segment)
     }
   }
 
-  case class ReorderFilterCommand(project: Project, source: Source[?], filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
+  case class ReorderFilterCommand(project: Project, segment: Segment[?], filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(source).remove(filter)
-      filterList(source).add(oldIndex, filter)
-      postRefresh(project, source)
+      filterList(segment).remove(filter)
+      filterList(segment).add(oldIndex, filter)
+      postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(source).remove(filter)
-      filterList(source).add(newIndex, filter)
-      postRefresh(project, source)
+      filterList(segment).remove(filter)
+      filterList(segment).add(newIndex, filter)
+      postRefresh(project, segment)
     }
   }
 
-  case class FpPortValueCommand(project: Project, port: Node.InPort[?], source: Source[?], oldValue: Double, newValue: Double) extends UndoableCommand {
+  case class FpPortValueCommand(project: Project, port: Node.InPort[?], segment: Segment[?], oldValue: Double, newValue: Double) extends UndoableCommand {
     override def undo(): Unit = {
       setValue(oldValue)
     }
@@ -308,7 +308,7 @@ object UndoManager {
 
     private def setValue(v: Double): Unit = {
       port.asInstanceOf[Node.InPort[Double]].setDefaultData(v)
-      postRefresh(project, source)
+      postRefresh(project, segment)
     }
   }
 
@@ -316,7 +316,7 @@ object UndoManager {
                             dRotation: Float,
                             flipX: Boolean, flipY: Boolean)
 
-  case class TransformNodeCommand(project: Project, source: Source[?], node: TransNode, oldState: TransNodeState, newState: TransNodeState) extends UndoableCommand {
+  case class TransformNodeCommand(project: Project, segment: Segment[?], node: TransNode, oldState: TransNodeState, newState: TransNodeState) extends UndoableCommand {
     override def undo(): Unit = {
       applyState(oldState)
     }
@@ -333,7 +333,7 @@ object UndoManager {
       node.setDRotation(s.dRotation)
       node.flipX(s.flipX)
       node.flipY(s.flipY)
-      postRefresh(project, source)
+      postRefresh(project, segment)
     }
   }
 }

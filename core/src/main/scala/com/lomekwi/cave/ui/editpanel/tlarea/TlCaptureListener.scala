@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.{Gap, Source}
+import com.lomekwi.cave.pipeline.{Gap, Segment}
 import com.lomekwi.cave.timeline.{Interval, Track}
 import com.lomekwi.cave.timeline.~~
 
@@ -28,13 +28,13 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       true
     } else {
       val trackIndex: Int = timelineView.yToTrackIndex(y)
-      val onSource: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
+      val onSegment: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
         timelineView.timeline.getTrackOrCreate(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
-          case _: Source[?] => true
+          case _: Segment[?] => true
           case _: Gap => false
         }
       }
-      if (!onSource) {
+      if (!onSegment) {
         timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
       }
       false
@@ -64,7 +64,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val firstTrack: Int = Math.max(0, timelineView.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(timelineView.timeline.getTrackCount - 1, timelineView.yToTrackIndex(minY))
 
-    val toSelect: util.Set[Source[?]] = new util.HashSet[Source[?]]()
+    val toSelect: util.Set[Segment[?]] = new util.HashSet[Segment[?]]()
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = timelineView.timeline.getTrackOrCreate(i)
@@ -83,7 +83,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         val timeRange: Interval = rangeStartTime ~~ rangeEndTime
         for (element <- track.getIntersecting(timeRange).asScala) {
           element match {
-            case s: Source[?] =>
+            case s: Segment[?] =>
               val r = track.getRange(s)
               val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
               val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
@@ -104,7 +104,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     }
 
     if (!toSelect.isEmpty) {
-      timelineView.selectSources(toSelect)
+      timelineView.selectSegments(toSelect)
     }
   }
 }

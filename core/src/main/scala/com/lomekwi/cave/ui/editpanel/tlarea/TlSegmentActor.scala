@@ -6,8 +6,8 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
-import com.lomekwi.cave.pipeline.{Gap, Source}
-import com.lomekwi.cave.timeline.{Interval, SourceGroup, Track}
+import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Track}
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.Colors
@@ -17,8 +17,8 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 import java.util
 
-/** 时间线上单个源的可视化表示与交互入口。 */
-abstract class TlSrcActor(private val source: Source[?]) extends Actor {
+/** 时间线上单个片段的可视化表示与交互入口。 */
+abstract class TlSegmentActor(private val segment: Segment[?]) extends Actor {
   private[tlarea] var tl: TimelineView = uninitialized
   private[tlarea] var dragSide: DragSide = DragSide.NONE
 
@@ -26,7 +26,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   private[tlarea] var firstY: Float = Float.NaN
   private var dragOldStart: Long = 0L
   private var dragOldDuration: Long = 0L
-  private var dragMembers: util.List[Source[?]] = uninitialized
+  private var dragMembers: util.List[Segment[?]] = uninitialized
   private var dragOrigStarts: Array[Long] = uninitialized
   private var dragOrigDurations: Array[Long] = uninitialized
 
@@ -35,26 +35,26 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   private var hovered: Boolean = false
   private var menuInitialized: Boolean = false
 
-  /** 本帧源当前所在的轨道；未在时间线上时为空。 */
+  /** 本片段当前所在的轨道；未在时间线上时为空。 */
   private[tlarea] def track: Track = {
-    if (tl == null) null else tl.timeline.findTrackOf(source)
+    if (tl == null) null else tl.timeline.findTrackOf(segment)
   }
 
-  /** 本帧源占用的时间区间；未在时间线上时为空。 */
+  /** 本片段占用的时间区间；未在时间线上时为空。 */
   private[tlarea] def range: Interval = {
     val t = track
-    if (t == null) null else t.getRange(source)
+    if (t == null) null else t.getRange(segment)
   }
 
-  /** 源的 0 秒在时间轴中的位置；未在时间线上时为 0。 */
+  /** 片段的 0 秒在时间轴中的位置；未在时间线上时为 0。 */
   private[tlarea] def origin: Long = {
     val t = track
-    if (t == null) 0L else t.getOrigin(source)
+    if (t == null) 0L else t.getOrigin(segment)
   }
 
-  /** 本帧源所属的组；不属于任何组时为空。 */
-  private[tlarea] def group: SourceGroup = {
-    if (tl == null) null else tl.timeline.getGroup(source)
+  /** 本片段所属的组；不属于任何组时为空。 */
+  private[tlarea] def group: SegmentGroup = {
+    if (tl == null) null else tl.timeline.getGroup(segment)
   }
 
   addListener(new InputListener {
@@ -69,11 +69,11 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       } else {
         setCursor(Cursor.SystemCursor.AllResize)
       }
-      val g: SourceGroup = group
+      val g: SegmentGroup = group
       if (g != null) {
         for (s <- g.asScala) {
-          if (s != source) {
-            s.getTlSrcActor.setHovered(true)
+          if (s != segment) {
+            s.getTlSegmentActor.setHovered(true)
           }
         }
       }
@@ -85,11 +85,11 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       if (dragSide == DragSide.NONE) {
         setCursor(Cursor.SystemCursor.Arrow)
       }
-      val g: SourceGroup = group
+      val g: SegmentGroup = group
       if (g != null) {
         for (s <- g.asScala) {
-          if (s != source) {
-            s.getTlSrcActor.setHovered(false)
+          if (s != segment) {
+            s.getTlSegmentActor.setHovered(false)
           }
         }
       }
@@ -110,15 +110,15 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
           dragSide = DragSide.MIDDLE
         }
         event.stop()
-        val alreadySelected: Boolean = timelineView.selectedSources.contains(source)
+        val alreadySelected: Boolean = timelineView.selectedSegments.contains(segment)
         if (!alreadySelected) {
-          timelineView.selectSource(source, false)
+          timelineView.selectSegment(segment, false)
         }
         tl = timelineView
         initDrag(x, y)
         true
       } else {
-        getMenu.setContext(TlSrcActor.this, parent.asInstanceOf[TimelineView].xToAbsoluteTime(getX + x))
+        getMenu.setContext(TlSegmentActor.this, parent.asInstanceOf[TimelineView].xToAbsoluteTime(getX + x))
         false
       }
     }
@@ -172,13 +172,13 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     this.hovered = hovered
   }
 
-  def getSource: Source[?] = {
-    source
+  def getSegment: Segment[?] = {
+    segment
   }
 
   /** 选中态由视图持有，actor 只是查询者。 */
   private def isSelected: Boolean = {
-    tl != null && tl.selectedSources.contains(source)
+    tl != null && tl.selectedSegments.contains(segment)
   }
 
   def getDragSide: DragSide = {
@@ -239,24 +239,24 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   // 吸附点由 Timeline.snapTime 获取，这里只做阈值换算、忽略集与指示线。
 
   private def snapThreshold(): Long = {
-    Math.max(1, (TlSrcActor.SNAP_THRESHOLD_PX / tl.getWidth * tl.view.durationTime).toLong)
+    Math.max(1, (TlSegmentActor.SNAP_THRESHOLD_PX / tl.getWidth * tl.view.durationTime).toLong)
   }
 
   private def snapDisabled(): Boolean = {
     App.shortcutManager.isActive(TimelineView.Actions.SNAP_IGNORE)
   }
 
-  /** 裁切吸附，忽略 drag 成员与同轨道源，返回吸附后的时间并设置指示线。 */
+  /** 裁切吸附，忽略 drag 成员与同轨道片段，返回吸附后的时间并设置指示线。 */
   private def snapResizeTime(rawTime: Long): Long = {
     if (snapDisabled()) {
       rawTime
     } else {
-      val ignore: util.Set[Source[?]] = new util.HashSet[Source[?]](dragMembers)
+      val ignore: util.Set[Segment[?]] = new util.HashSet[Segment[?]](dragMembers)
       val t = track
       if (t != null) {
         for (element <- t.asScala) {
           element match {
-            case s: Source[?] => ignore.add(s)
+            case s: Segment[?] => ignore.add(s)
             case _: Gap =>
           }
         }
@@ -272,7 +272,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     if (snapDisabled()) {
       target
     } else {
-      val ignore: util.Set[Source[?]] = new util.HashSet[Source[?]](dragMembers)
+      val ignore: util.Set[Segment[?]] = new util.HashSet[Segment[?]](dragMembers)
       val srcEnd: Long = target + duration
       val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
       var snappedEnd: Long = tl.timeline.snapTime(srcEnd, snapThreshold(), ignore) - duration
@@ -313,16 +313,16 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
 
   /** 收集参与拖拽的成员并快照各自的起点/时长。 */
   private def initDragMembers(): Unit = {
-    val selected = tl.selectedSources
-    if (selected.size() > 1 && selected.contains(source)) {
-      dragMembers = new util.ArrayList[Source[?]](selected.size())
-      dragMembers.add(source)
+    val selected = tl.selectedSegments
+    if (selected.size() > 1 && selected.contains(segment)) {
+      dragMembers = new util.ArrayList[Segment[?]](selected.size())
+      dragMembers.add(segment)
       for (s <- selected.asScala) {
-        if (s != source) dragMembers.add(s)
+        if (s != segment) dragMembers.add(s)
       }
     } else {
-      dragMembers = new util.ArrayList[Source[?]](1)
-      dragMembers.add(source)
+      dragMembers = new util.ArrayList[Segment[?]](1)
+      dragMembers.add(segment)
     }
 
     val n: Int = dragMembers.size()
@@ -338,12 +338,12 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   }
 
   private def handleMiddleDrag(target: Long, newTrack: Track): Unit = {
-    val members: util.List[Source[?]] = util.List.copyOf(dragMembers)
+    val members: util.List[Segment[?]] = util.List.copyOf(dragMembers)
 
     val firstTrack: Track = tl.timeline.findTrackOf(members.get(0))
     val trackDelta: Int = newTrack.index - firstTrack.index
 
-    val minIdx: Int = members.stream().mapToInt((m: Source[?]) => tl.timeline.findTrackOf(m).index).min().orElseThrow()
+    val minIdx: Int = members.stream().mapToInt((m: Segment[?]) => tl.timeline.findTrackOf(m).index).min().orElseThrow()
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.getRange(members.get(0)).lo
       tl.timeline.moveTime(members, target - currentStart0)
@@ -362,7 +362,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       ns < dragOrigStarts(i) + dragOrigDurations(i) && ns >= 0
     }
     if (inBounds) {
-      val members: util.List[Source[?]] = util.List.copyOf(dragMembers)
+      val members: util.List[Segment[?]] = util.List.copyOf(dragMembers)
       val currentStart0: Long = tl.timeline.findTrackOf(members.get(0)).getRange(members.get(0)).lo
 
       tl.timeline.setStart(members, newStart - currentStart0)
@@ -378,7 +378,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
       ne > dragOrigStarts(i)
     }
     if (inBounds) {
-      val members: util.List[Source[?]] = util.List.copyOf(dragMembers)
+      val members: util.List[Segment[?]] = util.List.copyOf(dragMembers)
       val currentEnd0: Long = tl.timeline.findTrackOf(members.get(0)).getRange(members.get(0)).hi
 
       tl.timeline.setEnd(members, newEnd - currentEnd0)
@@ -391,7 +391,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
     }
   }
 
-  private def getMenu: TlSrcMenu = {
+  private def getMenu: TlSegmentMenu = {
     getParent match {
       case g: TimelineView => g.srcMenu
       case _ => null
@@ -400,7 +400,7 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
 
   private[tlarea] def initMenu(): Unit = {
     if (!menuInitialized) {
-      val menu: TlSrcMenu = getMenu
+      val menu: TlSegmentMenu = getMenu
       if (menu != null) {
         addListener(menu.getDefaultInputListener)
         menuInitialized = true
@@ -417,6 +417,6 @@ abstract class TlSrcActor(private val source: Source[?]) extends Actor {
   }
 }
 
-object TlSrcActor {
+object TlSegmentActor {
   private final val SNAP_THRESHOLD_PX: Float = 10f
 }

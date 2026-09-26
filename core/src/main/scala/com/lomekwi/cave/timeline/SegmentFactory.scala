@@ -2,9 +2,9 @@ package com.lomekwi.cave.timeline
 
 
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.pipeline.{Content, Source}
-import com.lomekwi.cave.pipeline.audio.{AudFrame, AudGenerator}
-import com.lomekwi.cave.pipeline.image.{ImgFrame, ImgGenerator, VdoGenerator}
+import com.lomekwi.cave.pipeline.{Content, Segment}
+import com.lomekwi.cave.pipeline.audio.{AudFrame, AudSource}
+import com.lomekwi.cave.pipeline.image.{ImgFrame, ImgSource, VdoSource}
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.resource.media.AudRes
@@ -21,16 +21,16 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 源构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Source]]。
+ * 片段构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Segment]]。
  * 项目中还没有资源的文件先由 [[App.mediaFactory]] 建出资源。
  */
 @SerialVersionUID(1L)
-class SourceFactory(@transient private var project: Project) extends Serializable {
-  import SourceFactory.*
+class SegmentFactory(@transient private var project: Project) extends Serializable {
+  import SegmentFactory.*
 
-  @transient private var constructors: util.Map[ResourceClass, SourceCtor] = uninitialized
+  @transient private var constructors: util.Map[ResourceClass, SegmentCtor] = uninitialized
 
-  this.constructors = new util.HashMap[ResourceClass, SourceCtor]()
+  this.constructors = new util.HashMap[ResourceClass, SegmentCtor]()
   initDefaultConstructors()
 
   def setProject(project: Project): Unit = {
@@ -38,11 +38,11 @@ class SourceFactory(@transient private var project: Project) extends Serializabl
   }
 
   private def initDefaultConstructors(): Unit = {
-    register(classOf[VdoRes], (source: Resource) => new Content[ImgFrame](new VdoGenerator(source.asInstanceOf[VdoRes])))
-    register(classOf[AudRes], (source: Resource) => new Content[AudFrame](new AudGenerator(source.asInstanceOf[AudRes])))
-    register(classOf[ImgRes], (source: Resource) => new Content[ImgFrame](new ImgGenerator(source.asInstanceOf[ImgRes])))
+    register(classOf[VdoRes], (segment: Resource) => new Content[ImgFrame](new VdoSource(segment.asInstanceOf[VdoRes])))
+    register(classOf[AudRes], (segment: Resource) => new Content[AudFrame](new AudSource(segment.asInstanceOf[AudRes])))
+    register(classOf[ImgRes], (segment: Resource) => new Content[ImgFrame](new ImgSource(segment.asInstanceOf[ImgRes])))
   }
-  def register(clazz: ResourceClass, constructor: SourceCtor): Unit = {
+  def register(clazz: ResourceClass, constructor: SegmentCtor): Unit = {
     constructors.put(clazz, constructor)
   }
   def unregister(clazz: ResourceClass): Unit = {
@@ -50,10 +50,10 @@ class SourceFactory(@transient private var project: Project) extends Serializabl
   }
 
   /**
-   * 获取文件对应的所有源。
-   * 对于同时包含视频和音频流的文件，可能返回多个源。
+   * 获取文件对应的所有片段。
+   * 对于同时包含视频和音频流的文件，可能返回多个片段。
    */
-  def getAll(file: File): util.List[Source[?]] = {
+  def getAll(file: File): util.List[Segment[?]] = {
     var existing: util.Collection[Resource] = project.resources.get(file)
 
     if (existing.isEmpty) {
@@ -69,34 +69,34 @@ class SourceFactory(@transient private var project: Project) extends Serializabl
       existing = project.resources.get(file)
     }
 
-    val sources: util.List[Source[?]] = new util.ArrayList[Source[?]]()
+    val segments: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
     for (resource <- existing.asScala) {
-      sources.add(applyUnchecked(constructors.get(resource.getClass), resource))
+      segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
     }
-    sources
+    segments
   }
 
   /**
-   * 获取文件对应的第一个主要源。
+   * 获取文件对应的第一个主要片段。
    */
-  def get(file: File): Source[?] = {
+  def get(file: File): Segment[?] = {
     getAll(file).get(0)
   }
-  private def applyUnchecked[R <: Resource](fn: SourceCtor, resource: R): Source[?] = {
-    fn.asInstanceOf[Function[R, Source[?]]].apply(resource)
+  private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Segment[?] = {
+    fn.asInstanceOf[Function[R, Segment[?]]].apply(resource)
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
     ois.defaultReadObject()
-    this.constructors = new util.HashMap[ResourceClass, SourceCtor]()
+    this.constructors = new util.HashMap[ResourceClass, SegmentCtor]()
     initDefaultConstructors()
   }
 }
 
-object SourceFactory {
+object SegmentFactory {
   /** 资源类型，构造器登记表的键。 */
   private type ResourceClass = Class[? <: Resource]
 
-  /** 由单个资源构造源。 */
-  private type SourceCtor = Function[? <: Resource, Source[?]]
+  /** 由单个资源构造片段。 */
+  private type SegmentCtor = Function[? <: Resource, Segment[?]]
 }

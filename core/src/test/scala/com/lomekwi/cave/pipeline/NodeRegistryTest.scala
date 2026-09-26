@@ -13,9 +13,9 @@ class NodeRegistryTest {
   @Test
   def filterMenu_excludesNonFilters(): Unit = {
     val registry = new NodeRegistry()
-    val source = new FpCont(1)
-    val compatible = (0 until registry.getCompatibleCount(source))
-      .map(i => registry.createCompatible(source, i))
+    val segment = new FpCont(1)
+    val compatible = (0 until registry.getCompatibleCount(segment))
+      .map(i => registry.createCompatible(segment, i))
 
     assertTrue(compatible.nonEmpty, "至少应有节点图滤镜可用")
     assertTrue(compatible.forall(_.isInstanceOf[Filter[?]]), "滤镜链菜单不应包含非 Filter 节点")

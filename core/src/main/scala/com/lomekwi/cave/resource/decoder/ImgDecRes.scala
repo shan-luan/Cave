@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
 import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import scala.compiletime.uninitialized
 
-class ImgDecRes(source: ImgRes) extends DecRes[ImgFrame](source) {
+class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
   private var cachedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 

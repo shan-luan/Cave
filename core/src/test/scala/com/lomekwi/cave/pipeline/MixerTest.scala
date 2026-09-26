@@ -39,17 +39,17 @@ class MixerTest {
 
   @Test
   def outputType_followsInputA(): Unit = {
-    val src = new FpCont(1)
+    val segment = new FpCont(1)
     val mixer = new SumMixer()
-    mixer.getMixInA.linkFrom(src.getGenerator.headOut)
+    mixer.getMixInA.linkFrom(segment.getSource.headOut)
     assertSame(classOf[Fpable], mixer.getMixOut.getType)
   }
 
   @Test
   def outputType_fallsBackToInputB(): Unit = {
-    val src = new FpCont(1)
+    val segment = new FpCont(1)
     val mixer = new SumMixer()
-    mixer.getMixInB.linkFrom(src.getGenerator.headOut)
+    mixer.getMixInB.linkFrom(segment.getSource.headOut)
     assertSame(classOf[Fpable], mixer.getMixOut.getType)
   }
 
@@ -69,8 +69,8 @@ class MixerTest {
     val a = new FpCont(2)
     val b = new FpCont(3)
     val mixer = new SumMixer()
-    mixer.getMixInA.linkFrom(a.getGenerator.headOut)
-    mixer.getMixInB.linkFrom(b.getGenerator.headOut)
+    mixer.getMixInA.linkFrom(a.getSource.headOut)
+    mixer.getMixInB.linkFrom(b.getSource.headOut)
     a.get(0, null)
     b.get(0, null)
 

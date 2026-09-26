@@ -13,7 +13,7 @@ import org.bytedeco.javacv.Frame
 import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
-class VdoDecRes(source: VdoRes) extends DecRes[ImgFrame](source) {
+class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
   private var bufferedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 

@@ -11,7 +11,7 @@ import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
@@ -26,7 +26,7 @@ import java.util
  * 过滤器节点卡，显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class FilterActor(private val source: Source[?], private val filter: Filter[?]) extends Card(filter.getName) {
+final class FilterActor(private val segment: Segment[?], private val filter: Filter[?]) extends Card(filter.getName) {
   private var rebuildCallback: Runnable = uninitialized
   private var dragging: Boolean = false
   private var dragStageY: Float = 0
@@ -71,7 +71,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   for (in <- filter.getInPorts.asScala) {
     // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
     if (in != filter.getFilterIn) {
-      val widget = App.cardWidgetsRegistry.createEditor(in, source)
+      val widget = App.cardWidgetsRegistry.createEditor(in, segment)
       // 未注册该端口类型的 widget，不显示
       if (widget != null) {
         add(widget).growX().pad(2).row()
@@ -100,7 +100,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   }
 
   private def move(up: Boolean): Unit = {
-    val filters = if (source == null) null else source.getFilters.asInstanceOf[util.List[Filter[?]]]
+    val filters = if (segment == null) null else segment.getFilters.asInstanceOf[util.List[Filter[?]]]
     if (filters != null) {
       val index = filters.indexOf(filter)
       val target = if (up) index - 1 else index + 1
@@ -109,7 +109,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
         filters.add(target, filter)
         val p: Project = App.root.getFrontendProject
         if (p != null) {
-          p.undoManager.record(UndoManager.ReorderFilterCommand(p, source, filter, index, target))
+          p.undoManager.record(UndoManager.ReorderFilterCommand(p, segment, filter, index, target))
           p.projEventBus.post(RefreshRequestEvent)
         }
         if (rebuildCallback != null) {
@@ -121,11 +121,11 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
 
   /** 拖拽结束后，根据卡片在列表中的位置计算目标索引并重排。 */
   private def doReorder(): Unit = {
-    if (source == null) return
+    if (segment == null) return
     val p = getParent
     p match {
       case content: VisTable =>
-        val filters = source.getFilters.asInstanceOf[util.List[Filter[?]]]
+        val filters = segment.getFilters.asInstanceOf[util.List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
         if (myIndex < 0) return
 
@@ -144,7 +144,7 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
 
         val pj: Project = App.root.getFrontendProject
         if (pj != null) {
-          pj.undoManager.record(UndoManager.ReorderFilterCommand(pj, source, filter, myIndex, target))
+          pj.undoManager.record(UndoManager.ReorderFilterCommand(pj, segment, filter, myIndex, target))
           pj.projEventBus.post(RefreshRequestEvent)
         }
       case _ =>
@@ -152,12 +152,12 @@ final class FilterActor(private val source: Source[?], private val filter: Filte
   }
 
   override def close(): Unit = {
-    val index = source.getFilters.indexOf(filter)
+    val index = segment.getFilters.indexOf(filter)
     if (index >= 0) {
-      source.getFilters.remove(filter)
+      segment.getFilters.remove(filter)
       val p: Project = App.root.getFrontendProject
       if (p != null) {
-        p.undoManager.record(UndoManager.RemoveFilterCommand(p, source, filter, index))
+        p.undoManager.record(UndoManager.RemoveFilterCommand(p, segment, filter, index))
         p.projEventBus.post(RefreshRequestEvent)
       }
       remove()

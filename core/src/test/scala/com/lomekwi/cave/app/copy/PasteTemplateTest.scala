@@ -1,6 +1,6 @@
 package com.lomekwi.cave.app.copy
 
-import com.lomekwi.cave.app.selection.SourceSet
+import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, Timeline}
 import com.lomekwi.cave.timeline.~~
@@ -36,7 +36,7 @@ class PasteTemplateTest extends GdxTestBase {
     group.add(a)
     group.add(b)
 
-    val selection = new SourceSet(timeline)
+    val selection = new SegmentSet(timeline)
     selection.add(a)
     selection.add(b)
     val template = selection.copy().asInstanceOf[PasteTemplate]
@@ -60,14 +60,14 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(2, ea.group.size())
 
     // 模板持有的是拷贝，且这些拷贝不在时间线上，位置只能从模板本身读
-    assertNotSame(a, ea.source)
-    assertNotSame(b, eb.source)
-    assertNull(timeline.findTrackOf(ea.source))
-    assertNull(timeline.findTrackOf(eb.source))
+    assertNotSame(a, ea.segment)
+    assertNotSame(b, eb.segment)
+    assertNull(timeline.findTrackOf(ea.segment))
+    assertNull(timeline.findTrackOf(eb.segment))
   }
 
   @Test
-  def templateCopyRefreshesSourcesButKeepsPlacementAndGroupShape(): Unit = {
+  def templateCopyRefreshesSegmentsButKeepsPlacementAndGroupShape(): Unit = {
     val t0 = timeline.getTrackOrCreate(0)
     val t1 = timeline.getTrackOrCreate(1)
     val a = new TestCont(100)
@@ -78,14 +78,14 @@ class PasteTemplateTest extends GdxTestBase {
     group.add(a)
     group.add(b)
 
-    val selection = new SourceSet(timeline)
+    val selection = new SegmentSet(timeline)
     selection.add(a)
     selection.add(b)
     val first = selection.copy().asInstanceOf[PasteTemplate]
     val second = first.copy().asInstanceOf[PasteTemplate]
 
-    // 两次粘贴必须拿到不同的源实例，否则第二次粘贴会复用已在时间线上的对象
-    assertNotSame(first.getEntries.get(0).source, second.getEntries.get(0).source)
+    // 两次粘贴必须拿到不同的片段实例，否则第二次粘贴会复用已在时间线上的对象
+    assertNotSame(first.getEntries.get(0).segment, second.getEntries.get(0).segment)
 
     assertEquals(first.getEntries.get(0).range, second.getEntries.get(0).range)
     assertEquals(first.getEntries.get(0).origin, second.getEntries.get(0).origin)
@@ -103,7 +103,7 @@ class PasteTemplateTest extends GdxTestBase {
     val a = new TestCont(100)
     timeline.tryAdd(t0, a, 0 ~~ 100, 5000)
 
-    val selection = new SourceSet(timeline)
+    val selection = new SegmentSet(timeline)
     selection.add(a)
     val template = selection.copy().asInstanceOf[PasteTemplate]
 
