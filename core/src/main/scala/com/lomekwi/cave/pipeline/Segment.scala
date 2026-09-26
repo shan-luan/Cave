@@ -120,11 +120,12 @@ sealed abstract class Segment[T <: Frame](private val source: Source[T])
  * 不再需要为此开放继承。
  */
 @SerialVersionUID(1L)
-class Content[T <: Frame](source: Source[T]) extends Segment[T](source)
+class Content[T <: Frame](source: Source[T]) extends Segment[T](source) {
+
+}
 
 /**
- * 转场，连接前后两段内容。片段之间如何接、能不能接，是拓扑规则，
- * 由关心它的调用方按这个子类型分辨，不关心的调用方看到的是 [[Segment]]。
+ * 转场。一种特殊的片段。对其来说的障碍与[[Content]]看到的障碍不同。
  * WIP.
  */
 @SerialVersionUID(1L)
@@ -140,8 +141,7 @@ abstract class Transition[T <: Frame](source: Source[T]) extends Segment[T](sour
 sealed trait Element extends Serializable
 
 /**
- * 空隙。每个占位区间一个独立实例，因此不能用 case。
- * 它的相等必须是身份相等，否则无法充当"元素到区间"那张反向表的键。
+ * 空隙。
  */
 @SerialVersionUID(1L)
 final class Gap extends Element
