@@ -1,20 +1,20 @@
 package com.lomekwi.cave.pipeline.num
 
-import com.lomekwi.cave.pipeline.Mixer
+import com.lomekwi.cave.pipeline.BinaryNode
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 验证四个基本运算节点作为 Mixer 实现的行为，包括默认值、各运算符语义、与随机数节点连线。
+ * 验证四个基本运算节点作为 BinaryNode 实现的行为，包括默认值、各运算符语义、与随机数节点连线。
  */
 class NumOpsTest {
 
   @Test
   def unconnectedInputs_useNeutralDefaults(): Unit = {
-    assertEquals(0.0, new AddNode().getMixOut.getData, 0)
-    assertEquals(0.0, new SubNode().getMixOut.getData, 0)
-    assertEquals(1.0, new MulNode().getMixOut.getData, 0)
-    assertEquals(1.0, new DivNode().getMixOut.getData, 0)
+    assertEquals(0.0, new AddNode().getOut.getData, 0)
+    assertEquals(0.0, new SubNode().getOut.getData, 0)
+    assertEquals(1.0, new MulNode().getOut.getData, 0)
+    assertEquals(1.0, new DivNode().getOut.getData, 0)
   }
 
   @Test
@@ -28,10 +28,10 @@ class NumOpsTest {
   @Test
   def acceptsRandomNodeOutput(): Unit = {
     val add = new AddNode()
-    add.getMixInA.setDefaultData(1.0)
-    assertTrue(add.getMixInB.linkFrom(new RandomNode().getOut))
+    add.getInA.setDefaultData(1.0)
+    assertTrue(add.getInB.linkFrom(new RandomNode().getOut))
 
-    val v = add.getMixOut.getData
+    val v = add.getOut.getData
     assertTrue(v >= 1.0 && v < 2.0, "越界: " + v)
   }
 
@@ -40,9 +40,9 @@ class NumOpsTest {
     assertEquals(Double.PositiveInfinity, eval(new DivNode(), 1, 0), 0)
   }
 
-  private def eval(node: Mixer[Double], a: Double, b: Double): Double = {
-    node.getMixInA.setDefaultData(a)
-    node.getMixInB.setDefaultData(b)
-    node.getMixOut.getData
+  private def eval(node: BinaryNode[Double], a: Double, b: Double): Double = {
+    node.getInA.setDefaultData(a)
+    node.getInB.setDefaultData(b)
+    node.getOut.getData
   }
 }

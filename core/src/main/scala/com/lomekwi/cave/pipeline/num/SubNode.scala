@@ -1,12 +1,12 @@
 package com.lomekwi.cave.pipeline.num
 
-import com.lomekwi.cave.pipeline.Mixer
+import com.lomekwi.cave.pipeline.BinaryNode
 
 @SerialVersionUID(1L)
-final class SubNode extends Mixer[Double] {
-  private final val inA: MixIn = addInPort(new MixIn("A"))
-  private final val inB: MixIn = addInPort(new MixIn("B"))
-  private final val out: MixOut = addOutPort(new MixOut("输出") {
+final class SubNode extends BinaryNode[Double] {
+  private final val inA: In = addInPort(new In("A"))
+  private final val inB: In = addInPort(new In("B"))
+  private final val out: Out = addOutPort(new Out("输出") {
     override def getData: Double = inA.getData - inB.getData
   })
 
