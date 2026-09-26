@@ -529,16 +529,19 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       try {
         val p = project.playhead
         // 播放头当前所在的片段。播放头离开它时在该片段上收尾。
+        // 区间与 origin 都按切入时的版本记下，收尾时不必再向轨道查，片段已被删除或移走时也仍然成立。
         var activeSegment: Segment[?] = null
         var activeRange: Interval = null
+        var activeOrigin: Long = 0L
         while (!Thread.currentThread().isInterrupted) {
           val track = tracks(index)
           var t: Long = p.getTime
-          if (activeSegment != null && !activeRange.contains(t)) {
+          // 片段被删除或移到别的轨道后，它就不在当前版本里了，此时同样要收尾
+          if (activeSegment != null && (!track.contains(activeSegment) || !activeRange.contains(t))) {
             val out = activeSegment
             activeSegment = null
             activeRange = null
-            out.onStepOut(t - track.getOrigin(out), track)
+            out.onStepOut(t - activeOrigin, track)
           }
           if (!p.isPlaying) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
@@ -549,6 +552,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                 track.syncAt(s, t)
                 activeSegment = s
                 activeRange = track.getRange(s)
+                activeOrigin = track.getOrigin(s)
                 f = track.frameAt(s, t)
               case _: Gap =>
             }
@@ -564,6 +568,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                 track.syncAt(s, t)
                 activeSegment = s
                 activeRange = r
+                activeOrigin = track.getOrigin(s)
                 val end: Long = r.hi
                 while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
                   t = project.playhead.getTime
