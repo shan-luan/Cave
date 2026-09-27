@@ -9,9 +9,7 @@ import com.lomekwi.cave.pipeline.Node
 import scala.jdk.CollectionConverters.*
 
 class OutPortActor(port0: Node.OutPort[?]) extends Actor with PortActor {
-  private final val port: Node.OutPort[?] = port0
-
-  override def getPort: Node.OutPort[?] = port
+  override final val port: Node.OutPort[?] = port0
 
   override def getAnchor(out: Vector2): Vector2 = {
     out.set(getX + getWidth, getY + getHeight / 2f)
@@ -19,8 +17,8 @@ class OutPortActor(port0: Node.OutPort[?]) extends Actor with PortActor {
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
-    val drawer = App.root.getShapeDrawer
-    for (in <- port.getNext.asScala) {
+    val drawer = App.root.shapeDrawer
+    for (in <- port.next.asScala) {
       val peer: PortActor = findPortActor(in)
       if (peer != null) {
         drawLink(drawer, peer)

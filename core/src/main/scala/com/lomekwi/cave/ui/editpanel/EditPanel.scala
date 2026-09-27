@@ -11,11 +11,11 @@ import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
 class EditPanel(private[editpanel] val project: Project) {
-  private[editpanel] var previewArea: PreviewArea = uninitialized
+  var previewArea: PreviewArea = uninitialized
   private[editpanel] var tl: VisTable = uninitialized
   private[editpanel] var tlMain: Container[TimelineView] = uninitialized
   private[editpanel] var res: Container[MediaPool] = uninitialized
-  private[editpanel] var tlTabs: EditTabbedPane = uninitialized
+  var tlTabs: EditTabbedPane = uninitialized
 
   {
     previewArea = new PreviewArea(project)
@@ -24,21 +24,13 @@ class EditPanel(private[editpanel] val project: Project) {
     tlTabs.add(new TimelineTab(tlMain))
     tl = new VisTable()
     tl.add(tlTabs.getTable).fillX().top().row()
-    tl.add(tlTabs.getContentHost).grow()
+    tl.add(tlTabs.contentHost).grow()
     tlTabs.refreshVisibility()
     res = new Container[MediaPool](new MediaPool(project.resources, project.projEventBus))
   }
 
-  def getPreviewArea: PreviewArea = {
-    previewArea
-  }
-
   def getTimelineView: TimelineView = {
     tlMain.getActor
-  }
-
-  def getTlTabs: EditTabbedPane = {
-    tlTabs
   }
 
   def dispose(): Unit = {

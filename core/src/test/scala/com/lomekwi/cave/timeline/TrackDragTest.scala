@@ -59,7 +59,7 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
 
     assertTrue(t0.isEmpty)
-    assertEquals(0, t0.getLength)
+    assertEquals(0, t0.length)
     assertTrue(srcAt(t0, 0) == null)
     assertTrue(srcAt(t0, TrackDragTest.rng(0, 100).hi) == null)
   }
@@ -132,10 +132,10 @@ class TrackDragTest extends GdxTestBase {
     val b: Segment[?] = newSegment(100)
     place(t0, a, TrackDragTest.rng(0, 100))
     place(t0, b, TrackDragTest.rng(500, 600))
-    assertEquals(600, t0.getLength)
+    assertEquals(600, t0.length)
 
     timeline.remove(b)
-    assertEquals(100, t0.getLength)
+    assertEquals(100, t0.length)
   }
 
   @Test

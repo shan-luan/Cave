@@ -26,7 +26,7 @@ object TestCont {
       duration
     }
 
-    override def getDisplayName: String = {
+    override def displayName: String = {
       "test"
     }
 

@@ -9,7 +9,7 @@ class TlTextSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
-    var text: String = getSegment.getSource.asInstanceOf[TextSource].getText
+    var text: String = segment.source.asInstanceOf[TextSource].getText
     if (text != null && text.indexOf('\n') >= 0) {
       text = text.substring(0, text.indexOf('\n'))
     }

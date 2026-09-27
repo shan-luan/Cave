@@ -32,7 +32,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private final val project: Project = project0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
-  private final val canvas: Group = panZoom.getCanvas
+  private final val canvas: Group = panZoom.canvas
   // 此列表仅应在主线程读取。
   private final val frames: mutable.ArrayBuffer[Frame] = mutable.ArrayBuffer.empty[Frame]
   private var refViewportArea: Float = -1f
@@ -78,25 +78,25 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   @Subscribe
   def sink(frame: ImgFrame): Unit = {
     val idx: Int = frame.trackIndex
-    project.timeline.getWorker(idx).getSinkPhaser.register()
+    project.timeline.getWorker(idx).sinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
       frame.upload()
-      val i: TransFrameActor = frame.getActor
+      val i: TransFrameActor = frame.actor
       canvas.addActor(i)
-      project.timeline.getWorker(idx).getSinkPhaser.arriveAndDeregister()
+      project.timeline.getWorker(idx).sinkPhaser.arriveAndDeregister()
     })
   }
 
   @Subscribe
   def sink(frame: TextFrame): Unit = {
     val idx: Int = frame.trackIndex
-    project.timeline.getWorker(idx).getSinkPhaser.register()
+    project.timeline.getWorker(idx).sinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(frame)
-      val i: TransFrameActor = frame.getActor
+      val i: TransFrameActor = frame.actor
       canvas.addActor(i)
-      project.timeline.getWorker(idx).getSinkPhaser.arriveAndDeregister()
+      project.timeline.getWorker(idx).sinkPhaser.arriveAndDeregister()
     })
   }
 
@@ -134,12 +134,12 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   @Subscribe
   def onSelectionChanged(event: SegmentSetSelectedEvent): Unit = {
     // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
-    if (!(event.set.getTimeline eq project.timeline)) return
+    if (!(event.set.timeline eq project.timeline)) return
     for (frame <- frames) {
       if (frame != null) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null) {
-          val selected = frame.getSegment != null && event.set.contains(frame.getSegment)
+          val selected = frame.segment != null && event.set.contains(frame.segment)
           actor.setSelected(selected)
         }
       }
@@ -151,7 +151,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     canvas.setZIndex(0)
     var i = 0
     for (frame <- frames) {
-      if (!(frame == null || frame.isClosed)) {
+      if (!(frame == null || frame.closed)) {
         val actor = PreviewArea.getFrameActor(frame)
         if (actor != null && (actor.getParent eq canvas)) {
           actor.setZIndex(i)
@@ -162,7 +162,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.BLACK)
+    App.root.shapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.BLACK)
     drawAxes()
     drawPresetOutlines()
     super.draw(batch, parentAlpha)
@@ -170,11 +170,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   private def drawSnapGuides(): Unit = {
-    val drawer = App.root.getShapeDrawer
+    val drawer = App.root.shapeDrawer
     canvas.getChildren.asScala.foreach {
       case tfa: TransFrameActor =>
-        val lx = tfa.getSnapLineX
-        val ly = tfa.getSnapLineY
+        val lx = tfa.snapLineX
+        val ly = tfa.snapLineY
         if (!(java.lang.Float.isNaN(lx) && java.lang.Float.isNaN(ly))) {
           if (!java.lang.Float.isNaN(lx)) {
             PreviewArea.guidePos.set(lx, 0f)
@@ -198,7 +198,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   private def drawPresetOutlines(): Unit = {
     if (exportOpts == null) exportOpts = ExportOptionsSet.load()
-    val drawer = App.root.getShapeDrawer
+    val drawer = App.root.shapeDrawer
     val ox = getX + canvas.getX
     val oy = getY + canvas.getY
     val s = canvas.getScaleX
@@ -210,7 +210,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   private def drawAxes(): Unit = {
-    val drawer = App.root.getShapeDrawer
+    val drawer = App.root.shapeDrawer
     val ox = getX + canvas.getX
     val oy = getY + canvas.getY
     val x0 = getX
@@ -277,8 +277,8 @@ object PreviewArea {
 
   private def getFrameActor(frame: Frame): TransFrameActor = {
     frame match {
-      case imgFrame: ImgFrame => imgFrame.getActor
-      case textFrame: TextFrame => textFrame.getActor
+      case imgFrame: ImgFrame => imgFrame.actor
+      case textFrame: TextFrame => textFrame.actor
       case _ => null
     }
   }

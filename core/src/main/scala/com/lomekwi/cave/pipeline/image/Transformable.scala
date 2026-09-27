@@ -1,12 +1,11 @@
 package com.lomekwi.cave.pipeline.image
 
 trait Transformable extends Renderable {
-  def getTransform: Transform
-  def setTransform(transform: Transform): Unit
-  def getBaseWidth: Float
-  def getBaseHeight: Float
+  def transform: Transform
+  def transform_=(transform: Transform): Unit
+  def baseWidth: Float
+  def baseHeight: Float
   def reset(): Unit = {
-    val t = getTransform
-    t.reset(0, 0)
+    transform.reset(0, 0)
   }
 }

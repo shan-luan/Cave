@@ -15,8 +15,8 @@ import scala.reflect.ClassTag
 @SerialVersionUID(1L)
 abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
 
-  private var filterIn: FilterIn = uninitialized
-  private var filterOut: FilterOut = uninitialized
+  var filterIn: FilterIn = uninitialized
+  var filterOut: FilterOut = uninitialized
 
   override protected def addInPort[P <: Node.InPort[?]](p: P): P = {
     val port = super.addInPort(p)
@@ -45,21 +45,14 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
   }
   final def getType: Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
 
-  def getFilterIn: FilterIn = {
-    filterIn
-  }
-  def getFilterOut: FilterOut = {
-    filterOut
-  }
-
   class FilterIn(name: String) extends Node.InPort[T](name, Filter.this.getType) {
     def this() = {
       this("输入")
     }
 
-    override def getConstraint: util.Set[Class[?]] = {
-      if (getFilterOut.isLinked) {
-        (getFilterOut.getNext.asScala.flatMap(_.getConstraint.asScala).union(Set(Filter.this.getType))).asJava
+    override def constraint: util.Set[Class[?]] = {
+      if (filterOut.isLinked) {
+        (filterOut.next.asScala.flatMap(_.constraint.asScala).union(Set(Filter.this.getType))).asJava
       } else {
         util.Set.of(Filter.this.getType)
       }
@@ -74,8 +67,8 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
      * @return 输入已连接时返回上游实际类型,否则返回 null 表示类型未知.
      */
     override def getType: Class[? <: T] = {
-      if (getFilterIn.isLinked) {
-        getFilterIn.getPrev.getType
+      if (filterIn.isLinked) {
+        filterIn.prev.getType
       } else {
         null
       }

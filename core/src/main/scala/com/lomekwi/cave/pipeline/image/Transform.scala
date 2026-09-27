@@ -3,9 +3,9 @@ package com.lomekwi.cave.pipeline.image
 import com.badlogic.gdx.math.Matrix4
 
 class Transform(x: Float, y: Float, rotation: Float) {
-  private final val matrix: Matrix4 = new Matrix4()
-  private var flipX: Boolean = false
-  private var flipY: Boolean = false
+  final val matrix: Matrix4 = new Matrix4()
+  var flipX: Boolean = false
+  var flipY: Boolean = false
 
   this.matrix.translate(x, y, 0)
   if (rotation != 0) {
@@ -74,15 +74,4 @@ class Transform(x: Float, y: Float, rotation: Float) {
     Math.atan2(c - b, a + d).toFloat
   }
 
-  def getMatrix: Matrix4 = {
-    matrix
-  }
-
-  def isFlipX: Boolean = {
-    flipX
-  }
-
-  def isFlipY: Boolean = {
-    flipY
-  }
 }

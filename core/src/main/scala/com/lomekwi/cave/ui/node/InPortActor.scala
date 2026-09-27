@@ -10,17 +10,15 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 
 class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Container[Actor] with PortActor {
-  private final val port: Node.InPort[?] = port0
+  override final val port: Node.InPort[?] = port0
   private var linked: Boolean = port.isLinked
 
   setActor(editor)
   syncControl(animate = false)
 
-  override def getPort: Node.InPort[?] = port
-
   /** 输入端口只有一条连接，拖动即把它从原地提起，落空断开，落在别的输出端口则改接。 */
   override protected def detachForDrag(): PortActor = {
-    val prev: Node.OutPort[?] = port.getPrev
+    val prev: Node.OutPort[?] = port.prev
     port.unlink()
     if (prev == null) null else findPortActor(prev)
   }
@@ -41,7 +39,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
-    val drawer = App.root.getShapeDrawer
+    val drawer = App.root.shapeDrawer
     drawPendingLink(drawer)
     drawDot(drawer)
   }
@@ -51,7 +49,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
     if (editor == null) {
       return
     }
-    val control: Actor = editor.getControl
+    val control: Actor = editor.control
     control.clearActions()
     if (!animate) {
       control.getColor.a = if (linked) 0f else 1f

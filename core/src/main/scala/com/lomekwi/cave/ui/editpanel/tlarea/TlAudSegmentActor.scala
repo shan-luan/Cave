@@ -15,7 +15,7 @@ class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)
 
-    val res: AudRes = getSegment.getSource.asInstanceOf[AudSource].getAudRes
+    val res: AudRes = segment.source.asInstanceOf[AudSource].audRes
     val wf: res.Waveformer = res.waveformer()
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return

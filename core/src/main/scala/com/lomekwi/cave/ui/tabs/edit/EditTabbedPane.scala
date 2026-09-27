@@ -8,7 +8,7 @@ import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.widget.AutoHideTabbedPane
 
 class EditTabbedPane extends AutoHideTabbedPane {
-  private final val contentHost: Container[Table] = new Container[Table] {
+  final val contentHost: Container[Table] = new Container[Table] {
     override def getMinHeight: Float = {
       0
     }
@@ -40,15 +40,11 @@ class EditTabbedPane extends AutoHideTabbedPane {
     })
   }
 
-  def getContentHost: Container[Table] = {
-    contentHost
-  }
-
   /** 打开绑定到指定节点图的编辑器标签页；已为同一个节点图打开过则直接切换过去。 */
   def openNodeEditor(nodeGraph: NodeGraph): Unit = {
     val tabs = getTabs
     val existing = (0 until tabs.size).map(i => tabs.get(i)).collectFirst {
-      case editor: NodeEditorTab if editor.getNodeGraph eq nodeGraph => editor
+      case editor: NodeEditorTab if editor.nodeGraph eq nodeGraph => editor
     }
     existing match {
       case Some(editor) =>

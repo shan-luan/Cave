@@ -14,7 +14,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 class TlVdoSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
-    val sd: ShapeDrawer = App.root.getShapeDrawer
+    val sd: ShapeDrawer = App.root.shapeDrawer
     val contentRange = range
     val contentOrigin = origin
     val srcLocalStart: Long = contentRange.lo - contentOrigin
@@ -24,10 +24,10 @@ class TlVdoSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
     if (srcDuration > 0) {
-      val res: VdoRes = getSegment.getSource.asInstanceOf[VdoSource].getVdoRes
+      val res: VdoRes = segment.source.asInstanceOf[VdoSource].vdoRes
 
       val pxPerUs: Float = getWidth / srcDuration.toFloat
-      val aspect: Float = res.getWidth.toFloat / res.getHeight
+      val aspect: Float = res.width.toFloat / res.height
       val thumbDisplayW: Float = getHeight * aspect
 
       var rawStep: Long = (thumbDisplayW / pxPerUs).toLong

@@ -14,26 +14,20 @@ import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
 class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) with Transformable with Renderable {
-  private var transform: Transform = uninitialized
+  override var transform: Transform = uninitialized
   private var pixels: ByteBuffer = uninitialized
   @volatile private var pixelsDirty: Boolean = false
-  private var texture: Texture = uninitialized
-  private var actor: TransFrameActor = uninitialized
-  private var unpackRowLength: Int = 0
+  var texture: Texture = uninitialized
+  var actor: TransFrameActor = uninitialized
+  var unpackRowLength: Int = 0
 
   def this(trackIndex: Int) = {
     this(trackIndex, null)
   }
-  override def getTransform: Transform = {
-    transform
-  }
-  override def setTransform(transform: Transform): Unit = {
-    this.transform = transform
-  }
-  override def getBaseWidth: Float = {
+  override def baseWidth: Float = {
     texture.getWidth.toFloat
   }
-  override def getBaseHeight: Float = {
+  override def baseHeight: Float = {
     texture.getHeight.toFloat
   }
   def getPixels: ByteBuffer = {
@@ -43,26 +37,6 @@ class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, s
   def setPixels(pixels: ByteBuffer): Unit = {
     this.pixels = pixels
     pixelsDirty = true
-  }
-  def getTexture: Texture = {
-    texture
-  }
-  def setTexture(texture: Texture): ImgFrame = {
-    this.texture = texture
-    this
-  }
-
-  def setActor(actor: TransFrameActor): ImgFrame = {
-    this.actor = actor
-    this
-  }
-
-  def getUnpackRowLength: Int = {
-    unpackRowLength
-  }
-
-  def setUnpackRowLength(unpackRowLength: Int): Unit = {
-    this.unpackRowLength = unpackRowLength
   }
 
   def upload(): Unit = {
@@ -95,19 +69,15 @@ class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, s
     }
   }
 
-  def getActor: TransFrameActor = {
-    actor
-  }
-
   override def render(batch: Batch): Unit = {
     upload()
-    val t = getTransform
-    val baseW = getBaseWidth
-    val baseH = getBaseHeight
-    val scaleX = if (t.isFlipX) -1f else 1f
-    val scaleY = if (t.isFlipY) -1f else 1f
+    val t = transform
+    val baseW = baseWidth
+    val baseH = baseHeight
+    val scaleX = if (t.flipX) -1f else 1f
+    val scaleY = if (t.flipY) -1f else 1f
     val w = baseW * t.getScaleX
     val h = baseH * t.getScaleY
-    batch.draw(getTexture, t.getX, t.getY, w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation, 0, 0, baseW.toInt, baseH.toInt, false, false)
+    batch.draw(texture, t.getX, t.getY, w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation, 0, 0, baseW.toInt, baseH.toInt, false, false)
   }
 }

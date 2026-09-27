@@ -19,10 +19,10 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
  * baseScale 供外部按视口尺寸适配（如预览区），默认 1。
  */
 class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, private val moveSpeed: Float) extends WidgetGroup {
-  private final val canvas: Group = new Group()
-  private var xOffset: Float = 0
-  private var yOffset: Float = 0
-  private var zoom: Float = 1f
+  final val canvas: Group = new Group()
+  var xOffset: Float = 0
+  var yOffset: Float = 0
+  var zoom: Float = 1f
   private var baseScale: Float = 1f
   private final val screenPos: Vector2 = new Vector2()
 
@@ -57,10 +57,6 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     })
   }
 
-  def getCanvas: Group = {
-    canvas
-  }
-
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
     val hit = super.hit(x, y, touchable)
     if (hit != null) hit
@@ -71,10 +67,6 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
 
   private def getScale: Float = {
     zoom * baseScale
-  }
-
-  def getZoom: Float = {
-    zoom
   }
 
   private def setZoom(zoom: Float): Unit = {
@@ -91,14 +83,6 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     xOffset = x
     yOffset = y
     updateCanvas()
-  }
-
-  def getXOffset: Float = {
-    xOffset
-  }
-
-  def getYOffset: Float = {
-    yOffset
   }
 
   /**

@@ -20,8 +20,8 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
   @volatile private var text: String = uninitialized
   @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()
-  private var transform: Transform = uninitialized
-  private var actor: TransFrameActor = uninitialized
+  override var transform: Transform = uninitialized
+  var actor: TransFrameActor = uninitialized
   private final val tmpMatrix: Matrix4 = new Matrix4()
   @volatile private var glyphsMissing: Boolean = false
   @volatile private var cachedWidth: Float = 0f
@@ -34,6 +34,9 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
     this(trackIndex, null)
   }
 
+  override def baseWidth: Float = cachedWidth
+  override def baseHeight: Float = cachedHeight
+
   def setText(text: CharSequence): Unit = {
     this.text = text.toString
     version += 1
@@ -44,29 +47,6 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
     version += 1
   }
 
-  def setActor(actor: TransFrameActor): Unit = {
-    this.actor = actor
-  }
-
-  def getActor: TransFrameActor = {
-    actor
-  }
-
-  override def getTransform: Transform = {
-    transform
-  }
-
-  override def setTransform(transform: Transform): Unit = {
-    this.transform = transform
-  }
-
-  override def getBaseWidth: Float = {
-    cachedWidth
-  }
-
-  override def getBaseHeight: Float = {
-    cachedHeight
-  }
 
   override def render(batch: Batch): Unit = {
     if (version != layoutVersion) {
@@ -74,9 +54,9 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
       layoutVersion = version
     }
     if (font != null && text != null && !glyphsMissing) {
-      val t = getTransform
-      val scaleX = if (t.isFlipX) -1f else 1f
-      val scaleY = if (t.isFlipY) -1f else 1f
+      val t = transform
+      val scaleX = if (t.flipX) -1f else 1f
+      val scaleY = if (t.flipY) -1f else 1f
       val w = cachedWidth
       val h = cachedHeight
 

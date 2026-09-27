@@ -23,7 +23,7 @@ class NodeGraphFilterTest {
   @Test
   def newGraph_hasBoundaryNodes(): Unit = {
     val ngf = new NodeGraphFilter()
-    val nodes = ngf.getInnerNodes.asScala.toSeq
+    val nodes = ngf.innerNodes.asScala.toSeq
 
     assertEquals(2, nodes.size)
     assertEquals(1, nodes.count(_.isInstanceOf[GraphInNode]))
@@ -31,37 +31,37 @@ class NodeGraphFilterTest {
 
     val in = graphIn(ngf)
     val sink = nodes.collectFirst { case s: Sink => s }.get
-    assertNotEquals(ngf.getInnerNodes.getPosition(in), ngf.getInnerNodes.getPosition(sink))
+    assertNotEquals(ngf.innerNodes.getPosition(in), ngf.innerNodes.getPosition(sink))
   }
 
   @Test
   def newGraph_connectsInputToSink(): Unit = {
     val ngf = new NodeGraphFilter()
-    assertTrue(graphIn(ngf).getOut.isLinked)
-    assertTrue(sink(ngf).getIn.isLinked)
+    assertTrue(graphIn(ngf).out.isLinked)
+    assertTrue(sink(ngf).in.isLinked)
   }
 
   @Test
   def graphInput_typeFollowsUpstream(): Unit = {
     val ngf = new NodeGraphFilter()
-    assertNull(graphIn(ngf).getOut.getType)
+    assertNull(graphIn(ngf).out.getType)
 
     val segment = new FpCont(10)
-    segment.getFilters.add(ngf)
-    assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).getOut.getType)
+    segment.filters.add(ngf)
+    assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).out.getType)
   }
 
   @Test
   def graphInput_forwardsFrameToInnerFilter(): Unit = {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    segment.getFilters.add(ngf)
+    segment.filters.add(ngf)
 
     val add = new AddFilter()
     setDelta(add, 5)
-    add.getFilterIn.linkFrom(graphIn(ngf).getOut)
-    val sinkIn = sink(ngf).getInPorts.get(0).asInstanceOf[Node.InPort[Object]]
-    sinkIn.linkFrom(add.getFilterOut)
+    add.filterIn.linkFrom(graphIn(ngf).out)
+    val sinkIn = sink(ngf).inPorts.get(0).asInstanceOf[Node.InPort[Object]]
+    sinkIn.linkFrom(add.filterOut)
 
     assertEquals(15.0, segment.get(0, null).`val`, 0)
   }
@@ -70,15 +70,15 @@ class NodeGraphFilterTest {
   def serialization_roundTrip_keepsGraphInput(): Unit = {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    segment.getFilters.add(ngf)
+    segment.filters.add(ngf)
     val add = new AddFilter()
     setDelta(add, 5)
-    add.getFilterIn.linkFrom(graphIn(ngf).getOut)
-    sink(ngf).getInPorts.get(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.getFilterOut)
+    add.filterIn.linkFrom(graphIn(ngf).out)
+    sink(ngf).inPorts.get(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.filterOut)
 
     val copy: FpCont = roundTrip(segment)
 
-    val copyNgf = copy.getFilters.get(0).asInstanceOf[NodeGraphFilter]
+    val copyNgf = copy.filters.get(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))
     // 入口节点反向引用宿主 filter，往返后仍能取到图外连入的帧
     assertEquals(15.0, copy.get(0, null).`val`, 0)
@@ -91,28 +91,28 @@ class NodeGraphFilterTest {
     val field = classOf[NodeGraphFilter].getDeclaredField("innerIn")
     field.setAccessible(true)
     field.set(ngf, null)
-    ngf.getInnerNodes.remove(graphIn(ngf))
+    ngf.innerNodes.remove(graphIn(ngf))
 
     val copy: NodeGraphFilter = roundTrip(ngf)
 
     assertNotNull(graphIn(copy))
-    assertEquals(2, copy.getInnerNodes.size())
-    assertNotEquals(copy.getInnerNodes.getPosition(graphIn(copy)), copy.getInnerNodes.getPosition(sink(copy)))
+    assertEquals(2, copy.innerNodes.size())
+    assertNotEquals(copy.innerNodes.getPosition(graphIn(copy)), copy.innerNodes.getPosition(sink(copy)))
     // 补建不自动连线，旧存档里用户已有的连接不被覆盖
-    assertFalse(graphIn(copy).getOut.isLinked)
+    assertFalse(graphIn(copy).out.isLinked)
   }
 
   private def graphIn(ngf: NodeGraphFilter): GraphInNode = {
-    ngf.getInnerNodes.asScala.collectFirst { case node: GraphInNode => node }.orNull
+    ngf.innerNodes.asScala.collectFirst { case node: GraphInNode => node }.orNull
   }
 
   private def sink(ngf: NodeGraphFilter): Sink = {
-    ngf.getInnerNodes.asScala.collectFirst { case node: Sink => node }.orNull
+    ngf.innerNodes.asScala.collectFirst { case node: Sink => node }.orNull
   }
 
   /** AddFilter 的 delta 端口是 filter 私有的，按端口名取值设置默认数据。 */
   private def setDelta(add: AddFilter, value: Double): Unit = {
-    add.getInPorts.asScala.find(_.getName == "delta").get.asInstanceOf[Node.InPort[Any]].setDefaultData(value)
+    add.inPorts.asScala.find(_.name == "delta").get.asInstanceOf[Node.InPort[Any]].defaultData = value
   }
 
   private def roundTrip[T](o: T): T = {

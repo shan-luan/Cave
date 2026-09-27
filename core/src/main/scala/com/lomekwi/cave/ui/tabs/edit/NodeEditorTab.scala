@@ -7,12 +7,8 @@ import com.lomekwi.cave.ui.node.NodeEditorView
 import com.lomekwi.cave.util.i18n.I18N
 
 class NodeEditorTab(nodeGraph0: NodeGraph) extends Tab(false, true) {
-  private final val nodeGraph: NodeGraph = nodeGraph0
+  final val nodeGraph: NodeGraph = nodeGraph0
   private final val content: Table = new NodeEditorView(nodeGraph)
-
-  def getNodeGraph: NodeGraph = {
-    nodeGraph
-  }
 
   override def getTabTitle: String = {
     I18N.i18n("节点编辑器")

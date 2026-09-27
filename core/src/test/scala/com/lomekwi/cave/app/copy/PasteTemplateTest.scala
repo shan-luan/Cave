@@ -41,7 +41,7 @@ class PasteTemplateTest extends GdxTestBase {
     selection.add(b)
     val template = selection.copy().asInstanceOf[PasteTemplate]
 
-    val entries = template.getEntries
+    val entries = template.entries
     assertEquals(2, entries.size())
 
     val ea = entries.get(0)
@@ -85,16 +85,16 @@ class PasteTemplateTest extends GdxTestBase {
     val second = first.copy().asInstanceOf[PasteTemplate]
 
     // 两次粘贴必须拿到不同的片段实例，否则第二次粘贴会复用已在时间线上的对象
-    assertNotSame(first.getEntries.get(0).segment, second.getEntries.get(0).segment)
+    assertNotSame(first.entries.get(0).segment, second.entries.get(0).segment)
 
-    assertEquals(first.getEntries.get(0).range, second.getEntries.get(0).range)
-    assertEquals(first.getEntries.get(0).origin, second.getEntries.get(0).origin)
-    assertEquals(first.getEntries.get(1).range, second.getEntries.get(1).range)
-    assertEquals(first.getEntries.get(1).origin, second.getEntries.get(1).origin)
+    assertEquals(first.entries.get(0).range, second.entries.get(0).range)
+    assertEquals(first.entries.get(0).origin, second.entries.get(0).origin)
+    assertEquals(first.entries.get(1).range, second.entries.get(1).range)
+    assertEquals(first.entries.get(1).origin, second.entries.get(1).origin)
 
-    assertNotSame(first.getEntries.get(0).group, second.getEntries.get(0).group)
-    assertSame(second.getEntries.get(0).group, second.getEntries.get(1).group)
-    assertEquals(2, second.getEntries.get(0).group.size())
+    assertNotSame(first.entries.get(0).group, second.entries.get(0).group)
+    assertSame(second.entries.get(0).group, second.entries.get(1).group)
+    assertEquals(2, second.entries.get(0).group.size())
   }
 
   @Test
@@ -109,8 +109,8 @@ class PasteTemplateTest extends GdxTestBase {
 
     timeline.remove(a)
 
-    assertEquals(1, template.getEntries.size())
-    assertEquals(0 ~~ 100, template.getEntries.get(0).range)
-    assertEquals(5000, template.getEntries.get(0).origin)
+    assertEquals(1, template.entries.size())
+    assertEquals(0 ~~ 100, template.entries.get(0).range)
+    assertEquals(5000, template.entries.get(0).origin)
   }
 }

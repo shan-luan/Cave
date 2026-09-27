@@ -24,7 +24,7 @@ class TaskPool extends java.lang.Iterable[Task] {
           // FIXME:ignore
       }
       tasks.remove(task)
-      Gdx.app.postRunnable(() => App.root.getToastManager.show(i18n("任务") + task.getName + i18n("已完成")))
+      Gdx.app.postRunnable(() => App.root.toastManager.show(i18n("任务") + task.getName + i18n("已完成")))
     })
   }
 

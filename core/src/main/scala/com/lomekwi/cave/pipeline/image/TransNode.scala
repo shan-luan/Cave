@@ -24,12 +24,12 @@ class TransNode extends Filter[Transformable] {
 
   private final val out: FilterOut = addOutPort(new FilterOut("输出") {
     override def getData: Transformable = {
-      val frame: Transformable = getFilterIn.getData
+      val frame: Transformable = filterIn.getData
       if (frame != null) {
-        var t: Transform = frame.getTransform
+        var t: Transform = frame.transform
         if (t == null) {
           t = new Transform()
-          frame.setTransform(t)
+          frame.transform = t
         }
         t.applyLocal(TransNode.value(dx).toFloat, TransNode.value(dy).toFloat, TransNode.value(scaleX).toFloat, TransNode.value(scaleY).toFloat,
                 TransNode.value(dRotation).toFloat, flipXState, flipYState)
@@ -52,7 +52,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDx(v: Double): Unit = {
-    dx.setDefaultData(v)
+    dx.defaultData = v
   }
 
   def getDy: Double = {
@@ -60,7 +60,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDy(v: Double): Unit = {
-    dy.setDefaultData(v)
+    dy.defaultData = v
   }
 
   def getScaleX: Double = {
@@ -68,7 +68,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setScaleX(v: Double): Unit = {
-    scaleX.setDefaultData(v)
+    scaleX.defaultData = v
   }
 
   def getScaleY: Double = {
@@ -76,7 +76,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setScaleY(v: Double): Unit = {
-    scaleY.setDefaultData(v)
+    scaleY.defaultData = v
   }
 
   def getDRotation: Double = {
@@ -84,7 +84,7 @@ class TransNode extends Filter[Transformable] {
   }
 
   def setDRotation(v: Double): Unit = {
-    dRotation.setDefaultData(v)
+    dRotation.defaultData = v
   }
 
   def flipX(): Boolean = {
@@ -103,9 +103,7 @@ class TransNode extends Filter[Transformable] {
     flipYState = v
   }
 
-  override def getName: String = {
-    "变换"
-  }
+  override val name: String = "变换"
 }
 
 object TransNode {

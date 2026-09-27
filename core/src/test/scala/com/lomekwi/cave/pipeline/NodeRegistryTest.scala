@@ -25,7 +25,7 @@ class NodeRegistryTest {
   @Test
   def nodeEditorMenu_listsGraphOnlyNodes(): Unit = {
     val registry = new NodeRegistry()
-    val names = (0 until registry.getCount).map(i => registry.create(i).getName).toSet
+    val names = (0 until registry.getCount).map(i => registry.create(i).name).toSet
 
     assertTrue(names.contains("随机数"))
     assertTrue(names.contains("加法"))

@@ -28,7 +28,7 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   if (head == null) {
     throw new IllegalArgumentException("head 不能为 null")
   }
-  if (head.getFilterOut == null) {
+  if (head.filterOut == null) {
     throw new IllegalArgumentException("head 必须有 FilterOut")
   }
   headEntry.next = tailEntry
@@ -102,15 +102,15 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
   }
 
   private def portOut(entry: FilterList.Entry): Node.OutPort[?] = {
-    if (entry == headEntry) head.getFilterOut
+    if (entry == headEntry) head.filterOut
     else if (entry == tailEntry) null
-    else entry.filter.asInstanceOf[Filter[? >: T]].getFilterOut
+    else entry.filter.asInstanceOf[Filter[? >: T]].filterOut
   }
 
   private def portIn(entry: FilterList.Entry): Node.InPort[?] = {
     // 链末端不连接端口，输出即最后一个 filter 的 FilterOut
     if (entry == tailEntry || entry == headEntry) null
-    else entry.filter.asInstanceOf[Filter[? >: T]].getFilterIn
+    else entry.filter.asInstanceOf[Filter[? >: T]].filterIn
   }
 
   private def entryAt(index: Int): FilterList.Entry = {
@@ -161,8 +161,8 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     entry.filter = filter.asInstanceOf[Filter[? >: Object]]
     connect(entry.prev, entry)
     connect(entry, entry.next)
-    old.getFilterIn.unlink()
-    old.getFilterOut.unlink()
+    old.filterIn.unlink()
+    old.filterOut.unlink()
     old
   }
 
@@ -170,8 +170,8 @@ class FilterList[T](private final val head: Filter[? >: T]) extends util.Abstrac
     var x = headEntry.next
     while (x != tailEntry) {
       val next = x.next
-      x.filter.getFilterIn.unlink()
-      x.filter.getFilterOut.unlink()
+      x.filter.filterIn.unlink()
+      x.filter.filterOut.unlink()
       x.filter = null
       x.prev = null
       x.next = null

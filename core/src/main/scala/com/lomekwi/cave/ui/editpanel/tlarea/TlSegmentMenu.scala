@@ -10,7 +10,7 @@ class TlSegmentMenu private[tlarea] (private val timelineView: TimelineView) ext
   private var time: Long = 0L
 
   addItem(new MenuItem("复制", new ChangeListenerX(() => {
-    if (timelineView.selectedSegments.contains(segmentActor.getSegment)) {
+    if (timelineView.selectedSegments.contains(segmentActor.segment)) {
       App.copyManager.copy()
     }
   })))

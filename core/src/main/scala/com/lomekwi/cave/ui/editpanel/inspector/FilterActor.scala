@@ -26,7 +26,7 @@ import java.util
  * 过滤器节点卡，显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class FilterActor(private val segment: Segment[?], private val filter: Filter[?]) extends Card(filter.getName) {
+final class FilterActor(private val segment: Segment[?], private val filter: Filter[?]) extends Card(filter.name) {
   private var rebuildCallback: Runnable = uninitialized
   private var dragging: Boolean = false
   private var dragStageY: Float = 0
@@ -68,9 +68,9 @@ final class FilterActor(private val segment: Segment[?], private val filter: Fil
       }
     }
   })
-  for (in <- filter.getInPorts.asScala) {
+  for (in <- filter.inPorts.asScala) {
     // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
-    if (in != filter.getFilterIn) {
+    if (in != filter.filterIn) {
       val widget = App.cardWidgetsRegistry.createEditor(in, segment)
       // 未注册该端口类型的 widget，不显示
       if (widget != null) {
@@ -85,7 +85,7 @@ final class FilterActor(private val segment: Segment[?], private val filter: Fil
       VisUI.getSkin.get("close-window", classOf[VisImageButton.VisImageButtonStyle]))
     style.imageUp = VisUI.getSkin.getDrawable(if (up) "select-up" else "select-down")
     val button = new VisImageButton(style)
-    getTitleTable.add(button)
+    titleTable.add(button)
     button.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         move(up)
@@ -100,7 +100,7 @@ final class FilterActor(private val segment: Segment[?], private val filter: Fil
   }
 
   private def move(up: Boolean): Unit = {
-    val filters = if (segment == null) null else segment.getFilters.asInstanceOf[util.List[Filter[?]]]
+    val filters = if (segment == null) null else segment.filters.asInstanceOf[util.List[Filter[?]]]
     if (filters != null) {
       val index = filters.indexOf(filter)
       val target = if (up) index - 1 else index + 1
@@ -125,7 +125,7 @@ final class FilterActor(private val segment: Segment[?], private val filter: Fil
     val p = getParent
     p match {
       case content: VisTable =>
-        val filters = segment.getFilters.asInstanceOf[util.List[Filter[?]]]
+        val filters = segment.filters.asInstanceOf[util.List[Filter[?]]]
         val myIndex = filters.indexOf(filter)
         if (myIndex < 0) return
 
@@ -152,9 +152,9 @@ final class FilterActor(private val segment: Segment[?], private val filter: Fil
   }
 
   override def close(): Unit = {
-    val index = segment.getFilters.indexOf(filter)
+    val index = segment.filters.indexOf(filter)
     if (index >= 0) {
-      segment.getFilters.remove(filter)
+      segment.filters.remove(filter)
       val p: Project = App.root.getFrontendProject
       if (p != null) {
         p.undoManager.record(UndoManager.RemoveFilterCommand(p, segment, filter, index))

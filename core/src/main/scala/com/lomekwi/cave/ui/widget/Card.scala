@@ -15,8 +15,8 @@ import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
 class Card(title: String) extends VisTable {
-  private var titleLabel: Label = uninitialized
-  private var titleTable: Table = uninitialized
+  var titleLabel: Label = uninitialized
+  var titleTable: Table = uninitialized
   private var drawTitleTable: Boolean = false
 
   {
@@ -52,14 +52,6 @@ class Card(title: String) extends VisTable {
 
   override def getPrefWidth: Float = {
     Math.max(super.getPrefWidth, titleTable.getPrefWidth + getPadLeft + getPadRight)
-  }
-
-  def getTitleLabel: Label = {
-    titleLabel
-  }
-
-  def getTitleTable: Table = {
-    titleTable
   }
 
   def addCloseButton(): Unit = {

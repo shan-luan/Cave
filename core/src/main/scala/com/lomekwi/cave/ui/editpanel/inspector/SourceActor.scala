@@ -12,19 +12,19 @@ import scala.jdk.CollectionConverters.*
  * 一个片段的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
  * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class SourceActor(private val segment: Segment[?]) extends Card(segment.getDisplayName) {
-  private final val source: Source[?] = segment.getSource
+final class SourceActor(private val segment: Segment[?]) extends Card(segment.displayName) {
+  private final val source: Source[?] = segment.source
 
   align(Align.top | Align.left)
   defaults().left()
-  for (in <- source.getInPorts.asScala) {
+  for (in <- source.inPorts.asScala) {
     val widget = App.cardWidgetsRegistry.createEditor(in, segment)
     // 未注册该端口类型的 widget，不显示
     if (widget != null) {
       add(widget).growX().pad(2).row()
     }
   }
-  for (out <- source.getOutPorts.asScala) {
+  for (out <- source.outPorts.asScala) {
     val row = App.cardWidgetsRegistry.createOutputRow(out)
     // FilterOut 与未知类型的输出端口不显示
     if (row != null) {

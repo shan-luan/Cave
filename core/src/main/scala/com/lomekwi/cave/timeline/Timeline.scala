@@ -426,7 +426,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     "Timeline:" + body
   }
   def getLength: Long = {
-    if (tracks.isEmpty) 0L else tracks.iterator.map(_.getLength).max
+    if (tracks.isEmpty) 0L else tracks.iterator.map(_.length).max
   }
   def getTracks: util.List[Track] = {
     tracks.asJava
@@ -503,24 +503,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    */
   class TrackWorker(private val index: Int) extends Runnable {
     private final val gapFrame: GapFrame = new GapFrame(index)
-    private var sinkPhaser: Phaser = uninitialized
-    private var future: Future[?] = uninitialized
+    var sinkPhaser: Phaser = uninitialized
+    var future: Future[?] = uninitialized
     @volatile private var workerThread: Thread = uninitialized
     @volatile private var updateNeeded: Boolean = false
 
     project.projEventBus.register(this)
-
-    def getSinkPhaser: Phaser = {
-      sinkPhaser
-    }
-
-    def getFuture: Future[?] = {
-      future
-    }
-
-    def setFuture(future: Future[?]): Unit = {
-      this.future = future
-    }
 
     override def run(): Unit = {
       workerThread = Thread.currentThread()

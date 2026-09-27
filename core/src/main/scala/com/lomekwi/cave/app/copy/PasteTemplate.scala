@@ -13,9 +13,7 @@ import scala.jdk.CollectionConverters.*
  * 因此位置信息必须随模板一起携带，不能指望从时间线反查。
  * 轨道不可变，模板可能等到原轨道换过多次版本后才被粘贴，故这里记索引。
  */
-class PasteTemplate private (private val entries: util.List[PasteTemplate.Entry]) extends Copyable {
-
-  def getEntries: util.List[PasteTemplate.Entry] = entries
+class PasteTemplate private (val entries: util.List[PasteTemplate.Entry]) extends Copyable {
 
   /** 复制模板本身，片段再深拷贝一份，位置与组结构沿用。 */
   override def copy(): Copyable = {

@@ -208,7 +208,7 @@ trait PortActor extends Actor with PortHolder {
     if (stage != null) {
       val target: PortActor = portActorAt(stage.hit(stageX, stageY, true))
       if (target != null) {
-        getPort.link(target.getPort)
+        port.link(target.port)
       }
     }
   }

@@ -55,7 +55,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     }
 
     if (!isTimeLegal(time)) {
-      frame.setSamples(null)
+      frame.samples = null
       return
     }
 
@@ -79,10 +79,10 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
       while (i < 50 && !found) {
         val f = grab()
         if (f == null || f.samples == null || f.samples.length == 0) {
-          frame.setSamples(null)
+          frame.samples = null
           return
         }
-        if (f.timestamp + getLengthPerFrame >= time) {
+        if (f.timestamp + lengthPerFrame >= time) {
           val sb = f.samples(0).asInstanceOf[FloatBuffer]
           val remaining = sb.remaining()
           if (remaining <= FRAME_SIZE) {
@@ -107,7 +107,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
       val f = grab()
       if (f == null || f.samples == null || f.samples.length == 0) {
         if (written == 0) {
-          frame.setSamples(null)
+          frame.samples = null
           return
         }
         // 文件末尾不足部分以静音填充
@@ -130,7 +130,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
       }
     }
 
-    frame.setSamples(output)
+    frame.samples = output
   }
 
   override protected def configure(): Unit = {
@@ -139,21 +139,21 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     grabber.setSampleFormat(AV_SAMPLE_FMT_FLT)
   }
 
-  override def getCodecName: String = {
+  override def codecName: String = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getAudioCodecName
   }
 
-  override def getCodec: Int = {
+  override def codec: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getAudioCodec
   }
 
-  override def getLengthPerFrame: Long = {
+  override def lengthPerFrame: Long = {
     FRAME_SIZE / 2 * SECOND / 44100
   }
 }

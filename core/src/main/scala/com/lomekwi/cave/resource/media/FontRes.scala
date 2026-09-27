@@ -11,7 +11,7 @@ import scala.compiletime.uninitialized
 
 
 @SerialVersionUID(1L)
-class FontRes(private val path: String) extends Resource with Serializable {
+class FontRes(val path: String) extends Resource with Serializable {
   @transient private var generator: FreeTypeFontGenerator = uninitialized
   @transient private lazy val fontCache: IntMap[BitmapFont] = new IntMap[BitmapFont]()
 
@@ -35,10 +35,6 @@ class FontRes(private val path: String) extends Resource with Serializable {
       generator = new FreeTypeFontGenerator(handle)
     }
     generator
-  }
-
-  def getPath: String = {
-    path
   }
 
   override def close(): Unit = {

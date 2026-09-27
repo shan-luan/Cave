@@ -7,7 +7,7 @@ import java.io.ObjectInputStream
 @SerialVersionUID(1L)
 class NodeGraphFilter extends Filter[Object] {
   private final val innerSink: Sink = new Sink()
-  private final val innerNodes: NodeGraph = new NodeGraph()
+  final val innerNodes: NodeGraph = new NodeGraph()
   private var innerIn: GraphInNode = null
 
   innerNodes.add(innerSink)
@@ -18,7 +18,7 @@ class NodeGraphFilter extends Filter[Object] {
   ensureInnerIn()
 
   // 只在新图里默认连线。反序列化补建入口节点时不连，避免覆盖旧存档中用户已有的连接。
-  innerSink.getIn.linkFrom(innerIn.getOut)
+  innerSink.in.linkFrom(innerIn.out)
 
   addOutPort(new FilterOut {
     override def getData: Object = {
@@ -39,7 +39,7 @@ class NodeGraphFilter extends Filter[Object] {
     if (innerIn != null) {
       return
     }
-    val node: GraphInNode = new GraphInNode(getFilterIn)
+    val node: GraphInNode = new GraphInNode(filterIn)
     innerIn = node
     innerNodes.add(node)
     innerNodes.setPosition(node, 0f, 0f)
@@ -50,13 +50,7 @@ class NodeGraphFilter extends Filter[Object] {
     }
   }
 
-  def getInnerNodes: NodeGraph = {
-    innerNodes
-  }
-
-  override def getName: String = {
-    "节点图"
-  }
+  override val name: String = "节点图"
 }
 
 object NodeGraphFilter {

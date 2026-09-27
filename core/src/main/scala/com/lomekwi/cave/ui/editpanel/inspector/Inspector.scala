@@ -125,7 +125,7 @@ class Inspector extends VisTable {
 
   private def appendSegmentInfo(segment: Segment[?]): Unit = {
     content.add(new SourceActor(segment)).growX().pad(4).row()
-    for (filter <- segment.getFilters.asScala) {
+    for (filter <- segment.filters.asScala) {
       val actor = new FilterActor(segment, filter)
       actor.setRebuildCallback(() => rebuildContent())
       content.add(actor).growX().pad(4).row()
@@ -136,8 +136,8 @@ class Inspector extends VisTable {
     for (fi <- 0 until compatibleCount) {
       val idx = fi
       val created: Node = App.nodeRegistry.createCompatible(segment, idx)
-      filterMenu.addItem(new MenuItem(created.getName, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
-        segment.getFilters.asInstanceOf[util.List[Filter[?]]].add(created.asInstanceOf[Filter[?]])
+      filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
+        segment.filters.asInstanceOf[util.List[Filter[?]]].add(created.asInstanceOf[Filter[?]])
         val p = App.root.getFrontendProject
         if (p != null) p.undoManager.record(UndoManager.AddFilterCommand(p, segment, created.asInstanceOf[Filter[?]]))
         rebuildContent()

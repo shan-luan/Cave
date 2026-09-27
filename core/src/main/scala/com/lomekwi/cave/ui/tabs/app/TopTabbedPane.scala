@@ -18,19 +18,19 @@ class TopTabbedPane extends AutoHideTabbedPane {
     addListener(new TabbedPaneListener {
       override def switchedTab(tab: Tab): Unit = {
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
-          currentProjectTab.getProject.playhead.setPlaying(false)
+          currentProjectTab.project.playhead.setPlaying(false)
         }
 
-        App.root.getMajorArea.setActor(tab.getContentTable)
+        App.root.majorArea.setActor(tab.getContentTable)
 
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
-          currentProjectTab.getProject.projEventBus.post(ProjectBackgroundedEvent)
+          currentProjectTab.project.projEventBus.post(ProjectBackgroundedEvent)
         }
 
         tab match {
           case pt: ProjectTab =>
             currentProjectTab = pt
-            pt.getProject.projEventBus.post(ProjectFrontedEvent)
+            pt.project.projEventBus.post(ProjectFrontedEvent)
           case _ =>
             currentProjectTab = null
         }
@@ -41,8 +41,8 @@ class TopTabbedPane extends AutoHideTabbedPane {
       override def removedTab(tab: Tab): Unit = {
         tab match {
           case pt: ProjectTab =>
-            pt.getProject.playhead.setPlaying(false)
-            pt.getProject.projEventBus.post(ProjectBackgroundedEvent)
+            pt.project.playhead.setPlaying(false)
+            pt.project.projEventBus.post(ProjectBackgroundedEvent)
             if (currentProjectTab eq tab) {
               currentProjectTab = null
             }
@@ -51,7 +51,7 @@ class TopTabbedPane extends AutoHideTabbedPane {
       }
 
       override def removedAllTabs(): Unit = {
-        App.root.getMajorArea.setActor(null)
+        App.root.majorArea.setActor(null)
         App.appEventBus.post(TabSwitchedEvent)
       }
     })

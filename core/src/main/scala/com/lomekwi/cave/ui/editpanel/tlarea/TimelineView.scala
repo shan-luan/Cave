@@ -73,7 +73,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
   private def addDefaultListeners(): Unit = {
     addListener(new TlInputListener(this))
     addCaptureListener(new TlCaptureListener(this))
-    App.root.getDragAndDrop.addTarget(new TlDropTarget(this))
+    App.root.dragAndDrop.addTarget(new TlDropTarget(this))
     addListener(new DragListener {
       setButton(Input.Buttons.MIDDLE)
 
@@ -258,7 +258,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   private[tlarea] def removeSegment(segmentActor: TlSegmentActor): Unit = {
     removeActor(segmentActor)
-    val segment = segmentActor.getSegment
+    val segment = segmentActor.segment
     Using.resource(timeline.record()) { h =>
       timeline.remove(segment)
     }
@@ -267,7 +267,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   /** 右键菜单“分割”入口。 */
   private[tlarea] def split(segmentActor: TlSegmentActor, time: Long): Unit = {
-    splitSegment(segmentActor.getSegment, time)
+    splitSegment(segmentActor.segment, time)
     dirty = true
   }
 
@@ -440,7 +440,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 //FIXME:跨项目粘贴
   private[tlarea] def performPaste(): Unit = {
-    val template = App.copyManager.getClipboard
+    val template = App.copyManager.clipboard
     val s = getStage
     if (template != null && s != null) {
       val local = stageToLocalCoordinates(
@@ -464,7 +464,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   /** 把剪贴板模板整批放进时间轴，保持成员相对间距，冲突时整组顺移轨道。 */
   private def pasteTemplate(template: PasteTemplate, baseTime: Long, baseTrack: Int): util.List[Segment[?]] = {
-    val entries = template.getEntries
+    val entries = template.entries
     if (entries.isEmpty) return util.List.of[Segment[?]]()
 
     val pasted = new util.ArrayList[Segment[?]](entries.size())
@@ -525,14 +525,6 @@ class TimelineView(project0: Project) extends Group with Focusable {
     getHeight + view.trackYShift - index * view.trackHeight
   }
 
-  def getProject: Project = {
-    project
-  }
-
-  def getTimeline: Timeline = {
-    timeline
-  }
-
   def markTimelineDirty(): Unit = {
     dirty = true
   }
@@ -542,7 +534,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 
   private[tlarea] class TimelineRenderer {
-    private[tlarea] final val shapeDrawer: ShapeDrawer = App.root.getShapeDrawer
+    private[tlarea] final val shapeDrawer: ShapeDrawer = App.root.shapeDrawer
 
     private[tlarea] def drawBackground(): Unit = {
       shapeDrawer.filledRectangle(0, 0, getWidth, getHeight, Colors.TIMELINE_BG)

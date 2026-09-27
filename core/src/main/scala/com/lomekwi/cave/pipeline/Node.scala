@@ -11,8 +11,8 @@ import scala.jdk.CollectionConverters.*
  */
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
-  private final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
-  private final val outPorts: util.List[Node.OutPort[?]] = new util.ArrayList[Node.OutPort[?]]()
+  final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
+  final val outPorts: util.List[Node.OutPort[?]] = new util.ArrayList[Node.OutPort[?]]()
 
   protected[pipeline] def remove(): Unit = {
     for (in <- inPorts.asScala) {
@@ -37,57 +37,44 @@ abstract class Node extends Serializable {
     outPorts.add(p)
     p
   }
-  def getName: String
-
-  def getInPorts: util.List[Node.InPort[?]] = inPorts
-  def getOutPorts: util.List[Node.OutPort[?]] = outPorts
+  def name: String
 }
 
 object Node {
   sealed trait Port extends Serializable {
     def link(target: Port): Boolean
     def unlink(): Unit
-    def getName: String = toString
+    def name: String = toString
   }
 
   @SerialVersionUID(1L)
-  class InPort[T](name: String, constraint: Class[?]*) extends Port {
-    private final val constraintSet: util.Set[Class[?]] = util.Set.of(constraint*)
+  class InPort[T](override val name: String, constraints: Class[?]*) extends Port {
+    private final val constraintSet: util.Set[Class[?]] = util.Set.of(constraints*)
 
-    private var defaultData: T = null.asInstanceOf[T]
+    var defaultData: T = null.asInstanceOf[T]
 
-    private var prev: Node.OutPort[? <: T] = uninitialized
+    var prev: Node.OutPort[? <: T] = uninitialized
 
     override def link(target: Port): Boolean = target match {
       case out: Node.OutPort[?] => this.asInstanceOf[Node.InPort[Any]].linkFrom(out.asInstanceOf[Node.OutPort[Any]])
       case _ => false
     }
 
-    def this(name: String, defaultValue: T, constraint: Class[?]*) = {
-      this(name, constraint*)
+    def this(name: String, defaultValue: T, constraints: Class[?]*) = {
+      this(name, constraints*)
       this.defaultData = defaultValue
     }
 
-    def getPrev: Node.OutPort[? <: T] = prev
-
-    private def setPrev(prev: Node.OutPort[? <: T]): Unit = {
-      this.prev = prev
-    }
-
-    def getData: T = if (prev == null) getDefaultData else prev.getData
-
-    def getDefaultData: T = defaultData
-
-    def setDefaultData(data: T): Unit = defaultData = data
+    def getData: T = if (prev == null) defaultData else prev.getData
 
     /**
      * @return 可以连接到此输入端口的输出端口所需要满足的全部约束.即交叉类型(&).
      */
-    def getConstraint: util.Set[Class[?]] = constraintSet
+    def constraint: util.Set[Class[?]] = constraintSet
 
     def canLinkFrom(p: Node.OutPort[?]): Boolean = {
       val outType = p.getType
-      outType == null || getConstraint.asScala.forall(c => c.isAssignableFrom(outType))
+      outType == null || constraint.asScala.forall(c => c.isAssignableFrom(outType))
     }
 
     def linkFrom(p: Node.OutPort[?]): Boolean = {
@@ -96,7 +83,7 @@ object Node {
       } else {
         unlink()
 
-        setPrev(p.asInstanceOf[Node.OutPort[? <: T]])
+        prev = p.asInstanceOf[Node.OutPort[? <: T]]
         p.addNext(this)
 
         true
@@ -110,18 +97,17 @@ object Node {
       }
     }
     def isLinked: Boolean = prev != null
-    override def getName: String = name
   }
 
 
   @SerialVersionUID(1L)
-  abstract class OutPort[T](name: String, portType: Class[? <: T]) extends Port {
+  abstract class OutPort[T](override val name: String, portType: Class[? <: T]) extends Port {
     override def link(target: Port): Boolean = target match {
       case in: Node.InPort[?] => linkTo(in)
       case _ => false
     }
 
-    protected final val next: util.Set[Node.InPort[? >: T]] = new util.HashSet[Node.InPort[? >: T]]()
+    final val next: util.Set[Node.InPort[? >: T]] = new util.HashSet[Node.InPort[? >: T]]()
 
     def getData: T
 
@@ -154,8 +140,5 @@ object Node {
     }
 
     def isLinked: Boolean = !next.isEmpty
-
-    def getNext: util.Set[Node.InPort[? >: T]] = next
-    override def getName: String = name
   }
 }

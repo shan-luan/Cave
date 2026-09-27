@@ -57,8 +57,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   /** 最后一个片段的终点；没有片段时为 0。 */
   lazy val length: Long = byTime.iterator.collect { case (lo, _: Segment[?]) => hiOf(byTime, lo) }.maxOption.getOrElse(0L)
 
-  def getLength: Long = length
-
   /**
    * 尝试在轨道中加入一个片段。仅当可加入时才会被真的加入。
    * @return `(新轨道, 最大可用偏移量)`，偏移量为 0 表示目标区间空闲、已按原位加入，返回的轨道是加入后的版本；
@@ -394,8 +392,6 @@ final class Track private ( val timeline: Timeline,  val index: Int,
 
   /** 轨迹线程，按轨道索引唯一，由 [[Timeline]] 持有，故轨道换版本时它保持不变。 */
   def getWorker: timeline.TrackWorker = timeline.getWorker(index)
-
-  def getTimeline: Timeline = timeline
 
   /** 轨道上的用户条目；阻挡片段对遍历不可见。 */
   override def iterator(): util.Iterator[Element] = {

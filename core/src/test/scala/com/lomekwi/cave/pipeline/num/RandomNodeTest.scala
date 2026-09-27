@@ -11,7 +11,7 @@ class RandomNodeTest {
 
   @Test
   def output_isInUnitInterval(): Unit = {
-    val out = new RandomNode().getOut
+    val out = new RandomNode().out
     assertEquals(classOf[Double], out.getType)
 
     var i = 0
@@ -24,7 +24,7 @@ class RandomNodeTest {
 
   @Test
   def output_reRandomizesEachEvaluation(): Unit = {
-    val out = new RandomNode().getOut
+    val out = new RandomNode().out
     val first = out.getData
 
     var changed = false

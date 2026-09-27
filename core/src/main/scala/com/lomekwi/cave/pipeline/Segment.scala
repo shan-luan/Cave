@@ -19,14 +19,10 @@ import scala.compiletime.uninitialized
  * @tparam T 帧类型
  */
 @SerialVersionUID(1L)
-sealed abstract class Segment[T <: Frame](private val source: Source[T])
+sealed abstract class Segment[T <: Frame](val source: Source[T])
   extends Element with Serializable with Duplicatable[Segment[T]] {
-  private final val filters: util.List[Filter[? >: T]] = new FilterList[T](source)
+  final val filters: util.List[Filter[? >: T]] = new FilterList[T](source)
   @transient private var segmentActor: TlSegmentActor = uninitialized
-
-  def getSource: Source[T] = {
-    source
-  }
 
   /**
    * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
@@ -36,8 +32,7 @@ sealed abstract class Segment[T <: Frame](private val source: Source[T])
    */
   final def get(time: Long, track: Track): T = {
     val generated = source.generate(time, track, this)
-    if (filters.isEmpty) generated
-    else filters.get(filters.size() - 1).getFilterOut.getData.asInstanceOf[T]
+    if (filters.isEmpty) generated        else filters.get(filters.size() - 1).filterOut.getData.asInstanceOf[T]
   }
 
   /**
@@ -60,9 +55,6 @@ sealed abstract class Segment[T <: Frame](private val source: Source[T])
     source.prefetch()
   }
 
-  def getFilters: util.List[Filter[? >: T]] = {
-    filters
-  }
 
   def attach(filter: Filter[? >: T]): Segment[T] = {
     filters.add(filter)
@@ -90,8 +82,8 @@ sealed abstract class Segment[T <: Frame](private val source: Source[T])
     source.getDefaultDuration
   }
 
-  def getDisplayName: String = {
-    source.getDisplayName
+  def displayName: String = {
+    source.displayName
   }
 
   def getSourceActor: SourceActor = {
@@ -110,7 +102,7 @@ sealed abstract class Segment[T <: Frame](private val source: Source[T])
 
   override def duplicate(): Segment[T] = {
     val copy = super[Duplicatable].duplicate()
-    copy.getSource.onDuplicate(source)
+    copy.source.onDuplicate(source)
     copy
   }
 }

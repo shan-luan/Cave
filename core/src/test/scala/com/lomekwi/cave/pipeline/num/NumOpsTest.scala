@@ -11,10 +11,10 @@ class NumOpsTest {
 
   @Test
   def unconnectedInputs_useNeutralDefaults(): Unit = {
-    assertEquals(0.0, new AddNode().getOut.getData, 0)
-    assertEquals(0.0, new SubNode().getOut.getData, 0)
-    assertEquals(1.0, new MulNode().getOut.getData, 0)
-    assertEquals(1.0, new DivNode().getOut.getData, 0)
+    assertEquals(0.0, new AddNode().out.getData, 0)
+    assertEquals(0.0, new SubNode().out.getData, 0)
+    assertEquals(1.0, new MulNode().out.getData, 0)
+    assertEquals(1.0, new DivNode().out.getData, 0)
   }
 
   @Test
@@ -28,10 +28,10 @@ class NumOpsTest {
   @Test
   def acceptsRandomNodeOutput(): Unit = {
     val add = new AddNode()
-    add.getInA.setDefaultData(1.0)
-    assertTrue(add.getInB.linkFrom(new RandomNode().getOut))
+    add.inA.defaultData = 1.0
+    assertTrue(add.inB.linkFrom(new RandomNode().out))
 
-    val v = add.getOut.getData
+    val v = add.out.getData
     assertTrue(v >= 1.0 && v < 2.0, "越界: " + v)
   }
 
@@ -41,8 +41,8 @@ class NumOpsTest {
   }
 
   private def eval(node: BinaryNode[Double], a: Double, b: Double): Double = {
-    node.getInA.setDefaultData(a)
-    node.getInB.setDefaultData(b)
-    node.getOut.getData
+    node.inA.defaultData = a
+    node.inB.defaultData = b
+    node.out.getData
   }
 }

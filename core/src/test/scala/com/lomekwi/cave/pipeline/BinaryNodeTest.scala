@@ -14,12 +14,12 @@ class BinaryNodeTest {
   @Test
   def hasTwoInputsAndOneOutput(): Unit = {
     val node = new SumNode()
-    assertEquals(2, node.getInPorts.size())
-    assertEquals(1, node.getOutPorts.size())
-    assertNotSame(node.getInA, node.getInB)
-    assertSame(node.getInA, node.getInPorts.get(0))
-    assertSame(node.getInB, node.getInPorts.get(1))
-    assertSame(node.getOut, node.getOutPorts.get(0))
+    assertEquals(2, node.inPorts.size())
+    assertEquals(1, node.outPorts.size())
+    assertNotSame(node.inA, node.inB)
+    assertSame(node.inA, node.inPorts.get(0))
+    assertSame(node.inB, node.inPorts.get(1))
+    assertSame(node.out, node.outPorts.get(0))
   }
 
   @Test
@@ -34,34 +34,34 @@ class BinaryNodeTest {
 
   @Test
   def outputType_unknownWhenNoInputLinked(): Unit = {
-    assertNull(new SumNode().getOut.getType)
+    assertNull(new SumNode().out.getType)
   }
 
   @Test
   def outputType_followsInputA(): Unit = {
     val segment = new FpCont(1)
     val node = new SumNode()
-    node.getInA.linkFrom(segment.getSource.headOut)
-    assertSame(classOf[Fpable], node.getOut.getType)
+    node.inA.linkFrom(segment.source.headOut)
+    assertSame(classOf[Fpable], node.out.getType)
   }
 
   @Test
   def outputType_fallsBackToInputB(): Unit = {
     val segment = new FpCont(1)
     val node = new SumNode()
-    node.getInB.linkFrom(segment.getSource.headOut)
-    assertSame(classOf[Fpable], node.getOut.getType)
+    node.inB.linkFrom(segment.source.headOut)
+    assertSame(classOf[Fpable], node.out.getType)
   }
 
   @Test
   def constraint_mergesDownstream(): Unit = {
     val node = new SumNode()
-    assertEquals(util.Set.of(classOf[Fpable]), node.getInA.getConstraint)
+    assertEquals(util.Set.of(classOf[Fpable]), node.inA.constraint)
 
     val downstream = new Node.InPort[AnyRef]("下游", classOf[AnyRef])
-    node.getOut.link(downstream)
-    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.getInA.getConstraint)
-    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.getInB.getConstraint)
+    node.out.link(downstream)
+    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.inA.constraint)
+    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.inB.constraint)
   }
 
   @Test
@@ -69,12 +69,12 @@ class BinaryNodeTest {
     val a = new FpCont(2)
     val b = new FpCont(3)
     val node = new SumNode()
-    node.getInA.linkFrom(a.getSource.headOut)
-    node.getInB.linkFrom(b.getSource.headOut)
+    node.inA.linkFrom(a.source.headOut)
+    node.inB.linkFrom(b.source.headOut)
     a.get(0, null)
     b.get(0, null)
 
-    assertEquals(5.0, node.getOut.getData.`val`, 0)
+    assertEquals(5.0, node.out.getData.`val`, 0)
   }
 }
 
@@ -93,7 +93,7 @@ private final class SumNode extends BinaryNode[Fpable] {
     }
   })
 
-  override def getName: String = "求和"
+  override def name: String = "求和"
 }
 
 private final class ThreeInNode extends BinaryNode[Fpable] {
@@ -101,7 +101,7 @@ private final class ThreeInNode extends BinaryNode[Fpable] {
   addInPort(new In("B"))
   addInPort(new In("C"))
 
-  override def getName: String = "三入"
+  override def name: String = "三入"
 }
 
 private final class TwoOutNode extends BinaryNode[Fpable] {
@@ -114,5 +114,5 @@ private final class TwoOutNode extends BinaryNode[Fpable] {
     override def getData: Fpable = null
   })
 
-  override def getName: String = "双出"
+  override def name: String = "双出"
 }
