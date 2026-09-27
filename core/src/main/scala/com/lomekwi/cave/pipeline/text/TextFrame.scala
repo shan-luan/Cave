@@ -68,7 +68,7 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
       tmpMatrix.rotate(0, 0, 1, t.getRotation)
       tmpMatrix.scale(sx, sy, 1)
       batch.setTransformMatrix(tmpMatrix)
-      font.setColor(WHITE)
+      font.setColor(1f, 1f, 1f, opacity)
       try {
         font.draw(batch, layout, -w / 2, -cachedCenterY)
       } catch {
