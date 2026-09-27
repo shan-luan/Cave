@@ -194,7 +194,7 @@ class TopBar extends MenuBar {
   def applyCustomShortcuts(): Unit = {
     for ((action, item) <- actionItems) {
       val keys = App.shortcutManager.getKeys(action)
-      val arr: Array[Int] = keys.stream.mapToInt((i: Integer) => i.intValue).toArray
+      val arr: Array[Int] = keys.asScala.iterator.map((i: Integer) => i.intValue).toArray
       item.setShortcut(arr*)
     }
   }
