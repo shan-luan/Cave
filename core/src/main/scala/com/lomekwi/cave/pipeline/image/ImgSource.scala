@@ -15,24 +15,20 @@ import java.util.concurrent.CountDownLatch
 import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
-class ImgSource(private var imgRes: ImgRes) extends Source[ImgFrame] {
+class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   @transient private var texture: Texture = uninitialized
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
-    override def getData: Double = imgRes.getWidth.toDouble
+    override def getData: Double = imgRes.width.toDouble
   })
   addOutPort(new Node.OutPort[Double]("高度", classOf[Double]) {
-    override def getData: Double = imgRes.getHeight.toDouble
+    override def getData: Double = imgRes.height.toDouble
   })
   addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
-
-  def getImgRes: ImgRes = {
-    imgRes
-  }
 
   override def sync(time: Long, track: Track): Unit = {
     imgRes.sync(track.index, time)
@@ -46,17 +42,17 @@ class ImgSource(private var imgRes: ImgRes) extends Source[ImgFrame] {
     if (!initialized) {
       Gdx.app.postRunnable(() => {
         if (texture == null) {
-          texture = new Texture(imgRes.getWidth, imgRes.getHeight, Pixmap.Format.RGBA8888)
+          texture = new Texture(imgRes.width, imgRes.height, Pixmap.Format.RGBA8888)
         }
         frame = new ImgFrame(track.index, segment)
-        frame.setTexture(texture)
-          .setTransform(new Transform(0, 0, 0))
+        frame.texture = texture
+        frame.transform = new Transform(0, 0, 0)
         if (actor == null) {
           actor = new TransFrameActor(frame)
         } else {
           actor.rebind(frame)
         }
-        frame.setActor(actor)
+        frame.actor = actor
         initialized = true
         cd.countDown()
       })
@@ -75,12 +71,12 @@ class ImgSource(private var imgRes: ImgRes) extends Source[ImgFrame] {
         e.printStackTrace()
         frame.setPixels(null)
     }
-    frame.getTransform.reset(0, 0)
+    frame.transform.reset(0, 0)
     frame
   }
 
   override def getLengthPerExportFrame: Long = {
-    imgRes.getFrameLength
+    imgRes.frameLength
   }
 
   override def getDuration: Long = {
@@ -91,7 +87,7 @@ class ImgSource(private var imgRes: ImgRes) extends Source[ImgFrame] {
     5 * SECOND
   }
 
-  override def getDisplayName: String = {
+  override def displayName: String = {
     "图片源"
   }
 

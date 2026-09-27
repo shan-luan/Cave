@@ -27,7 +27,7 @@ import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(2L)
 class Project protected[project] extends Serializable with AutoCloseable {
-  @transient protected[project] var savePath: Path = uninitialized
+  @transient var savePath: Path = uninitialized
   var timeline: Timeline = uninitialized
   @transient var playhead: Playhead = uninitialized
   final val resources: Multimap[File, Resource] = ArrayListMultimap.create[File, Resource]()
@@ -53,9 +53,9 @@ class Project protected[project] extends Serializable with AutoCloseable {
   def update(): Unit = {
     if (isActive) {
       for (track <- timeline.getTracks.asScala) {
-        if (track.getWorker.getFuture == null || track.getWorker.getFuture.isDone) {
+        if (track.getWorker.future == null || track.getWorker.future.isDone) {
           val future = App.workerExecutor.submit(track.getWorker)
-          track.getWorker.setFuture(future)
+          track.getWorker.future = future
         }
       }
     }
@@ -81,10 +81,10 @@ class Project protected[project] extends Serializable with AutoCloseable {
 
   private def stopTrackLoops(): Unit = {
     for (track <- timeline.getTracks.asScala) {
-      val future = track.getWorker.getFuture
+      val future = track.getWorker.future
       if (future != null) {
         future.cancel(true)
-        track.getWorker.setFuture(null)
+        track.getWorker.future = null
       }
     }
   }
@@ -108,7 +108,7 @@ class Project protected[project] extends Serializable with AutoCloseable {
   private def readObject(in: ObjectInputStream): Unit = {
     in.defaultReadObject()
     currentVersion = savedVersion
-    sourceFactory.setProject(this)
+    sourceFactory.project = this
     App.appEventBus.register(this)
     projEventBus = new EventBus(uuid.toString)
     projEventBus.register(new AudioFrameSink(this))
@@ -116,10 +116,6 @@ class Project protected[project] extends Serializable with AutoCloseable {
     playhead = new Playhead(projEventBus)
     undoManager = new UndoManager(this)
     isActive = false
-  }
-
-  def getSavePath: Path = {
-    savePath
   }
 
   private def writeObject(out: java.io.ObjectOutputStream): Unit = {

@@ -63,7 +63,7 @@ class FileTreeNode(file: File) extends Tree.Node[FileTreeNode, File, VisLabel]()
   }
   private class DraggableLabel(text: String) extends VisLabel(text) {
     private var dragActor: VisLabel = uninitialized
-    App.root.getDragAndDrop.addSource(new DragAndDrop.Source(this) {
+    App.root.dragAndDrop.addSource(new DragAndDrop.Source(this) {
       override def dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload = {
         val payload = new DragAndDrop.Payload()
         payload.setObject(getValue)

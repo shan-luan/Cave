@@ -14,8 +14,8 @@ import com.lomekwi.cave.ui.widget.Card
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
-class NodeActor(node0: Node) extends Card(node0.getName) {
-  private final val node: Node = node0
+class NodeActor(node0: Node) extends Card(node0.name) {
+  final val node: Node = node0
   private final val inTable: VisTable = new VisTable()
   private final val outTable: VisTable = new VisTable()
   private final val portActors: mutable.HashMap[Node.Port, PortActor] = mutable.HashMap.empty[Node.Port, PortActor]
@@ -27,14 +27,14 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
   add(inTable).top().left()
   add(outTable).top().right().growX()
 
-  for (in <- node.getInPorts.asScala) {
+  for (in <- node.inPorts.asScala) {
     val editor: Actor = App.cardWidgetsRegistry.createEditor(in, null)
     val portActor = new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])
     portActors.put(in, portActor)
     inTable.add(portActor).growX().row()
   }
 
-  for (out <- node.getOutPorts.asScala) {
+  for (out <- node.outPorts.asScala) {
     val row: Actor = App.cardWidgetsRegistry.createOutputRow(out)
     if (row != null) {
       outTable.add(row).growX()
@@ -47,10 +47,6 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
   /** 本卡片中承载指定端口的端口圆点，没有则返回 null。 */
   def getPortActor(port: Node.Port): PortActor = {
     portActors.getOrElse(port, null)
-  }
-
-  def getNode: Node = {
-    node
   }
 
   if (node.canRemove) {
@@ -89,6 +85,6 @@ class NodeActor(node0: Node) extends Card(node0.getName) {
     Option(getParent)
       .flatMap(parent => Option(parent.getParent))
       .flatMap(parent => Option(parent.getParent))
-      .collect { case view: NodeEditorView if view.getNodeGraph.contains(node) => view.getNodeGraph }
+      .collect { case view: NodeEditorView if view.nodeGraph.contains(node) => view.nodeGraph }
   }
 }

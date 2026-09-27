@@ -18,9 +18,9 @@ import scala.jdk.CollectionConverters.*
 import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
-abstract class TlSegmentActor(private val segment: Segment[?]) extends Actor {
+abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
   private[tlarea] var tl: TimelineView = uninitialized
-  private[tlarea] var dragSide: DragSide = DragSide.NONE
+  var dragSide: DragSide = DragSide.NONE
 
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
@@ -136,7 +136,7 @@ abstract class TlSegmentActor(private val segment: Segment[?]) extends Actor {
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     if (range == null) return
-    ScissorStack.calculateScissors(App.root.getStage.getCamera, batch.getTransformMatrix, bounds, scissors)
+    ScissorStack.calculateScissors(App.root.stage.getCamera, batch.getTransformMatrix, bounds, scissors)
     if (ScissorStack.pushScissors(scissors)) {
       var visibleStartX: Float = 0
       var visibleEndX: Float = getWidth
@@ -154,17 +154,17 @@ abstract class TlSegmentActor(private val segment: Segment[?]) extends Actor {
   }
 
   protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
-    App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
+    App.root.shapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
   }
 
   private def drawBorder(): Unit = {
     val s = isSelected
-    App.root.getShapeDrawer.rectangle(getX, getY, getWidth, getHeight, if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
+    App.root.shapeDrawer.rectangle(getX, getY, getWidth, getHeight, if (s) Color.WHITE else Colors.ACCENT, if (s) 6f else 2f)
   }
 
   private def drawSelectionOverlay(): Unit = {
     if (hovered) {
-      App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.SRC_HOVER)
+      App.root.shapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.SRC_HOVER)
     }
   }
 
@@ -172,17 +172,10 @@ abstract class TlSegmentActor(private val segment: Segment[?]) extends Actor {
     this.hovered = hovered
   }
 
-  def getSegment: Segment[?] = {
-    segment
-  }
 
   /** 选中态由视图持有，actor 只是查询者。 */
   private def isSelected: Boolean = {
     tl != null && tl.selectedSegments.contains(segment)
-  }
-
-  def getDragSide: DragSide = {
-    dragSide
   }
 
   // 拖拽会话由本 actor 驱动，actor 位置是模型的纯投影。

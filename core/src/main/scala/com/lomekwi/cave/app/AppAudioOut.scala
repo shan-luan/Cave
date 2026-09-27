@@ -4,11 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.AudioDevice
 
 class AppAudioOut {
-  private final val audioDevice: AudioDevice = Gdx.audio.newAudioDevice(AppAudioOut.SAMPLE_RATE, false)
-
-  def getAudioDevice: AudioDevice = {
-    audioDevice
-  }
+  final val audioDevice: AudioDevice = Gdx.audio.newAudioDevice(AppAudioOut.SAMPLE_RATE, false)
 
   def writeSamples(samples: Array[Float]): Unit = this.synchronized {
     audioDevice.writeSamples(samples, 0, samples.length)

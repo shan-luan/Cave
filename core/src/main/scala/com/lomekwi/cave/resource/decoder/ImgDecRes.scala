@@ -10,8 +10,8 @@ import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_RGBA
 import scala.compiletime.uninitialized
 
 class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
-  private var cachedPixels: ByteBuffer = uninitialized
-  private var unpackRowLength: Int = 0
+  var cachedPixels: ByteBuffer = uninitialized
+  var unpackRowLength: Int = 0
 
   override def grab(): Frame = {
     if (!initialized) {
@@ -39,7 +39,7 @@ class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
     grabber.getImageHeight
   }
 
-  override def getLengthPerFrame: Long = {
+  override def lengthPerFrame: Long = {
     0
   }
 
@@ -75,19 +75,11 @@ class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
   override def seek(time: Long): Unit = {
   }
 
-  override def getCodecName: String = {
+  override def codecName: String = {
     grabber.getVideoCodecName
   }
 
-  override def getCodec: Int = {
+  override def codec: Int = {
     grabber.getVideoCodec
-  }
-
-  def getCachedPixels: ByteBuffer = {
-    cachedPixels
-  }
-
-  def getUnpackRowLength: Int = {
-    unpackRowLength
   }
 }

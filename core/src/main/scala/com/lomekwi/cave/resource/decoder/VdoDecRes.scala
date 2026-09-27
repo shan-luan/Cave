@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
 class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
-  private var bufferedPixels: ByteBuffer = uninitialized
+  var bufferedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 
   protected def setPixelFormat(pixelFormat: Int): Unit = {
@@ -49,21 +49,21 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     grabber.getLengthInVideoFrames
   }
 
-  override def getCodecName: String = {
+  override def codecName: String = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getVideoCodecName
   }
 
-  override def getCodec: Int = {
+  override def codec: Int = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
     grabber.getVideoCodec
   }
 
-  override def getLengthPerFrame: Long = {
+  override def lengthPerFrame: Long = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
@@ -73,14 +73,6 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
   override protected def configure(): Unit = {
     grabber.setPixelFormat(avutil.AV_PIX_FMT_RGBA)
     grabber.setAudioChannels(0)
-  }
-
-  def setBufferedPixels(pixels: ByteBuffer): Unit = {
-    bufferedPixels = pixels
-  }
-
-  def getBufferedPixels: ByteBuffer = {
-    bufferedPixels
   }
 
   override def close(): Unit = {
@@ -95,7 +87,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     val validTime = toValidTime(time)
     val diff = validTime - getLastFrameTime
 
-    if (diff < 0 || diff > 2 * getLengthPerFrame) {
+    if (diff < 0 || diff > 2 * lengthPerFrame) {
       seek(validTime)
       bufferedPixels = null
     }
@@ -116,7 +108,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     }
 
     if (isTimeLegal(time)) {
-      val nextFrameTime = getTimestamp + getLengthPerFrame
+      val nextFrameTime = getTimestamp + lengthPerFrame
 
       if (!((time < nextFrameTime) && bufferedPixels != null)) {
         var output: Frame = null
@@ -136,7 +128,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
 
       // 目标时间在下一帧之前，且缓存有效，直接返回缓存
       frame.setPixels(bufferedPixels)
-      frame.setUnpackRowLength(unpackRowLength)
+      frame.unpackRowLength = unpackRowLength
     }
   }
 

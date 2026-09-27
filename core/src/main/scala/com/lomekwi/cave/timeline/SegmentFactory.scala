@@ -25,17 +25,13 @@ import scala.jdk.CollectionConverters.*
  * 项目中还没有资源的文件先由 [[App.mediaFactory]] 建出资源。
  */
 @SerialVersionUID(1L)
-class SegmentFactory(@transient private var project: Project) extends Serializable {
+class SegmentFactory(@transient var project: Project) extends Serializable {
   import SegmentFactory.*
 
   @transient private var constructors: util.Map[ResourceClass, SegmentCtor] = uninitialized
 
   this.constructors = new util.HashMap[ResourceClass, SegmentCtor]()
   initDefaultConstructors()
-
-  def setProject(project: Project): Unit = {
-    this.project = project
-  }
 
   private def initDefaultConstructors(): Unit = {
     register(classOf[VdoRes], (segment: Resource) => new Content[ImgFrame](new VdoSource(segment.asInstanceOf[VdoRes])))

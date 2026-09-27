@@ -19,7 +19,7 @@ class EditPanelFrame private extends VisTable {
   private var mediaPoolAndFileTreeSplitPane: VisSplitPane = uninitialized
   private var previewAndTimelineSplitPane: VisSplitPane = uninitialized
   private var previewAndDetailSplitPane: VisSplitPane = uninitialized
-  private var detailPanel: Inspector = uninitialized
+  var detailPanel: Inspector = uninitialized
   private var editPanel: EditPanel = uninitialized
 
   {
@@ -35,7 +35,7 @@ class EditPanelFrame private extends VisTable {
             FileTree.getINSTANCE.addRootDirectory(file.file())
           }
         })
-        App.root.getStage.addActor(chooser)
+        App.root.stage.addActor(chooser)
       }
     })
     treePanel.add(addDirBtn).fillX()
@@ -61,10 +61,6 @@ class EditPanelFrame private extends VisTable {
       editPanel.project.projEventBus.register(detailPanel)
     }
     this
-  }
-
-  def getDetailPanel: Inspector = {
-    detailPanel
   }
 
   override def getMinHeight: Float = {

@@ -18,8 +18,8 @@ import com.lomekwi.cave.util.i18n.I18N.i18n
  * 外层表格占满卡片宽度，标签与按钮保持自身尺寸左对齐，避免被卡片的 growX 拉伸。
  */
 final class NodeGraphPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
-  private final val port: Node.InPort[?] = port0
-  private final val label: VisLabel = new VisLabel(port.getName)
+  override final val port: Node.InPort[?] = port0
+  override final val label: VisLabel = new VisLabel(port.name)
   private final val button: VisTextButton = new VisTextButton(i18n("编辑"))
 
   button.addListener(new ChangeListener {
@@ -33,16 +33,12 @@ final class NodeGraphPortEditor(port0: Node.InPort[?], segment: Segment[?]) exte
   add(button).pad(2f)
 
   private def openEditor(): Unit = {
-    val nodeGraph: NodeGraph = port.getDefaultData.asInstanceOf[NodeGraph]
+    val nodeGraph: NodeGraph = port.defaultData.asInstanceOf[NodeGraph]
     val panel: EditPanel = App.root.getFrontendEditPanel
     if (nodeGraph != null && panel != null) {
-      panel.getTlTabs.openNodeEditor(nodeGraph)
+      panel.tlTabs.openNodeEditor(nodeGraph)
     }
   }
 
-  override def getPort: Node.InPort[?] = port
-
-  override def getLabel: Actor = label
-
-  override def getControl: Actor = button
+  override def control: Actor = button
 }

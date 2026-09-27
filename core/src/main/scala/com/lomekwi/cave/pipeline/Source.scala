@@ -74,10 +74,10 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
     getDuration
   }
 
-  def getDisplayName: String
+  def displayName: String
 
-  override def getName: String = {
-    getDisplayName
+  override def name: String = {
+    displayName
   }
 
   /** 本片段在时间线上的可视化 actor。 */

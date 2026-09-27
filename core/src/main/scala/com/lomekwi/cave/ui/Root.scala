@@ -49,19 +49,19 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.compiletime.uninitialized
 
 class Root extends ApplicationListener {
-  private var stage: Stage = uninitialized
+  var stage: Stage = uninitialized
 
-  private var toastManager: ToastManager = uninitialized
+  var toastManager: ToastManager = uninitialized
 
-  private var mainLayout: VisTable = uninitialized
-  private var majorArea: Container[Table] = uninitialized
+  var mainLayout: VisTable = uninitialized
+  var majorArea: Container[Table] = uninitialized
 
   private var topBar: TopBar = uninitialized
-  private var tabbedPane: TopTabbedPane = uninitialized
+  var tabbedPane: TopTabbedPane = uninitialized
 
-  private var dragAndDrop: DragAndDrop = uninitialized
+  var dragAndDrop: DragAndDrop = uninitialized
 
-  private var shapeDrawer: ShapeDrawer = uninitialized
+  var shapeDrawer: ShapeDrawer = uninitialized
 
   private var generator: FreeTypeFontGenerator = uninitialized
 
@@ -225,10 +225,6 @@ class Root extends ApplicationListener {
     VisUI.dispose()
     generator.dispose()
   }
-  def getStage: Stage = {
-    stage
-  }
-
   def isTextInputFocused: Boolean = {
     if (stage == null) {
       false
@@ -238,15 +234,6 @@ class Root extends ApplicationListener {
     }
   }
 
-  def getMainLayout: VisTable = {
-    mainLayout
-  }
-  def getMajorArea: Container[Table] = {
-    majorArea
-  }
-  def getTabbedPane: TopTabbedPane = {
-    tabbedPane
-  }
   private def injectChineseFont(scale: VisUI.SkinScale): Skin = {
     val skin: Skin = new Skin(scale.getSkinFile)
 
@@ -281,12 +268,12 @@ class Root extends ApplicationListener {
   }
 
   def getFrontendProject: Project = tabbedPane.getActiveTab match {
-    case tab: ProjectTab => tab.getProject
+    case tab: ProjectTab => tab.project
     case _ => null
   }
 
   def getFrontendEditPanel: EditPanel = tabbedPane.getActiveTab match {
-    case tab: ProjectTab => tab.getEditPanel
+    case tab: ProjectTab => tab.editPanel
     case _ => null
   }
 
@@ -301,15 +288,4 @@ class Root extends ApplicationListener {
     topBar.applyCustomShortcuts()
   }
 
-  def getDragAndDrop: DragAndDrop = {
-    dragAndDrop
-  }
-
-  def getShapeDrawer: ShapeDrawer = {
-    shapeDrawer
-  }
-
-  def getToastManager: ToastManager = {
-    toastManager
-  }
 }

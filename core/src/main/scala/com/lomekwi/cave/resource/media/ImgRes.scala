@@ -20,8 +20,8 @@ import com.lomekwi.cave.util.Units.SECOND
 
 @SerialVersionUID(1L)
 class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
-  private var width: Int = scala.compiletime.uninitialized
-  private var height: Int = scala.compiletime.uninitialized
+  var width: Int = scala.compiletime.uninitialized
+  var height: Int = scala.compiletime.uninitialized
   @transient private var cachedPixels: ByteBuffer = scala.compiletime.uninitialized
   @transient private var unpackRowLength: Int = scala.compiletime.uninitialized
   @transient @volatile private var decoded: Boolean = scala.compiletime.uninitialized
@@ -39,8 +39,8 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     val tmp = new ImgFrame(-1)
     try {
       idr.get(0, tmp)
-      cachedPixels = idr.getCachedPixels
-      unpackRowLength = idr.getUnpackRowLength
+      cachedPixels = idr.cachedPixels
+      unpackRowLength = idr.unpackRowLength
       decoded = true
     } catch {
       case _: Exception =>
@@ -48,17 +48,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
   }
 
-  def getWidth: Int = {
-    width
-  }
-
-  def getHeight: Int = {
-    height
-  }
-
-  def getFrameLength: Long = {
-    SECOND / 30
-  }
+  final val frameLength: Long = SECOND / 30
 
   override def get(trackIndex: Int, time: Long, frame: Frame): Unit = {
     if (!decoded) {
@@ -66,14 +56,14 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
         dec.start()
         val tmp = new ImgFrame(-1)
         dec.get(0, tmp)
-        cachedPixels = dec.getCachedPixels
-        unpackRowLength = dec.getUnpackRowLength
+        cachedPixels = dec.cachedPixels
+        unpackRowLength = dec.unpackRowLength
       }
       decoded = true
     }
     val imgFrame = frame.asInstanceOf[ImgFrame]
     imgFrame.setPixels(cachedPixels)
-    imgFrame.setUnpackRowLength(unpackRowLength)
+    imgFrame.unpackRowLength = unpackRowLength
   }
 
   override def sync(trackIndex: Int, time: Long): Unit = {

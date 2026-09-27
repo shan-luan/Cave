@@ -20,8 +20,8 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 import java.io.IOException
 
 class ProjectTab(project0: Project) extends Tab(true, true) {
-  private final val editPanel: EditPanel = new EditPanel(project0)
-  private final val project: Project = project0
+  final val editPanel: EditPanel = new EditPanel(project0)
+  final val project: Project = project0
   project.projEventBus.register(this)
 
   override def getTabTitle: String = {
@@ -31,14 +31,6 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
     EditPanelFrame.getINSTANCE.`with`(editPanel)
   }
 
-  def getEditPanel: EditPanel = {
-    editPanel
-  }
-
-  def getProject: Project = {
-    project
-  }
-
   @Subscribe
   def onProjectDirtyChanged(event: ProjectDirtyChangedEvent): Unit = {
     setDirty(project.isDirty)
@@ -46,7 +38,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
 
   //FIXME 当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
   override def save(): Boolean = {
-    if (project.getSavePath == null) {
+    if (project.savePath == null) {
       val conf = new NativeFileChooserConfiguration()
       conf.title = i18n("选择保存位置...")
       if (Gdx.app.getType == Application.ApplicationType.Android) {

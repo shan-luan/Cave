@@ -17,12 +17,12 @@ class NodeGraphTest {
     val in = new TestInNode()
     graph.add(out)
     graph.add(in)
-    assertTrue(in.getIn.linkFrom(out.getOut))
+    assertTrue(in.in.linkFrom(out.out))
 
     assertTrue(graph.remove(out))
 
-    assertFalse(in.getIn.isLinked)
-    assertFalse(out.getOut.isLinked)
+    assertFalse(in.in.isLinked)
+    assertFalse(out.out.isLinked)
     assertTrue(graph.contains(in))
   }
 
@@ -40,26 +40,22 @@ class NodeGraphTest {
   @Test
   def boundaryNodesAreNotRemovable(): Unit = {
     val ngf = new NodeGraphFilter()
-    val nodes = ngf.getInnerNodes.asScala.toSeq
+    val nodes = ngf.innerNodes.asScala.toSeq
     assertFalse(nodes.collectFirst { case n: GraphInNode => n }.get.canRemove)
     assertFalse(nodes.collectFirst { case n: Sink => n }.get.canRemove)
   }
 }
 
 private[pipeline] final class TestOutNode extends Node {
-  private final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
+  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
     override def getData: Object = null
   })
 
-  def getOut: Node.OutPort[Object] = out
-
-  override def getName: String = "测试输出"
+  override val name: String = "测试输出"
 }
 
 private[pipeline] final class TestInNode extends Node {
-  private final val in: Node.InPort[Object] = addInPort(new Node.InPort[Object]("输入"))
+  final val in: Node.InPort[Object] = addInPort(new Node.InPort[Object]("输入"))
 
-  def getIn: Node.InPort[Object] = in
-
-  override def getName: String = "测试输入"
+  override val name: String = "测试输入"
 }

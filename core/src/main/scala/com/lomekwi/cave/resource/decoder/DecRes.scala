@@ -11,12 +11,12 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
  * @tparam F 产生的帧类型
  */
 abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) extends Resource {
-  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(segment.getPath)
-  @volatile protected var initialized: Boolean = false
+  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(segment.path)
+  @volatile var initialized: Boolean = false
 
   def start(): Unit = this.synchronized {
     if (!initialized) {
-      if (segment.getCodecName != null) {
+      if (segment.codecName != null) {
         grabber.setVideoCodecName(tryGetDecoder())
       }
       configure()
@@ -57,9 +57,6 @@ abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) exte
   def get(time: Long, frame: F): Unit
 
   def seek(time: Long): Unit
-  def isInitialized: Boolean = {
-    initialized
-  }
   protected def toValidTime(time: Long): Long = {
     Math.min(Math.max(0, time), getLengthInTime)
   }
@@ -78,12 +75,12 @@ abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) exte
     }
     grabber.getTimestamp
   }
-  def getCodecName: String
+  def codecName: String
 
-  def getCodec: Int
+  def codec: Int
 
-  def getLengthPerFrame: Long
+  def lengthPerFrame: Long
   def getLastFrameTime: Long = {
-    getTimestamp - getTimestamp % getLengthPerFrame
+    getTimestamp - getTimestamp % lengthPerFrame
   }
 }

@@ -64,7 +64,7 @@ object CardWidgetsRegistry {
 
   /** 端口约束为交叉类型，目标类型必须满足全部约束；无约束端口视为无可编辑类型。 */
   private def accepts(port: Node.InPort[?], `type`: Class[?]): Boolean = {
-    val constraint = port.getConstraint.asScala
+    val constraint = port.constraint.asScala
     constraint.nonEmpty && constraint.forall(c => c.isAssignableFrom(`type`))
   }
 }

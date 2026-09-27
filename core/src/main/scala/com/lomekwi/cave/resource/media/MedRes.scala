@@ -26,12 +26,12 @@ import scala.util.Using
  * 指代一个在磁盘中存在、占有编解码器的资源。
  */
 @SerialVersionUID(1L)
-abstract class MedRes(private val path: String) extends Resource with Serializable {
+abstract class MedRes(val path: String) extends Resource with Serializable {
   import MedRes.*
 
-  protected var duration: Long = 0
-  protected var codecName: String = uninitialized
-  protected var codec: Int = 0
+  var duration: Long = 0
+  var codecName: String = uninitialized
+  var codec: Int = 0
 
   @transient private var decoderCache: Cache[Integer, DecRes[?]] = CacheBuilder.newBuilder()
     .asInstanceOf[CacheBuilder[Integer, DecRes[?]]]
@@ -56,21 +56,6 @@ abstract class MedRes(private val path: String) extends Resource with Serializab
       throw new RuntimeException(e)
   }
 
-  def getDuration: Long = {
-    duration
-  }
-
-  def getPath: String = {
-    path
-  }
-
-  def getCodecName: String = {
-    codecName
-  }
-
-  def getCodec: Int = {
-    codec
-  }
   def getDecoder(trackIndex: Int): DecRes[?] = {
     try {
       decoderCache.get(trackIndex, () => newDecoder())

@@ -17,9 +17,9 @@ import scala.reflect.ClassTag
 @SerialVersionUID(1L)
 abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
 
-  private var inA: In = uninitialized
-  private var inB: In = uninitialized
-  private var out: Out = uninitialized
+  var inA: In = uninitialized
+  var inB: In = uninitialized
+  var out: Out = uninitialized
 
   override protected def addInPort[P <: Node.InPort[?]](p: P): P = {
     val port = super.addInPort(p)
@@ -52,19 +52,13 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
 
   final def getType: Class[T] = classTag.runtimeClass.asInstanceOf[Class[T]]
 
-  def getInA: In = inA
-
-  def getInB: In = inB
-
-  def getOut: Out = out
-
   class In(name: String) extends Node.InPort[T](name, BinaryNode.this.getType) {
     /**
      * 两个输入共用同一输出，因此各自把输出下游的约束并入自身约束。
      */
-    override def getConstraint: util.Set[Class[?]] = {
-      if (getOut.isLinked) {
-        (getOut.getNext.asScala.flatMap(_.getConstraint.asScala).union(Set(BinaryNode.this.getType))).asJava
+    override def constraint: util.Set[Class[?]] = {
+      if (out.isLinked) {
+        (out.next.asScala.flatMap(_.constraint.asScala).union(Set(BinaryNode.this.getType))).asJava
       } else {
         util.Set.of(BinaryNode.this.getType)
       }
@@ -86,10 +80,10 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
     }
 
     private def linkedUpstream: Node.OutPort[? <: T] = {
-      if (getInA.isLinked) {
-        getInA.getPrev
-      } else if (getInB.isLinked) {
-        getInB.getPrev
+      if (inA.isLinked) {
+        inA.prev
+      } else if (inB.isLinked) {
+        inB.prev
       } else {
         null
       }

@@ -27,7 +27,7 @@ class TextSource(text: String) extends Source[TextFrame] {
   @transient private var actor: TransFrameActor = uninitialized
   @volatile @transient private var initialized: Boolean = false
 
-  textIn.setDefaultData(text)
+  textIn.defaultData = text
   fontRes = new FontRes("font/noto.otf")
 
   def this() = {
@@ -35,11 +35,11 @@ class TextSource(text: String) extends Source[TextFrame] {
   }
 
   def getText: String = {
-    textIn.getDefaultData
+    textIn.defaultData
   }
 
   def setText(text: String): Unit = {
-    textIn.setDefaultData(text)
+    textIn.defaultData = text
   }
 
   def getFontRes: FontRes = {
@@ -54,16 +54,16 @@ class TextSource(text: String) extends Source[TextFrame] {
   }
 
   private def getFontSize: Int = {
-    fontSizeIn.getDefaultData.toInt
+    fontSizeIn.defaultData.toInt
   }
 
   def setFontSize(fontSize: Int): Unit = {
-    fontSizeIn.setDefaultData(fontSize.toDouble)
+    fontSizeIn.defaultData = fontSize.toDouble
     invalidateFont()
   }
 
   def getFontPath: String = {
-    if (fontRes != null) fontRes.getPath else ""
+    if (fontRes != null) fontRes.path else ""
   }
 
   def setFontPath(path: String): Unit = {
@@ -97,13 +97,13 @@ class TextSource(text: String) extends Source[TextFrame] {
         }
         frame = new TextFrame(track.index, segment)
         frame.setFont(font)
-        frame.setTransform(new Transform(0, 0, 0))
+        frame.transform = new Transform(0, 0, 0)
         if (actor == null) {
           actor = new TransFrameActor(frame)
         } else {
           actor.rebind(frame)
         }
-        frame.setActor(actor)
+        frame.actor = actor
         initialized = true
         cd.countDown()
       })
@@ -116,7 +116,7 @@ class TextSource(text: String) extends Source[TextFrame] {
       }
     }
     frame.setText(getText)
-    frame.getTransform.reset(0, 0)
+    frame.transform.reset(0, 0)
     frame
   }
 
@@ -132,7 +132,7 @@ class TextSource(text: String) extends Source[TextFrame] {
     5 * SECOND
   }
 
-  override def getDisplayName: String = {
+  override def displayName: String = {
     "文本源"
   }
 
@@ -142,8 +142,8 @@ class TextSource(text: String) extends Source[TextFrame] {
 
   override def onDuplicate(original: Source[?]): Unit = {
     val source = original.asInstanceOf[TextSource]
-    this.textIn.setDefaultData(source.getText)
-    this.fontSizeIn.setDefaultData(source.getFontSize.toDouble)
-    this.fontRes = new FontRes(source.fontRes.getPath)
+    this.textIn.defaultData = source.getText
+    this.fontSizeIn.defaultData = source.getFontSize.toDouble
+    this.fontRes = new FontRes(source.fontRes.path)
   }
 }

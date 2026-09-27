@@ -21,9 +21,9 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
-  private var width: Int = scala.compiletime.uninitialized
-  private var height: Int = scala.compiletime.uninitialized
-  private var frameLength: Long = scala.compiletime.uninitialized
+  var width: Int = scala.compiletime.uninitialized
+  var height: Int = scala.compiletime.uninitialized
+  var frameLength: Long = scala.compiletime.uninitialized
 
   @transient private var thumbnailer: Thumbnailer = uninitialized
 
@@ -37,23 +37,13 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   override def getDecoder(trackIndex: Int): VdoDecRes = {
     super.getDecoder(trackIndex).asInstanceOf[VdoDecRes]
   }
-  def getWidth: Int = {
-    width
-  }
-  def getHeight: Int = {
-    height
-  }
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val vdr = metadataDecRes.asInstanceOf[VdoDecRes]
     width = vdr.getWidth
     height = vdr.getHeight
-    frameLength = vdr.getLengthPerFrame
-    codecName = vdr.getCodecName
-    codec = vdr.getCodec
-  }
-
-  def getFrameLength: Long = {
-    frameLength
+    frameLength = vdr.lengthPerFrame
+    codecName = vdr.codecName
+    codec = vdr.codec
   }
 
   override protected def newDecoder(): VdoDecRes = {
@@ -149,7 +139,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     private def processPendingSlots(): Unit = {
       val dec = getCachedDecoder
       try {
-        if (!dec.isInitialized) {
+        if (!dec.initialized) {
           dec.start()
         }
         if (fullPixmap == null) {
@@ -193,7 +183,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         flushBatch()
       } catch {
         case e: Exception =>
-          Gdx.app.error("VdoRes", "Thumbnail worker failed for " + getPath, e)
+          Gdx.app.error("VdoRes", "Thumbnail worker failed for " + path, e)
       } finally {
         workerRunning.set(false)
         if (!pendingSlots.isEmpty) {

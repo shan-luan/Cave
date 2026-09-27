@@ -18,20 +18,20 @@ import java.util.Objects
  * String 输入端口编辑 widget，VisTextArea 行。直接持有端口模型，修改写默认值并刷新预览。
  */
 final class TextPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
-  private final val port: Node.InPort[?] = port0
-  private final val label: VisLabel = new VisLabel(port.getName)
+  override final val port: Node.InPort[?] = port0
+  override final val label: VisLabel = new VisLabel(port.name)
   private final val textArea: VisTextArea = {
-    val defaultValue: String = port.getDefaultData.asInstanceOf[String]
+    val defaultValue: String = port.defaultData.asInstanceOf[String]
     val area: VisTextArea = new VisTextArea(if (defaultValue == null) "" else defaultValue)
     // 撑高 prefHeight，否则 X2 皮肤下 linesShowing 为 0，文字不会绘制
     area.setPrefRows(3f)
     area.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         val newVal: String = area.getText
-        val oldVal: String = port.getDefaultData.asInstanceOf[String]
+        val oldVal: String = port.defaultData.asInstanceOf[String]
         if (!Objects.equals(oldVal, newVal)) {
           val strPort: Node.InPort[String] = port.asInstanceOf[Node.InPort[String]]
-          strPort.setDefaultData(newVal)
+          strPort.defaultData = newVal
           val p: Project = App.root.getFrontendProject
           if (p != null) {
             p.projEventBus.post(RefreshRequestEvent)
@@ -48,9 +48,5 @@ final class TextPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends V
     add(textArea).growX().pad(2f)
   }
 
-  override def getPort: Node.InPort[?] = port
-
-  override def getLabel: Actor = label
-
-  override def getControl: Actor = textArea
+  override def control: Actor = textArea
 }

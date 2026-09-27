@@ -18,7 +18,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
  * 点击浏览按钮会弹出系统原生文件选择对话框，选中后路径自动填入文本框。
  */
 class FileChooserField(private val chooserTitle: String, private val intent: NativeFileChooserIntent) extends VisTable {
-  private final val pathField: VisValidatableTextField = new VisValidatableTextField("")
+  final val pathField: VisValidatableTextField = new VisValidatableTextField("")
   private final val browseBtn: VisTextButton = new VisTextButton("浏览")
 
   {
@@ -60,7 +60,4 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
     pathField.setText(path)
   }
 
-  def getPathField: VisValidatableTextField = {
-    pathField
-  }
 }

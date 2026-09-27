@@ -17,24 +17,20 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
-  private var frameLength: Long = scala.compiletime.uninitialized
+  var frameLength: Long = scala.compiletime.uninitialized
 
   @transient private var waveformerRef: Waveformer = uninitialized
   @transient private var singleWaveform: SingleWaveform = uninitialized
 
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val adr = metadataDecRes.asInstanceOf[AudDecRes]
-    frameLength = adr.getLengthPerFrame
-    codecName = adr.getCodecName
-    codec = adr.getCodec
+    frameLength = adr.lengthPerFrame
+    codecName = adr.codecName
+    codec = adr.codec
   }
 
   override protected def newDecoder(): AudDecRes = {
     new AudDecRes(this)
-  }
-
-  def getFrameLength: Long = {
-    frameLength
   }
 
   private def getWaveformer: Waveformer = {
@@ -50,7 +46,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
   override def getPreview(time: Long): Texture = {
     getWaveformer.queueSlot(time)
-    getWaveformer.getTexture
+    getWaveformer.waveTex
   }
 
   override def getPreviewInterval: Long = {
@@ -107,14 +103,14 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
       val peaks = new Array[Float](W)
       try {
         dec.start()
-        val frameLen = dec.getLengthPerFrame
+        val frameLen = dec.lengthPerFrame
         var t = 0L
         var col = 0
         var continueLoop = true
         while (col < W && continueLoop) {
           val colEnd = (col + 1) * duration / W
           dec.get(t, frame)
-          val samples = frame.getSamples
+          val samples = frame.samples
           if (samples == null) {
             continueLoop = false
           } else {
@@ -152,7 +148,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         })
       } catch {
         case e: Exception =>
-          Gdx.app.error("AudRes", "Single waveform failed for " + getPath, e)
+          Gdx.app.error("AudRes", "Single waveform failed for " + path, e)
       } finally {
         try {
           dec.close()
@@ -207,10 +203,6 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
       waveTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
     })
 
-    private[media] def getTexture: Texture = {
-      waveTex
-    }
-
     private[media] def queueSlot(time: Long): Unit = {
       var idx = (time / bucketDuration).toInt
       if (idx < 0) {
@@ -244,7 +236,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     private def processPendingSlots(): Unit = {
       val dec = getCachedDecoder
       try {
-        if (!dec.isInitialized) {
+        if (!dec.initialized) {
           dec.start()
         }
         val frame = new AudFrame(44100, -1)
@@ -274,7 +266,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
               try {
                 val t = slots(i).toLong * bucketDuration
                 dec.get(t, frame)
-                val samples = frame.getSamples
+                val samples = frame.samples
                 if (samples != null) {
                   var max = 0f
                   for (s <- samples) {
@@ -299,7 +291,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         flushBatch()
       } catch {
         case e: Exception =>
-          Gdx.app.error("AudRes", "Waveform worker failed for " + getPath, e)
+          Gdx.app.error("AudRes", "Waveform worker failed for " + path, e)
       } finally {
         workerRunning.set(false)
         if (!pendingSlots.isEmpty) {

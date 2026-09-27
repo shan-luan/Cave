@@ -131,7 +131,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
         presetSet.save()
         presetLabel.setText(presetLabelText())
         applyOptions(opts)
-        App.root.getToastManager.show(
+        App.root.toastManager.show(
           i18n("已保存预设 #") + (presetSet.currentIndex + 1), 1.5f)
       }
     })
@@ -140,7 +140,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
     delBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
         if (presetSet.presets.size() <= 1) {
-          App.root.getToastManager.show(i18n("至少保留一个预设"), 1.5f)
+          App.root.toastManager.show(i18n("至少保留一个预设"), 1.5f)
         } else {
           presetSet.presets.remove(presetSet.currentIndex)
           if (presetSet.currentIndex >= presetSet.presets.size()) {
@@ -149,7 +149,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
           presetSet.save()
           presetLabel.setText(presetLabelText())
           applyOptions(presetSet.current())
-          App.root.getToastManager.show(i18n("已删除预设"), 1.5f)
+          App.root.toastManager.show(i18n("已删除预设"), 1.5f)
         }
       }
     })
@@ -165,7 +165,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
 
   private def detectDimensions(): Array[Int] = {
     project.resources.values().asScala
-      .collectFirst { case v: VdoRes => Array(v.getWidth, v.getHeight) }
+      .collectFirst { case v: VdoRes => Array(v.width, v.height) }
       .getOrElse(Array(1920, 1080))
   }
 
@@ -185,7 +185,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
 
   private def applyOptions(opts: ExportOptions): Unit = {
     if (opts.width == 0) {
-      App.root.getToastManager.show(i18n("此预设为空，请先保存"), 2f)
+      App.root.toastManager.show(i18n("此预设为空，请先保存"), 2f)
     } else {
       fileChooserField.setPath(opts.outputPath)
       widthModel.setValue(opts.width)
@@ -198,7 +198,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   private def startExport(): Unit = {
     val path: String = fileChooserField.getPath
     if (path.isEmpty) {
-      App.root.getToastManager.show(i18n("请选择输出文件"), 2f)
+      App.root.toastManager.show(i18n("请选择输出文件"), 2f)
     } else {
       val width: Int = widthModel.getValue
       val height: Int = heightModel.getValue
@@ -211,7 +211,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
         width, height, fps, bitrate
       )
       App.taskPool.submit(task)
-      App.root.getToastManager.show(i18n("开始导出：") + new java.io.File(path).getName, 2f)
+      App.root.toastManager.show(i18n("开始导出：") + new java.io.File(path).getName, 2f)
       fadeOut()
     }
   }

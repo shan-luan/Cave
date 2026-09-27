@@ -167,7 +167,7 @@ object UndoManager {
   }
 
   private def filterList(segment: Segment[?]): util.List[Filter[?]] = {
-    segment.getFilters.asInstanceOf[util.List[Filter[?]]]
+    segment.filters.asInstanceOf[util.List[Filter[?]]]
   }
 
   /**
@@ -307,7 +307,7 @@ object UndoManager {
     }
 
     private def setValue(v: Double): Unit = {
-      port.asInstanceOf[Node.InPort[Double]].setDefaultData(v)
+      port.asInstanceOf[Node.InPort[Double]].defaultData = v
       postRefresh(project, segment)
     }
   }

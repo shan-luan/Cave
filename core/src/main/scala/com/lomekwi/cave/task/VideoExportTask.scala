@@ -114,7 +114,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
 
       var i = 0
       while (i < tracks.length) {
-        if (tracks(i).getLength != 0) {
+        if (tracks(i).length != 0) {
           var segment = active(i)
           val activeRange = if (segment == null) null else tracks(i).getRange(segment)
           if (segment == null || !activeRange.contains(audioT)) {
@@ -122,7 +122,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
               case s: Segment[?] => s
               case _: Gap => null
             }
-            if (segment != null && segment.getSource.isInstanceOf[AudSource]) {
+            if (segment != null && segment.source.isInstanceOf[AudSource]) {
               tracks(i).syncAt(segment, audioT)
             }
             active(i) = segment
@@ -130,8 +130,8 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
           if (segment != null) {
             val frame = tracks(i).frameAt(segment, audioT)
             frame match {
-              case af: AudFrame if af.getSamples != null =>
-                val samples = af.getSamples
+              case af: AudFrame if af.samples != null =>
+                val samples = af.samples
                 val len = Math.min(samples.length, mixBuf.length)
                 var si = 0
                 while (si < len) {

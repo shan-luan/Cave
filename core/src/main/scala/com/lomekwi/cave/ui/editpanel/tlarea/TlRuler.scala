@@ -52,7 +52,7 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
-    App.root.getShapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.DARK_GRAY)
+    App.root.shapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.DARK_GRAY)
 
     val interval: Long = niceScale((timelineView.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth).toLong)
     val start: Long = (timelineView.view.startTime / interval) * interval
@@ -60,7 +60,7 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
     var t = start
     while (t < timelineView.view.startTime + timelineView.view.durationTime) {
       val x: Float = timelineView.absoluteTimeToX(t) + getX
-      App.root.getShapeDrawer.filledRectangle(x, getY, 1, getHeight, Color.WHITE)
+      App.root.shapeDrawer.filledRectangle(x, getY, 1, getHeight, Color.WHITE)
       formatTime(t, interval)
       font.setColor(Color.WHITE)
       font.draw(batch, sb, x + 2, getY + getHeight - 2)

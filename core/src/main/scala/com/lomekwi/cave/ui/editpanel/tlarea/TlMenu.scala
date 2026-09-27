@@ -45,7 +45,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   def setContext(time: Long): Unit = {
     this.time = time
-    pasteItem.setDisabled(!App.copyManager.getClipboard.isInstanceOf[PasteTemplate])
+    pasteItem.setDisabled(!App.copyManager.clipboard.isInstanceOf[PasteTemplate])
   }
 
   private def onAddMedia(): Unit = {
@@ -79,11 +79,11 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
     var targetTrack: Int = 0
     val range: Interval = time ~~ (time + duration)
-    while (!timelineView.getTimeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
+    while (!timelineView.timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
       targetTrack += 1
     }
 
-    val timeline = timelineView.getTimeline
+    val timeline = timelineView.timeline
     Using.resource(timeline.record()) { h =>
       timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time)
     }
@@ -92,7 +92,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def addMediaFile(file: File): Unit = {
-    val project: Project = timelineView.getProject
+    val project: Project = timelineView.project
     try {
       val segments: util.List[Segment[?]] = project.sourceFactory.getAll(file)
       if (!segments.isEmpty) {
@@ -100,7 +100,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
         var trackOffset: Int = 0
         val added: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
 
-        val timeline = timelineView.getTimeline
+        val timeline = timelineView.timeline
         Using.resource(timeline.record()) { h =>
           for (segment <- segments.asScala) {
             val duration: Long = segment.getDefaultDuration

@@ -23,7 +23,7 @@ class NumSource extends Source[NumFrame] {
     Long.MaxValue
   }
 
-  override def getDisplayName: String = {
+  override def displayName: String = {
     "数值源"
   }
 

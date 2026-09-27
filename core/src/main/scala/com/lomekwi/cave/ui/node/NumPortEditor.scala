@@ -20,8 +20,8 @@ import java.util
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
 final class NumPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
-  private final val port: Node.InPort[?] = port0
-  private final val label: VisLabel = new VisLabel(port.getName)
+  override final val port: Node.InPort[?] = port0
+  override final val label: VisLabel = new VisLabel(port.name)
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(
     defaultValue.toFloat, -99999f, 99999f, 1f, 2)
   private final val spinner: Spinner = new Spinner("", model)
@@ -44,11 +44,7 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends Vi
   add(label).pad(2f)
   add(spinner).width(90f).pad(2f)
 
-  override def getPort: Node.InPort[?] = port
-
-  override def getLabel: Actor = label
-
-  override def getControl: Actor = spinner
+  override def control: Actor = spinner
 
   override def act(delta: Float): Unit = {
     super.act(delta)
@@ -65,10 +61,10 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends Vi
   }
 
   private def defaultValue: Double = {
-    port.getDefaultData.asInstanceOf[Double]
+    port.defaultData.asInstanceOf[Double]
   }
 
   private def setDefaultValue(v: Double): Unit = {
-    port.asInstanceOf[Node.InPort[Double]].setDefaultData(v)
+    port.asInstanceOf[Node.InPort[Double]].defaultData = v
   }
 }

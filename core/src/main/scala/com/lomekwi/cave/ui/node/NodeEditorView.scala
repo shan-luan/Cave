@@ -23,9 +23,9 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
-  private final val nodeGraph: NodeGraph = nodeGraph0
+  final val nodeGraph: NodeGraph = nodeGraph0
   private val panZoom: PanZoomCanvas = new PanZoomCanvas(0.1f, 4f, 1000f)
-  private val canvas: Group = panZoom.getCanvas
+  private val canvas: Group = panZoom.canvas
   private final val displayedNodes: mutable.HashSet[Node] = mutable.HashSet.empty[Node]
   private final val nodeMenu: PopupMenu = new PopupMenu()
   private final val spawnPos: Vector2 = new Vector2()
@@ -52,10 +52,6 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
     dirty = true
   }
 
-  def getNodeGraph: NodeGraph = {
-    nodeGraph
-  }
-
   private def isUpToDate: Boolean = {
     displayedNodes.size == nodeGraph.size() && displayedNodes.forall(node => nodeGraph.contains(node))
   }
@@ -68,7 +64,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
 
     for (actor <- canvas.getChildren.asScala.toSeq) {
       actor match {
-        case nodeActor: NodeActor if toRemove.contains(nodeActor.getNode) =>
+        case nodeActor: NodeActor if toRemove.contains(nodeActor.node) =>
           nodeActor.remove()
         case _ =>
       }
@@ -88,7 +84,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
     for (actor <- canvas.getChildren.asScala) {
       actor match {
         case nodeActor: NodeActor =>
-          val position = nodeGraph.getPosition(nodeActor.getNode)
+          val position = nodeGraph.getPosition(nodeActor.node)
           nodeActor.setPosition(position.x, position.y)
         case _ =>
       }
@@ -131,7 +127,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
 
   private def buildNodeMenu(): Unit = {
     for (i <- 0 until App.nodeRegistry.getCount) {
-      val name: String = App.nodeRegistry.create(i).getName
+      val name: String = App.nodeRegistry.create(i).name
       nodeMenu.addItem(new MenuItem(name, new ChangeListenerX(() => addNode(App.nodeRegistry.create(i)))))
     }
   }
@@ -144,7 +140,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   }
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    val drawer = App.root.getShapeDrawer
+    val drawer = App.root.shapeDrawer
     drawer.filledRectangle(getX, getY, getWidth, getHeight, Colors.NODE_BG)
     drawGrid(drawer)
     super.draw(batch, parentAlpha)

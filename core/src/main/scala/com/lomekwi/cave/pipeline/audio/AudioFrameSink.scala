@@ -15,7 +15,7 @@ class AudioFrameSink(private val project: Project) {
 
   @Subscribe
   def sink(frame: AudFrame): Unit = {
-    project.timeline.getWorker(frame.trackIndex).getSinkPhaser.register()
+    project.timeline.getWorker(frame.trackIndex).sinkPhaser.register()
     afm.submit(frame)
   }
 
@@ -70,11 +70,11 @@ object AudioFrameSink {
           var continueLoop = true
           while (continueLoop) {
             var j = 0
-            for (sample <- f.getSamples) {
+            for (sample <- f.samples) {
               output(j) += sample
               j += 1
             }
-            project.timeline.getWorker(f.trackIndex).getSinkPhaser.arriveAndDeregister()
+            project.timeline.getWorker(f.trackIndex).sinkPhaser.arriveAndDeregister()
             if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {

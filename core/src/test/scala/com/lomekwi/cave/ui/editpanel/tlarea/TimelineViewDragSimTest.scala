@@ -83,7 +83,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   /** 模拟 act() 重建，actor 纯粹按模型摆位，不得改动模型。 */
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
-    val segment = actor.getSegment
+    val segment = actor.segment
     val track = timeline.findTrackOf(segment)
     val r = track.getRange(segment)
     actor.setPosition(absX(r.lo), trackTopY(track.index))

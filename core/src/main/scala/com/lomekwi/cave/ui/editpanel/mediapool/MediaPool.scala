@@ -28,7 +28,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   {
     setTouchable(com.badlogic.gdx.scenes.scene2d.Touchable.enabled)
 
-    dnd = App.root.getDragAndDrop
+    dnd = App.root.dragAndDrop
 
     dnd.addTarget(new DragAndDrop.Target(this) {
       override def drag(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Boolean = {
@@ -64,7 +64,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   def onMediaCreated(event: MediaCreatedEvent): Unit = {
     val file = event.file
     val alreadyListed = getChildren.asScala.exists {
-      case item: MediaPoolItem => item.getFile.equals(file)
+      case item: MediaPoolItem => item.file.equals(file)
       case _ => false
     }
     if (!alreadyListed) {
@@ -82,14 +82,14 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
     dnd.addSource(new DragAndDrop.Source(item) {
       override def dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload = {
         val payload = new DragAndDrop.Payload()
-        payload.setObject(item.getFile)
-        payload.setDragActor(new MediaPoolItem(item.getFile, item.previewable))
+        payload.setObject(item.file)
+        payload.setDragActor(new MediaPoolItem(item.file, item.previewable))
         payload
       }
     })
   }
 
-  private class MediaPoolItem(private val file: File, private[mediapool] val previewable: Showable) extends VisTable() {
+  private class MediaPoolItem(val file: File, private[mediapool] val previewable: Showable) extends VisTable() {
     private final val image: VisImage = new VisImage(new Texture("libgdx.png"))
     private var requested: Boolean = false
 
@@ -113,9 +113,6 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       }
     }
 
-    def getFile: File = {
-      file
-    }
   }
 
   override def getMinWidth: Float = {

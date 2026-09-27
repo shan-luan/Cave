@@ -7,7 +7,7 @@ package com.lomekwi.cave.pipeline
  */
 @SerialVersionUID(1L)
 final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
-  private final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
+  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
     override def getData: Object = {
       upstream.getData
     }
@@ -16,18 +16,12 @@ final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
      * 上游未连接时类型未知，返回 null 让任意输入端口都能接入。
      */
     override def getType: Class[? <: Object] = {
-      val prev: Node.OutPort[?] = upstream.getPrev
+      val prev: Node.OutPort[?] = upstream.prev
       if (prev == null) null else prev.getType.asInstanceOf[Class[? <: Object]]
     }
   })
 
-  def getOut: Node.OutPort[Object] = {
-    out
-  }
-
-  override def getName: String = {
-    "输入"
-  }
+  override val name: String = "输入"
 
   override def canRemove: Boolean = false
 }
