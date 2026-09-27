@@ -117,6 +117,7 @@ class TextSource(text: String) extends Source[TextFrame] {
     }
     frame.setText(getText)
     frame.transform.reset(0, 0)
+    frame.opacity = 1f
     frame
   }
 

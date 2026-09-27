@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline.image
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.GL30
 import com.badlogic.gdx.graphics.Texture
@@ -78,6 +79,8 @@ class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, s
     val scaleY = if (t.flipY) -1f else 1f
     val w = baseW * t.getScaleX
     val h = baseH * t.getScaleY
+    batch.setColor(1f, 1f, 1f, opacity)
     batch.draw(texture, t.getX, t.getY, w / 2, h / 2, w, h, scaleX, scaleY, t.getRotation, 0, 0, baseW.toInt, baseH.toInt, false, false)
+    batch.setColor(Color.WHITE)
   }
 }

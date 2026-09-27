@@ -72,6 +72,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
         frame.setPixels(null)
     }
     frame.transform.reset(0, 0)
+    frame.opacity = 1f
     frame
   }
 

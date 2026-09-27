@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.pipeline.image.TransNode
+import com.lomekwi.cave.pipeline.image.{OpacityNode, TransNode}
 import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode}
 
 import java.lang.{IllegalAccessException, InstantiationException}
@@ -19,6 +19,7 @@ class NodeRegistry {
   private final val entries: mutable.ArrayBuffer[Class[? <: Node]] = mutable.ArrayBuffer.empty[Class[? <: Node]]
 
   register(classOf[TransNode])
+  register(classOf[OpacityNode])
   register(classOf[NodeGraphFilter])
   register(classOf[RandomNode])
   register(classOf[AddNode])
