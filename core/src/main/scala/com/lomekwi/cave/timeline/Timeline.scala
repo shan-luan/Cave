@@ -87,6 +87,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       val group = getGroup(segment)
       val next = track.remove(segment)
       setTrack(track.index, next)
+      if (group != null) group.remove(segment)
       push(RemoveSegmentCommand(this, track.index, track, next, segment, group))
     }
   }
@@ -102,6 +103,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
         val before = currentOf(track.index)
         val next = before.remove(s)
         working.put(track.index, next)
+        if (group != null) group.remove(s)
         entries.add(RemoveSegmentsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group))
       }
     }
