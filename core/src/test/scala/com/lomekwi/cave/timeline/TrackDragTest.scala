@@ -126,6 +126,35 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
+  def removeDetachesSegmentFromItsGroup(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a: Segment[?] = newSegment(100)
+    val b: Segment[?] = newSegment(100)
+    place(t0, a, TrackDragTest.rng(0, 100))
+    place(t0, b, TrackDragTest.rng(500, 600))
+    val group: SegmentGroup = timeline.newGroup()
+    group.add(a)
+    group.add(b)
+
+    Using.resource(timeline.record()) { _ =>
+      timeline.remove(a)
+    }
+
+    // 删除必须同步移出组，否则组里残留的片段会被整组选中带出，在找不到轨道时崩溃
+    assertTrue(timeline.findTrackOf(a) == null)
+    assertTrue(!group.contains(a))
+    assertTrue(group.contains(b))
+    assertSame(group, timeline.getGroup(b))
+
+    project.undoManager.undo()
+    assertSame(group, timeline.getGroup(a))
+    assertSame(group, timeline.getGroup(b))
+
+    project.undoManager.redo()
+    assertTrue(!group.contains(a))
+  }
+
+  @Test
   def removeInvalidatesTrackLength(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Segment[?] = newSegment(100)
