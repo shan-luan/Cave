@@ -46,6 +46,18 @@ class OpacityNodeTest {
   }
 
   @Test
+  def repeatedEvaluation_staysStable(): Unit = {
+    val segment = new OpCont
+    val node = new OpacityNode()
+    node.setOpacity(0.5)
+    segment.attach(node)
+
+    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
+    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
+    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
+  }
+
+  @Test
   def registry_offersNodeForRenderableSegment(): Unit = {
     val registry = new NodeRegistry()
     val segment = new OpCont
@@ -66,7 +78,12 @@ object OpacityNodeTest {
 
   private final class OpSource extends Source[OpFrame] {
     override protected def produce(time: Long, track: Track, segment: Segment[OpFrame]): OpFrame = {
-      new OpFrame
+      if (frame == null) {
+        frame = new OpFrame
+      }
+      // 真实源在每次产出时把帧恢复到基线，透明度的乘法语义依赖这一点
+      frame.opacity = 1f
+      frame
     }
 
     override def getLengthPerExportFrame: Long = {

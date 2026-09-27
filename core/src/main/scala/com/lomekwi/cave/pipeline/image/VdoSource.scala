@@ -70,6 +70,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
         frame.setPixels(null)
     }
     frame.transform.reset(0, 0)
+    frame.opacity = 1f
     frame
   }
 
