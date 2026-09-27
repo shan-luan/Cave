@@ -13,7 +13,11 @@ import scala.reflect.ClassTag
 abstract class TransitionSource[T <: Frame](val from: Source[? <: T], val to: Source[? <: T])
   (using ClassTag[T]) extends Source[T] {
 
-  final override def createTransition(source: Source[?]): Option[TransitionSource[T]] = None
+  final override def canCreateTransitionWith(source: Source[?]): Boolean = false
+
+  final override def createTransition(source: Source[?]): TransitionSource[T] = {
+    throw new UnsupportedOperationException("转场不能嵌套")
+  }
 
     override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = new TlTransitionActor(segment)
 }
