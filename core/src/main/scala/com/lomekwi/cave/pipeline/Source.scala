@@ -83,9 +83,15 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   /** 本片段在时间线上的可视化 actor。 */
   def createTlSegmentActor(segment: Segment[?]): TlSegmentActor
 
-  /** 由本源与给定源构造转场源。默认返回测试转场源。 */
-  def createTransition(source: Source[?]): Option[TransitionSource[T]] = {
-    Some(new TestTransitionSource[T](this, source.asInstanceOf[Source[T]])(using classTag))
+  /** 本源与给定源能否构造转场。 */
+  def canCreateTransitionWith(source: Source[?]): Boolean = true
+
+  /**
+   * 由本源与给定源构造转场源。默认返回测试转场源。
+   * 要求 [[canCreateTransitionWith]] 为 true，否则抛 UnsupportedOperationException。
+   */
+  def createTransition(source: Source[?]): TransitionSource[T] = {
+    new TestTransitionSource[T](this, source.asInstanceOf[Source[T]])(using classTag)
   }
 
   def onDuplicate(original: Source[?]): Unit = {}
