@@ -336,7 +336,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
     val firstTrack: Track = tl.timeline.findTrackOf(members.get(0))
     val trackDelta: Int = newTrack.index - firstTrack.index
 
-    val minIdx: Int = members.stream().mapToInt((m: Segment[?]) => tl.timeline.findTrackOf(m).index).min().orElseThrow()
+    val minIdx: Int = members.asScala.iterator.map((m: Segment[?]) => tl.timeline.findTrackOf(m).index).min
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.getRange(members.get(0)).lo
       tl.timeline.moveTime(members, target - currentStart0)

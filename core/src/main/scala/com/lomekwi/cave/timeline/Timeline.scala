@@ -139,9 +139,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val indices = trackIndicesOf(segments)
     if (indices.isEmpty) return 0L
 
-    val bound: Long = indices
+    val bounds = indices
       .map((i: Int) => { val t = tracks(i); if (end) t.probeSetEnd(segments, forward) else t.probeSetStart(segments, forward) })
-      .reduce(Track.tighter)
+    val bound: Long = if (forward) bounds.min else bounds.max
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
     if (applied == 0) return 0L
@@ -164,7 +164,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val indices = trackIndicesOf(segments)
     if (indices.isEmpty) return 0L
 
-    val bound: Long = indices.map((i: Int) => tracks(i).probeMove(segments, forward)).reduce(Track.tighter)
+    val bounds = indices.map((i: Int) => tracks(i).probeMove(segments, forward))
+    val bound: Long = if (forward) bounds.min else bounds.max
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
     if (applied == 0) return 0L
@@ -250,7 +251,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    */
   private def findPlaceableTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
     if (deltaTrack == 0 || segments.isEmpty) return 0
-    val minIdx = segments.stream().mapToInt((s: Segment[?]) => findTrackOf(s).index).min().orElseThrow()
+    val minIdx: Int = segments.asScala.iterator.map((s: Segment[?]) => findTrackOf(s).index).min
     val step = if (deltaTrack > 0) 1 else -1
     val span = Math.abs(deltaTrack)
     var k = span

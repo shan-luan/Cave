@@ -266,18 +266,18 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    * 左移（伸头）受 0、origin 与前邻限制，越界时冻结。
    */
   protected[timeline] def probeSetStart(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
-    segments.stream()
+    val offsets = segments.asScala.iterator
       .filter((s: Segment[?]) => contains(s))
-      .mapToLong((s: Segment[?]) => {
+      .map { s =>
         val r = getRange(s)
-        val lo: Long = r.lo
         if (forward) {
-          r.hi - 1 - lo
+          r.hi - 1 - r.lo
         } else {
-          Math.min(Longs.max(prevRangeOf(s).fold(0L)(_.hi), minStartOf(s)) - lo, 0)
+          Math.min(Longs.max(prevRangeOf(s).fold(0L)(_.hi), minStartOf(s)) - r.lo, 0)
         }
-      })
-      .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
+      }
+    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
   /** 拉伸头时允许的最小起点，片段的 0 秒不能越过时间轴 0 点。 */
@@ -295,18 +295,18 @@ final class Track private ( val timeline: Timeline,  val index: Int,
    * 左移（裁尾）仅受自身长度限制。
    */
   protected[timeline] def probeSetEnd(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
-    segments.stream()
+    val offsets = segments.asScala.iterator
       .filter((s: Segment[?]) => contains(s))
-      .mapToLong((s: Segment[?]) => {
+      .map { s =>
         val r = getRange(s)
-        val hi: Long = r.hi
         if (forward) {
-          Math.max(Math.min(nextRangeOf(s).fold(Long.MaxValue)(_.lo), maxEndOf(s)) - hi, 0)
+          Math.max(Math.min(nextRangeOf(s).fold(Long.MaxValue)(_.lo), maxEndOf(s)) - r.hi, 0)
         } else {
-          r.lo + 1 - hi
+          r.lo + 1 - r.hi
         }
-      })
-      .reduce(if (forward) Long.MaxValue else Long.MinValue, Track.tighter)
+      }
+    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
   /**
@@ -317,9 +317,9 @@ final class Track private ( val timeline: Timeline,  val index: Int,
   protected[timeline] def probeMove(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍 = 无界
     val bare = removeAll(segments)
-    segments.stream()
+    val offsets = segments.asScala.iterator
       .filter((s: Segment[?]) => contains(s))
-      .mapToLong((s: Segment[?]) => {
+      .map { s =>
         val r = getRange(s)
         if (forward) {
           val next = bare.sourceAtOrAfter(r.hi)
@@ -328,8 +328,9 @@ final class Track private ( val timeline: Timeline,  val index: Int,
           val prev = bare.sourceBefore(r.lo)
           if (prev == null) noBlock else bare.getRange(prev).hi - r.lo
         }
-      })
-      .reduce(noBlock, Track.tighter)
+      }
+    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
   }
 
   /** 包含 time 的元素。时间轴被完整划分，条目首尾相接，因此对任何时刻都存在。 */
@@ -485,14 +486,6 @@ object Track {
     val byTime: immutable.TreeMap[Long, Element] = immutable.TreeMap[Long, Element](Long.MinValue -> blockSegment, 0L -> tail)
     new Track(timeline, index, blockSegment, byTime,
       Map[Element, Long](blockSegment -> Long.MinValue, tail -> 0L), Map[Segment[?], Long](blockSegment -> 0L))
-  }
-
-  /** 返回离 0 更近的偏移量（限制更严者）；MAX_VALUE/MIN_VALUE 视为"无界"参与合并。 */
-  private[timeline] def tighter(a: Long, b: Long): Long = {
-    if (a == Long.MaxValue || a == Long.MinValue) b
-    else if (b == Long.MaxValue || b == Long.MinValue) a
-    else if (Math.abs(b) < Math.abs(a)) b
-    else a
   }
 
   private final val MAX_SLIDE_STEPS = 10000

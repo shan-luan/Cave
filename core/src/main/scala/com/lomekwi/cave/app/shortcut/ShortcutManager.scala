@@ -7,7 +7,6 @@ import com.google.common.collect.Multimap
 
 import java.util
 import java.util.{Collections}
-import java.util.stream.Collectors
 
 import scala.jdk.CollectionConverters.*
 
@@ -45,9 +44,7 @@ class ShortcutManager {
     for (action <- registeredActions.asScala) {
       val v: String = prefs.getString(action.toString, null)
       if (v != null && !v.isEmpty) {
-        val keys: Array[Int] = util.Arrays.stream(v.split(","))
-          .mapToInt((s: String) => Integer.parseInt(s))
-          .toArray
+        val keys: Array[Int] = v.split(",").map((s: String) => Integer.parseInt(s))
         register(action, keys*)
       }
     }
@@ -59,7 +56,7 @@ class ShortcutManager {
     for (action <- registeredActions.asScala) {
       val keys: util.Collection[Integer] = actionToKeys.get(action)
       if (!keys.isEmpty) {
-        val v: String = keys.stream().map((i: Integer) => String.valueOf(i)).collect(Collectors.joining(","))
+        val v: String = keys.asScala.mkString(",")
         prefs.putString(action.toString, v)
       }
     }
