@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTransitionActor}
+
 import scala.reflect.ClassTag
 
 /**
@@ -12,4 +14,6 @@ abstract class TransitionSource[T <: Frame](val from: Source[? <: T], val to: So
   (using ClassTag[T]) extends Source[T] {
 
   final override def createTransition(source: Source[?]): Option[TransitionSource[T]] = None
+
+    override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = new TlTransitionActor(segment)
 }

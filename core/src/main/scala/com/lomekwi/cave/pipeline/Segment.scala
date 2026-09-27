@@ -114,6 +114,13 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
 @SerialVersionUID(1L)
 class Content[T <: Frame](source: Source[T]) extends Segment[T](source) {
 
+  /**
+   * 以本片段为前段、另一个内容片段为后段，构造转场片段。
+   * 转场源由 [[Source.createTransition]] 提供。
+   */
+  def createTransition(other: Content[? <: T]): Option[Transition[T]] = {
+    source.createTransition(other.source).map(ts => new Transition[T](ts) {})
+  }
 }
 
 /**
