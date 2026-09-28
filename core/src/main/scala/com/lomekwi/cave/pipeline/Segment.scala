@@ -136,8 +136,8 @@ class Content[T <: Frame](source: Source[T]) extends Segment[T](source) {
 abstract class Transition[T <: Frame](source: Source[T]) extends Segment[T](source)
 
 /**
- * 轨道元素，一个ADT。轨道被元素完整划分，任意时刻恰好由一个元素占据。
- * 元素不持有区间，区间与元素的对应由 [[Track]] 维护。
+ * 轨道元素，一个ADT，是 [[Track.get]] 的返回值。片段是轨道上真实存在的条目，
+ * 空隙只是"此处没有片段"的标记，不存储、没有身份。
  *
  * 片段就是承载内容的那一支，空隙是另一支。它和 [[Gap]] 与 [[Segment]]
  * 声明在同一个文件里，是为了让元素保持 sealed，sealed 只认同源文件的直接子类。
@@ -145,7 +145,8 @@ abstract class Transition[T <: Frame](source: Source[T]) extends Segment[T](sour
 sealed trait Element extends Serializable
 
 /**
- * 空隙。
+ * 空隙。轨道上没有片段覆盖的部分，由 [[Track]] 在查询时随取随建，不参与存储；
+ * 区间用 [[Track.rangeAt]] 查。
  */
 @SerialVersionUID(1L)
 final class Gap extends Element

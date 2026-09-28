@@ -81,22 +81,18 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         }
 
         val timeRange: Interval = rangeStartTime ~~ rangeEndTime
-        for (element <- track.getIntersecting(timeRange).asScala) {
-          element match {
-            case s: Segment[?] =>
-              val r = track.getRange(s)
-              val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
-              val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
+        for (s <- track.getIntersecting(timeRange).asScala) {
+          val r = track.getRange(s)
+          val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
+          val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 
-              if (sourceRight > minX && sourceLeft < maxX) {
-                val group = timelineView.timeline.getGroup(s)
-                if (group != null) {
-                  toSelect.addAll(group)
-                } else {
-                  toSelect.add(s)
-                }
-              }
-            case _: Gap =>
+          if (sourceRight > minX && sourceLeft < maxX) {
+            val group = timelineView.timeline.getGroup(s)
+            if (group != null) {
+              toSelect.addAll(group)
+            } else {
+              toSelect.add(s)
+            }
           }
         }
       }

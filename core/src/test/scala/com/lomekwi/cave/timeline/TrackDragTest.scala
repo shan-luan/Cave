@@ -55,7 +55,7 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
-  def freshTrackIsEmptyCoveredBySingleGap(): Unit = {
+  def freshTrackIsEmpty(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
 
     assertTrue(t0.isEmpty)
@@ -65,16 +65,29 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
-  def elementRangeIsQueryableForBothKinds(): Unit = {
+  def segmentRangeIsQueryableAndGapIsImplicit(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Segment[?] = newSegment(100)
     place(t0, s, TrackDragTest.rng(0, 100))
 
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
 
-    val tail = t0.get(100)
-    assertTrue(tail.isInstanceOf[Gap])
-    assertEquals(100 ~~ Long.MaxValue, t0.getRange(tail))
+    assertTrue(t0.get(100).isInstanceOf[Gap])
+    assertEquals(TrackDragTest.rng(100, Long.MaxValue), t0.rangeAt(100))
+  }
+
+  @Test
+  def removeCoalescesSurroundingGap(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a: Segment[?] = newSegment(100)
+    val b: Segment[?] = newSegment(100)
+    place(t0, a, TrackDragTest.rng(0, 100))
+    place(t0, b, TrackDragTest.rng(200, 300))
+
+    timeline.remove(a)
+    assertTrue(srcAt(t0, 50) == null)
+    assertEquals(TrackDragTest.rng(0, 200), t0.rangeAt(50))
+    assertEquals(TrackDragTest.rng(200, 300), t0.rangeAt(250))
   }
 
   @Test
@@ -576,16 +589,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(2000, t1.getOrigin(b))
   }
 
-  private def countOn(track: Track): Int = {
-    var c = 0
-    for (element <- track.asScala) {
-      element match {
-        case _: Segment[?] => c += 1
-        case _: Gap =>
-      }
-    }
-    c
-  }
+  private def countOn(track: Track): Int = track.asScala.size
 }
 
 object TrackDragTest {
