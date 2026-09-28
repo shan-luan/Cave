@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
-import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Track}
 
 import com.lomekwi.cave.app.App
@@ -247,11 +247,8 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
       val ignore: util.Set[Segment[?]] = new util.HashSet[Segment[?]](dragMembers)
       val t = track
       if (t != null) {
-        for (element <- t.asScala) {
-          element match {
-            case s: Segment[?] => ignore.add(s)
-            case _: Gap =>
-          }
+        for (s <- t.asScala) {
+          ignore.add(s)
         }
       }
       val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)

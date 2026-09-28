@@ -148,24 +148,20 @@ class TimelineView(project0: Project) extends Group with Focusable {
       for (i <- timeline.getTracks.asScala.indices.reverse) {
         val track = timeline.getTracks.get(i)
 
-        for (element <- track.getIntersecting(visibleRange).asScala) {
-          element match {
-            case s: Segment[?] =>
-              val actor = s.getTlSegmentActor
-              actor.tl = this
-              val r = track.getRange(s)
-              actor.setPosition(
-                absoluteTimeToX(r.lo),
-                getHeight + view.trackYShift - (i + 1) * view.trackHeight
-              )
-              actor.setSize(
-                absoluteTimeToX(r.hi) - absoluteTimeToX(r.lo),
-                view.trackHeight
-              )
-              addActor(actor)
-              actor.initMenu()
-            case _: Gap =>
-          }
+        for (s <- track.getIntersecting(visibleRange).asScala) {
+          val actor = s.getTlSegmentActor
+          actor.tl = this
+          val r = track.getRange(s)
+          actor.setPosition(
+            absoluteTimeToX(r.lo),
+            getHeight + view.trackYShift - (i + 1) * view.trackHeight
+          )
+          actor.setSize(
+            absoluteTimeToX(r.hi) - absoluteTimeToX(r.lo),
+            view.trackHeight
+          )
+          addActor(actor)
+          actor.initMenu()
         }
       }
 

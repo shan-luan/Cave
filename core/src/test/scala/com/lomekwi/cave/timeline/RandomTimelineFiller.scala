@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.pipeline.Segment
 
 import java.util.{ArrayList, List, Random, Set}
 
@@ -82,20 +82,16 @@ class RandomTimelineFiller(final val timeline: Timeline,
    */
   def group(probability: Float = 0.35f, reuseProbability: Float = 0.5f): Unit = {
     for (track <- timeline.getTracks.asScala) {
-      for (element <- track.asScala) {
-        element match {
-          case s: Segment[?] =>
-            if (rnd.nextFloat() < probability) {
-              var target: SegmentGroup = null
-              if (!groups.isEmpty && rnd.nextFloat() < reuseProbability) {
-                target = groups.get(rnd.nextInt(groups.size()))
-              } else {
-                target = timeline.newGroup()
-                groups.add(target)
-              }
-              target.add(s)
-            }
-          case _: Gap =>
+      for (s <- track.asScala) {
+        if (rnd.nextFloat() < probability) {
+          var target: SegmentGroup = null
+          if (!groups.isEmpty && rnd.nextFloat() < reuseProbability) {
+            target = groups.get(rnd.nextInt(groups.size()))
+          } else {
+            target = timeline.newGroup()
+            groups.add(target)
+          }
+          target.add(s)
         }
       }
     }
@@ -227,11 +223,8 @@ class RandomTimelineFiller(final val timeline: Timeline,
   private def placedSegments(): List[Segment[?]] = {
     val out: List[Segment[?]] = new ArrayList[Segment[?]]()
     for (track <- timeline.getTracks.asScala) {
-      for (element <- track.asScala) {
-        element match {
-          case s: Segment[?] => out.add(s)
-          case _: Gap =>
-        }
+      for (s <- track.asScala) {
+        out.add(s)
       }
     }
     out

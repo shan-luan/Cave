@@ -291,23 +291,19 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     if (searchEnd <= searchStart) return time
     val searchRange: Interval = searchStart ~~ searchEnd
     for (track <- tracks) {
-      for (element <- track.getIntersecting(searchRange).asScala) {
-        element match {
-          case s: Segment[?] =>
-            if (!ignore.contains(s)) {
-              val r = track.getRange(s)
-              var dist = Math.abs(r.lo - time)
-              if (dist < bestDist) {
-                best = r.lo
-                bestDist = dist
-              }
-              dist = Math.abs(r.hi - time)
-              if (dist < bestDist) {
-                best = r.hi
-                bestDist = dist
-              }
-            }
-          case _: Gap =>
+      for (s <- track.getIntersecting(searchRange).asScala) {
+        if (!ignore.contains(s)) {
+          val r = track.getRange(s)
+          var dist = Math.abs(r.lo - time)
+          if (dist < bestDist) {
+            best = r.lo
+            bestDist = dist
+          }
+          dist = Math.abs(r.hi - time)
+          if (dist < bestDist) {
+            best = r.hi
+            bestDist = dist
+          }
         }
       }
     }
@@ -575,9 +571,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
                     }
                   }
                 }
-              case gap: Gap =>
+              case _: Gap =>
                 project.projEventBus.post(gapFrame)
-                val gapEnd: Long = track.getRange(gap).hi
+                val gapEnd: Long = track.rangeAt(t).hi
                 val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
                 Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
                 LockSupport.parkNanos(parkTime)
