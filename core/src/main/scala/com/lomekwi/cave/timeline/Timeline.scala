@@ -2,7 +2,7 @@ package com.lomekwi.cave.timeline
 
 import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.pipeline.{Gap, GapFrame, Segment}
+import com.lomekwi.cave.pipeline.{Content, Gap, GapFrame, Segment, Transition}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
 import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
@@ -173,11 +173,35 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val edits = new util.ArrayList[TrackEdit]()
     for (i <- indices) {
       val before = tracks(i)
-      // 先把该轨道上要移动的片段全部摘掉，再按新位置放回；中途状态不对外发布
-      var next = before.removeAll(segments)
+      // 内容先全部摘掉，再按新位置放回。转场是重叠区的派生物，随内容自动重建；
+      // 只有两侧内容都不在本次搬运范围内时，才需要把转场本身当作搬运动作
+      val onTrack = new util.ArrayList[Segment[?]]()
       for (s <- segments.asScala) {
-        if (before.contains(s)) {
-          next = next.addOrThrow(s, before.getRange(s).shift(applied), before.getOrigin(s) + applied)
+        if (before.contains(s)) onTrack.add(s)
+      }
+      var next = before
+      for (s <- onTrack.asScala) {
+        s match {
+          case c: Content[?] => next = next.remove(c)
+          case _: Transition[?] =>
+        }
+      }
+      for (s <- onTrack.asScala) {
+        val range = before.getRange(s)
+        val origin = before.getOrigin(s)
+        s match {
+          case c: Content[?] => next = next.addOrThrow(c, range.shift(applied), origin + applied)
+          case _: Transition[?] =>
+        }
+      }
+      for (s <- onTrack.asScala) {
+        s match {
+          case t: Transition[?] =>
+            val sides = before.transitionSides(t)
+            if (sides != null && !segments.contains(sides._1) && !segments.contains(sides._2)) {
+              next = next.shiftTransition(t, applied)
+            }
+          case _ =>
         }
       }
       edits.add(TrackEdit(i, before, next))
@@ -194,10 +218,17 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
    * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
    */
   def moveTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
+    // 转场不允许换轨
+    if (segments.asScala.exists {
+      case _: Transition[?] => true
+      case _ => false
+    }) {
+      return 0
+    }
     val applied = findPlaceableTrack(segments, deltaTrack)
     if (applied == 0) return 0
 
-    /** 片段、原轨道索引、目标轨道索引、原区间、原 origin */
+    /** 片段、原轨道索引、目标轨道索引、原解绑区间、原 origin */
     val moves = new util.ArrayList[(Segment[?], Int, Int, Interval, Long)]()
     for (s <- segments.asScala) {
       val from = findTrackOf(s)
@@ -277,7 +308,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       segments.asScala.forall { s =>
         val from = findTrackOf(s)
         val ti = from.index + (target - refIdx)
-        ti >= tracks.size || tracks(ti).isFree(from.getRange(s), segments)
+        // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
+        // 落点与既有内容重叠只要合法就允许，重叠会成为转场，不必强行换到空轨道
+        ti >= tracks.size || (s match {
+          case c: Content[?] => tracks(ti).canPlaceAt(c, from.getRange(s), segments)
+          case _ => false
+        })
       }
     }
   }
@@ -516,67 +552,66 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       try {
         val p = project.playhead
         // 播放头当前所在的片段。播放头离开它时在该片段上收尾。
-        // 区间与 origin 都按切入时的版本记下，收尾时不必再向轨道查，片段已被删除或移走时也仍然成立。
+        // origin 按切入时的版本记下，收尾时不必再向轨道查，片段已被删除或移走时也仍然成立。
         var activeSegment: Segment[?] = null
-        var activeRange: Interval = null
         var activeOrigin: Long = 0L
         while (!Thread.currentThread().isInterrupted) {
           val track = tracks(index)
           var t: Long = p.getTime
-          // 片段被删除或移到别的轨道后，它就不在当前版本里了，此时同样要收尾
-          if (activeSegment != null && (!track.contains(activeSegment) || !activeRange.contains(t))) {
+          // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
+          val current: Segment[?] = track.get(t) match {
+            case s: Segment[?] => s
+            case _: Gap => null
+          }
+          // 片段被删除、移走或播放头进入了转场，都要在原片段上收尾
+          if (activeSegment != null && current != activeSegment) {
             val out = activeSegment
             activeSegment = null
-            activeRange = null
             out.onStepOut(t - activeOrigin, track)
           }
           if (!p.isPlaying) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
 
             var f: com.lomekwi.cave.pipeline.Frame = null
-            track.get(t) match {
-              case s: Segment[?] =>
-                track.syncAt(s, t)
-                activeSegment = s
-                activeRange = track.getRange(s)
-                activeOrigin = track.getOrigin(s)
-                f = track.frameAt(s, t)
-              case _: Gap =>
+            if (current != null) {
+              track.syncAt(current, t)
+              activeSegment = current
+              activeOrigin = track.getOrigin(current)
+              f = track.frameAt(current, t)
             }
             project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
 
             LockSupport.park()
           } else {
             updateNeeded = false
-            track.get(t) match {
-              case s: Segment[?] =>
-                val r = track.getRange(s)
-                Gdx.app.debug("Track" + index, "找到源: " + s)
-                track.syncAt(s, t)
-                activeSegment = s
-                activeRange = r
-                activeOrigin = track.getOrigin(s)
-                val end: Long = r.hi
-                while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
-                  t = project.playhead.getTime
-                  val frame = track.frameAt(s, t)
-                  if (!updateNeeded && frame != null) {
-                    project.projEventBus.post(frame)
-                    val phase = sinkPhaser.arrive()
-                    try {
-                      sinkPhaser.awaitAdvanceInterruptibly(phase)
-                    } catch {
-                      case _: InterruptedException =>
-                        Thread.currentThread().interrupt()
-                    }
+            if (current != null) {
+              val s = current
+              Gdx.app.debug("Track" + index, "找到源: " + s)
+              track.syncAt(s, t)
+              activeSegment = s
+              activeOrigin = track.getOrigin(s)
+              // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
+              val end: Long = track.soloEndOf(s)
+              while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
+                t = project.playhead.getTime
+                val frame = track.frameAt(s, t)
+                if (!updateNeeded && frame != null) {
+                  project.projEventBus.post(frame)
+                  val phase = sinkPhaser.arrive()
+                  try {
+                    sinkPhaser.awaitAdvanceInterruptibly(phase)
+                  } catch {
+                    case _: InterruptedException =>
+                      Thread.currentThread().interrupt()
                   }
                 }
-              case _: Gap =>
-                project.projEventBus.post(gapFrame)
-                val gapEnd: Long = track.rangeAt(t).hi
-                val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
-                Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
-                LockSupport.parkNanos(parkTime)
+              }
+            } else {
+              project.projEventBus.post(gapFrame)
+              val gapEnd: Long = track.rangeAt(t).hi
+              val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
+              Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
+              LockSupport.parkNanos(parkTime)
             }
           }
         }
