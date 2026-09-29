@@ -2,28 +2,20 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotSame, assertSame, assertTrue}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotNull, assertNotSame, assertSame, assertTrue}
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import java.util.{List, Set}
 
-import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
- * 拖拽 API 的模型级测试。
- * 目标为验证截断式（clamp）的探测/应用语义，执行方法一次调用即把 deltaTime
- * 同向截断到最大可用偏移量并应用，返回实际应用的偏移量（0 = 未移动）。
- *
- * 覆盖如下。
- *  - add/remove 基础放置与覆盖
- *  - move（整体平移），无阻碍时精确落位 + origin 同步；有阻碍时截断到与障碍贴合或原地不动
- *  - setStart/setEnd（头/尾裁切），只动对应端点；越界/受阻时截断到边界
- *  - split，一分为二，两侧区间正确
- *  - Undo/redo，统一经 UndoManager 还原/重放
+ * 拖拽 API 的模型级测试，验证截断语义：一次调用就把 deltaTime 同向截到最大可用偏移量并应用，
+ * 返回值是实际应用的偏移量，0 表示未移动。
  */
 class TrackDragTest extends GdxTestBase {
 
@@ -52,6 +44,49 @@ class TrackDragTest extends GdxTestBase {
   private def srcAt(track: Track, time: Long): Segment[?] = track.get(time) match {
     case s: Segment[?] => s
     case _: Gap => null
+  }
+
+  @Test
+  def groupMayContainTransition(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = newSegment(1000_000L)
+    val b = newSegment(1000_000L)
+    place(t0, a, 0L ~~ 1000_000L)
+    place(t0, b, 800_000L ~~ 1800_000L)
+
+    val tr = t0.transitionBetween(a.asInstanceOf[Content[?]], b.asInstanceOf[Content[?]])
+    assertNotNull(tr)
+
+    val group = timeline.newGroup()
+    assertTrue(group.add(a))
+    assertTrue(group.add(tr))
+    assertTrue(group.add(b))
+    assertEquals(3, group.size())
+    assertSame(group, timeline.getGroup(tr))
+  }
+
+  @Test
+  def movingGroupWithTransitionDoesNotShiftItTwice(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = newSegment(1000_000L)
+    val b = newSegment(1000_000L)
+    place(t0, a, 0L ~~ 1000_000L)
+    place(t0, b, 800_000L ~~ 1800_000L)
+
+    val tr = t0.transitionBetween(a.asInstanceOf[Content[?]], b.asInstanceOf[Content[?]])
+    assertNotNull(tr)
+    assertEquals(800_000L ~~ 1000_000L, t0.getRange(tr))
+
+    // 两侧内容都在搬运范围内，转场随它们平移即可，不能再被单独平移一次
+    val members = new java.util.ArrayList[Segment[?]]()
+    members.add(a)
+    members.add(tr)
+    members.add(b)
+    assertEquals(100_000L, timeline.moveTime(members, 100_000L))
+
+    assertEquals(100_000L ~~ 1100_000L, t0.getRange(a))
+    assertEquals(900_000L ~~ 1900_000L, t0.getRange(b))
+    assertEquals(900_000L ~~ 1100_000L, t0.getRange(tr))
   }
 
   @Test
@@ -268,7 +303,7 @@ class TrackDragTest extends GdxTestBase {
     // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会与它重叠
     place(t0, obstacle, TrackDragTest.rng(100, 1100))
 
-    // 可建转场，重叠上限是 mover 起点退到障碍起点之前一位（+99），请求 150 截到 99
+    // 可建转场，上限是 mover 起点退到障碍起点前一微秒，请求 150 截到 99
     val applied: Long = timeline.moveTime(List.of(mover), 150)
 
     assertEquals(99, applied)
@@ -297,7 +332,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(300, 350), t0.getRange(transition))
     assertEquals(TrackDragTest.rng(300, 400), t0.getRange(obstacle))
 
-    // 请求在可用范围内时全额应用（返回带符号的实际偏移）；移开时转场消失、被吃掉的尾部还回来
+    // 移回 50，转场消失，被吃掉的尾部还回来
     assertEquals(-50, timeline.moveTime(List.of(mover), -50))
     assertEquals(TrackDragTest.rng(200, 300), t0.getRange(mover))
     assertEquals(TrackDragTest.rng(300, 400), t0.getRange(obstacle))
@@ -311,9 +346,9 @@ class TrackDragTest extends GdxTestBase {
     val mover: Segment[?] = newSegment(100)
     val obstacle: Segment[?] = newSegment(1000)
     place(t0, mover, TrackDragTest.rng(0, 100))
-    place(t1, obstacle, TrackDragTest.rng(0, 1000)) // 目标轨道同区间被占据
+    place(t1, obstacle, TrackDragTest.rng(0, 1000))
 
-    // 目标轨道被占据且方向上无更近的可落点，偏移截断为 0，保持原位
+    // 目标轨道同区间被占据且方向上无更近的可落点，偏移截断为 0
     val applied: Int = timeline.moveTrack(List.of(mover), 1)
 
     assertEquals(0, applied)
@@ -337,7 +372,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Int = timeline.moveTrack(List.of(b), 1)
 
     assertEquals(1, applied)
-    // b 搬走的是解绑区间 [80,180)，origin 不变
+    // 搬运的是 b 的完整区间，origin 不变
     assertEquals(TrackDragTest.rng(80, 180), t1.getRange(b))
     assertEquals(80, t1.getOrigin(b))
     // 轨道 0 的 a 补占转场段，转场消失
@@ -391,7 +426,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, obstacle, TrackDragTest.rng(0, 100)) // 左侧障碍占住 [0,100)
     place(t0, s, TrackDragTest.rng(100, 200))      // 把 s 起点往左推到 50 会与障碍重叠
 
-    // 障碍可与 s 建转场，起点最多左移到障碍末位置-1，一次调用直接应用
+    // 可建转场，起点最多左移到障碍终点前一微秒
     val applied: Long = timeline.setStart(List.of(s), -50)
 
     assertEquals(-50, applied)
@@ -407,11 +442,10 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Segment[?] = newSegment(200)
     val obstacle: Segment[?] = newSegment(50)
-    place(t0, s, TrackDragTest.rng(50, 100))      // 前端已被裁切，origin=0 → minStart=0
+    place(t0, s, TrackDragTest.rng(50, 100))      // origin 为 0，最小起点也是 0
     place(t0, obstacle, TrackDragTest.rng(0, 30)) // 占住 [0,30)
 
-    // 想把前端拖到 -10（delta=-60），minStart 允许回到 0，但重叠最多让障碍只剩 1µs，
-    // 一次调用直接左移到起点 1（偏移 -49），与障碍的重叠区间成为转场
+    // 想拖到 -10，但重叠最多让障碍只剩 1µs，截到起点 1，重叠区成为转场
     val applied: Long = timeline.setStart(List.of(s), -60)
 
     assertEquals(-49, applied)
@@ -430,8 +464,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.rng(0, 50))
     place(t0, obstacle, TrackDragTest.rng(80, 120)) // 占住 [80,120)
 
-    // 想把尾端拖到 250（delta=200），maxEnd=100 与重叠上限 119 相比 100 更近，
-    // 一次调用直接右移到 100（偏移 +50），重叠区间成为转场
+    // 想拖到 250，素材终点 100 比重叠上限 119 更近，截到 100
     val applied: Long = timeline.setEnd(List.of(s), 200)
 
     assertEquals(50, applied)
@@ -536,7 +569,7 @@ class TrackDragTest extends GdxTestBase {
     assertNotSame(s, right)
     assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
     assertSame(t0, timeline.findTrackOf(right))
-    // 右半的 origin 与左半一致，片段内时间是绝对时间减 origin，两半才接得上
+    // 右半 origin 与左半一致，内容才接得上
     assertEquals(1000, t0.getOrigin(right))
     assertEquals(2, countOn(t0))
   }
@@ -599,7 +632,6 @@ class TrackDragTest extends GdxTestBase {
 
     project.undoManager.execute(new UndoManager.SplitSegmentCommand(timeline, 0, before, after))
 
-    // execute 已应用分割，一分为二
     assertEquals(TrackDragTest.rng(0, 40), t0.getRange(s))
     assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
     assertEquals(2, countOn(t0))
