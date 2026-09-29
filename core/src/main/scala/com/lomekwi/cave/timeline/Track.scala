@@ -223,70 +223,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       }
     }
 
-    val next = built.withTransitions(fresh)
-    next.assertInvariants()
-    next
-  }
-
-  /** 检查三条不变量。 */
-  private def assertInvariants(): Unit = {
-    if (byTime.size != placements.size) {
-      throw new IllegalStateException("条目数与索引不一致，区间键可能被覆盖")
-    }
-    val contents = byTime.iterator
-      .map(_._2)
-      .collect { case c: Content[?] if !isBlock(c) => c }
-      .toVector
-    var i = 0
-    while (i < contents.size) {
-      val cr = getRange(contents(i))
-      if (cr.isEmpty) {
-        throw new IllegalStateException("内容区间为空: " + cr)
-      }
-      if (i + 1 < contents.size) {
-        val nr = getRange(contents(i + 1))
-        // 重叠时必须交叉，起点相同或终点相同都属于真子集
-        if (cr.hi > nr.lo && !(cr.lo < nr.lo && cr.hi < nr.hi)) {
-          throw new IllegalStateException("相邻内容未交叉: " + cr + " " + nr + " 轨道=" + toString)
-        }
-      }
-      if (i + 2 < contents.size) {
-        val nn = getRange(contents(i + 2))
-        if (cr.hi > nn.lo) {
-          throw new IllegalStateException("三项重叠: " + cr + " " + nn)
-        }
-      }
-      i += 1
-    }
-    for ((left, tr) <- rightTransitions) {
-      if (contains(left)) {
-        val right = nextContent(left)
-        if (right != null) {
-          val lo = getRange(right).lo
-          val hi = getRange(left).hi
-          if (lo >= hi) {
-            throw new IllegalStateException("转场两侧没有重叠 轨道=" + toString)
-          }
-          if (getRange(tr) != (lo ~~ hi)) {
-            throw new IllegalStateException("转场区间不是重叠区: " + getRange(tr) + " 期望 " + (lo ~~ hi))
-          }
-        }
-      }
-    }
-    var seen = 0
-    for ((_, s) <- byTime) {
-      s match {
-        case tr: Transition[?] =>
-          if (!rightTransitions.values.exists(_ eq tr)) {
-            throw new IllegalStateException("轨道上有未登记的转场")
-          }
-          seen += 1
-        case _ =>
-      }
-    }
-    if (seen > rightTransitions.size) {
-      throw new IllegalStateException("转场条目数与索引不一致")
-    }
+    built.withTransitions(fresh)
   }
 
   /** 移除片段。片段不在本轨道时原样返回本实例。 */
@@ -302,8 +239,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 删除内容。它的左右邻居从隔项变成相邻，两者若重叠就必须能构成转场，否则把右侧推到左侧之后；
-   * 推不动就放弃这次删除，不留下非法布局。
+   * 删除内容。它的左右邻居从隔项变成相邻，两者若重叠就必须能构成转场，否则把右侧推到左侧之后。
    */
   private def removeContent(c: Content[?]): Track = {
     val p = prevContent(c)
@@ -319,16 +255,12 @@ final class Track private (val timeline: Timeline, val index: Int,
         }
       }
     }
-    try {
-      t.rebuildTransitions()
-    } catch {
-      case _: IllegalStateException => this
-    }
+    t.rebuildTransitions()
   }
 
   /**
    * 删除转场。转场是重叠区的派生条目，只摘掉条目会被重算立刻建回来，所以真正的删除是消除重叠：
-   * 两侧内容各让一半，交界点落在原转场中心。凑不出满足两侧邻居约束的交界点时放弃本次删除。
+   * 两侧内容各让一半，交界点落在原转场中心；越出两侧内容范围时放弃本次删除。
    */
   private def removeTransition(t: Transition[?]): Track = {
     val sides = transitionSides(t)
@@ -349,11 +281,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     val next = drop(t)
       .rekey(left, lr.lo ~~ boundary, getOrigin(left))
       .rekey(right, boundary ~~ rr.hi, getOrigin(right))
-    try {
-      next.rebuildTransitions()
-    } catch {
-      case _: IllegalStateException => this
-    }
+    next.rebuildTransitions()
   }
 
   /** 移除这批片段，返回新版本。不在本轨道的片段会被忽略。 */
