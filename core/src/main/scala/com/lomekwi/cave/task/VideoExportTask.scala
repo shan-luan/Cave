@@ -72,13 +72,12 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       while (t < timeline.getLength) {
         i = 0
         for (track <- timeline.asScala) {
-          var segment = activeSegments(i)
-          val activeRange = if (segment == null) null else track.getRange(segment)
-          if (segment == null || !activeRange.contains(t)) {
-            segment = track.get(t) match {
-              case s: Segment[?] => s
-              case _: Gap => null
-            }
+          // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
+          val segment = track.get(t) match {
+            case s: Segment[?] => s
+            case _: Gap => null
+          }
+          if (activeSegments(i) != segment) {
             if (segment != null) {
               track.syncAt(segment, t)
             }
@@ -115,13 +114,11 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       var i = 0
       while (i < tracks.length) {
         if (tracks(i).length != 0) {
-          var segment = active(i)
-          val activeRange = if (segment == null) null else tracks(i).getRange(segment)
-          if (segment == null || !activeRange.contains(audioT)) {
-            segment = tracks(i).get(audioT) match {
-              case s: Segment[?] => s
-              case _: Gap => null
-            }
+          val segment = tracks(i).get(audioT) match {
+            case s: Segment[?] => s
+            case _: Gap => null
+          }
+          if (active(i) != segment) {
             if (segment != null && segment.source.isInstanceOf[AudSource]) {
               tracks(i).syncAt(segment, audioT)
             }

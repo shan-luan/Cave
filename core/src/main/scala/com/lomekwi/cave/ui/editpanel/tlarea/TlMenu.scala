@@ -77,15 +77,19 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val segment: Segment[?] = new Content[TextFrame](new TextSource())
     val duration: Long = segment.getDefaultDuration
 
-    var targetTrack: Int = 0
-    val range: Interval = time ~~ (time + duration)
-    while (!timelineView.timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
-      targetTrack += 1
-    }
-
     val timeline = timelineView.timeline
+    val range: Interval = time ~~ (time + duration)
     Using.resource(timeline.record()) { h =>
-      timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time)
+      // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
+      var targetTrack: Int = 0
+      var placed = false
+      while (!placed) {
+        if (timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+          placed = true
+        } else {
+          targetTrack += 1
+        }
+      }
     }
 
     timelineView.markTimelineDirty()
@@ -107,11 +111,15 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
               val range: Interval = time ~~ (time + duration)
-              while (!timeline.getTrackOrCreate(targetTrack).isFree(range, util.Set.of[Segment[?]]())) {
-                targetTrack += 1
+              var placed = false
+              while (!placed) {
+                if (timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+                  placed = true
+                } else {
+                  targetTrack += 1
+                }
               }
 
-              timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time)
               trackOffset = targetTrack - baseTrack + 1
               added.add(segment)
             }

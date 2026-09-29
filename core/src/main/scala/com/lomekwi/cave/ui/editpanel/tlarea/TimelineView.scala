@@ -11,7 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
 import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline, Track, UndoManager}
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.project.Project
@@ -148,7 +148,12 @@ class TimelineView(project0: Project) extends Group with Focusable {
       for (i <- timeline.getTracks.asScala.indices.reverse) {
         val track = timeline.getTracks.get(i)
 
-        for (s <- track.getIntersecting(visibleRange).asScala) {
+        // 转场排在最后添加，压在两侧内容之上，重叠区里鼠标命中的是转场
+        val entries = track.getIntersecting(visibleRange).asScala.toSeq.sortBy {
+          case _: Transition[?] => 1
+          case _ => 0
+        }
+        for (s <- entries) {
           val actor = s.getTlSegmentActor
           actor.tl = this
           val r = track.getRange(s)
@@ -485,16 +490,20 @@ class TimelineView(project0: Project) extends Group with Focusable {
         if (duration > 0) {
           val trackOffset = entry.trackIndex - minTrack
           var ti = baseTrack + trackOffset
-          var track = timeline.getTrackOrCreate(ti)
           val start = entry.range.lo + timeOffset
-          var range = start ~~ (start + duration)
-          while (!track.isFree(range, util.Set.of[Segment[?]]())) {
-            ti += 1
-            track = timeline.getTrackOrCreate(ti)
-            range = start ~~ (start + duration)
+          val range = start ~~ (start + duration)
+          // 落点与既有内容重叠只要合法就接受，重叠会成为转场；
+          // 只有确实放不下时才整条上移轨道重试，成员之间因此不会被拆散
+          var placed = false
+          while (!placed) {
+            val track = timeline.getTrackOrCreate(ti)
+            if (timeline.tryAdd(track, entry.segment, range, entry.origin + timeOffset) == 0) {
+              placed = true
+            } else {
+              ti += 1
+            }
           }
 
-          timeline.tryAdd(track, entry.segment, range, entry.origin + timeOffset)
           pasted.add(entry.segment)
         }
       }

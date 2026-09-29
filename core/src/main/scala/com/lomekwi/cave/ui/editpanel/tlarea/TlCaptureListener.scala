@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
 import com.lomekwi.cave.timeline.{Interval, Track}
 import com.lomekwi.cave.timeline.~~
 
@@ -81,7 +81,16 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         }
 
         val timeRange: Interval = rangeStartTime ~~ rangeEndTime
-        for (s <- track.getIntersecting(timeRange).asScala) {
+        // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
+        val hits = track.getIntersecting(timeRange).asScala
+        val covering = hits.collectFirst {
+          case t: Transition[?] if track.getRange(t).contains(timeRange.lo) => t
+        }
+        val selected = covering match {
+          case Some(t) => Seq(t)
+          case None => hits.toSeq
+        }
+        for (s <- selected) {
           val r = track.getRange(s)
           val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
           val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)

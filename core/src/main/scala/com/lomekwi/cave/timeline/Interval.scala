@@ -13,6 +13,12 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
 
   def intersects(other: Interval): Boolean = lo < other.hi && other.lo < hi
 
+  /** 与另一区间的交集；不相交或仅相邻时是空区间。 */
+  def intersect(other: Interval): Interval = {
+    val later = Math.max(lo, other.lo)
+    Interval(later, Math.max(later, Math.min(hi, other.hi)))
+  }
+
   /** 相邻（如 [0,10) 与 [10,20)）也算相连。 */
   def isConnected(other: Interval): Boolean = lo <= other.hi && other.lo <= hi
 

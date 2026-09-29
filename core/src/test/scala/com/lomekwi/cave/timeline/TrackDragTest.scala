@@ -2,13 +2,13 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNotSame, assertSame, assertTrue}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotSame, assertSame, assertTrue}
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import java.util.{List, Set}
 
-import com.lomekwi.cave.pipeline.{Gap, Segment}
+import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -260,39 +260,48 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
-  def moveIntoOccupiedSpotOnSameTrackDoesNotApply(): Unit = {
+  def moveIntoOccupiedSpotCreatesTransition(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val mover: Segment[?] = newSegment(100)
     val obstacle: Segment[?] = newSegment(1000)
     place(t0, mover, TrackDragTest.rng(0, 100))
-    // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会撞上它
+    // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会与它重叠
     place(t0, obstacle, TrackDragTest.rng(100, 1100))
 
-    // 右侧紧贴障碍，最大可用偏移为 0，完全无法移动
+    // 可建转场，重叠上限是 mover 起点退到障碍起点之前一位（+99），请求 150 截到 99
     val applied: Long = timeline.moveTime(List.of(mover), 150)
 
-    assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(mover))
-    assertSame(obstacle, srcAt(t0, 200))
+    assertEquals(99, applied)
+    // 内容保留完整区间，转场是两者的重叠区
+    assertEquals(TrackDragTest.rng(99, 199), t0.getRange(mover))
+    val transition = srcAt(t0, 150)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(100, 199), t0.getRange(transition))
+    assertEquals(TrackDragTest.rng(100, 1100), t0.getRange(obstacle))
   }
 
   @Test
-  def moveTimeClampsAtObstacleEdge(): Unit = {
+  def moveTimeOverlapsObstacleBuildsTransition(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val mover: Segment[?] = newSegment(100)
     val obstacle: Segment[?] = newSegment(100)
     place(t0, mover, TrackDragTest.rng(0, 100))
     place(t0, obstacle, TrackDragTest.rng(300, 400))
 
-    // 请求 +250，最多移到与障碍贴合（+200），一次调用直接应用
+    // 请求 +250：终点进到障碍里，重叠区间 [300,350) 成为转场
     val applied: Long = timeline.moveTime(List.of(mover), 250)
-    assertEquals(200, applied)
-    assertEquals(TrackDragTest.rng(200, 300), t0.getRange(mover))
-    assertSame(obstacle, srcAt(t0, 350))
+    assertEquals(250, applied)
+    assertEquals(TrackDragTest.rng(250, 350), t0.getRange(mover))
+    val transition = srcAt(t0, 320)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(300, 350), t0.getRange(transition))
+    assertEquals(TrackDragTest.rng(300, 400), t0.getRange(obstacle))
 
-    // 请求在可用范围内时全额应用（返回带符号的实际偏移）
+    // 请求在可用范围内时全额应用（返回带符号的实际偏移）；移开时转场消失、被吃掉的尾部还回来
     assertEquals(-50, timeline.moveTime(List.of(mover), -50))
-    assertEquals(TrackDragTest.rng(150, 250), t0.getRange(mover))
+    assertEquals(TrackDragTest.rng(200, 300), t0.getRange(mover))
+    assertEquals(TrackDragTest.rng(300, 400), t0.getRange(obstacle))
+    assertFalse(t0.asScala.exists(_.isInstanceOf[Transition[?]]))
   }
 
   @Test
@@ -311,6 +320,29 @@ class TrackDragTest extends GdxTestBase {
     assertSame(t0, timeline.findTrackOf(mover))
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(mover))
     assertSame(obstacle, srcAt(t1, 50))
+  }
+
+  @Test
+  def moveTrackKeepsUnboundRangeOfSegmentAdjacentToTransition(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    def t1: Track = timeline.getTrackOrCreate(1)
+    val a: Segment[?] = newSegment(100)
+    val b: Segment[?] = newSegment(100)
+    place(t0, a, TrackDragTest.rng(0, 100))
+    // 与 a 重叠建转场：a=[0,100) t=[80,100) b=[80,180)，b 的 origin 是 80
+    placeAt(t0, b, TrackDragTest.rng(80, 180), 80)
+    assertEquals(TrackDragTest.rng(80, 180), t0.getRange(b))
+    assertEquals(TrackDragTest.rng(80, 100), t0.getRange(srcAt(t0, 90)))
+
+    val applied: Int = timeline.moveTrack(List.of(b), 1)
+
+    assertEquals(1, applied)
+    // b 搬走的是解绑区间 [80,180)，origin 不变
+    assertEquals(TrackDragTest.rng(80, 180), t1.getRange(b))
+    assertEquals(80, t1.getOrigin(b))
+    // 轨道 0 的 a 补占转场段，转场消失
+    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(a))
+    assertFalse(t0.asScala.exists(_.isInstanceOf[Transition[?]]))
   }
 
   @Test
@@ -352,19 +384,22 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
-  def setStartIntoOccupiedSpotDoesNotApply(): Unit = {
+  def setStartIntoObstacleCreatesTransition(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Segment[?] = newSegment(100)
     val obstacle: Segment[?] = newSegment(100)
     place(t0, obstacle, TrackDragTest.rng(0, 100)) // 左侧障碍占住 [0,100)
-    place(t0, s, TrackDragTest.rng(100, 200))      // 把 s 起点往左推到 50 会撞上它
+    place(t0, s, TrackDragTest.rng(100, 200))      // 把 s 起点往左推到 50 会与障碍重叠
 
-    // 左侧紧贴障碍，最大可用偏移为 0，完全无法移动
+    // 障碍可与 s 建转场，起点最多左移到障碍末位置-1，一次调用直接应用
     val applied: Long = timeline.setStart(List.of(s), -50)
 
-    assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(s))
-    assertSame(obstacle, srcAt(t0, 50))
+    assertEquals(-50, applied)
+    assertEquals(TrackDragTest.rng(50, 200), t0.getRange(s))
+    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(obstacle))
+    val transition = srcAt(t0, 75)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(50, 100), t0.getRange(transition))
   }
 
   @Test
@@ -375,13 +410,16 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.rng(50, 100))      // 前端已被裁切，origin=0 → minStart=0
     place(t0, obstacle, TrackDragTest.rng(0, 30)) // 占住 [0,30)
 
-    // 想把前端拖到 -10（delta=-60），minStart 允许回到 0，但 obstacle 终点 30 更近，
-    // 一次调用直接左移到与障碍贴合（起点 30，偏移 -20）
+    // 想把前端拖到 -10（delta=-60），minStart 允许回到 0，但重叠最多让障碍只剩 1µs，
+    // 一次调用直接左移到起点 1（偏移 -49），与障碍的重叠区间成为转场
     val applied: Long = timeline.setStart(List.of(s), -60)
 
-    assertEquals(-20, applied)
-    assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
-    assertSame(obstacle, srcAt(t0, 10))
+    assertEquals(-49, applied)
+    assertEquals(TrackDragTest.rng(1, 100), t0.getRange(s))
+    assertEquals(TrackDragTest.rng(0, 30), t0.getRange(obstacle))
+    val transition = srcAt(t0, 10)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(1, 30), t0.getRange(transition))
   }
 
   @Test
@@ -392,57 +430,65 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.rng(0, 50))
     place(t0, obstacle, TrackDragTest.rng(80, 120)) // 占住 [80,120)
 
-    // 想把尾端拖到 250（delta=200），maxEnd=100 与 obstacle 起点 80 相比 80 更近，
-    // 一次调用直接右移到与障碍贴合（终点 80，偏移 +30）
+    // 想把尾端拖到 250（delta=200），maxEnd=100 与重叠上限 119 相比 100 更近，
+    // 一次调用直接右移到 100（偏移 +50），重叠区间成为转场
     val applied: Long = timeline.setEnd(List.of(s), 200)
 
-    assertEquals(30, applied)
-    assertEquals(TrackDragTest.rng(0, 80), t0.getRange(s))
-    assertSame(obstacle, srcAt(t0, 90))
+    assertEquals(50, applied)
+    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
+    assertEquals(TrackDragTest.rng(80, 120), t0.getRange(obstacle))
+    val transition = srcAt(t0, 90)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(80, 100), t0.getRange(transition))
   }
 
   @Test
-  def groupSetEndAdjacentMembersDoNotOverlap(): Unit = {
+  def groupSetEndAdjacentMembersOverlap(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Segment[?] = newSegment(100)
     val b: Segment[?] = newSegment(100)
     placeAt(t0, a, TrackDragTest.rng(0, 100), 500)   // 允许尾端伸展
     placeAt(t0, b, TrackDragTest.rng(100, 200), 600) // 与 a 相邻
 
-    // 伸展被后一个成员的起点挡住，整组偏移截断为 0，模型不变
+    // 两者同时伸尾 50：a 的尾巴盖到 b 上形成转场，b 自身也变长
     val applied: Long = timeline.setEnd(List.of(a, b), 50)
-    assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(a))
-    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(b))
-    assertSame(a, srcAt(t0, 50))
-    assertSame(b, srcAt(t0, 150))
-
-    // 再次请求仍截断为 0，成员仍不重叠
-    assertEquals(0, timeline.setEnd(List.of(a, b), 50))
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(a))
-    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(b))
+    assertEquals(50, applied)
+    assertEquals(TrackDragTest.rng(0, 150), t0.getRange(a))
+    assertEquals(TrackDragTest.rng(100, 250), t0.getRange(b))
+    val transition = srcAt(t0, 125)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(100, 150), t0.getRange(transition))
   }
 
   @Test
-  def groupSetStartAdjacentMembersDoNotOverlap(): Unit = {
+  def groupSetStartAdjacentMembersMoveTogether(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Segment[?] = newSegment(100)
     val b: Segment[?] = newSegment(100)
     place(t0, a, TrackDragTest.rng(100, 200))
     place(t0, b, TrackDragTest.rng(200, 300)) // 与 a 相邻
 
-    // 前移被前一个成员的终点挡住，整组偏移截断为 0，模型不变
+    // a 起点前移到 50，b 起点前移到 150 与 a 重叠，重叠区间成为转场
     val applied: Long = timeline.setStart(List.of(a, b), -50)
-    assertEquals(0, applied)
-    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(a))
-    assertEquals(TrackDragTest.rng(200, 300), t0.getRange(b))
-    assertSame(a, srcAt(t0, 100))
-    assertSame(b, srcAt(t0, 250))
+    assertEquals(-50, applied)
+    assertEquals(TrackDragTest.rng(50, 200), t0.getRange(a))
+    val transition = srcAt(t0, 175)
+    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(150, 200), t0.getRange(transition))
+    assertEquals(TrackDragTest.rng(150, 300), t0.getRange(b))
 
-    // 再次请求仍截断为 0，成员仍不重叠
+    // 再前移 50：a 贴住 0 点，b 也再前移 50，重叠区随之左移
+    assertEquals(-50, timeline.setStart(List.of(a, b), -50))
+    assertEquals(TrackDragTest.rng(0, 200), t0.getRange(a))
+    val kept = srcAt(t0, 175)
+    assertTrue(kept.isInstanceOf[Transition[?]])
+    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(kept))
+    assertEquals(TrackDragTest.rng(100, 300), t0.getRange(b))
+
+    // a 已到边界，整组偏移截断为 0
     assertEquals(0, timeline.setStart(List.of(a, b), -50))
-    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(a))
-    assertEquals(TrackDragTest.rng(200, 300), t0.getRange(b))
+    assertEquals(TrackDragTest.rng(0, 200), t0.getRange(a))
+    assertEquals(TrackDragTest.rng(100, 300), t0.getRange(b))
   }
 
   @Test
