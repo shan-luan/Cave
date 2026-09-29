@@ -7,23 +7,19 @@ import java.util
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.immutable.TreeMap
-import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
- * 轨道。轨道只存片段（[[Segment]]），每条记录带自己的区间与片段内偏移（origin），
- * 片段之外的时间都是空隙。空隙不存储，[[get]] 与 [[rangeAt]] 查到空隙时
- * 临时物化一个 [[Gap]] 返回给调用方。
+ * 轨道。只存片段（[[Segment]]），每条带自己的区间与片段内偏移 origin。空隙不存储，
+ * [[get]] 与 [[rangeAt]] 落进空隙时临时物化一个 [[Gap]] 返回。
  *
- * 转场是相邻两块内容的重叠区。内容保留覆盖完整的区间，转场占据两者的交集，
- * 三者共存于同一张按区间索引的表里。索引键是 `[lo, hi)`，转场与两侧内容的键互不相同。
- * 转场条目由 [[rebuildTransitions]] 从内容布局派生，setter 不直接修改它。
+ * 转场是相邻两块内容的重叠区，由 [[rebuildTransitions]] 从内容布局派生，setter 不直接改它。
+ * 内容保留自己的完整区间，与转场同放一张按区间索引的表。
  *
- * 三条不变量。相邻内容交叉重叠，禁止真子集，否则转场的键会与某一侧内容完全相同而被
- * 静默覆盖。隔项不重叠，保证任意时刻最多两块内容，转场只定义在相邻对上。转场的区间
- * 恒等于 `[next.lo, cur.hi)`。
+ * 三条不变量。相邻内容交叉重叠且起点终点都不同，否则转场的键会和某一侧内容相同而被覆盖。
+ * 隔项不重叠，任意时刻最多两块内容交叠，转场因此只定义在相邻对上。转场区间恒等于 `[next.lo, cur.hi)`。
  *
- * 不可变。每次编辑都返回新实例。
+ * 不可变，每次编辑返回新实例。
  */
 @SerialVersionUID(1L)
 final class Track private (val timeline: Timeline, val index: Int,
@@ -36,7 +32,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   /** 是否是占据 0 点左侧的阻挡片段。它只提供左边界，对遍历不可见。 */
   private def isBlock(segment: Segment[?]): Boolean = segment.eq(blockSegment)
 
-  /** 轨道是否没有用户内容。阻挡片段是地基，不算。 */
+  /** 是否没有用户内容，阻挡片段不算。 */
   protected[timeline] def isEmpty: Boolean = byTime.valuesIterator.forall(isBlock)
 
   /** 片段占用的区间。要求片段在本轨道，否则抛 IllegalArgumentException。 */
@@ -79,10 +75,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (p == null) null else rightTransitions.get(p).orNull
   }
 
-  /**
-   * 条目独占播放的终点。内容被右侧转场遮盖时，它自己只播到转场起点为止，
-   * 之后的时间交给转场；转场则播满自己的区间。
-   */
+  /** 条目独占播放的终点。有右侧转场时内容只播到转场起点，转场则播满自己的区间。 */
   def soloEndOf(segment: Segment[?]): Long = segment match {
     case c: Content[?] =>
       val r = getRange(c)
@@ -104,11 +97,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 尝试在轨道中加入一个内容片段。能放进指定区间时直接放置，与已有内容的重叠自然成为转场；
-   * 放不下时退回到原有语义：找到最近的可放下该区间的偏移后返回，不放置。
-   * @return `(新轨道, 最大可用偏移量)`，偏移量为 0 表示已按原位加入，返回的轨道是加入后的版本；
-   *         非 0 表示放不下、未加入，返回的是原轨道，且偏移量是能放下该区间的最近偏移。
-   *         此语义专用于放置/粘贴。
+   * 尝试把内容片段放进指定区间，与已有内容的重叠自然成为转场。
+   * @return 放得下时是 `(新轨道, 0)`；放不下时不加入，返回 `(本轨道, 最近的可容纳偏移)`
    */
   protected[timeline] def tryAdd(segment: Segment[?], r: Interval, origin: Long): (Track, Long) = segment match {
     case _: Transition[?] =>
@@ -117,9 +107,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       if (canPlaceAt(c, r)) (put(c, r, origin).rebuildTransitions(), 0L) else (this, getShift(r))
   }
 
-  /**
-   * 把内容片段放到指定区间。放不下时抛 IllegalArgumentException。要求片段不在本轨道上。
-   */
+  /** 把内容片段放到指定区间。放不下时抛 IllegalArgumentException。要求片段不在本轨道上。 */
   protected[timeline] def addOrThrow(segment: Segment[?], r: Interval, origin: Long): Track = segment match {
     case _: Transition[?] =>
       throw new IllegalArgumentException("不允许手动添加转场片段")
@@ -128,9 +116,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       put(c, r, origin).rebuildTransitions()
   }
 
-  /**
-   * 把不在表里的元素放到指定区间。
-   */
+  /** 把不在表里的元素放到指定区间。 */
   private def put(element: Segment[?], r: Interval, origin: Long): Track =
     derived(byTime.updated(r, element), placements.updated(element, r), origins.updated(element, origin))
 
@@ -147,9 +133,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   private def canPlaceAt(c: Content[?], r: Interval): Boolean = canPlaceAt(c, r, null)
 
   /**
-   * 把内容放进指定区间后，轨道是否仍满足三条不变量。要求该内容不在本轨道上。
-   * skip 里的条目不参与检查，用于整组搬运或粘贴时忽略同伴。
-   * 只有新条目会引入变化，因此只需检查它与左右邻居的邻接关系以及由它新增的隔项关系。
+   * 放入后轨道是否仍满足三条不变量，要求该内容不在本轨道上。skip 里的条目不参与检查，
+   * 整组搬运与粘贴时用它忽略同伴。合法性只由新条目改变，检查因此只看它的邻居与隔项。
    */
   private[timeline] def canPlaceAt(c: Content[?], r: Interval, skip: util.Collection[Segment[?]]): Boolean = {
     if (r.isEmpty) return false
@@ -192,8 +177,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 从内容布局重算转场。所有 setter 在改完内容后调用它，重叠建转场的规则只写在这里。
-   * 转场对象按左侧内容复用，重叠关系没变的转场保持同一实例，界面上的对象身份因此稳定。
+   * 从内容布局重算转场，所有 setter 改完内容后调用它，重叠建转场的规则只写在这里。
+   * 重叠关系没变的转场复用原对象，界面上的对象身份因此稳定。
    */
   private def rebuildTransitions(): Track = {
     val contents = byTime.iterator
@@ -201,8 +186,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       .collect { case c: Content[?] if !isBlock(c) => c }
       .toVector
 
-    // 先摘掉全部旧转场条目（对象留在 rightTransitions 里等待复用）。
-    // 直接扫表而不是遍历索引，索引若因某种原因滞后也不会留下孤儿条目
+    // 先摘掉全部旧转场条目，对象留在 rightTransitions 里等待复用
     var built = this
     for ((_, s) <- byTime) {
       s match {
@@ -211,8 +195,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       }
     }
 
-    // 以旧索引为底：内容暂时不在轨道上时（整组搬运的中间态）条目要留着，
-    // 它回来时才能复用同一个转场对象，界面上的身份才不会每帧跳
+    // 从旧索引起步。内容暂时不在轨道上时（整组搬运的中间态）条目先留着，它回来时才能复用同一个对象
     var fresh = rightTransitions
     var i = 0
     while (i + 1 < contents.size) {
@@ -232,8 +215,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       }
       i += 1
     }
-    // 清理：内容仍在轨道上、右邻居也存在但已经不再重叠的条目。
-    // 右邻居暂时不在（整组搬运的中间态）时保留，它回来时才能复用同一个对象
+    // 丢掉两侧内容都在、却已不再重叠的条目。右邻居暂时不在的留着，理由同上
     for (left <- fresh.keys.toVector if built.contains(left)) {
       val right = built.nextContent(left)
       if (right != null && built.getRange(right).lo >= built.getRange(left).hi) {
@@ -246,10 +228,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     next
   }
 
-  /**
-   * 检查三条不变量。轨道规模很小，每次编辑重新扫一遍的开销可以忽略，
-   * 换来的是非法拓扑在产生它的那次编辑上就暴露，而不是在很远的调用点崩掉。
-   */
+  /** 检查三条不变量。 */
   private def assertInvariants(): Unit = {
     if (byTime.size != placements.size) {
       throw new IllegalStateException("条目数与索引不一致，区间键可能被覆盖")
@@ -323,8 +302,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 删除内容。删掉之后它的左右邻居从隔项变成相邻，两者若重叠就必须能构成转场，
-   * 否则把右侧推到左侧之后；推不动就放弃这次删除，不留下非法布局。
+   * 删除内容。它的左右邻居从隔项变成相邻，两者若重叠就必须能构成转场，否则把右侧推到左侧之后；
+   * 推不动就放弃这次删除，不留下非法布局。
    */
   private def removeContent(c: Content[?]): Track = {
     val p = prevContent(c)
@@ -348,9 +327,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 删除转场。转场是重叠区的派生条目，只摘掉条目会被重算立刻建回来，
-   * 因此真正的删除是消除重叠：两侧内容各让一半，交界点落在原转场中心。
-   * 两侧各自的邻居约束都要满足，凑不出合法的交界点时放弃本次删除。
+   * 删除转场。转场是重叠区的派生条目，只摘掉条目会被重算立刻建回来，所以真正的删除是消除重叠：
+   * 两侧内容各让一半，交界点落在原转场中心。凑不出满足两侧邻居约束的交界点时放弃本次删除。
    */
   private def removeTransition(t: Transition[?]): Track = {
     val sides = transitionSides(t)
@@ -360,7 +338,6 @@ final class Track private (val timeline: Timeline, val index: Int,
     val lr = getRange(left)
     val rr = getRange(right)
     val half = (tr.hi - tr.lo) / 2
-    // 各让一半，再把两侧各自的硬约束夹进来
     var boundary = lr.hi - half
     boundary = Math.max(boundary, Math.max(Math.max(lr.lo + 1, minStartOf(right)), endLower(left)))
     boundary = Math.min(boundary, rr.hi - 1)
@@ -398,7 +375,7 @@ final class Track private (val timeline: Timeline, val index: Int,
         if (time <= r.lo || time >= r.hi) return this
         val origin: Long = getOrigin(c)
         val right = c.duplicate().asInstanceOf[Content[?]]
-        // 两半共用同一个 origin，片段内时间 = 绝对时间 - origin，右半才能接着左半的内容播
+        // 两半共用 origin，片段内时间是绝对时间减 origin，右半才接得上左半的内容
         drop(c)
           .put(c, r.lo ~~ time, origin)
           .put(right, time ~~ r.hi, origin)
@@ -435,9 +412,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     case c: Content[?] => setContentEnd(c, deltaTime)
   }
 
-  /**
-   * 移动内容起点。起点可以伸进左邻居形成转场，边界由 [[startLower]] 与 [[startUpper]] 给出。
-   */
+  /** 移动内容起点。起点可以伸进左邻居形成转场。 */
   private def setContentStart(c: Content[?], deltaTime: Long): Track = {
     val r = getRange(c)
     val lower = startLower(c)
@@ -448,9 +423,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     rekey(c, target ~~ r.hi, getOrigin(c)).rebuildTransitions()
   }
 
-  /**
-   * 移动内容终点。终点可以伸进右邻居形成转场，边界由 [[endLower]] 与 [[endUpper]] 给出。
-   */
+  /** 移动内容终点。终点可以伸进右邻居形成转场。 */
   private def setContentEnd(c: Content[?], deltaTime: Long): Track = {
     val r = getRange(c)
     val lower = endLower(c)
@@ -461,18 +434,14 @@ final class Track private (val timeline: Timeline, val index: Int,
     rekey(c, r.lo ~~ target, getOrigin(c)).rebuildTransitions()
   }
 
-  /**
-   * 移动转场左缘。转场左缘在几何上就是右内容的起点，因此直接转成移动右内容的起点。
-   */
+  /** 转场左缘在几何上就是右内容的起点，直接转成移动它。 */
   private def setTransitionStart(t: Transition[?], deltaTime: Long): Track = {
     val sides = transitionSides(t)
     if (sides == null) return this
     setContentStart(sides._2, deltaTime)
   }
 
-  /**
-   * 移动转场右缘。转场右缘在几何上就是左内容的终点，因此直接转成移动左内容的终点。
-   */
+  /** 转场右缘在几何上就是左内容的终点，直接转成移动它。 */
   private def setTransitionEnd(t: Transition[?], deltaTime: Long): Track = {
     val sides = transitionSides(t)
     if (sides == null) return this
@@ -480,8 +449,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 内容起点可以落到的绝对位置下界。由素材起点、时间轴 0 点、左邻居与隔项不重叠共同决定。
-   * 能与左邻居建转场且不会被对方包含时允许重叠，否则贴住左邻居的终点。
+   * 内容起点的绝对下界。能与左邻居建转场且不会被它包含时允许重叠，否则贴住左邻居终点；
+   * 还要受素材起点、时间轴 0 点与隔项不重叠限制。
    */
   private def startLower(c: Content[?]): Long = {
     val r = getRange(c)
@@ -500,8 +469,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 内容起点可以落到的绝对位置上界。正常情况下是自身终点前一微秒；
-   * 与右邻居重叠着时还必须留在对方起点之前，否则会被对方包含。
+   * 内容起点的绝对上界。正常是自身终点前一微秒；与右邻居重叠时还必须留在对方起点之前，否则会被对方包含。
    */
   private def startUpper(c: Content[?]): Long = {
     val r = getRange(c)
@@ -517,8 +485,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 内容终点可以落到的绝对位置下界。正常情况下是自身起点后一微秒；
-   * 与左邻居重叠着时还必须留在对方终点之后，否则会被对方包含。
+   * 内容终点的绝对下界。正常是自身起点后一微秒；与左邻居重叠时还必须留在对方终点之后，否则会被对方包含。
    */
   private def endLower(c: Content[?]): Long = {
     val r = getRange(c)
@@ -534,8 +501,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 内容终点可以落到的绝对位置上界。由素材终点、右邻居与隔项不重叠共同决定。
-   * 能与右邻居建转场时允许重叠，但至少给对方留一微秒，否则贴住右邻居的起点。
+   * 内容终点的绝对上界。能与右邻居建转场时允许重叠，但至少给对方留一微秒，否则贴住右邻居起点；
+   * 还要受素材终点与隔项不重叠限制。
    */
   private def endUpper(c: Content[?]): Long = {
     val r = getRange(c)
@@ -553,20 +520,17 @@ final class Track private (val timeline: Timeline, val index: Int,
     upper
   }
 
-  /** 前段向后段能否建立转场。 */
   private def canTransition(from: Content[?], to: Content[?]): Boolean = {
     from.asInstanceOf[Content[Frame]].canCreateTransitionWith(to.asInstanceOf[Content[Frame]])
   }
 
-  /** 以前段与后段构造转场。 */
   private def newTransition(from: Content[?], to: Content[?]): Transition[Frame] = {
     from.asInstanceOf[Content[Frame]].createTransition(to.asInstanceOf[Content[Frame]])
   }
 
   /**
-   * 拖动 content 时哪条相邻边会跟着动：相邻（已重叠或紧邻）且可建立转场的内容。
-   * 这条边与 c 的外缘有同一个位置，吸附忽略集必须把它算进去，
-   * 否则目标会被吸回正在移动的边缘，表现为鼠标动了几帧也不长转场、然后跳一大段。
+   * 拖动 c 时会跟着动的邻居，即相邻且可建立转场的那些。它们的外缘与 c 的外缘重合，
+   * 吸附忽略集必须包含它们，否则目标会被吸回正在移动的边缘。
    */
   def movingNeighbours(c: Content[?]): util.List[Content[?]] = {
     val out = new util.ArrayList[Content[?]](2)
@@ -578,7 +542,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     out
   }
 
-  /** 整条转场刚性平移：两侧内容的边界同步移动同样的量，转场宽度因此不变。 */
+  /** 整条转场刚性平移，两侧内容的边界同步移动同样的量，转场宽度不变。 */
   protected[timeline] def shiftTransition(t: Transition[?], delta: Long): Track = {
     if (delta == 0 || !contains(t)) return this
     val sides = transitionSides(t)
@@ -586,7 +550,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     val (left, right) = sides
     val lr = getRange(left)
     val rr = getRange(right)
-    // 两侧必须移动同样的量，于是转场宽度不变；只需保证移动后仍交叉且不越过各自的素材与邻居约束
+    // 两侧同步移动，只需保证移动后仍交叉且不越过各自的素材与邻居约束
     val minShift = Math.max(
       Math.max(Math.max(minStartOf(right) - rr.lo, lr.lo + 1 - rr.lo), endLower(left) - lr.hi),
       lr.lo + 1 - lr.hi)
@@ -654,24 +618,17 @@ final class Track private (val timeline: Timeline, val index: Int,
     scan(0L, 0)
   }
 
-  /** 区间内没有片段。 */
   private def noSegment(range: Interval): Boolean =
     !intersectingEntries(byTime, range).hasNext
 
-  /**
-   * 检查指定时间范围是否空闲（忽略指定片段集合中的片段）
-   *
-   * @param range  要检查的时间范围
-   * @param ignore 不视为障碍的片段集合（为空时相当于完全空闲检查）
-   * @return 如果范围内没有任何非忽略片段占用则返回 true
-   */
+  /** range 内是否没有被 ignore 之外的片段占用，ignore 为空时是完全空闲检查。 */
   def isFree(range: Interval, ignore: util.Collection[Segment[?]]): Boolean = {
     intersectingEntries(byTime, range).forall { case (_, s) => ignore.contains(s) }
   }
 
   /**
-   * 探测起点沿指定方向最多可移动多少。forward=右移（裁头，仅受自身长度限制）；
-   * 左移（伸头）受 0、origin、转场联动与可建转场的前邻限制，越界时冻结。
+   * 探测起点沿指定方向可移动多少。forward 是裁头，只受自身素材长度限制；
+   * 反向是伸头，受时间轴 0 点、origin 与前邻能否建转场限制。
    */
   protected[timeline] def probeSetStart(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
     val offsets = segments.asScala.iterator
@@ -680,13 +637,13 @@ final class Track private (val timeline: Timeline, val index: Int,
         case t: Transition[?] => probeTransitionStart(t, forward)
         case c: Content[?] => probeContentStart(c, forward)
       }
-    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
   /**
-   * 探测终点沿指定方向可移动多少。右移（伸尾）受后继、转场联动、可建转场的后邻与
-   * 片段长度 maxEnd 限制，越界时冻结；左移（裁尾）仅受自身长度限制。
+   * 探测终点沿指定方向可移动多少。forward 是伸尾，受后继、后邻能否建转场与素材长度 maxEnd 限制；
+   * 反向是裁尾，只受自身素材长度限制。
    */
   protected[timeline] def probeSetEnd(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
     val offsets = segments.asScala.iterator
@@ -695,7 +652,7 @@ final class Track private (val timeline: Timeline, val index: Int,
         case t: Transition[?] => probeTransitionEnd(t, forward)
         case c: Content[?] => probeContentEnd(c, forward)
       }
-    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
@@ -709,19 +666,19 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (forward) Math.max(endUpper(c) - r.hi, 0) else Math.min(endLower(c) - r.hi, 0)
   }
 
-  /** 转场左缘在几何上就是右内容的起点，可移动量与它一致。 */
+  /** 转场左缘即右内容的起点。 */
   private def probeTransitionStart(t: Transition[?], forward: Boolean): Long = {
     val sides = transitionSides(t)
     if (sides == null) 0L else probeContentStart(sides._2, forward)
   }
 
-  /** 转场右缘在几何上就是左内容的终点，可移动量与它一致。 */
+  /** 转场右缘即左内容的终点。 */
   private def probeTransitionEnd(t: Transition[?], forward: Boolean): Long = {
     val sides = transitionSides(t)
     if (sides == null) 0L else probeContentEnd(sides._1, forward)
   }
 
-  /** 拉伸头时允许的最小起点，片段的 0 秒不能越过时间轴 0 点。 */
+  /** 允许的最小起点，即片段的 0 秒不能越过时间轴 0 点。 */
   private def minStartOf(segment: Segment[?]): Long = {
     Math.max(0, getOrigin(segment))
   }
@@ -732,21 +689,21 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 探测整组沿指定方向可平移多少。在摘掉整组之后的布局上看每个成员的最近障碍，取全体最严者。
-   * 整组刚性平移，成员之间不会互相成为障碍。内容撞上可建转场的邻居时按重叠建转场处理，
-   * 可以吃到邻居只剩一微秒，但不能吞掉邻居、也不能被邻居吞掉，否则重叠无法成为转场。
-   * 左移还受时间轴 0 限制。转场不允许换轨，平移时与两侧内容同步移动。
+   * 探测整组沿指定方向可平移多少。整组刚性平移，成员之间不构成障碍，因此在摘掉整组后的布局上
+   * 逐个看最近障碍再取最严者。撞上可建转场的邻居时按重叠处理，可以吃到邻居只剩一微秒，
+   * 但不能吞掉邻居或被邻居吞掉。左移另受时间轴 0 限制。
    */
   protected[timeline] def probeMove(segments: util.Collection[Segment[?]], forward: Boolean): Long = {
-    val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍 = 无界
+    val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍，视作无界
     val bare = removeAll(segments)
     val offsets = segments.asScala.iterator
       .filter((s: Segment[?]) => contains(s))
       .map {
         case t: Transition[?] =>
           val sides = transitionSides(t)
-          if (sides == null) {
-            0L
+          if (sides == null || segments.contains(sides._1) || segments.contains(sides._2)) {
+            // 至少一侧内容也在搬运范围内时，转场随内容重建，不构成独立限制
+            noBlock
           } else {
             val (left, right) = sides
             bare.probeShiftOf(left, right, getRange(left), getRange(right),
@@ -754,7 +711,7 @@ final class Track private (val timeline: Timeline, val index: Int,
           }
         case c: Content[?] => bare.probeMoveOf(c, getRange(c), forward)
       }
-    // 偏移与方向同号（正向非负、反向非正），正向取最小、反向取最大即最严限制
+    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
   }
 
@@ -793,7 +750,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /**
    * 在摘掉两侧内容之后的布局上，转场随两侧同步平移能走多远。
-   * lr / rr 是两侧内容移动前的区间，hiCap / loCap 是它们各自的素材边界。
+   * hiCap 与 loCap 是两侧的素材边界，lr 与 rr 是它们移动前的区间。
    */
   private def probeShiftOf(left: Content[?], right: Content[?], lr: Interval, rr: Interval,
                            hiCap: Long, loCap: Long, forward: Boolean): Long = {
@@ -832,7 +789,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (s != null) {
       getRange(s)
     } else {
-      // 空隙：从上一个条目的终点到下一个条目的起点
+      // 空隙从上一个条目的终点延伸到下一个条目的起点
       var from = 0L
       for ((r, _) <- byTime.rangeTo(upTo(time))) {
         if (r.hi > from) from = r.hi
@@ -849,10 +806,10 @@ final class Track private (val timeline: Timeline, val index: Int,
     case _ => false
   }
 
-  /** 起点顺序上紧随其后的条目；没有时为空。要求片段在本轨道，否则抛 IllegalArgumentException。 */
+  /** 起点顺序上紧随其后的条目；没有时返回 null。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def nextOf(segment: Segment[?]): Segment[?] = sourceAtOrAfter(getRange(segment).hi)
 
-  /** 起点顺序上紧邻其前的条目；没有时为空。要求片段在本轨道，否则抛 IllegalArgumentException。 */
+  /** 起点顺序上紧邻其前的条目；没有时返回 null。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def prevOf(segment: Segment[?]): Segment[?] = sourceBefore(getRange(segment).lo)
 
   /** 起点不小于 time 的首个片段；没有时返回 null。 */
@@ -892,7 +849,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     byTime.valuesIterator.filterNot(isBlock).asJava
   }
 
-  /** 调试用摘要：按时间顺序列出所有片段，内容附带原点与素材终点。 */
+  /** 调试用摘要，按时间顺序列出片段，内容附带 origin 与素材终点。 */
   override def toString: String = {
     val parts = byTime.iterator.filterNot((_, s) => isBlock(s)).map { case (r, s) =>
       s match {
@@ -907,10 +864,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     parts.mkString(", ")
   }
 
-  /**
-   * 两条轨道相等，当且仅当轨道索引相同、条目逐项相同。
-   * 条目总是按起点从小到大迭代，因此两侧可以逐项对齐比较。
-   */
+  /** 索引相同且条目逐项相同。条目都按起点升序迭代，两侧可以逐项对齐比较。 */
   override def equals(o: Any): Boolean = {
     if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
       true
@@ -930,8 +884,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 两个片段条目相等，逐字段比类型/时长，连同 origin；区间已经作为键比过了。
-   * 逐字段而非按身份，是为了跨时间线（如序列化快照）的结构对比。
+   * 比较两个条目，类型与时长逐个比，再比 origin，区间作为键已经比过。
+   * 按字段而不是按对象身份，是为了跟序列化快照这类不同实例做结构对比。
    */
   private def entryEquals(a: Segment[?], b: Segment[?], other: Track): Boolean = {
     Track.sourceEquals(a, b) && getOrigin(a) == other.getOrigin(b)
@@ -941,10 +895,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     Integer.hashCode(index)
   }
 
-  /**
-   * 包含 time 的片段；落在空隙中时返回 null。重叠时取区间最短的那个，
-   * 它唯一确定转场，因为转场是两个内容区间的交集，必然严格短于两者。
-   */
+  /** 包含 time 的片段，落在空隙中时返回 null。重叠时取区间最短的那个，它一定是转场。 */
   private def segmentAt(time: Long): Segment[?] = {
     var best: Segment[?] = null
     var bestLen = Long.MaxValue
@@ -958,7 +909,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /**
-   * 与 range 有公共点的条目，按区间升序。轨道内片段互不重叠，因此按起点排序后这些条目是连续的一段。
+   * 与 range 有公共点的条目，按区间升序。条目之间不存在一个完整包住另一个的情况，
+   * 相交的条目在起点序上因此是连续的一段。
    */
   private def intersectingEntries(bt: immutable.TreeMap[Interval, Segment[?]], range: Interval): Iterator[(Interval, Segment[?])] = {
     if (range.isEmpty) {
@@ -969,7 +921,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     }
   }
 
-  /** 圈住一切起点不大于 time 的条目，作 rangeTo 的上界。 */
+  /** 起点不大于 time 的一切条目，作 rangeTo 的上界。 */
   private def upTo(time: Long): Interval = time ~~ Long.MaxValue
 
   /** time 处的空区间，作起点与 time 的分界。 */
@@ -987,7 +939,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 }
 
 object Track {
-  /** 新建空轨道，0 点左侧是阻挡片段（地基），覆盖 [Long.MinValue, 0)，右侧全是空隙。 */
+  /** 新建空轨道。0 点左侧放阻挡片段，覆盖 [Long.MinValue, 0)，右侧全是空隙。 */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
     val blockSegment: Segment[Frame] = new Content[Frame](new BlockSource)
     new Track(timeline, index, blockSegment,
