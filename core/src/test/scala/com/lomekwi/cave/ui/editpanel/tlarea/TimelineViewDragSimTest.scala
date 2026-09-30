@@ -306,6 +306,30 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertNotNull(timeline.findTrackOf(transition))
   }
 
+  // 两个片段重叠出转场后，拖其中一个仍应吸附到对方的边缘
+
+  @Test
+  def middleDragSnapsToOverlappingNeighbourEdge(): Unit = {
+    def t0 = timeline.getTrackOrCreate(0)
+    val a = newSegment(1000_000L)
+    val b = newSegment(1000_000L)
+    val aActor = place(t0, a, 0, 1000_000L, 0L)
+    place(t0, b, 500_000L, 1500_000L, 500_000L)
+    // a 与 b 重叠出转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
+    rebuildFromModel(aActor)
+
+    val firstX = aActor.getWidth / 2
+    val firstY = view.trackHeight / 2
+    aActor.dragSide = DragSide.MIDDLE
+    aActor.initDrag(firstX, firstY)
+
+    // 目标起点落在 b 起点内侧 5px（阈值 10px），应吸到 b 的起点
+    aActor.dragTo(absX(495_000L) + firstX, aActor.getY + firstY)
+
+    assertEquals(500_000L, tl.snapIndicatorTime)
+    assertEquals(500_000L, t0.getRange(a).lo, 1L)
+  }
+
   // 转场拖到消失后再拖、重建后小幅移动，吸附不得把目标吸回正在移动的边
 
   @Test
