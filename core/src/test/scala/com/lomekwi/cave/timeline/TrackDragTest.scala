@@ -90,6 +90,94 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
+  def groupMoveForwardStopsAtSecondSuccessor(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val x: Segment[?] = newSegment(1000_000L)
+    val y: Segment[?] = newSegment(1000_000L)
+    val n: Segment[?] = newSegment(1000_000L)
+    place(t0, x, TrackDragTest.rng(0, 1000))
+    place(t0, y, TrackDragTest.rng(500, 1500))
+    place(t0, n, TrackDragTest.rng(1000, 2000))
+
+    // x 前移后会与 n 隔项重叠，整组因此一步都动不了，而不是探出一个放不下去的偏移量
+    assertEquals(0L, timeline.moveTime(List.of(x, y), 100))
+    assertEquals(TrackDragTest.rng(0, 1000), t0.getRange(x))
+    assertEquals(TrackDragTest.rng(500, 1500), t0.getRange(y))
+    assertEquals(TrackDragTest.rng(1000, 2000), t0.getRange(n))
+  }
+
+  @Test
+  def groupMoveBackwardStopsAtSecondPredecessor(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val p: Segment[?] = newSegment(1000_000L)
+    val x: Segment[?] = newSegment(1000_000L)
+    val y: Segment[?] = newSegment(1000_000L)
+    val n: Segment[?] = newSegment(1000_000L)
+    place(t0, p, TrackDragTest.rng(0, 1000))
+    place(t0, x, TrackDragTest.rng(1000, 2000))
+    place(t0, y, TrackDragTest.rng(1500, 2500))
+    place(t0, n, TrackDragTest.rng(2000, 3000))
+
+    // 再左移 y 就会与 p 隔项重叠，上限是 y 的起点贴到 p 的终点
+    assertEquals(-500L, timeline.moveTime(List.of(x, y), -600))
+    assertEquals(TrackDragTest.rng(500, 1500), t0.getRange(x))
+    assertEquals(TrackDragTest.rng(1000, 2000), t0.getRange(y))
+    assertEquals(TrackDragTest.rng(0, 1000), t0.getRange(p))
+  }
+
+  @Test
+  def groupMoveForwardUsesNeighbourNotFarContent(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val d: Segment[?] = newSegment(1000_000L)
+    val a: Segment[?] = newSegment(1000_000L)
+    val b: Segment[?] = newSegment(1000_000L)
+    val c: Segment[?] = newSegment(1000_000L)
+    val e: Segment[?] = newSegment(1000_000L)
+    place(t0, d, TrackDragTest.rng(0, 3000))
+    place(t0, a, TrackDragTest.rng(2000, 5000))
+    place(t0, b, TrackDragTest.rng(4000, 7000))
+    place(t0, c, TrackDragTest.rng(6000, 9000))
+    place(t0, e, TrackDragTest.rng(8000, 11000))
+
+    // 中间成员 b 的右邻居是 c，与 e 隔项，上限由 b 与 e 的隔项关系定，不是按 b 与 e 相邻算出来的 1999
+    assertEquals(1000L, timeline.moveTime(List.of(a, b, c), 2000))
+    assertEquals(TrackDragTest.rng(3000, 6000), t0.getRange(a))
+    assertEquals(TrackDragTest.rng(5000, 8000), t0.getRange(b))
+    assertEquals(TrackDragTest.rng(7000, 10000), t0.getRange(c))
+    assertEquals(TrackDragTest.rng(8000, 11000), t0.getRange(e))
+  }
+
+  @Test
+  def movingGroupKeepsInternalTransitionIdentity(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    // 组的两侧都还有别的内容，成员的右邻居在放回中途会暂时缺席
+    val d = newSegment(1000_000L)
+    val a = newSegment(1000_000L)
+    val b = newSegment(1000_000L)
+    val c = newSegment(1000_000L)
+    val e = newSegment(1000_000L)
+    place(t0, d, TrackDragTest.rng(0, 3000))
+    place(t0, a, TrackDragTest.rng(2000, 5000))
+    place(t0, b, TrackDragTest.rng(4000, 7000))
+    place(t0, c, TrackDragTest.rng(6000, 9000))
+    place(t0, e, TrackDragTest.rng(8000, 11000))
+    val ab = t0.transitionBetween(a.asInstanceOf[Content[?]], b.asInstanceOf[Content[?]])
+    val bc = t0.transitionBetween(b.asInstanceOf[Content[?]], c.asInstanceOf[Content[?]])
+    assertNotNull(ab)
+    assertNotNull(bc)
+
+    assertEquals(500L, timeline.moveTime(List.of(a, b, c), 500L))
+
+    val after = timeline.getTrackOrCreate(0)
+    assertEquals(TrackDragTest.rng(2500, 5500), after.getRange(a))
+    assertEquals(TrackDragTest.rng(4500, 7500), after.getRange(b))
+    assertEquals(TrackDragTest.rng(6500, 9500), after.getRange(c))
+    // 组内相邻对的转场随两侧一起平移，应当仍是原来那两个对象
+    assertSame(ab, after.transitionBetween(a.asInstanceOf[Content[?]], b.asInstanceOf[Content[?]]))
+    assertSame(bc, after.transitionBetween(b.asInstanceOf[Content[?]], c.asInstanceOf[Content[?]]))
+  }
+
+  @Test
   def freshTrackIsEmpty(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
 

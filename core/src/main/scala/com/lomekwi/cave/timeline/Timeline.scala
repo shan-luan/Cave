@@ -186,13 +186,18 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
           case _: Transition[?] =>
         }
       }
+      // 内容自右向左放回：放每个内容时它的右邻居已经就位，右侧原有的转场对象才接得上。
+      // 从左往右的话右邻居还在缺席，转场会被当成不再重叠而摘掉，放回后只能新建一个
+      val refill = new util.ArrayList[Content[?]](onTrack.size())
       for (s <- onTrack.asScala) {
-        val range = before.getRange(s)
-        val origin = before.getOrigin(s)
         s match {
-          case c: Content[?] => next = next.addOrThrow(c, range.shift(applied), origin + applied)
+          case c: Content[?] => refill.add(c)
           case _: Transition[?] =>
         }
+      }
+      refill.sort(java.util.Comparator.comparingLong((c: Content[?]) => before.getRange(c).lo).reversed())
+      for (c <- refill.asScala) {
+        next = next.addOrThrow(c, before.getRange(c).shift(applied), before.getOrigin(c) + applied)
       }
       for (s <- onTrack.asScala) {
         s match {
