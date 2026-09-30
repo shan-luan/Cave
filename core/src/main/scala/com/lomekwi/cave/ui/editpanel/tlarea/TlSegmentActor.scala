@@ -272,8 +272,8 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
 
   /**
    * 整体移动吸附，起点与终点各求吸附点，取更近者。
-   * 随拖动一起动的边都不参与吸附：成员自身、相邻转场及其外侧内容、紧邻且可建转场的邻居，
-   * 否则目标会被吸回正在移动的边缘。
+   * 随拖动一起动的边都不参与吸附：成员自身，以及端点由成员端点派生的相邻转场。
+   * 拖内容时邻居不动，它的边缘是静止的吸附点，照常参与。
    */
   private def snapMoveTarget(target: Long, duration: Long): Long = {
     if (snapDisabled()) {
@@ -286,9 +286,10 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
         if (memberTrack != null) {
           member match {
             case c: Content[?] =>
-              ignoreTransition(ignore, memberTrack, memberTrack.transitionBefore(c))
-              ignoreTransition(ignore, memberTrack, memberTrack.transitionAfter(c))
-              ignore.addAll(memberTrack.movingNeighbours(c))
+              val before = memberTrack.transitionBefore(c)
+              if (before != null) ignore.add(before)
+              val after = memberTrack.transitionAfter(c)
+              if (after != null) ignore.add(after)
             case t: Transition[?] =>
               ignoreTransition(ignore, memberTrack, t)
             case _ =>
@@ -322,8 +323,8 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
   }
 
   /**
-   * 转场及其两侧内容都会随拖动移动，端点位置跟着变，必须整体退出吸附。
-   * 只忽略其中一部分挡不住吸附，目标会被吸回正在移动的边缘。
+   * 拖转场本体时两侧内容跟着平移（见 [[Track.shiftTransition]]），
+   * 转场及其两侧内容的端点都在变，必须整体退出吸附。
    */
   private def ignoreTransition(ignore: util.Set[Segment[?]], track: Track, t: Transition[?]): Unit = {
     if (t != null) {

@@ -432,17 +432,6 @@ final class Track private (val timeline: Timeline, val index: Int,
     from.asInstanceOf[Content[Frame]].createTransition(to.asInstanceOf[Content[Frame]])
   }
 
-  /** 拖动 c 时会跟着动的邻居。 */
-  def movingNeighbours(c: Content[?]): util.List[Content[?]] = {
-    val out = new util.ArrayList[Content[?]](2)
-    val cr = getRange(c)
-    val p = prevContent(c)
-    if (p != null && canTransition(p, c) && getRange(p).hi >= cr.lo) out.add(p)
-    val n = nextContent(c)
-    if (n != null && canTransition(c, n) && getRange(n).lo <= cr.hi) out.add(n)
-    out
-  }
-
   /** 整条转场刚性平移，转场宽度不变。 */
   protected[timeline] def shiftTransition(t: Transition[?], delta: Long): Track = {
     if (delta == 0 || !contains(t)) return this
