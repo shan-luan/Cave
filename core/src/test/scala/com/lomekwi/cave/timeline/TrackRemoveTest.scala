@@ -74,6 +74,44 @@ class TrackRemoveTest extends GdxTestBase {
   }
 
   @Test
+  def soloEndOfUnaffectedByRemovedLastContent(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = newContent(1000)
+    val b = newContent(1000)
+    place(t0, a, 0 ~~ 1000)
+    place(t0, b, 500 ~~ 1500)
+
+    timeline.remove(b)
+
+    // b 离开后 a 右侧的转场索引项仍在，但它已摘表，不得再被当作转场
+    val after = timeline.getTrackOrCreate(0)
+    assertNull(after.transitionAfter(a))
+    assertEquals(1000L, after.soloEndOf(a))
+  }
+
+  @Test
+  def removedLastContentLeavesTransitionReusableOnReturn(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = newContent(1000)
+    val b = newContent(1000)
+    place(t0, a, 0 ~~ 1000)
+    place(t0, b, 500 ~~ 1500)
+    val transition = transitionOf(t0, 700)
+    assertNotNull(transition)
+
+    timeline.remove(b)
+    assertNull(timeline.getTrackOrCreate(0).transitionAfter(a))
+
+    val c = newContent(1000)
+    place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
+
+    // 邻居回来后复用同一个转场对象，身份因此保持稳定
+    val after = timeline.getTrackOrCreate(0)
+    assertSame(transition, after.transitionAfter(a))
+    TrackLayout.assertValid(after)
+  }
+
+  @Test
   def removingOnlyContentLeavesEmptyTrack(): Unit = {
     val t0 = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
@@ -265,7 +303,7 @@ class TrackRemoveTest extends GdxTestBase {
   }
 
   @Test
-  def removingTransitionSqueezedBySecondSuccessorNoLongerRollsBack(): Unit = {
+  def removingTransitionRollsBackWhenSqueezedBySecondSuccessor(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val p = newContent(1000)
     val a = newContent(1000)
@@ -280,13 +318,47 @@ class TrackRemoveTest extends GdxTestBase {
 
     timeline.remove(transition)
 
-    // 不变量校验移除后不再回滚：交界点被 b 的右邻压到 p 的终点之下时，
-    // a 会缩到与 p 同终点，区间键 [1000,1100) 与 p-a 转场相同，a 的条目在重建时被覆盖。
-    // 这是已知的现状；若恢复回滚语义，本测试需要随之更新。
+    // 交界点被 b 的右邻压回下界之下，两侧内容无法再交叉，消除重叠无解，删除放弃，布局原样保留
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(1000 ~~ 1100, after.getRange(a))
+    assertEquals(1000 ~~ 1101, after.getRange(a))
     assertEquals(800 ~~ 1100, after.getRange(p))
-    assertFalse(after.asScala.exists(_ eq a))
+    assertEquals(1100 ~~ 1500, after.getRange(b))
+    assertEquals(1101 ~~ 2000, after.getRange(rn))
+    assertSame(transition, transitionOf(after, 1100))
+    TrackLayout.assertValid(after)
+  }
+
+  @Test
+  def removingTransitionKeepsEveryContentVisible(): Unit = {
+    // a 的交界点被第二后继压回下界附近时，内容与转场的区间键会争同一个位置。
+    // 扫过压回与否的位置，任何内容都不得出现 contains 为真却从迭代里消失的状态，
+    // 否则它就成了 placements 里留着、byTime 里缺席的幽灵。
+    for (rnLo <- 1101L to 1104L) {
+      val tl = new TestProject().timeline
+      val p = newContent(1000)
+      val a = newContent(1000)
+      val b = newContent(1000)
+      val rn = newContent(1000)
+      tl.addOrThrow(tl.getTrackOrCreate(0), p, 800 ~~ 1100, 0L)
+      tl.addOrThrow(tl.getTrackOrCreate(0), a, 1000 ~~ 1101, 0L)
+      tl.addOrThrow(tl.getTrackOrCreate(0), b, 1100 ~~ 1500, 0L)
+      tl.addOrThrow(tl.getTrackOrCreate(0), rn, rnLo ~~ (rnLo + 1000), 0L)
+      val transition = tl.getTrackOrCreate(0).get(1100) match {
+        case t: Transition[?] => t
+        case _ => null
+      }
+      assertNotNull(transition)
+
+      tl.remove(transition)
+
+      val after = tl.getTrackOrCreate(0)
+      for (s <- Vector(p, a, b, rn)) {
+        if (after.contains(s) != after.asScala.exists(_ eq s)) {
+          fail("内容在轨道反查里存在却从迭代中消失: " + s + " rnLo=" + rnLo)
+        }
+      }
+      TrackLayout.assertValid(after)
+    }
   }
 
   @Test

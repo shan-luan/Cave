@@ -22,7 +22,6 @@ import scala.jdk.CollectionConverters.*
 
 /**
  * 片段构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Segment]]。
- * 项目中还没有资源的文件先由 [[App.mediaFactory]] 建出资源。
  */
 @SerialVersionUID(1L)
 class SegmentFactory(@transient var project: Project) extends Serializable {

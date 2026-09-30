@@ -98,7 +98,7 @@ object UndoManager {
   }
 
   /**
-   * 可合并命令，同类型命令可合并为一个，避免栈中存在连续的同类型记录。
+   * 可合并命令，同类型命令可合并为一个。
    */
   trait MergeableCommand extends UndoableCommand {
     /**
@@ -111,8 +111,6 @@ object UndoManager {
 
   /**
    * 一条轨道的一次版本替换，撤销即换回 before，重做即换成 after。
-   * 轨道不可变，两端版本即完整描述一次改动，且新旧版本共享绝大部分节点，
-   * 因此快照本身很轻。
    */
   case class TrackEdit(index: Int, before: Track, after: Track)
 
@@ -172,7 +170,6 @@ object UndoManager {
 
   /**
    * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
-   * 撤销时把涉及的轨道整体换回旧版本，因此不必逐片段回放。
    */
   private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
                                                      protected val edits: util.List[TrackEdit]) extends MergeableCommand {

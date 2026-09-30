@@ -7,7 +7,6 @@ import java.util
 
 /**
  * 一组被同时操作的片段。组可以跨轨道，因此不归属于任何轨道，由 [[Timeline]] 统一登记。
- * 转场也能进组，但只承担选择语义，位置仍由两侧内容的重叠区决定。
  */
 @SerialVersionUID(1L)
 class SegmentGroup extends util.AbstractCollection[Segment[?]] with Serializable {
