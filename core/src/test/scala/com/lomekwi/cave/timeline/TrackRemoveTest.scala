@@ -13,7 +13,7 @@ import scala.jdk.CollectionConverters.*
 
 /**
  * 删除路径的场景测试。内容与转场的删除在各种邻居与边界形态下的行为；
- * 三条不变量校验移除后，这些性质由本测试守护。
+ * 移除后 [[TrackLayout]] 校验的布局不变量由本测试守护。
  */
 class TrackRemoveTest extends GdxTestBase {
 
@@ -37,43 +37,6 @@ class TrackRemoveTest extends GdxTestBase {
     case _ => null
   }
 
-  private def contentsOf(track: Track): Vector[Content[?]] =
-    track.asScala.collect { case c: Content[?] => c }.toVector
-
-  /** 相邻内容交叉、隔项不重叠、转场区间恒等于重叠区。 */
-  private def assertLayoutValid(track: Track): Unit = {
-    val contents = contentsOf(track)
-    var i = 0
-    while (i < contents.size) {
-      val cr = track.getRange(contents(i))
-      if (i + 1 < contents.size) {
-        val nr = track.getRange(contents(i + 1))
-        if (cr.hi > nr.lo) {
-          assertTrue(cr.lo < nr.lo && cr.hi < nr.hi, "相邻内容未交叉: " + cr + " " + nr)
-        }
-      }
-      if (i + 2 < contents.size) {
-        val nn = track.getRange(contents(i + 2))
-        assertFalse(cr.hi > nn.lo, "隔项重叠: " + cr + " " + nn)
-      }
-      i += 1
-    }
-    for (s <- track.asScala) {
-      s match {
-        case t: Transition[?] =>
-          val sides = track.transitionSides(t)
-          assertNotNull(sides, "转场两侧缺失")
-          if (sides != null) {
-            val lo = track.getRange(sides._2).lo
-            val hi = track.getRange(sides._1).hi
-            assertTrue(lo < hi, "转场两侧没有重叠")
-            assertEquals(lo ~~ hi, track.getRange(t), "转场区间不是重叠区")
-          }
-        case _ =>
-      }
-    }
-  }
-
   @Test
   def removingFirstContentDetachesEverythingAfterIt(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
@@ -89,7 +52,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(500 ~~ 1500, after.getRange(b))
     assertNull(transitionOf(after, 700))
     assertTrue(after.get(300).isInstanceOf[Gap])
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -107,7 +70,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(1000L, after.length)
     assertNull(transitionOf(after, 700))
     assertTrue(after.get(1200).isInstanceOf[Gap])
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -144,7 +107,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertSame(a, after.get(700))
     assertSame(c, after.get(1200))
     assertNull(after.transitionBetween(a, c))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -174,7 +137,7 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     assertSame(transition, transitionOf(after, 700))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -192,7 +155,7 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertEquals(500 ~~ 1500, after.getRange(c))
     assertTrue(after.get(100).isInstanceOf[Gap])
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -208,12 +171,12 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(List.of(a, c))
 
     val after = timeline.getTrackOrCreate(0)
-    val remaining = contentsOf(after)
+    val remaining = TrackLayout.contentsOf(after)
     assertEquals(1, remaining.size)
     assertSame(b, remaining.head)
     assertEquals(500 ~~ 1500, after.getRange(b))
     assertTrue(after.get(2500).isInstanceOf[Gap])
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -233,7 +196,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(0 ~~ 995, after.getRange(a))
     assertEquals(995 ~~ 1500, after.getRange(b))
     assertNull(after.transitionBetween(a, b))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -253,7 +216,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(0 ~~ 1000, after.getRange(a))
     assertEquals(1000 ~~ 1500, after.getRange(b))
     assertNull(after.transitionBetween(a, b))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -275,7 +238,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(100 ~~ 1000, after.getRange(a))
     assertEquals(1000 ~~ 1100, after.getRange(b))
     assertNotNull(transitionOf(after, 500))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -298,7 +261,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(1100 ~~ 1500, after.getRange(b))
     assertEquals(1101 ~~ 2000, after.getRange(rn))
     assertNotNull(transitionOf(after, 1200))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test
@@ -346,7 +309,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(0 ~~ 750, after.getRange(a))
     assertEquals(750 ~~ 1250, after.getRange(b))
     assertEquals(1250 ~~ 2000, after.getRange(c))
-    assertLayoutValid(after)
+    TrackLayout.assertValid(after)
   }
 
   @Test

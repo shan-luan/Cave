@@ -97,16 +97,29 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  /** 随机执行一次“拖拽”，保证提交出一条可撤销命令；多次尝试都改动不了模型时兜底增删一个片段。 */
+  /**
+   * 随机执行一次“拖拽”，保证提交出一条可撤销命令；多次尝试都改动不了模型时兜底增删一个片段。
+   * 每次改动后都校验所有轨道的布局不变量。
+   */
   def randomDrag(): Unit = {
     var attempt = 0
     while (attempt < 40) {
       val before = timeline.project.currentVersion
       performRandomOp()
-      if (timeline.project.currentVersion != before) return // 成功记录了一步
+      if (timeline.project.currentVersion != before) {
+        assertLayoutValid()
+        return // 成功记录了一步
+      }
       attempt += 1
     }
     forceChange()
+    assertLayoutValid()
+  }
+
+  private def assertLayoutValid(): Unit = {
+    for (track <- timeline.getTracks.asScala) {
+      TrackLayout.assertValid(track)
+    }
   }
 
   private def performRandomOp(): Unit = {
