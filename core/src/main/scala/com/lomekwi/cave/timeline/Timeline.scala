@@ -18,22 +18,15 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 时间线。它是这套结构里唯一可变的地方，轨道本身不可变，编辑产生新版本，
- * 由这里把当前版本指针换掉。所有读取方（界面、播放线程、导出）都从这里取最新版本，
- * 因此不需要对轨道加锁。
- *
- * 轨道存放在一个不可变向量里，替换整条向量后一次性发布。
- * 跨轨道的批量操作（整组平移、换轨）因此对读者是原子的，不会看到只做了一半的中间态。
+ * 时间线。它是这套结构里唯一可变的地方，编辑产生新版本，所有读取方（界面、播放线程、导出）
+ * 都从这里取最新版本。跨轨道的批量操作一次性发布，对读者是原子的。
  */
 @SerialVersionUID(1L)
 class Timeline(final val project: Project) extends Serializable with java.lang.Iterable[Track] with Duplicatable[Timeline] {
   @transient private var recording: Boolean = false
   @transient private var recorded: util.List[UndoableCommand] = new util.ArrayList[UndoableCommand]()
-  /** 当前版本指针。整条替换后发布，读者要么看到替换前要么看到替换后的整体状态。 */
   @volatile private var tracks: Vector[Track] = Vector.empty[Track]
-  /** 轨迹线程。按轨道索引唯一，因此轨道换版本时线程与 Phaser 都不受影响。 */
   @transient private var workers: util.Map[Integer, TrackWorker] = new util.HashMap[Integer, TrackWorker]()
-  /** 分组注册表。组是跨轨道的，故不归属任何单条轨道。 */
   private final val groups: util.List[SegmentGroup] = new util.ArrayList[SegmentGroup]()
 
   private def readObject(in: ObjectInputStream): Unit = {
@@ -43,10 +36,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     workers = new util.HashMap[Integer, TrackWorker]()
   }
 
-  /** 把 index 处的轨道替换为新版本，并唤醒其轨迹线程。 */
+  /** 把 index 处的轨道替换为新版本。 */
   protected[timeline] def setTrack(index: Int, track: Track): Unit = publish(Seq(index -> track))
 
-  /** 一次性替换多条轨道。读者只会看到替换前或替换后的整体状态。 */
+  /** 一次性替换多条轨道。 */
   protected[timeline] def setTracks(changes: Seq[(Int, Track)]): Unit = publish(changes)
 
   private def publish(changes: Seq[(Int, Track)]): Unit = {
@@ -132,7 +125,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     applyPerTrack(segments, deltaTime, true)
   }
 
-  /** 各轨道 probe 后取限制最严者，把 deltaTime 同向截断并应用。@return 实际应用的偏移量，0 表示未移动。 */
   private def applyPerTrack(segments: util.Collection[Segment[?]], deltaTime: Long, end: Boolean): Long = {
     if (deltaTime == 0 || segments.isEmpty) return 0L
     val forward = deltaTime > 0
@@ -217,9 +209,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 仅按轨道索引平移片段（时间区间不变）。deltaTrack 会被同向截断到最大可用的
-   * 轨道偏移后应用。从请求的目标轨道起沿该方向逐条回退，落在第一条整组可放置的
-   * 轨道上（不反向、不超过请求量），保持组内成员相对间距。
+   * 仅按轨道索引平移片段（时间区间不变）。deltaTrack 截断到最大可用量后应用，保持组内成员相对间距。
    * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
    */
   def moveTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
@@ -233,7 +223,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val applied = findPlaceableTrack(segments, deltaTrack)
     if (applied == 0) return 0
 
-    /** 片段、原轨道索引、目标轨道索引、原解绑区间、原 origin */
     val moves = new util.ArrayList[(Segment[?], Int, Int, Interval, Long)]()
     for (s <- segments.asScala) {
       val from = findTrackOf(s)
@@ -279,12 +268,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     indices
   }
 
-  /**
-   * 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。
-   * 从请求量开始向 0 逐级回退探测，返回第一条可放置轨道对应的偏移。
-   * 索引越大的轨道越可能为空，且 getTrack 会按需创建，因此正向探测总能找到落点；
-   * 反向受 0 限制，找不到时返回 0（保持原位）。
-   */
+  /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。 */
   private def findPlaceableTrack(segments: util.Collection[Segment[?]], deltaTrack: Int): Int = {
     if (deltaTrack == 0 || segments.isEmpty) return 0
     val minIdx: Int = segments.asScala.iterator.map((s: Segment[?]) => findTrackOf(s).index).min
@@ -300,10 +284,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     0
   }
 
-  /**
-   * 整组按统一偏移移动后，是否每个成员在各自目标轨道上都不与既有片段冲突。
-   * 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
-   */
+  /** 整组按统一偏移移动后，是否每个成员在各自目标轨道上都不与既有片段冲突。 */
   private def canPlaceGroupOnTrack(segments: util.Collection[Segment[?]], target: Int): Boolean = {
     if (target < 0) {
       false
@@ -362,9 +343,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     null
   }
 
-  /**
-   * 新建一个组并纳入注册表。组跨轨道，因此注册表在时间线一级。
-   */
+  /** 新建一个组并纳入注册表。 */
   def newGroup(): SegmentGroup = {
     val group = new SegmentGroup()
     groups.add(group)
@@ -417,7 +396,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       }
     }
   }
-  /** 记录模式下把一次修改对应的命令压入记录栈。同类型命令会与栈尾合并。 */
   private def push(command: UndoableCommand): Unit = {
     if (recording) {
       val last = if (recorded.isEmpty) null else recorded.get(recorded.size() - 1)
@@ -473,9 +451,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 两个时间线相等，当且仅当每个轨道对应相等，按索引逐位比较轨道内容。
-   * 由于 [[Timeline.getTrackOrCreate]] 会按需自动创建空轨道、而撤销不会删除轨道，
-   * 比较时把"缺失"与"空轨道"视为相等（只允许尾部为空的差异）。
+   * 两个时间线相等，当且仅当每个轨道按索引逐位对应相等。
+   * 缺失的轨道与空轨道视为相等（只允许尾部为空的差异）。
    */
   override def equals(o: Any): Boolean = {
     if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
@@ -502,16 +479,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     h
   }
 
-  /**
-   * 迭代有元素的轨道
-   * @return 轨道迭代器
-   */
+  /** 迭代有元素的轨道。 */
   override def iterator(): util.Iterator[Track] = {
     new IteratorImpl()
   }
 
   class IteratorImpl extends util.Iterator[Track] {
-    /** 迭代期间轨道向量可能被换成新版本，取一次快照，保证一轮迭代看到的是同一批轨道。 */
     private final val snapshot: Vector[Track] = tracks
     private var index: Int = 0
 
@@ -537,9 +510,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   /**
    * 轨迹线程，按时间独立推进播放头，把帧投到项目事件总线上，
    * 并用 Phaser 与消费方（预览、音频混音）做握手。
-   *
-   * 它按轨道索引唯一、由时间线持有，轨道换版本时线程、Phaser 与注册的消费方
-   * 都不必跟着换。内容则每轮从 [[Timeline.getTracks]] 现取，拿到的一定是当前版本。
    */
   class TrackWorker(private val index: Int) extends Runnable {
     private final val gapFrame: GapFrame = new GapFrame(index)
