@@ -12,7 +12,7 @@ class SettingsDialog extends VisDialog(i18n("设置")) {
 
     getContentTable.add(new SettingsTable()).grow()
 
-    show(App.root.stage)
+    App.root.showDialog(this)
     setSize(800, 600)
     centerWindow()
   }

@@ -35,7 +35,7 @@ class EditPanelFrame private extends VisTable {
             FileTree.getINSTANCE.addRootDirectory(file.file())
           }
         })
-        App.root.stage.addActor(chooser)
+        App.root.dialogLayer.addActor(chooser)
       }
     })
     treePanel.add(addDirBtn).fillX()
