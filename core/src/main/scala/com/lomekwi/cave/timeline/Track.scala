@@ -425,11 +425,16 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def canTransition(from: Content[?], to: Content[?]): Boolean = {
-    from.asInstanceOf[Content[Frame]].canCreateTransitionWith(to.asInstanceOf[Content[Frame]])
+    val f = from.asInstanceOf[Content[Frame]]
+    val t = to.asInstanceOf[Content[Frame]]
+    f.canCreateTransitionWith(t) || t.canCreateTransitionWith(f)
   }
 
   private def newTransition(from: Content[?], to: Content[?]): Transition[Frame] = {
-    from.asInstanceOf[Content[Frame]].createTransition(to.asInstanceOf[Content[Frame]])
+    val f = from.asInstanceOf[Content[Frame]]
+    val t = to.asInstanceOf[Content[Frame]]
+    // 后段兜底构造出的转场源，from与to相对时间顺序互换
+    if (f.canCreateTransitionWith(t)) f.createTransition(t) else t.createTransition(f)
   }
 
   /** 整条转场刚性平移，转场宽度不变。 */
