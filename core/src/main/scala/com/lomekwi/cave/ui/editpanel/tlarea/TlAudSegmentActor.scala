@@ -8,7 +8,6 @@ import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.ui.Colors
-import scala.compiletime.uninitialized
 
 class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 
@@ -53,7 +52,7 @@ class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
     val startBucket: Float = srcLocalStart.toFloat / bucketUs
     val endBucket: Float = startBucket + srcDuration.toFloat / bucketUs
 
-    val shader: ShaderProgram = TlAudSegmentActor.getWaveShader
+    val shader: ShaderProgram = TlAudSegmentActor.waveShader
     if (!shader.isCompiled) return
 
     batch.setShader(shader)
@@ -71,16 +70,12 @@ class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
 }
 
 object TlAudSegmentActor {
-  private var waveShader: ShaderProgram = uninitialized
-
-  private def getWaveShader: ShaderProgram = {
-    if (waveShader == null) {
-      waveShader = new ShaderProgram(VERT, FRAG)
-      if (!waveShader.isCompiled) {
-        Gdx.app.error("TlAudSegmentActor", "Wave shader failed:\n" + waveShader.getLog)
-      }
+  private lazy val waveShader: ShaderProgram = {
+    val shader = new ShaderProgram(VERT, FRAG)
+    if (!shader.isCompiled) {
+      Gdx.app.error("TlAudSegmentActor", "Wave shader failed:\n" + shader.getLog)
     }
-    waveShader
+    shader
   }
 
   private final val VERT =

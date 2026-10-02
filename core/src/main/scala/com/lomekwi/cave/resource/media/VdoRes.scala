@@ -93,8 +93,8 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     private final val pendingSlots: ConcurrentLinkedQueue[Integer] =
       new ConcurrentLinkedQueue[Integer]()
 
-    @transient private var fullPixmap: Pixmap = uninitialized
-    @transient private var thumbW: Int = 0
+    @transient private lazy val fullPixmap: Pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888)
+    @transient private lazy val thumbW: Int = Math.max(1, (THUMB_HEIGHT * width.toFloat / height).toInt)
 
     private final val batchSlots: Array[Int] = new Array[Int](BATCH_SIZE)
     private final val batchPixmaps: Array[Pixmap] = new Array[Pixmap](BATCH_SIZE)
@@ -141,11 +141,6 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
       try {
         if (!dec.initialized) {
           dec.start()
-        }
-        if (fullPixmap == null) {
-          fullPixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888)
-          val aspect = width.toFloat / height
-          thumbW = Math.max(1, (THUMB_HEIGHT * aspect).toInt)
         }
 
         var running = true

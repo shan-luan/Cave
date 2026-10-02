@@ -7,7 +7,6 @@ import com.kotcrab.vis.ui.widget.VisTree
 import java.io.File
 
 import com.lomekwi.cave.util.i18n.I18N.i18n
-import scala.compiletime.uninitialized
 
 class FileTree private extends VisTree[FileTreeNode, File]() {
   {
@@ -26,12 +25,7 @@ class FileTree private extends VisTree[FileTreeNode, File]() {
 }
 
 object FileTree {
-  private var INSTANCE: FileTree = uninitialized
+  private lazy val INSTANCE: FileTree = new FileTree()
 
-  def getINSTANCE: FileTree = {
-    if (INSTANCE == null) {
-      INSTANCE = new FileTree()
-    }
-    INSTANCE
-  }
+  def getINSTANCE: FileTree = INSTANCE
 }

@@ -24,7 +24,7 @@ class TextSource(text: String) extends Source[TextFrame] {
   @transient private var font: BitmapFont = uninitialized
   /** 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体。 */
   @transient private var generatedFontSize: Int = 0
-  @transient private var actor: TransFrameActor = uninitialized
+  @transient private lazy val actor: TransFrameActor = new TransFrameActor(frame)
   @volatile @transient private var initialized: Boolean = false
 
   textIn.defaultData = text
@@ -98,11 +98,7 @@ class TextSource(text: String) extends Source[TextFrame] {
         frame = new TextFrame(track.index, segment)
         frame.setFont(font)
         frame.transform = new Transform(0, 0, 0)
-        if (actor == null) {
-          actor = new TransFrameActor(frame)
-        } else {
-          actor.rebind(frame)
-        }
+        actor.rebind(frame)
         frame.actor = actor
         initialized = true
         cd.countDown()
