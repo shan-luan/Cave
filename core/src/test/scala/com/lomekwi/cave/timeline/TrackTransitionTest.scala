@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 import java.util.List
 
-import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
 
 import scala.jdk.CollectionConverters.*
 
@@ -21,6 +21,7 @@ import scala.jdk.CollectionConverters.*
  *  - 转场区的时间语义：get/rangeAt 返回转场而不是两侧内容
  *  - 转场对象复用：无关编辑不改变转场身份
  *  - 删除转场：两侧各让一半，交界点落在原转场中心
+ *  - 构造走向：前段不能构造时由后段兜底，两侧都不能构造时不成为转场
  */
 class TrackTransitionTest extends GdxTestBase {
 
@@ -42,6 +43,14 @@ class TrackTransitionTest extends GdxTestBase {
   private def transitionOf(track: Track, time: Long): Transition[?] = track.get(time) match {
     case t: Transition[?] => t
     case _ => null
+  }
+
+  /** 不能构造转场的内容，createTransition 落到它身上即失败，用来验证兜底走向。 */
+  private class NoTransitionCont(duration: Long) extends TestCont(duration) {
+    override def canCreateTransitionWith(other: Content[? <: TestCont.TestFrame]): Boolean = false
+
+    override def createTransition(other: Content[? <: TestCont.TestFrame]): Transition[TestCont.TestFrame] =
+      throw new UnsupportedOperationException("转场不应由本片段构造")
   }
 
   @Test
@@ -208,5 +217,40 @@ class TrackTransitionTest extends GdxTestBase {
     assertEquals(-999, applied)
     assertEquals(500 ~~ 1001, t0.getRange(c))
     assertEquals(0 ~~ 1000, t0.getRange(a))
+  }
+
+  @Test
+  def leftCannotCreateFallsBackToRight(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = new NoTransitionCont(1000)
+    val b = newSegment(1000)
+    place(t0, a, 0 ~~ 1000)
+    place(t0, b, 500 ~~ 1500)
+
+    // 前段不能构造，兜底由后段构造，重叠照常成为转场
+    assertNotNull(transitionOf(t0, 600))
+  }
+
+  @Test
+  def rightCannotCreateStillUsesLeft(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = newSegment(1000)
+    val b = new NoTransitionCont(1000)
+    place(t0, a, 0 ~~ 1000)
+    place(t0, b, 500 ~~ 1500)
+
+    // 前段能构造时仍走前段，后段不能构造不构成障碍
+    assertNotNull(transitionOf(t0, 600))
+  }
+
+  @Test
+  def neitherSideCanCreateOverlapIsRejected(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val a = new NoTransitionCont(1000)
+    val b = new NoTransitionCont(1000)
+    place(t0, a, 0 ~~ 1000)
+
+    assertThrows(classOf[IllegalArgumentException], () => place(t0, b, 500 ~~ 1500))
+    assertEquals(1, t0.asScala.size)
   }
 }
