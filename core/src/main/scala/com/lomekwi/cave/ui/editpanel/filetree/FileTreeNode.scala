@@ -52,7 +52,7 @@ class FileTreeNode(file: File) extends Tree.Node[FileTreeNode, File, VisLabel]()
       val children = file.listFiles()
       if (children != null) {
         Gdx.app.debug("FileTreeNode", i18n("找到 ") + children.length + i18n(" 个子项"))
-        for (child <- children) {
+        for (child <- children.sortBy(_.getName)) {
           if (!child.getName.startsWith(".")) {
             val childNode = new FileTreeNode(child)
             add(childNode)
