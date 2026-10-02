@@ -12,15 +12,18 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.scenes.scene2d.Actor
+import com.badlogic.gdx.scenes.scene2d.Group
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox
 import com.badlogic.gdx.scenes.scene2d.ui.Container
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.List
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
+import com.badlogic.gdx.scenes.scene2d.ui.Stack
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.TextField
@@ -33,6 +36,7 @@ import com.kotcrab.vis.ui.util.ToastManager
 import com.kotcrab.vis.ui.widget.LinkLabel
 import com.kotcrab.vis.ui.widget.Menu
 import com.kotcrab.vis.ui.widget.MenuItem
+import com.kotcrab.vis.ui.widget.VisDialog
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
@@ -55,6 +59,7 @@ class Root extends ApplicationListener {
 
   var mainLayout: VisTable = uninitialized
   var majorArea: Container[Table] = uninitialized
+  var dialogLayer: Group = uninitialized
 
   private var topBar: TopBar = uninitialized
   var tabbedPane: TopTabbedPane = uninitialized
@@ -192,7 +197,16 @@ class Root extends ApplicationListener {
     majorArea.fill()
     mainLayout.add(majorArea).fill().expand().row()
 
-    stage.addActor(mainLayout)
+    // Stack 的 layout 会强制所有直接子项填满自身,因此弹窗不能直接放进 Stack,而是放进 dialogLayer
+    val rootStack = new Stack()
+    rootStack.setFillParent(true)
+    stage.addActor(rootStack)
+
+    rootStack.add(mainLayout)
+
+    dialogLayer = new Group()
+    dialogLayer.setTouchable(Touchable.childrenOnly)
+    rootStack.add(dialogLayer)
 
     registerDefaultShortcuts()
 
@@ -232,6 +246,12 @@ class Root extends ApplicationListener {
       val focus = stage.getKeyboardFocus
       focus.isInstanceOf[TextField] || focus.isInstanceOf[VisTextField]
     }
+  }
+
+  /** VisDialog.show 只接受 Stage,会先把窗口加到 stage 根,这里再转移到 dialogLayer */
+  def showDialog(dialog: VisDialog): Unit = {
+    dialog.show(stage)
+    dialogLayer.addActor(dialog)
   }
 
   private def injectChineseFont(scale: VisUI.SkinScale): Skin = {

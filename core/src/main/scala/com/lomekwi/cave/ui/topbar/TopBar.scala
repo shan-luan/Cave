@@ -76,7 +76,7 @@ class TopBar extends MenuBar {
     fileMenu.addItem(new MenuItemP(i18n("导出"), new ChangeListenerX(() => {
       val project = App.root.getFrontendProject
       if (project != null) {
-        new ExportDialog(project).show(App.root.stage)
+        App.root.showDialog(new ExportDialog(project))
       }
     })))
 
@@ -161,7 +161,7 @@ class TopBar extends MenuBar {
           }
         }
         taskWin.addCloseButton()
-        taskWin.show(App.root.stage)
+        App.root.showDialog(taskWin)
       })))
     )
 
@@ -187,7 +187,7 @@ class TopBar extends MenuBar {
         ct.row()
         ct.add(new LinkLabel(i18n("B站"), "https://space.bilibili.com/1655518235")).left()
         ct.row()
-        about.show(App.root.stage)
+        App.root.showDialog(about)
       }))
     ))
   }
