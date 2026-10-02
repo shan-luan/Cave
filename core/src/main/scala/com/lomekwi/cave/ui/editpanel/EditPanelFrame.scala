@@ -78,12 +78,7 @@ class EditPanelFrame private extends VisTable {
 }
 
 object EditPanelFrame {
-  private var INSTANCE: EditPanelFrame = uninitialized
+  private lazy val INSTANCE: EditPanelFrame = new EditPanelFrame()
 
-  def getINSTANCE: EditPanelFrame = {
-    if (INSTANCE == null) {
-      INSTANCE = new EditPanelFrame()
-    }
-    INSTANCE
-  }
+  def getINSTANCE: EditPanelFrame = INSTANCE
 }

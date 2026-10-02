@@ -7,7 +7,6 @@ import com.lomekwi.cave.util.Duplicatable
 
 import java.io.Serializable
 import java.util
-import scala.compiletime.uninitialized
 
 /**
  * 片段。由 [[Source]]（帧的产出）与 [[FilterList]]（过滤链）组合而成，
@@ -22,7 +21,7 @@ import scala.compiletime.uninitialized
 sealed abstract class Segment[T <: Frame](val source: Source[T])
   extends Element with Serializable with Duplicatable[Segment[T]] {
   final val filters: util.List[Filter[? >: T]] = new FilterList[T](source)
-  @transient private var segmentActor: TlSegmentActor = uninitialized
+  @transient private lazy val segmentActor: TlSegmentActor = createTlSegmentActor()
 
   /**
    * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
@@ -95,10 +94,7 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
   }
 
   /** 本片段在时间线上的可视化 actor，随取随建。 */
-  def getTlSegmentActor: TlSegmentActor = {
-    if (segmentActor == null) segmentActor = createTlSegmentActor()
-    segmentActor
-  }
+  def getTlSegmentActor: TlSegmentActor = segmentActor
 
   override def duplicate(): Segment[T] = {
     val copy = super[Duplicatable].duplicate()

@@ -12,12 +12,11 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlImgSegmentActor, TlSegmentActor}
 
 import java.util.concurrent.CountDownLatch
-import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
-  @transient private var texture: Texture = uninitialized
-  @transient private var actor: TransFrameActor = uninitialized
+  @transient private lazy val texture: Texture = new Texture(imgRes.width, imgRes.height, Pixmap.Format.RGBA8888)
+  @transient private lazy val actor: TransFrameActor = new TransFrameActor(frame)
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
@@ -41,17 +40,10 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     val cd = new CountDownLatch(1)
     if (!initialized) {
       Gdx.app.postRunnable(() => {
-        if (texture == null) {
-          texture = new Texture(imgRes.width, imgRes.height, Pixmap.Format.RGBA8888)
-        }
         frame = new ImgFrame(track.index, segment)
         frame.texture = texture
         frame.transform = new Transform(0, 0, 0)
-        if (actor == null) {
-          actor = new TransFrameActor(frame)
-        } else {
-          actor.rebind(frame)
-        }
+        actor.rebind(frame)
         frame.actor = actor
         initialized = true
         cd.countDown()
