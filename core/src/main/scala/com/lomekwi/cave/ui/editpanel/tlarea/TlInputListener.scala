@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.Input.Keys.*
 
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.timeline.playback.PlayState
 
 /** 时间线空白区输入监听器，处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
 class TlInputListener(private final val timelineView: TimelineView) extends InputListener {
@@ -61,7 +62,8 @@ class TlInputListener(private final val timelineView: TimelineView) extends Inpu
 
   override def keyDown(event: InputEvent, keycode: Int): Boolean = {
     if (App.shortcutManager.isActive(TimelineView.Actions.PLAY_PAUSE)) {
-      timelineView.playhead.setPlaying(!timelineView.playhead.isPlaying)
+      val ph = timelineView.playhead
+      ph.state = if (ph.state == PlayState.Playing) PlayState.Paused else PlayState.Playing
     } else if (App.shortcutManager.isActive(TimelineView.Actions.SPLIT)) {
       timelineView.splitAtCursor()
     } else if (App.shortcutManager.isActive(TimelineView.Actions.DELETE)) {

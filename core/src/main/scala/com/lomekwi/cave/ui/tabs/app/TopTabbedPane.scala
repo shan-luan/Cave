@@ -7,6 +7,7 @@ import com.lomekwi.cave.project.ProjectBackgroundedEvent
 import com.lomekwi.cave.project.ProjectFrontedEvent
 import com.lomekwi.cave.project.ProjectLoadedEvent
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.timeline.playback.PlayState
 import com.lomekwi.cave.ui.widget.AutoHideTabbedPane
 import scala.compiletime.uninitialized
 
@@ -18,7 +19,7 @@ class TopTabbedPane extends AutoHideTabbedPane {
     addListener(new TabbedPaneListener {
       override def switchedTab(tab: Tab): Unit = {
         if (currentProjectTab != null && (currentProjectTab ne tab)) {
-          currentProjectTab.project.playhead.setPlaying(false)
+          currentProjectTab.project.playhead.state = PlayState.Paused
         }
 
         App.root.majorArea.setActor(tab.getContentTable)
@@ -41,7 +42,7 @@ class TopTabbedPane extends AutoHideTabbedPane {
       override def removedTab(tab: Tab): Unit = {
         tab match {
           case pt: ProjectTab =>
-            pt.project.playhead.setPlaying(false)
+            pt.project.playhead.state = PlayState.Paused
             pt.project.projEventBus.post(ProjectBackgroundedEvent)
             if (currentProjectTab eq tab) {
               currentProjectTab = null

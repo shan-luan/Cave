@@ -5,7 +5,7 @@ import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.{Content, Gap, GapFrame, Segment, Transition}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
-import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, RefreshRequestEvent, SeekEvent}
+import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, PlayState, RefreshRequestEvent, SeekEvent}
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.{ObjectInputStream, Serializable}
@@ -27,6 +27,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   @transient private var recorded: util.List[UndoableCommand] = new util.ArrayList[UndoableCommand]()
   @volatile private var tracks: Vector[Track] = Vector.empty[Track]
   @transient private var workers: util.Map[Integer, TrackWorker] = new util.HashMap[Integer, TrackWorker]()
+  // SEEKING 聚合会话的运行时状态
+  @transient private var seekSessionVersion: Long = -1L
+  @transient private var seekDoneIndexes: mutable.HashSet[Int] = mutable.HashSet.empty[Int]
   private final val groups: util.List[SegmentGroup] = new util.ArrayList[SegmentGroup]()
 
   private def readObject(in: ObjectInputStream): Unit = {
@@ -34,6 +37,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     recording = false
     recorded = new util.ArrayList[UndoableCommand]()
     workers = new util.HashMap[Integer, TrackWorker]()
+    seekSessionVersion = -1L
+    seekDoneIndexes = mutable.HashSet.empty[Int]
   }
 
   /** 把 index 处的轨道替换为新版本。 */
@@ -437,6 +442,28 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     worker
   }
 
+  /**
+   * 轨迹线程在 SEEKING 下完成一轮 sync 后调用。按会话版本去重聚合，
+   * 聚齐所有轨道后在 GDX 线程恢复 seek 前的状态，版本过期的事件丢弃。
+   */
+  private def reportSeekDone(version: Long, index: Int): Unit = synchronized {
+    if (version >= seekSessionVersion) {
+      if (version > seekSessionVersion) {
+        seekSessionVersion = version
+        seekDoneIndexes.clear()
+      }
+      if (seekDoneIndexes.add(index) && seekDoneIndexes.size >= tracks.size) {
+        seekDoneIndexes.clear()
+        Gdx.app.postRunnable { () =>
+          val ph = project.playhead
+          if (ph.state == PlayState.Seeking && ph.getSeekVersion == version) {
+            ph.finishSeek()
+          }
+        }
+      }
+    }
+  }
+
   override def toString: String = {
     val body = tracks.zipWithIndex
       .map((track, i) => System.lineSeparator() + "track#" + i + ":" + track)
@@ -544,7 +571,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
             activeSegment = null
             out.onStepOut(t - activeOrigin, track)
           }
-          if (!p.isPlaying) {
+          if (p.state != PlayState.Playing) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
 
             var f: com.lomekwi.cave.pipeline.Frame = null
@@ -555,6 +582,9 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
               f = track.frameAt(current, t)
             }
             project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
+            if (p.state == PlayState.Seeking) {
+              reportSeekDone(p.getSeekVersion, index)
+            }
 
             LockSupport.park()
           } else {
