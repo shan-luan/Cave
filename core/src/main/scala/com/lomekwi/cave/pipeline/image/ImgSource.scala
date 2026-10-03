@@ -27,7 +27,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     override def getData: Double = getDuration.toDouble
   })
 
-  override def sync(time: Long, track: Track): Unit = {
+  override def sync(time: Long, track: Track, segment: Segment): Unit = {
     imgRes.sync(track.index, time)
   }
 

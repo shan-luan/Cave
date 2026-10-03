@@ -12,7 +12,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     override def getData: Double = getDuration.toDouble
   })
 
-  override def sync(time: Long, track: Track): Unit = {
+  override def sync(time: Long, track: Track, segment: Segment): Unit = {
     audRes.sync(track.index, time)
   }
 

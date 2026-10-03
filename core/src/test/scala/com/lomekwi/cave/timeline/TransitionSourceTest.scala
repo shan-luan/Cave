@@ -27,6 +27,17 @@ class TransitionSourceTest extends GdxTestBase {
   class TimedFrame(trackIndex: Int, val producedAt: Long) extends Frame(trackIndex)
 
   private class ProbeSource(duration: Long, nullAt: Long => Boolean) extends Source[TimedFrame] {
+    var lastSync: Long = -1L
+    var lastStepOut: Long = -1L
+
+    override def sync(time: Long, track: Track, segment: Segment): Unit = {
+      lastSync = time
+    }
+
+    override def onStepOut(time: Long, track: Track, segment: Segment): Unit = {
+      lastStepOut = time
+    }
+
     override protected def produce(time: Long, track: Track, segment: Segment): TimedFrame = {
       if (nullAt(time)) null else new TimedFrame(track.index, time)
     }
@@ -133,6 +144,46 @@ class TransitionSourceTest extends GdxTestBase {
     assertNull(source.lastFrom)
     assertEquals(100L, source.lastTo.producedAt)
     assertEquals(0.2f, source.lastProgress, 1e-6f)
+  }
+
+  @Test
+  def syncAndStepOutReachBothSidesWithConvertedTimes(): Unit = {
+    val (track, transition, _) = placedTrack(leftLead = true, _ => false, _ => false)
+    val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+
+    track.syncAt(transition, 600L)
+    assertEquals(600L, leftSource.lastSync)
+    assertEquals(100L, rightSource.lastSync)
+
+    transition.onStepOut(100L, track)
+    assertEquals(600L, leftSource.lastStepOut)
+    assertEquals(100L, rightSource.lastStepOut)
+  }
+
+  @Test
+  def syncForwardsCorrectlyWhenFlipped(): Unit = {
+    val (track, transition, _) = placedTrack(leftLead = false, _ => false, _ => false)
+    val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+
+    track.syncAt(transition, 600L)
+    // from 指向右内容，转发仍按各自的原始配对换算
+    assertEquals(600L, leftSource.lastSync)
+    assertEquals(100L, rightSource.lastSync)
+  }
+
+  @Test
+  def onStepOutSkippedAfterTransitionRemoved(): Unit = {
+    val (track, transition, source) = placedTrack(leftLead = true, _ => false, _ => false)
+
+    // 播放头在转场中删除转场，收尾发生在转场已摘出轨道之后
+    timeline.remove(transition)
+    val current = timeline.getTrackOrCreate(0)
+
+    transition.onStepOut(100L, current)
+    assertEquals(-1L, source.from.asInstanceOf[ProbeSource].lastStepOut)
+    assertEquals(-1L, source.to.asInstanceOf[ProbeSource].lastStepOut)
   }
 
   @Test

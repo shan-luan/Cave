@@ -37,15 +37,20 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
    */
   protected def mix(fromFrame: I, toFrame: I, progress: Float): O
 
-  final override protected def produce(time: Long, track: Track, segment: Segment): O = {
+  /**
+   * from 与 to 各自对应的内容片段（原始配对），以及方向标志。
+   * 后段兜底构造的转场源 from 与 to 顺序互换，flipped 为 true 表示 from 指向终点侧。
+   */
+  private def rawSides(segment: Segment, track: Track): (Content, Content, Boolean) = {
     val sides = track.transitionSides(segment.asInstanceOf[Transition])
     require(sides != null, "转场源在轨道之外被求值: " + segment)
     val left = sides._1
     val right = sides._2
-    // 后段兜底构造的转场源 from 与 to 顺序互换，这里统一还原成起点侧在前
-    val flipped = !(left.source eq from)
-    val fromSeg = if (flipped) right else left
-    val toSeg = if (flipped) left else right
+    if (left.source eq from) (left, right, false) else (right, left, true)
+  }
+
+  final override protected def produce(time: Long, track: Track, segment: Segment): O = {
+    val (fromSeg, toSeg, flipped) = rawSides(segment, track)
     val abs = track.getOrigin(segment) + time
     val a = from.asInstanceOf[Source[I]].generate(abs - track.getOrigin(fromSeg), track, fromSeg)
     val b = to.asInstanceOf[Source[I]].generate(abs - track.getOrigin(toSeg), track, toSeg)
@@ -53,8 +58,35 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     if (a == null && b == null) null.asInstanceOf[O]
     else {
       val progress = time.toFloat / (track.getRange(segment).hi - track.getRange(segment).lo)
+      // mix 的视角固定为起点侧在前，flipped 时参数对调、进度翻转
       if (flipped) mix(b, a, 1f - progress) else mix(a, b, progress)
     }
+  }
+
+  override def sync(time: Long, track: Track, segment: Segment): Unit = {
+    val (fromSeg, toSeg, _) = rawSides(segment, track)
+    val abs = track.getOrigin(segment) + time
+    from.sync(abs - track.getOrigin(fromSeg), track, fromSeg)
+    to.sync(abs - track.getOrigin(toSeg), track, toSeg)
+  }
+
+  override def onStepOut(time: Long, track: Track, segment: Segment): Unit = {
+    // 收尾可能发生在转场已被删除或摘出轨道之后，此时无从换算，直接跳过
+    if (!track.contains(segment)) return
+    val sides = track.transitionSides(segment.asInstanceOf[Transition])
+    if (sides == null || sides._2 == null) return
+    val left = sides._1
+    val right = sides._2
+    val fromSeg = if (left.source eq from) left else right
+    val toSeg = if (fromSeg eq left) right else left
+    val abs = track.getOrigin(segment) + time
+    from.onStepOut(abs - track.getOrigin(fromSeg), track, fromSeg)
+    to.onStepOut(abs - track.getOrigin(toSeg), track, toSeg)
+  }
+
+  override def prefetch(): Unit = {
+    from.prefetch()
+    to.prefetch()
   }
 
   // 转场长度由轨道的重叠区决定，不从源上查
