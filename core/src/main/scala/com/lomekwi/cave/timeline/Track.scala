@@ -772,13 +772,24 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /** 包含 time 的片段，落在空隙中时返回 null。重叠时取区间最短的那个，它一定是转场。 */
   private def segmentAt(time: Long): Segment = {
+    // 布局不变量（放置约束见 [[canPlaceAt]]，平移与裁切的上下界计算与之配套）使条目按 (lo, hi)
+    // 排序后 hi 不减，覆盖 time 的条目因而是 lo ≤ time 的条目末尾的连续几个，反向扫描
+    // 遇到 hi ≤ time 的条目即可停止，其之前的条目 hi 更短，不可能覆盖 time
     var best: Segment = null
     var bestLen = Long.MaxValue
-    for ((r, s) <- intervalToSeg.rangeTo(upTo(time))) {
-      if (r.hi > time && r.hi - r.lo < bestLen) {
+    val bound = upTo(time)
+    var current = intervalToSeg.get(bound) match {
+      case Some(s) => Some((bound, s))
+      case None => intervalToSeg.maxBefore(bound)
+    }
+    while (current.isDefined) {
+      val (r, s) = current.get
+      if (r.hi <= time) return best
+      if (r.hi - r.lo < bestLen) {
         best = s
         bestLen = r.hi - r.lo
       }
+      current = intervalToSeg.maxBefore(r)
     }
     best
   }
