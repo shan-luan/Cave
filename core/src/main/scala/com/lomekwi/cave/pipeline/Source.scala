@@ -50,14 +50,16 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   /**
    * 同步到指定时间
    * @param time 片段内时间
+   * @param segment 宿主片段
    */
-  def sync(time: Long, track: Track): Unit = {}
+  def sync(time: Long, track: Track, segment: Segment): Unit = {}
 
   /**
    * 播放头离开本片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
    * @param time 片段内时间，即离开时播放头所在的片段内位置
+   * @param segment 宿主片段
    */
-  def onStepOut(time: Long, track: Track): Unit = {}
+  def onStepOut(time: Long, track: Track, segment: Segment): Unit = {}
 
   def prefetch(): Unit = {}
 

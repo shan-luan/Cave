@@ -39,7 +39,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
    * @param time 片段内时间
    */
   def sync(time: Long, track: Track): Unit = {
-    source.sync(time, track)
+    source.sync(time, track, this)
   }
 
   /**
@@ -47,7 +47,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
    * @param time 片段内时间，即离开时播放头所在的片段内位置
    */
   def onStepOut(time: Long, track: Track): Unit = {
-    source.onStepOut(time, track)
+    source.onStepOut(time, track, this)
   }
 
   def prefetch(): Unit = {
