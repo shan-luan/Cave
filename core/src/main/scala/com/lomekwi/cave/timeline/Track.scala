@@ -666,9 +666,10 @@ final class Track private (val timeline: Timeline, val index: Int,
       getRange(s)
     } else {
       // 空隙从上一个条目的终点延伸到下一个条目的起点
-      var from = 0L
-      for ((r, _) <- intervalToSeg.rangeTo(upTo(time))) {
-        if (r.hi > from) from = r.hi
+      // 条目按 (lo, hi) 有序时 hi 不减（见 [[segmentAt]]），lo ≤ time 的条目里最后一个 hi 最大
+      val from = lastAtOrBefore(upTo(time)) match {
+        case Some((r, _)) => Math.max(0L, r.hi)
+        case None => 0L
       }
       from ~~ nextStart(time)
     }
@@ -777,11 +778,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     // 遇到 hi ≤ time 的条目即可停止，其之前的条目 hi 更短，不可能覆盖 time
     var best: Segment = null
     var bestLen = Long.MaxValue
-    val bound = upTo(time)
-    var current = intervalToSeg.get(bound) match {
-      case Some(s) => Some((bound, s))
-      case None => intervalToSeg.maxBefore(bound)
-    }
+    var current = lastAtOrBefore(upTo(time))
     while (current.isDefined) {
       val (r, s) = current.get
       if (r.hi <= time) return best
@@ -809,11 +806,18 @@ final class Track private (val timeline: Timeline, val index: Int,
   private def at(time: Long): Interval = time ~~ time
 
   private def lastBefore(bt: immutable.TreeMap[Interval, Segment], time: Long): (Interval, Segment) = {
-    bt.rangeUntil(at(time)).toSeq.lastOption.orNull
+    bt.maxBefore(at(time)).orNull
   }
 
+  /** 键不大于 bound 的最后一个条目。 */
+  private def lastAtOrBefore(bound: Interval): Option[(Interval, Segment)] =
+    intervalToSeg.get(bound) match {
+      case Some(s) => Some((bound, s))
+      case None => intervalToSeg.maxBefore(bound)
+    }
+
   private def nextStart(time: Long): Long = {
-    intervalToSeg.rangeFrom(at(time)).iterator.nextOption().map(_._1.lo).getOrElse(Long.MaxValue)
+    intervalToSeg.minAfter(at(time)).map(_._1.lo).getOrElse(Long.MaxValue)
   }
 }
 
