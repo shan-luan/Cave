@@ -49,6 +49,18 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
    * 对于同时包含视频和音频流的文件，可能返回多个片段。
    */
   def getAll(file: File): util.List[Segment[?]] = {
+    val segments: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
+    for (resource <- ensureResources(file).asScala) {
+      segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
+    }
+    segments
+  }
+
+  /**
+   * 为尚无资源的文件创建并登记媒体资源，返回该文件的全部资源。
+   * 对于同时包含视频和音频流的文件，可能返回多个资源。
+   */
+  def ensureResources(file: File): util.Collection[Resource] = {
     var existing: util.Collection[Resource] = project.resources.get(file)
 
     if (existing.isEmpty) {
@@ -64,11 +76,7 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
       existing = project.resources.get(file)
     }
 
-    val segments: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
-    for (resource <- existing.asScala) {
-      segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
-    }
-    segments
+    existing
   }
 
   /**

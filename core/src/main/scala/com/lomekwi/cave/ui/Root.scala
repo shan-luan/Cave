@@ -48,9 +48,14 @@ import com.lomekwi.cave.ui.tabs.app.ProjectTab
 import com.lomekwi.cave.ui.tabs.app.TopTabbedPane
 import com.lomekwi.cave.ui.topbar.TopBar
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.util.MimeType
+import com.lomekwi.cave.util.i18n.I18N.i18n
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.compiletime.uninitialized
+import scala.collection.mutable
+
+import java.io.File
 
 class Root extends ApplicationListener {
   var stage: Stage = uninitialized
@@ -295,6 +300,39 @@ class Root extends ApplicationListener {
   def getFrontendEditPanel: EditPanel = tabbedPane.getActiveTab match {
     case tab: ProjectTab => tab.editPanel
     case _ => null
+  }
+
+  /** 处理从系统桌面或文件管理器拖入窗口的文件，为前台项目创建媒体资源 */
+  def importDroppedFiles(paths: Array[String]): Unit = {
+    val project = getFrontendProject
+    if (project == null) {
+      toastManager.show(i18n("请先打开或新建项目"), 2f)
+      return
+    }
+    var imported = 0
+    val failed = mutable.ArrayBuffer[String]()
+    for (path <- paths) {
+      val file = new File(path)
+      val mimeType = MimeType.detectMimeType(file)
+      if (mimeType == null || !App.mediaFactory.isSupported(mimeType)) {
+        failed += file.getName
+      } else {
+        try {
+          project.sourceFactory.ensureResources(file)
+          imported += 1
+        } catch {
+          case e: Exception =>
+            Gdx.app.error("Root", i18n("创建媒体资源失败: ") + file.getName, e)
+            failed += file.getName
+        }
+      }
+    }
+    if (imported > 0) {
+      toastManager.show(i18n("已导入 ") + imported + i18n(" 个媒体文件"), 2f)
+    }
+    if (failed.nonEmpty) {
+      toastManager.show(i18n("无法导入: ") + failed.mkString(", "), 3f)
+    }
   }
 
   private def registerDefaultShortcuts(): Unit = {

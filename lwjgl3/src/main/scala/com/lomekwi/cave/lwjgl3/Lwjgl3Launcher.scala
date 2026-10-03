@@ -2,6 +2,8 @@ package com.lomekwi.cave.lwjgl3
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowListener
 import com.lomekwi.cave.Main
 
 import games.spooky.gdx.nativefilechooser.desktop.DesktopFileChooser
@@ -14,12 +16,32 @@ object Lwjgl3Launcher {
   }
 
   private def createApplication(): Lwjgl3Application = {
-    new Lwjgl3Application(new Main(new DesktopFileChooser()), getDefaultConfiguration)
+    val main = new Main(new DesktopFileChooser())
+    new Lwjgl3Application(main, getDefaultConfiguration(main))
   }
 
-  private def getDefaultConfiguration: Lwjgl3ApplicationConfiguration = {
+  private def getDefaultConfiguration(main: Main): Lwjgl3ApplicationConfiguration = {
     val configuration: Lwjgl3ApplicationConfiguration = new Lwjgl3ApplicationConfiguration()
     configuration.setTitle("Cave")
+    configuration.setWindowListener(new Lwjgl3WindowListener {
+      override def created(window: Lwjgl3Window): Unit = {}
+
+      override def iconified(isIconified: Boolean): Unit = {}
+
+      override def maximized(isMaximized: Boolean): Unit = {}
+
+      override def focusLost(): Unit = {}
+
+      override def focusGained(): Unit = {}
+
+      override def closeRequested(): Boolean = true
+
+      override def filesDropped(files: Array[String]): Unit = {
+        main.importDroppedFiles(files)
+      }
+
+      override def refreshRequested(): Unit = {}
+    })
     //// Vsync limits the frames per second to what your hardware can display, and helps eliminate
     //// screen tearing. This setting doesn't always work on Linux, so the line after is a safeguard.
     configuration.useVsync(false)
