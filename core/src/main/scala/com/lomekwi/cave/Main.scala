@@ -57,6 +57,11 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   override def dispose(): Unit = {
     ui.dispose()
   }
+
+  /** 桌面端系统文件拖放的入口，实现在 [[Root.importDroppedFiles]] */
+  def importDroppedFiles(paths: Array[String]): Unit = {
+    ui.importDroppedFiles(paths)
+  }
   override def resize(width: Int, height: Int): Unit = {
     ui.resize(width, height)
   }
