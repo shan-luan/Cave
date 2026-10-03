@@ -74,7 +74,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val segment: Segment[?] = new Content[TextFrame](new TextSource())
+    val segment: Segment = new Content(new TextSource())
     val duration: Long = segment.getDefaultDuration
 
     val timeline = timelineView.timeline
@@ -98,11 +98,11 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.project
     try {
-      val segments: util.List[Segment[?]] = project.sourceFactory.getAll(file)
+      val segments: util.List[Segment] = project.sourceFactory.getAll(file)
       if (!segments.isEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
-        val added: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
+        val added: util.List[Segment] = new util.ArrayList[Segment]()
 
         val timeline = timelineView.timeline
         Using.resource(timeline.record()) { h =>

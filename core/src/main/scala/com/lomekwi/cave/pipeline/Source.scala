@@ -35,7 +35,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * @param time 片段内时间
    * @param segment 宿主片段
    */
-  final def generate(time: Long, track: Track, segment: Segment[T]): T = {
+  final def generate(time: Long, track: Track, segment: Segment): T = {
     frame = produce(time, track, segment)
     frame
   }
@@ -45,7 +45,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * @param time 片段内时间
    * @param segment 宿主片段
    */
-  protected def produce(time: Long, track: Track, segment: Segment[T]): T
+  protected def produce(time: Long, track: Track, segment: Segment): T
 
   /**
    * 同步到指定时间
@@ -81,7 +81,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   }
 
   /** 本片段在时间线上的可视化 actor。 */
-  def createTlSegmentActor(segment: Segment[?]): TlSegmentActor
+  def createTlSegmentActor(segment: Segment): TlSegmentActor
 
   /** 本源与给定源能否构造转场。 */
   def canCreateTransitionWith(source: Source[?]): Boolean = true
@@ -90,8 +90,8 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * 由本源与给定源构造转场源。默认返回测试转场源。
    * 要求 [[canCreateTransitionWith]] 为 true，否则抛 UnsupportedOperationException。
    */
-  def createTransition(source: Source[?]): TransitionSource[T] = {
-    new TestTransitionSource[T](this, source.asInstanceOf[Source[T]])(using classTag)
+  def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
+    new TestTransitionSource[T, T](this, source.asInstanceOf[Source[T]])(using classTag)
   }
 
   def onDuplicate(original: Source[?]): Unit = {}

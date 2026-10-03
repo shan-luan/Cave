@@ -25,7 +25,7 @@ import java.util
 
 class Inspector extends VisTable {
   private final val content: VisTable = new VisTable()
-  private var currentSegment: Segment[?] = uninitialized
+  private var currentSegment: Segment = uninitialized
   private var currentSet: SegmentSet = uninitialized
 
   {
@@ -78,7 +78,7 @@ class Inspector extends VisTable {
     content.clear()
     content.setFillParent(false)
     content.top()
-    val segments: util.List[Segment[?]] = new util.ArrayList[Segment[?]](set)
+    val segments: util.List[Segment] = new util.ArrayList[Segment](set)
     sortByPlacement(segments)
     var first = true
     for (segment <- segments.asScala) {
@@ -90,7 +90,7 @@ class Inspector extends VisTable {
     }
   }
 
-  private def showInfo(segment: Segment[?]): Unit = {
+  private def showInfo(segment: Segment): Unit = {
     if (segment != null) {
       currentSegment = segment
       currentSet = null
@@ -102,11 +102,11 @@ class Inspector extends VisTable {
   }
 
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
-  private def sortByPlacement(segments: util.List[Segment[?]]): Unit = {
+  private def sortByPlacement(segments: util.List[Segment]): Unit = {
     val project = App.root.getFrontendProject
     if (project == null) return
     val timeline = project.timeline
-    segments.sort((a: Segment[?], b: Segment[?]) => {
+    segments.sort((a: Segment, b: Segment) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
       val ia = if (ta == null) Integer.MAX_VALUE else ta.index
@@ -123,7 +123,7 @@ class Inspector extends VisTable {
     })
   }
 
-  private def appendSegmentInfo(segment: Segment[?]): Unit = {
+  private def appendSegmentInfo(segment: Segment): Unit = {
     content.add(new SourceActor(segment)).growX().pad(4).row()
     for (filter <- segment.filters.asScala) {
       val actor = new FilterActor(segment, filter)

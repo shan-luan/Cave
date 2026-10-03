@@ -41,7 +41,7 @@ class NodeRegistry {
     NodeRegistry.create(entries(index))
   }
 
-  def getCompatibleCount(segment: Segment[?]): Int = {
+  def getCompatibleCount(segment: Segment): Int = {
     val frameType: Class[?] = segment.getType
     var count = 0
     for (nodeClass <- entries) {
@@ -54,7 +54,7 @@ class NodeRegistry {
    * 创建第 index 个兼容节点。只会返回可挂到片段滤镜链上的 [[Filter]] 节点，
    * 非 Filter 的图内节点不参与匹配。
    */
-  def createCompatible(segment: Segment[?], index: Int): Node = {
+  def createCompatible(segment: Segment, index: Int): Node = {
     val frameType: Class[?] = segment.getType
     entries.iterator
       .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))

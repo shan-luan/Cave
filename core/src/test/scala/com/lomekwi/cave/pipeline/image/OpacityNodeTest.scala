@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline.image
 
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.{Content, Frame, NodeRegistry, Segment, Source}
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
@@ -19,7 +20,7 @@ class OpacityNodeTest {
     val segment = new OpCont
     segment.attach(new OpacityNode())
 
-    assertEquals(1f, segment.get(0, null).opacity, 0f)
+    assertEquals(1f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
   }
 
   @Test
@@ -29,7 +30,7 @@ class OpacityNodeTest {
     node.setOpacity(0.25)
     segment.attach(node)
 
-    assertEquals(0.25f, segment.get(0, null).opacity, 0f)
+    assertEquals(0.25f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
   }
 
   @Test
@@ -42,7 +43,7 @@ class OpacityNodeTest {
     segment.attach(a)
     segment.attach(b)
 
-    assertEquals(0.25f, segment.get(0, null).opacity, 0f)
+    assertEquals(0.25f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
   }
 
   @Test
@@ -52,9 +53,9 @@ class OpacityNodeTest {
     node.setOpacity(0.5)
     segment.attach(node)
 
-    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
-    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
-    assertEquals(0.5f, segment.get(0, null).opacity, 0f)
+    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
   }
 
   @Test
@@ -72,12 +73,14 @@ object OpacityNodeTest {
   /** 最小可测的可渲染帧。 */
   private final class OpFrame extends Frame(-1) with Renderable {
     override def render(batch: Batch): Unit = {}
+
+    override protected def createActor(): Actor = null
   }
 
-  private final class OpCont extends Content[OpFrame](new OpSource)
+  private final class OpCont extends Content(new OpSource)
 
   private final class OpSource extends Source[OpFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment[OpFrame]): OpFrame = {
+    override protected def produce(time: Long, track: Track, segment: Segment): OpFrame = {
       if (frame == null) {
         frame = new OpFrame
       }
@@ -98,7 +101,7 @@ object OpacityNodeTest {
       "透明帧源"
     }
 
-    override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+    override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
       null
     }
   }

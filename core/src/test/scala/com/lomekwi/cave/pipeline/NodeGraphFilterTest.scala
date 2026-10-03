@@ -63,7 +63,7 @@ class NodeGraphFilterTest {
     val sinkIn = sink(ngf).inPorts.get(0).asInstanceOf[Node.InPort[Object]]
     sinkIn.linkFrom(add.filterOut)
 
-    assertEquals(15.0, segment.get(0, null).`val`, 0)
+    assertEquals(15.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -81,7 +81,7 @@ class NodeGraphFilterTest {
     val copyNgf = copy.filters.get(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))
     // 入口节点反向引用宿主 filter，往返后仍能取到图外连入的帧
-    assertEquals(15.0, copy.get(0, null).`val`, 0)
+    assertEquals(15.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test

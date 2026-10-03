@@ -16,7 +16,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     audRes.sync(track.index, time)
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment[AudFrame]): AudFrame = {
+  override protected def produce(time: Long, track: Track, segment: Segment): AudFrame = {
     // 轨道按索引唯一，帧携带的轨道只要索引相同就仍然对应当前的轨迹线程，可以接着用
     if (frame == null || frame.trackIndex != track.index) {
       frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track.index, segment)
@@ -43,7 +43,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     "音频源"
   }
 
-  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+  override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     new TlAudSegmentActor(segment)
   }
 

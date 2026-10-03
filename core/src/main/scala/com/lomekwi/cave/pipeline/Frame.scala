@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline
 import java.io.Serializable
 
 @SerialVersionUID(1L)
-abstract class Frame(final val trackIndex: Int, val segment: Segment[?]) extends AutoCloseable with Serializable {
+abstract class Frame(final val trackIndex: Int, val segment: Segment) extends AutoCloseable with Serializable {
 
   @volatile var timestamp: Long = 0L
   @volatile var closed: Boolean = false

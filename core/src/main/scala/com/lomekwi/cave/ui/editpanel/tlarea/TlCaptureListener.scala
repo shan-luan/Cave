@@ -30,7 +30,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val trackIndex: Int = timelineView.yToTrackIndex(y)
       val onSegment: Boolean = trackIndex >= 0 && trackIndex < timelineView.timeline.getTrackCount && {
         timelineView.timeline.getTrackOrCreate(trackIndex).get(timelineView.xToAbsoluteTime(x)) match {
-          case _: Segment[?] => true
+          case _: Segment => true
           case _: Gap => false
         }
       }
@@ -64,7 +64,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val firstTrack: Int = Math.max(0, timelineView.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(timelineView.timeline.getTrackCount - 1, timelineView.yToTrackIndex(minY))
 
-    val toSelect: util.Set[Segment[?]] = new util.HashSet[Segment[?]]()
+    val toSelect: util.Set[Segment] = new util.HashSet[Segment]()
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = timelineView.timeline.getTrackOrCreate(i)
@@ -84,7 +84,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
         val hits = track.getIntersecting(timeRange).asScala
         val covering = hits.collectFirst {
-          case t: Transition[?] if track.getRange(t).contains(timeRange.lo) => t
+          case t: Transition if track.getRange(t).contains(timeRange.lo) => t
         }
         val selected = covering match {
           case Some(t) => Seq(t)

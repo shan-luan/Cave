@@ -31,11 +31,11 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: util.List[Segment[?]] = timelineView.project.sourceFactory.getAll(file)
+      val segments: util.List[Segment] = timelineView.project.sourceFactory.getAll(file)
       val startTime: Long = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
-      val added: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
+      val added: util.List[Segment] = new util.ArrayList[Segment]()
       Using.resource(timelineView.timeline.record()) { h =>
         for (segment <- segments.asScala) {
           val duration: Long = segment.getDefaultDuration

@@ -59,7 +59,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     setField(tl, "view", view)
   }
 
-  private def newSegment(duration: Long): Segment[?] = {
+  private def newSegment(duration: Long): Segment = {
     new TestCont(duration)
   }
 
@@ -72,7 +72,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   }
 
   /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
-  private def place(track: Track, segment: Segment[?], start: Long, end: Long, origin: Long): TlSegmentActor = {
+  private def place(track: Track, segment: Segment, start: Long, end: Long, origin: Long): TlSegmentActor = {
     timeline.tryAdd(track, segment, start ~~ end, origin)
     val actor = segment.getTlSegmentActor
     actor.tl = tl
@@ -220,11 +220,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertTrue(transition.isInstanceOf[Transition])
 
     // 锚点是内容 a，转场作为同轨成员一起选中
     tl.selectedSegments.add(a)
@@ -268,11 +268,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     // a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertTrue(transition.isInstanceOf[Transition])
 
     // 锚点是转场，b 作为同轨成员一起选中
     tl.selectedSegments.add(transition)
@@ -340,11 +340,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     // a=[0,500000) 转场=[500000,1000000) b=[1000000,1500000)
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertTrue(transition.isInstanceOf[Transition])
 
     val tActor = transition.getTlSegmentActor
     tActor.tl = tl
@@ -359,11 +359,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     // 拖回右边重建转场
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
-    val rebuilt: Segment[?] = t0.get(600_000L) match {
-      case s: Segment[?] => s
+    val rebuilt: Segment = t0.get(600_000L) match {
+      case s: Segment => s
       case _ => null
     }
-    assertTrue(rebuilt.isInstanceOf[Transition[?]])
+    assertTrue(rebuilt.isInstanceOf[Transition])
     assertEquals(500_000L ~~ 900_000L, t0.getRange(rebuilt))
 
     // 小幅左移（在吸附阈值内），目标不得被吸回转场右缘
@@ -386,11 +386,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(500_000L ~~ 1500_000L, t0.getRange(b))
     rebuildFromModel(aActor)
 
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition[?]])
+    assertTrue(transition.isInstanceOf[Transition])
 
     val tActor = transition.getTlSegmentActor
     tActor.tl = tl
@@ -427,8 +427,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
     val tActor = transition.getTlSegmentActor
@@ -442,7 +442,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     // 拖回 a 的终点之内，重叠重新成为转场
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
-    assertTrue(t0.get(900_000L).isInstanceOf[Transition[?]])
+    assertTrue(t0.get(900_000L).isInstanceOf[Transition])
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
     assertEquals(900_000L ~~ 1500_000L, t0.getRange(b))
   }
@@ -458,8 +458,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment[?] = t0.get(500_000L) match {
-      case s: Segment[?] => s
+    val transition: Segment = t0.get(500_000L) match {
+      case s: Segment => s
       case _ => null
     }
     val tActor = transition.getTlSegmentActor

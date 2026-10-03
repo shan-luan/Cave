@@ -3,10 +3,9 @@ package com.lomekwi.cave.pipeline.image
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.lomekwi.cave.pipeline.{Source, Node, Segment}
+import com.lomekwi.cave.pipeline.{Source, Node, Segment, TransitionSource}
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlVdoSegmentActor}
 
 import java.util.concurrent.CountDownLatch
@@ -14,7 +13,6 @@ import java.util.concurrent.CountDownLatch
 @SerialVersionUID(1L)
 class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
   @transient private lazy val texture: Texture = new Texture(vdoRes.width, vdoRes.height, Pixmap.Format.RGBA8888)
-  @transient private lazy val actor: TransFrameActor = new TransFrameActor(frame)
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
@@ -31,7 +29,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
     vdoRes.sync(track.index, time)
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment[ImgFrame]): ImgFrame = {
+  override protected def produce(time: Long, track: Track, segment: Segment): ImgFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -41,8 +39,6 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
         frame = new ImgFrame(track.index, segment)
         frame.texture = texture
         frame.transform = new Transform(0, 0, 0)
-        actor.rebind(frame)
-        frame.actor = actor
         initialized = true
         cd.countDown()
       })
@@ -78,8 +74,16 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
     "视频源"
   }
 
-  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+  override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     new TlVdoSegmentActor(segment)
+  }
+
+  override def canCreateTransitionWith(source: Source[?]): Boolean = {
+    classOf[ImgFrame].isAssignableFrom(source.getType)
+  }
+
+  override def createTransition(source: Source[?]): TransitionSource[ImgFrame, BiRenderFrame] = {
+    new CrossfadeSource(this, source.asInstanceOf[Source[ImgFrame]])
   }
 
   override def onDuplicate(original: Source[?]): Unit = {

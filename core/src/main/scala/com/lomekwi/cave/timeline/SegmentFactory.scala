@@ -33,9 +33,9 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
   initDefaultConstructors()
 
   private def initDefaultConstructors(): Unit = {
-    register(classOf[VdoRes], (segment: Resource) => new Content[ImgFrame](new VdoSource(segment.asInstanceOf[VdoRes])))
-    register(classOf[AudRes], (segment: Resource) => new Content[AudFrame](new AudSource(segment.asInstanceOf[AudRes])))
-    register(classOf[ImgRes], (segment: Resource) => new Content[ImgFrame](new ImgSource(segment.asInstanceOf[ImgRes])))
+    register(classOf[VdoRes], (segment: Resource) => new Content(new VdoSource(segment.asInstanceOf[VdoRes])))
+    register(classOf[AudRes], (segment: Resource) => new Content(new AudSource(segment.asInstanceOf[AudRes])))
+    register(classOf[ImgRes], (segment: Resource) => new Content(new ImgSource(segment.asInstanceOf[ImgRes])))
   }
   def register(clazz: ResourceClass, constructor: SegmentCtor): Unit = {
     constructors.put(clazz, constructor)
@@ -48,8 +48,8 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
    * 获取文件对应的所有片段。
    * 对于同时包含视频和音频流的文件，可能返回多个片段。
    */
-  def getAll(file: File): util.List[Segment[?]] = {
-    val segments: util.List[Segment[?]] = new util.ArrayList[Segment[?]]()
+  def getAll(file: File): util.List[Segment] = {
+    val segments: util.List[Segment] = new util.ArrayList[Segment]()
     for (resource <- ensureResources(file).asScala) {
       segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
     }
@@ -82,11 +82,11 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
   /**
    * 获取文件对应的第一个主要片段。
    */
-  def get(file: File): Segment[?] = {
+  def get(file: File): Segment = {
     getAll(file).get(0)
   }
-  private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Segment[?] = {
-    fn.asInstanceOf[Function[R, Segment[?]]].apply(resource)
+  private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Segment = {
+    fn.asInstanceOf[Function[R, Segment]].apply(resource)
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
@@ -101,5 +101,5 @@ object SegmentFactory {
   private type ResourceClass = Class[? <: Resource]
 
   /** 由单个资源构造片段。 */
-  private type SegmentCtor = Function[? <: Resource, Segment[?]]
+  private type SegmentCtor = Function[? <: Resource, Segment]
 }

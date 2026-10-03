@@ -28,7 +28,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
                            private val trackCount: Int = 4,
                            private val minDuration: Long = 1_000L,
                            private val maxDuration: Long = 15_000L,
-                           private val segmentFactory: Long => Segment[?] = duration => new TestCont(duration)) {
+                           private val segmentFactory: Long => Segment = duration => new TestCont(duration)) {
 
   /** 组注册表。组跨轨道，放在引擎里才能在分组时并入已有的随机一个组。 */
   private final val groups: List[SegmentGroup] = new ArrayList[SegmentGroup]()
@@ -64,7 +64,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, span - duration))
       val range: Interval = start ~~ (start + duration)
-      if (track.isFree(range, Set.of[Segment[?]]())) {
+      if (track.isFree(range, Set.of[Segment]())) {
         val segment = segmentFactory(duration)
         Using.resource(timeline.record()) { _ =>
           timeline.tryAdd(track, segment, range, rnd.nextLong(span))
@@ -135,12 +135,12 @@ class RandomTimelineFiller(final val timeline: Timeline,
   }
 
   /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
-  private def dragMembers(segment: Segment[?]): List[Segment[?]] = {
+  private def dragMembers(segment: Segment): List[Segment] = {
     val group = timeline.getGroup(segment)
     if (group != null) List.copyOf(group) else List.of(segment)
   }
 
-  private def moveOp(placed: List[Segment[?]]): Unit = {
+  private def moveOp(placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     var minIdx = Integer.MAX_VALUE
@@ -157,7 +157,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def frontResizeOp(placed: List[Segment[?]]): Unit = {
+  private def frontResizeOp(placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
@@ -166,7 +166,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def behindResizeOp(placed: List[Segment[?]]): Unit = {
+  private def behindResizeOp(placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
@@ -175,7 +175,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def splitOp(placed: List[Segment[?]]): Unit = {
+  private def splitOp(placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val segment = placed.get(rnd.nextInt(placed.size()))
     val track = timeline.findTrackOf(segment)
@@ -189,7 +189,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def removeOp(placed: List[Segment[?]]): Unit = {
+  private def removeOp(placed: List[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
     Using.resource(timeline.record()) { _ =>
@@ -233,8 +233,8 @@ class RandomTimelineFiller(final val timeline: Timeline,
   }
 
   /** 当前时间线上已放置的全部片段。 */
-  private def placedSegments(): List[Segment[?]] = {
-    val out: List[Segment[?]] = new ArrayList[Segment[?]]()
+  private def placedSegments(): List[Segment] = {
+    val out: List[Segment] = new ArrayList[Segment]()
     for (track <- timeline.getTracks.asScala) {
       for (s <- track.asScala) {
         out.add(s)

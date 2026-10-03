@@ -44,7 +44,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     var step = 0
     while (step < 400) {
       val track = timeline.getTrackOrCreate(0)
-      val transitions = track.asScala.collect { case t: Transition[?] => t }.toVector
+      val transitions = track.asScala.collect { case t: Transition => t }.toVector
       if (transitions.nonEmpty && rnd.nextInt(4) != 0) {
         timeline.remove(transitions(rnd.nextInt(transitions.size)))
       } else {
@@ -57,8 +57,8 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   /** 用随机时长与随机落点堆叠片段；放得下才留下，因此每次得到的都是合法布局。 */
-  private def buildRandomTrack(timeline: Timeline, rnd: Random): Vector[Segment[?]] = {
-    val out = Vector.newBuilder[Segment[?]]
+  private def buildRandomTrack(timeline: Timeline, rnd: Random): Vector[Segment] = {
+    val out = Vector.newBuilder[Segment]
     var added = 0
     var attempts = 0
     while (added < 30 && attempts < 900) {
@@ -73,7 +73,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   /** 试放一个随机片段，放得下返回它，否则返回 null。 */
-  private def tryAddRandom(timeline: Timeline, rnd: Random): Segment[?] = {
+  private def tryAddRandom(timeline: Timeline, rnd: Random): Segment = {
     val duration = TrackTransitionFuzzTest.DURATION_MIN + rnd.nextLong(TrackTransitionFuzzTest.DURATION_MAX - TrackTransitionFuzzTest.DURATION_MIN + 1)
     val lo = rnd.nextLong(TrackTransitionFuzzTest.SPAN)
     val segment = new TestCont(duration)
@@ -116,13 +116,13 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     tl.addOrThrow(tl.getTrackOrCreate(0), rn, rnStart ~~ rnEnd, origin)
 
     val track = tl.getTrackOrCreate(0)
-    val transition = track.transitionBetween(a.asInstanceOf[Content[?]], b.asInstanceOf[Content[?]])
+    val transition = track.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])
     assertNotNull(transition)
     tl.remove(transition)
     assertConsistent(tl, Vector(p, a, b, rn), "iter=" + iter)
   }
 
-  private def assertConsistent(timeline: Timeline, known: Vector[Segment[?]], label: String): Unit = {
+  private def assertConsistent(timeline: Timeline, known: Vector[Segment], label: String): Unit = {
     for (track <- timeline.getTracks.asScala) {
       val visible = track.asScala.toVector
 
@@ -133,7 +133,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
         }
       }
 
-      val transitions = visible.collect { case t: Transition[?] => t }
+      val transitions = visible.collect { case t: Transition => t }
       for (c <- known if track.contains(c); t <- transitions) {
         if (track.getRange(c) == track.getRange(t)) {
           fail("内容与转场占据同一区间 " + label + " " + track.getRange(c))

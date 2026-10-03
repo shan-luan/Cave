@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSegmentActor, TlSegmentActor
 @SerialVersionUID(1L)
 class BlockSource extends Source[Frame] {
 
-  override protected def produce(time: Long, track: Track, segment: Segment[Frame]): Frame = {
+  override protected def produce(time: Long, track: Track, segment: Segment): Frame = {
     new GapFrame(track.index)
   }
 
@@ -20,7 +20,7 @@ class BlockSource extends Source[Frame] {
 
   override def displayName: String = ""
 
-  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+  override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     new TlBlockSegmentActor(segment)
   }
 }

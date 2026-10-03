@@ -27,7 +27,7 @@ class TransitionSourceTest extends GdxTestBase {
   class TimedFrame(trackIndex: Int, val producedAt: Long) extends Frame(trackIndex)
 
   private class ProbeSource(duration: Long, nullAt: Long => Boolean) extends Source[TimedFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment[TimedFrame]): TimedFrame = {
+    override protected def produce(time: Long, track: Track, segment: Segment): TimedFrame = {
       if (nullAt(time)) null else new TimedFrame(track.index, time)
     }
 
@@ -37,26 +37,29 @@ class TransitionSourceTest extends GdxTestBase {
 
     override def displayName: String = "probe"
 
-    override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = null
+    override def createTlSegmentActor(segment: Segment): TlSegmentActor = null
   }
 
   /**
    * canLead 为 false 时不能作为前段构造转场，放置成左侧内容即走后段兜底路径。
    */
   private class ProbeContent(duration: Long, canLead: Boolean, nullAt: Long => Boolean)
-    extends Content[TimedFrame](new ProbeSource(duration, nullAt)) {
+    extends Content(new ProbeSource(duration, nullAt)) {
 
     def this(duration: Long, canLead: Boolean) = this(duration, canLead, _ => false)
 
-    override def canCreateTransitionWith(other: Content[? <: TimedFrame]): Boolean = canLead
+    override def canCreateTransitionWith(other: Content): Boolean = canLead
 
-    override def createTransition(other: Content[? <: TimedFrame]): Transition[TimedFrame] = {
-      new Transition[TimedFrame](new ProbeTransitionSource(this.source, other.source)) {}
+    override def createTransition(other: Content): Transition = {
+      // 测试布局中两侧都是探针内容，帧型必然相容
+      new Transition(new ProbeTransitionSource(
+        this.source.asInstanceOf[Source[TimedFrame]],
+        other.source.asInstanceOf[Source[TimedFrame]])) {}
     }
   }
 
   private class ProbeTransitionSource(from: Source[? <: TimedFrame], to: Source[? <: TimedFrame])
-    extends TransitionSource[TimedFrame](from, to) {
+    extends TransitionSource[TimedFrame, TimedFrame](from, to) {
 
     var lastFrom: TimedFrame = null
     var lastTo: TimedFrame = null
@@ -66,7 +69,7 @@ class TransitionSourceTest extends GdxTestBase {
       lastFrom = fromFrame
       lastTo = toFrame
       lastProgress = progress
-      new TimedFrame(fromFrame.trackIndex, -1L)
+      new TimedFrame((if (fromFrame != null) fromFrame else toFrame).trackIndex, -1L)
     }
 
     override def displayName: String = "probe-transition"
@@ -74,7 +77,7 @@ class TransitionSourceTest extends GdxTestBase {
 
   /** 左右两块内容重叠出转场；左块 [0,1000) origin 0，右块 [500,1500) origin 500。 */
   private def placedTrack(leftLead: Boolean, leftNullAt: Long => Boolean, rightNullAt: Long => Boolean)
-  : (Track, Transition[?], ProbeTransitionSource) = {
+  : (Track, Transition, ProbeTransitionSource) = {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, leftLead, leftNullAt)
     val right = new ProbeContent(1000, canLead = true, rightNullAt)
@@ -83,7 +86,7 @@ class TransitionSourceTest extends GdxTestBase {
     // 轨道不可变，编辑后取最新版本断言
     val current = timeline.getTrackOrCreate(0)
     val transition = current.get(600L) match {
-      case t: Transition[?] => t
+      case t: Transition => t
       case other => fail("重叠处应是转场，实际: " + other + "；轨道: " + current)
     }
     (current, transition, transition.source.asInstanceOf[ProbeTransitionSource])
@@ -109,7 +112,7 @@ class TransitionSourceTest extends GdxTestBase {
     val (track, transition, source) = placedTrack(leftLead = false, _ => false, _ => false)
     // 兜底构造：转场源由右侧内容造出，from 指向右内容
     val right = track.get(1200L) match {
-      case c: Content[?] => c
+      case c: Content => c
       case _ => fail("转场终点之外应是右内容")
     }
     assertTrue(source.from eq right.source)
@@ -122,12 +125,14 @@ class TransitionSourceTest extends GdxTestBase {
   }
 
   @Test
-  def fallsBackToOtherSideWhenOneSideHasNoFrame(): Unit = {
+  def passesNullSideToMixWhenOneSideHasNoFrame(): Unit = {
     val (track, transition, source) = placedTrack(leftLead = true, _ == 600L, _ => false)
 
-    val frame = track.frameAt(transition, 600L)
-    assertEquals(100L, frame.asInstanceOf[TimedFrame].producedAt)
-    assertEquals(-1f, source.lastProgress, 0f)
+    track.frameAt(transition, 600L)
+    // 单侧无帧原样交给 mix，由效果决定表现
+    assertNull(source.lastFrom)
+    assertEquals(100L, source.lastTo.producedAt)
+    assertEquals(0.2f, source.lastProgress, 1e-6f)
   }
 
   @Test

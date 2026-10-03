@@ -8,7 +8,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 //TODO:WIP
 @SerialVersionUID(1L)
 class NumSource extends Source[NumFrame] {
-  override protected def produce(time: Long, track: Track, segment: Segment[NumFrame]): NumFrame = {
+  override protected def produce(time: Long, track: Track, segment: Segment): NumFrame = {
     if (frame == null || frame.trackIndex != track.index) {
       frame = new NumFrame(track.index, segment)
     }
@@ -27,7 +27,7 @@ class NumSource extends Source[NumFrame] {
     "数值源"
   }
 
-  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+  override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     ???
   }
 }

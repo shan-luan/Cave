@@ -9,10 +9,10 @@ import java.util
  * 一组被同时操作的片段。组可以跨轨道，因此不归属于任何轨道，由 [[Timeline]] 统一登记。
  */
 @SerialVersionUID(1L)
-class SegmentGroup extends util.AbstractCollection[Segment[?]] with Serializable {
-  private final val segments: util.Set[Segment[?]] = new util.LinkedHashSet[Segment[?]]()
+class SegmentGroup extends util.AbstractCollection[Segment] with Serializable {
+  private final val segments: util.Set[Segment] = new util.LinkedHashSet[Segment]()
 
-  override def add(segment: Segment[?]): Boolean = {
+  override def add(segment: Segment): Boolean = {
     segments.add(segment)
   }
 
@@ -32,7 +32,7 @@ class SegmentGroup extends util.AbstractCollection[Segment[?]] with Serializable
     segments.isEmpty
   }
 
-  override def iterator(): util.Iterator[Segment[?]] = {
+  override def iterator(): util.Iterator[Segment] = {
     segments.iterator()
   }
 

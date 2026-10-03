@@ -26,7 +26,7 @@ import java.util
  * 过滤器节点卡，显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class FilterActor(private val segment: Segment[?], private val filter: Filter[?]) extends Card(filter.name) {
+final class FilterActor(private val segment: Segment, private val filter: Filter[?]) extends Card(filter.name) {
   private var rebuildCallback: Runnable = uninitialized
   private var dragging: Boolean = false
   private var dragStageY: Float = 0
