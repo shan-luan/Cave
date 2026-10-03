@@ -145,7 +145,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         }
       }
       if (dragModifier != null && !dragging && !gizmoDragging) {
-        val segment: Segment[?] = frame.segment
+        val segment: Segment = frame.segment
         val editPanel = App.root.getFrontendEditPanel
         if (segment != null && editPanel != null) {
           editPanel.getTimelineView.selectSegment(segment, Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
@@ -323,7 +323,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  private def startGizmoDrag(segment: Segment[?], handle: Gizmo.Handle, stageX: Float, stageY: Float): Unit = {
+  private def startGizmoDrag(segment: Segment, handle: Gizmo.Handle, stageX: Float, stageY: Float): Unit = {
     gizmoHandle = handle
     gizmoDragging = true
 
@@ -1009,11 +1009,11 @@ object TransFrameActor {
   private final val SNAP_THRESHOLD_SCREEN: Float = 10f
   private final val snapAdjust: Vector2 = new Vector2()
 
-  private def findOrCreateTransNode(segment: Segment[?]): TransNode = {
-    val filters: util.List[Filter[?]] = segment.filters.asInstanceOf[util.List[Filter[?]]]
+  private def findOrCreateTransNode(segment: Segment): TransNode = {
+    val filters: util.List[Filter[?]] = segment.filters
     filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.getOrElse {
       val tf = new TransNode(0, 0, 1, 1, 0)
-      segment.asInstanceOf[Segment[Frame]].attach(tf.asInstanceOf[Filter[? >: Frame]])
+      segment.attach(tf)
       tf
     }
   }

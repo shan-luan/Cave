@@ -18,13 +18,13 @@ import scala.jdk.CollectionConverters.*
 import java.util
 
 /** 时间线上单个片段的可视化表示与交互入口。 */
-abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
+abstract class TlSegmentActor(val segment: Segment) extends Actor {
   private[tlarea] var tl: TimelineView = uninitialized
   var dragSide: DragSide = DragSide.NONE
 
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
-  private var dragMembers: util.List[Segment[?]] = uninitialized
+  private var dragMembers: util.List[Segment] = uninitialized
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -254,7 +254,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
     if (snapDisabled()) {
       rawTime
     } else {
-      val ignore: util.Set[Segment[?]] = new util.HashSet[Segment[?]](dragMembers)
+      val ignore: util.Set[Segment] = new util.HashSet[Segment](dragMembers)
       // actor 的片段可能已被替换或摘除（如转场拖到消失），轨道按锚点取
       val t = if (dragMembers.isEmpty) null else tl.timeline.findTrackOf(dragMembers.get(0))
       if (t != null) {
@@ -279,18 +279,18 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
     if (snapDisabled()) {
       target
     } else {
-      val ignore: util.Set[Segment[?]] = new util.HashSet[Segment[?]]()
+      val ignore: util.Set[Segment] = new util.HashSet[Segment]()
       for (member <- dragMembers.asScala) {
         ignore.add(member)
         val memberTrack = tl.timeline.findTrackOf(member)
         if (memberTrack != null) {
           member match {
-            case c: Content[?] =>
+            case c: Content =>
               val before = memberTrack.transitionBefore(c)
               if (before != null) ignore.add(before)
               val after = memberTrack.transitionAfter(c)
               if (after != null) ignore.add(after)
-            case t: Transition[?] =>
+            case t: Transition =>
               ignoreTransition(ignore, memberTrack, t)
             case _ =>
           }
@@ -326,7 +326,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
    * 拖转场本体时两侧内容跟着平移（见 [[Track.shiftTransition]]），
    * 转场及其两侧内容的端点都在变，必须整体退出吸附。
    */
-  private def ignoreTransition(ignore: util.Set[Segment[?]], track: Track, t: Transition[?]): Unit = {
+  private def ignoreTransition(ignore: util.Set[Segment], track: Track, t: Transition): Unit = {
     if (t != null) {
       ignore.add(t)
       val sides = track.transitionSides(t)
@@ -348,8 +348,8 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
   }
 
   /** 拖转场边缘就是拖某条内容边：左缘是右内容的起点，右缘是左内容的终点。 */
-  private def resizeTarget(member: Segment[?]): Segment[?] = member match {
-    case t: Transition[?] =>
+  private def resizeTarget(member: Segment): Segment = member match {
+    case t: Transition =>
       val memberTrack = tl.timeline.findTrackOf(t)
       if (memberTrack == null) {
         member
@@ -363,7 +363,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
   /** 收集参与拖拽的成员并快照各自的起点与时长。 */
   private def initDragMembers(): Unit = {
     val selected = tl.selectedSegments
-    val candidates = new util.ArrayList[Segment[?]]()
+    val candidates = new util.ArrayList[Segment]()
     if (selected.size() > 1 && selected.contains(segment)) {
       candidates.add(segment)
       for (s <- selected.asScala) {
@@ -375,7 +375,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
 
     // 边缘拖拽时一次换掉锚点，不在轨道上的成员不参与拖拽，否则按成员索引取区间会越界
     val replaceEdge = dragSide == DragSide.FRONT || dragSide == DragSide.BEHIND
-    dragMembers = new util.ArrayList[Segment[?]](candidates.size())
+    dragMembers = new util.ArrayList[Segment](candidates.size())
     for (m <- candidates.asScala) {
       val member = if (replaceEdge) resizeTarget(m) else m
       if (tl.timeline.findTrackOf(member) != null && !dragMembers.contains(member)) {
@@ -387,7 +387,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
   /** 整体移动一步；返回实际应用的轨道偏移，0 表示未换轨。 */
   private def handleMiddleDrag(target: Long, newTrack: Track): Int = {
     // 成员里的转场可能被相邻内容的删除连带摘掉，只保留仍在轨道上的成员参与移动
-    val members: util.List[Segment[?]] = new util.ArrayList[Segment[?]](dragMembers.size())
+    val members: util.List[Segment] = new util.ArrayList[Segment](dragMembers.size())
     for (m <- dragMembers.asScala) {
       if (tl.timeline.findTrackOf(m) != null) members.add(m)
     }
@@ -397,7 +397,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
     val trackDelta: Int = newTrack.index - firstTrack.index
 
     var appliedTracks: Int = 0
-    val minIdx: Int = members.asScala.iterator.map((m: Segment[?]) => tl.timeline.findTrackOf(m).index).min
+    val minIdx: Int = members.asScala.iterator.map((m: Segment) => tl.timeline.findTrackOf(m).index).min
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.getRange(members.get(0)).lo
       tl.timeline.moveTime(members, target - currentStart0)
@@ -411,7 +411,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
 
   private def handleFrontResize(newStart: Long): Unit = {
     if (dragMembers.isEmpty) return
-    val members: util.List[Segment[?]] = util.List.copyOf(dragMembers)
+    val members: util.List[Segment] = util.List.copyOf(dragMembers)
     val first = members.get(0)
     val firstTrack = tl.timeline.findTrackOf(first)
     if (firstTrack == null) return
@@ -422,7 +422,7 @@ abstract class TlSegmentActor(val segment: Segment[?]) extends Actor {
 
   private def handleBehindResize(newEnd: Long): Unit = {
     if (dragMembers.isEmpty) return
-    val members: util.List[Segment[?]] = util.List.copyOf(dragMembers)
+    val members: util.List[Segment] = util.List.copyOf(dragMembers)
     val first = members.get(0)
     val firstTrack = tl.timeline.findTrackOf(first)
     if (firstTrack == null) return

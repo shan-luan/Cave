@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters.*
  * 一个片段的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
  * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class SourceActor(private val segment: Segment[?]) extends Card(segment.displayName) {
+final class SourceActor(private val segment: Segment) extends Card(segment.displayName) {
   private final val source: Source[?] = segment.source
 
   align(Align.top | Align.left)

@@ -19,7 +19,7 @@ import java.util
  * 数值输入端口编辑 widget，Spinner 行。直接持有端口模型，修改写默认值记 undo，
  * 并在自身的 act() 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
-final class NumPortEditor(port0: Node.InPort[?], segment: Segment[?]) extends VisTable with PortEditor {
+final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override final val port: Node.InPort[?] = port0
   override final val label: VisLabel = new VisLabel(port.name)
   private final val model: SimpleFloatSpinnerModel = new SimpleFloatSpinnerModel(

@@ -9,7 +9,7 @@ import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.ui.Colors
 
-class TlAudSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
+class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
 
   override protected def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     super.drawContent(batch, parentAlpha, visibleStartX, visibleEndX)

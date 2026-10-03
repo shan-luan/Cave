@@ -4,15 +4,15 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Group
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.GapFrame
+import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.pipeline.image.ImgFrame
-import com.lomekwi.cave.pipeline.text.TextFrame
 import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.app.App
@@ -34,7 +34,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.canvas
   // 此列表仅应在主线程读取。
-  private final val frames: mutable.ArrayBuffer[Frame] = mutable.ArrayBuffer.empty[Frame]
+  private final val frames: mutable.ArrayBuffer[Frame & Renderable] = mutable.ArrayBuffer.empty[Frame & Renderable]
   private var refViewportArea: Float = -1f
   private var lastWidth: Float = 0
   private var exportOpts: ExportOptionsSet = uninitialized
@@ -76,40 +76,27 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   @Subscribe
-  def sink(frame: ImgFrame): Unit = {
-    val idx: Int = frame.trackIndex
+  def sink(frame: Renderable): Unit = {
+    // 进预览的 Renderable 都承载在 Frame 上，trackIndex 与生命周期状态都在 Frame 一侧
+    val f = frame.asInstanceOf[Frame & Renderable]
+    val idx: Int = f.trackIndex
     project.timeline.getWorker(idx).sinkPhaser.register()
     Gdx.app.postRunnable(() => {
-      setFrame(frame)
-      frame.upload()
-      val i: TransFrameActor = frame.actor
-      canvas.addActor(i)
+      setFrame(f)
+      canvas.addActor(f.actor)
       project.timeline.getWorker(idx).sinkPhaser.arriveAndDeregister()
     })
   }
 
-  @Subscribe
-  def sink(frame: TextFrame): Unit = {
-    val idx: Int = frame.trackIndex
-    project.timeline.getWorker(idx).sinkPhaser.register()
-    Gdx.app.postRunnable(() => {
-      setFrame(frame)
-      val i: TransFrameActor = frame.actor
-      canvas.addActor(i)
-      project.timeline.getWorker(idx).sinkPhaser.arriveAndDeregister()
-    })
-  }
-
-  private def setFrame(frame: Frame): Unit = {
+  private def setFrame(frame: Frame & Renderable): Unit = {
     val idx: Int = frame.trackIndex
     while (idx >= frames.size) {
       frames.append(null)
     }
     val legacy = frames(idx)
     frames(idx) = frame
-    if (legacy != null) {
-      val actor = PreviewArea.getFrameActor(legacy)
-      if (actor != null) canvas.removeActor(actor)
+    if (legacy != null && legacy.actor != null) {
+      canvas.removeActor(legacy.actor)
     }
   }
 
@@ -118,10 +105,9 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     Gdx.app.postRunnable(() => {
       val inBounds = idx >= 0 && idx < frames.size
       val frame = if (inBounds) frames(idx) else null
-      val actor = if (frame != null) PreviewArea.getFrameActor(frame) else null
-      if (actor != null) {
+      if (frame != null && frame.actor != null) {
         frames(idx) = null
-        canvas.removeActor(actor)
+        canvas.removeActor(frame.actor)
       }
     })
   }
@@ -137,10 +123,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     if (!(event.set.timeline eq project.timeline)) return
     for (frame <- frames) {
       if (frame != null) {
-        val actor = PreviewArea.getFrameActor(frame)
-        if (actor != null) {
-          val selected = frame.segment != null && event.set.contains(frame.segment)
-          actor.setSelected(selected)
+        frame.actor match {
+          case tfa: TransFrameActor =>
+            val selected = frame.segment != null && event.set.contains(frame.segment)
+            tfa.setSelected(selected)
+          case _ =>
         }
       }
     }
@@ -152,7 +139,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     var i = 0
     for (frame <- frames) {
       if (!(frame == null || frame.closed)) {
-        val actor = PreviewArea.getFrameActor(frame)
+        val actor = frame.actor
         if (actor != null && (actor.getParent eq canvas)) {
           actor.setZIndex(i)
           i += 1
@@ -274,12 +261,4 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 object PreviewArea {
   private final val TICK_PIXEL_TARGET: Int = 80
   private final val guidePos: Vector2 = new Vector2()
-
-  private def getFrameActor(frame: Frame): TransFrameActor = {
-    frame match {
-      case imgFrame: ImgFrame => imgFrame.actor
-      case textFrame: TextFrame => textFrame.actor
-      case _ => null
-    }
-  }
 }

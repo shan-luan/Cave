@@ -22,15 +22,15 @@ class PasteTemplate private (val entries: util.List[PasteTemplate.Entry]) extend
 }
 
 object PasteTemplate {
-  case class Entry(trackIndex: Int, segment: Segment[?], range: Interval, origin: Long, group: SegmentGroup)
+  case class Entry(trackIndex: Int, segment: Segment, range: Interval, origin: Long, group: SegmentGroup)
 
   /** 把时间线上的一批片段抓成模板。转场不参与复制。 */
-  def of(segments: util.Collection[Segment[?]], timeline: Timeline): PasteTemplate = {
+  def of(segments: util.Collection[Segment], timeline: Timeline): PasteTemplate = {
     val raw = new util.ArrayList[Entry](segments.size())
     if (timeline == null) return new PasteTemplate(raw)
     for (segment <- segments.asScala) {
       segment match {
-        case _: Transition[?] =>
+        case _: Transition =>
         case _ =>
           val track = timeline.findTrackOf(segment)
           if (track != null) {

@@ -33,7 +33,7 @@ class TrackTimingTest extends GdxTestBase {
   @Test
   def editCostOnThousandEntryTrack(): Unit = {
     val track = timeline.getTrackOrCreate(0)
-    val segments = new ArrayList[Segment[?]](TrackTimingTest.COUNT)
+    val segments = new ArrayList[Segment](TrackTimingTest.COUNT)
     var i = 0
     while (i < TrackTimingTest.COUNT) {
       val lo = i.toLong * TrackTimingTest.STEP
@@ -45,18 +45,18 @@ class TrackTimingTest extends GdxTestBase {
 
     val filled = timeline.getTrackOrCreate(0)
     // 夹具自检：COUNT 条内容两两相邻重叠，正好 COUNT-1 个转场
-    assertEquals(TrackTimingTest.COUNT, filled.asScala.count(_.isInstanceOf[Content[?]]))
-    assertEquals(TrackTimingTest.COUNT - 1, filled.asScala.count(_.isInstanceOf[Transition[?]]))
+    assertEquals(TrackTimingTest.COUNT, filled.asScala.count(_.isInstanceOf[Content]))
+    assertEquals(TrackTimingTest.COUNT - 1, filled.asScala.count(_.isInstanceOf[Transition]))
     println("[timing] 轨道条目 " + filled.asScala.size + "，内容 " + TrackTimingTest.COUNT +
       "，转场 " + (TrackTimingTest.COUNT - 1) + "，预热 " + TrackTimingTest.WARMUP +
       " 次，重复 " + TrackTimingTest.REPEATS + " 次")
 
-    val single: List[Segment[?]] = List.of(segments.get(TrackTimingTest.COUNT / 2))
-    val members: List[Segment[?]] =
+    val single: List[Segment] = List.of(segments.get(TrackTimingTest.COUNT / 2))
+    val members: List[Segment] =
       List.copyOf(segments.subList(TrackTimingTest.GROUP_AT, TrackTimingTest.GROUP_AT + TrackTimingTest.GROUP))
 
     // 与界面把一个组整体拖动一致，成员里含组内相邻内容之间的转场
-    val grouped: List[Segment[?]] = withInternalTransitions(timeline.getTrackOrCreate(0), members)
+    val grouped: List[Segment] = withInternalTransitions(timeline.getTrackOrCreate(0), members)
     assertEquals(2 * TrackTimingTest.GROUP - 1, grouped.size(), "组成员应含组内转场")
 
     // 先确认三种拖拽真的会移动，否则量到的是空转
@@ -89,7 +89,7 @@ class TrackTimingTest extends GdxTestBase {
       timeline.moveTime(grouped, TrackTimingTest.DELTA)
       timeline.moveTime(grouped, -TrackTimingTest.DELTA)
     }
-    assertTrue(grouped.asScala.forall((s: Segment[?]) => timeline.getTrackOrCreate(0).contains(s)),
+    assertTrue(grouped.asScala.forall((s: Segment) => timeline.getTrackOrCreate(0).contains(s)),
       "计时后成员表应仍然全部在轨道上")
     val (removeMin, removeAvg) = time({
       timeline.remove(victim)
@@ -99,7 +99,7 @@ class TrackTimingTest extends GdxTestBase {
 
     // 拖拽路径里每个转场成员都要问一次它的两侧，这里把全轨道的转场问一遍，单独看这一步的代价
     val dense = timeline.getTrackOrCreate(0)
-    val allTransitions = dense.asScala.collect { case t: Transition[?] => t }.toVector
+    val allTransitions = dense.asScala.collect { case t: Transition => t }.toVector
     assertEquals(TrackTimingTest.COUNT - 1, allTransitions.size)
     val (sidesMin, sidesAvg) = time {
       var k = 0
@@ -122,11 +122,11 @@ class TrackTimingTest extends GdxTestBase {
   }
 
   /** 在每个内容之后插入它与下一个内容之间的转场，得到界面拖一个组时那样的成员表。 */
-  private def withInternalTransitions(track: Track, contents: List[Segment[?]]): List[Segment[?]] = {
-    val out = new ArrayList[Segment[?]](2 * contents.size())
+  private def withInternalTransitions(track: Track, contents: List[Segment]): List[Segment] = {
+    val out = new ArrayList[Segment](2 * contents.size())
     var i = 0
     while (i < contents.size()) {
-      val content = contents.get(i).asInstanceOf[Content[?]]
+      val content = contents.get(i).asInstanceOf[Content]
       out.add(content)
       if (i + 1 < contents.size()) {
         val transition = track.transitionAfter(content)

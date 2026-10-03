@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.math.Matrix4
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.Transform
@@ -16,12 +17,11 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) with Transformable {
+class TextFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, segment) with Transformable {
   @volatile private var text: String = uninitialized
   @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()
   override var transform: Transform = uninitialized
-  var actor: TransFrameActor = uninitialized
   private final val tmpMatrix: Matrix4 = new Matrix4()
   @volatile private var glyphsMissing: Boolean = false
   @volatile private var cachedWidth: Float = 0f
@@ -29,6 +29,8 @@ class TextFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, 
   @volatile private var cachedCenterY: Float = 0f
   @volatile private var version: Int = 0
   private var layoutVersion: Int = 0
+
+  override protected def createActor(): Actor = new TransFrameActor(this)
 
   def this(trackIndex: Int) = {
     this(trackIndex, null)

@@ -34,22 +34,22 @@ class TrackTransitionTest extends GdxTestBase {
     timeline = project.timeline
   }
 
-  private def newSegment(duration: Long): Segment[?] = new TestCont(duration)
+  private def newSegment(duration: Long): Segment = new TestCont(duration)
 
-  private def place(track: Track, segment: Segment[?], range: Interval, origin: Long = 0L): Unit = {
+  private def place(track: Track, segment: Segment, range: Interval, origin: Long = 0L): Unit = {
     timeline.addOrThrow(track, segment, range, origin)
   }
 
-  private def transitionOf(track: Track, time: Long): Transition[?] = track.get(time) match {
-    case t: Transition[?] => t
+  private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
+    case t: Transition => t
     case _ => null
   }
 
   /** 不能构造转场的内容，createTransition 落到它身上即失败，用来验证兜底走向。 */
   private class NoTransitionCont(duration: Long) extends TestCont(duration) {
-    override def canCreateTransitionWith(other: Content[? <: TestCont.TestFrame]): Boolean = false
+    override def canCreateTransitionWith(other: Content): Boolean = false
 
-    override def createTransition(other: Content[? <: TestCont.TestFrame]): Transition[TestCont.TestFrame] =
+    override def createTransition(other: Content): Transition =
       throw new UnsupportedOperationException("转场不应由本片段构造")
   }
 

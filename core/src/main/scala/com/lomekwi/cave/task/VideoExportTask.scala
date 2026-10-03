@@ -31,7 +31,7 @@ import scala.jdk.CollectionConverters.*
 class VideoExportTask(private val timeline: Timeline, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
   private var recorder: FFmpegFrameRecorder = uninitialized
   private var frames: AtomicReferenceArray[Frame] = uninitialized
-  private var activeSegments: Array[Segment[?]] = uninitialized
+  private var activeSegments: Array[Segment] = uninitialized
   private var fb: FrameBuffer = uninitialized
   private var batch: SpriteBatch = uninitialized
   @volatile private var t: Long = 0
@@ -48,7 +48,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       i += 1
     }
     frames = new AtomicReferenceArray[Frame](i)
-    activeSegments = new Array[Segment[?]](i)
+    activeSegments = new Array[Segment](i)
   }
   fb = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true)
   batch = new SpriteBatch()
@@ -74,7 +74,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
         for (track <- timeline.asScala) {
           // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
           val segment = track.get(t) match {
-            case s: Segment[?] => s
+            case s: Segment => s
             case _: Gap => null
           }
           if (activeSegments(i) != segment) {
@@ -104,7 +104,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
 
   private def exportAudio(): Unit = {
     val tracks: Array[Track] = timeline.getTracks.toArray(new Array[Track](0))
-    val active: Array[Segment[?]] = new Array[Segment[?]](tracks.length)
+    val active: Array[Segment] = new Array[Segment](tracks.length)
     val mixBuf: Array[Float] = new Array[Float](VideoExportTask.AUDIO_FRAME_SIZE)
 
     var audioT: Long = 0
@@ -115,7 +115,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       while (i < tracks.length) {
         if (tracks(i).length != 0) {
           val segment = tracks(i).get(audioT) match {
-            case s: Segment[?] => s
+            case s: Segment => s
             case _: Gap => null
           }
           if (active(i) != segment) {

@@ -26,7 +26,7 @@ class CardWidgetsRegistry {
   registerOut(classOf[Double], port => new FpOutputRow(port))
 
   /** 注册输入端口的 widget 工厂。目标类型为端口约束需能容纳的类型。 */
-  private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment[?], Actor]): Unit = {
+  private def registerIn(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment, Actor]): Unit = {
     IN_ENTRIES += InEntry(`type`, factory)
   }
 
@@ -36,7 +36,7 @@ class CardWidgetsRegistry {
   }
 
   /** 为输入端口创建编辑 widget；没有注册对应类型的返回 null（该端口不显示）。 */
-  def createEditor(port: Node.InPort[?], segment: Segment[?]): Actor = {
+  def createEditor(port: Node.InPort[?], segment: Segment): Actor = {
     IN_ENTRIES
       .find(entry => accepts(port, entry.`type`))
       .map(entry => entry.factory.apply(port, segment))
@@ -58,7 +58,7 @@ class CardWidgetsRegistry {
 }
 
 object CardWidgetsRegistry {
-  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment[?], Actor])
+  private case class InEntry(`type`: Class[?], factory: BiFunction[Node.InPort[?], Segment, Actor])
 
   private case class OutEntry(`type`: Class[?], factory: Function[Node.OutPort[?], Actor])
 

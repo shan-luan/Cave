@@ -27,7 +27,7 @@ class FilterListTest {
   @Test
   def empty_chain_returnsSegmentFrame(): Unit = {
     val segment = new FpCont(10)
-    assertEquals(10.0, segment.get(0, null).`val`, 0)
+    assertEquals(10.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -44,7 +44,7 @@ class FilterListTest {
 
     f1.delta.defaultData = 1
     f2.delta.defaultData = 2
-    assertEquals(13.0, segment.get(0, null).`val`, 0)
+    assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -65,7 +65,7 @@ class FilterListTest {
     a.delta.defaultData = 1
     b.delta.defaultData = 2
     c.delta.defaultData = 3
-    assertEquals(16.0, segment.get(0, null).`val`, 0)
+    assertEquals(16.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -102,7 +102,7 @@ class FilterListTest {
 
     a.delta.defaultData = 1
     c.delta.defaultData = 2
-    assertEquals(13.0, segment.get(0, null).`val`, 0)
+    assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
 
     // 链表顺序正确
     assertEquals(a, segment.filters.get(0))
@@ -128,7 +128,7 @@ class FilterListTest {
 
     c.delta.defaultData = 5
     b.delta.defaultData = 1
-    assertEquals(16.0, segment.get(0, null).`val`, 0)
+    assertEquals(16.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -142,7 +142,7 @@ class FilterListTest {
 
     assertEquals(0, segment.filters.size())
     assertFalse(segment.source.headOut.isLinked)
-    assertEquals(10.0, segment.get(0, null).`val`, 0)
+    assertEquals(10.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
@@ -192,7 +192,7 @@ class FilterListTest {
     assertEquals(1, copy.filters.size())
     assertSame(copy.source.headOut, copy.filters.get(0).filterIn.prev)
     assertFalse(copy.filters.get(0).filterOut.isLinked)
-    assertEquals(13.0, copy.get(0, null).`val`, 0)
+    assertEquals(13.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 }
 
@@ -222,11 +222,11 @@ object FilterListTest {
   /** 可复用帧，以 val 为内容。 */
   private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(-1)
 
-  private[pipeline] final class FpCont(base: Double) extends Content[Fpable](new FpSource(base))
+  private[pipeline] final class FpCont(base: Double) extends Content(new FpSource(base))
 
   /** 以固定 val 产出帧的最小源。 */
   private[pipeline] final class FpSource(private val base: Double) extends Source[Fpable] {
-    override protected def produce(time: Long, track: com.lomekwi.cave.timeline.Track, segment: Segment[Fpable]): Fpable = {
+    override protected def produce(time: Long, track: com.lomekwi.cave.timeline.Track, segment: Segment): Fpable = {
       return new Fpable(base)
     }
 
@@ -242,7 +242,7 @@ object FilterListTest {
       "数字源"
     }
 
-    override def createTlSegmentActor(segment: Segment[?]): com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor = {
+    override def createTlSegmentActor(segment: Segment): com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor = {
       null
     }
   }

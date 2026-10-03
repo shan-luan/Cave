@@ -11,7 +11,7 @@ import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
-class TlVdoSegmentActor(segment: Segment[?]) extends TlSegmentActor(segment) {
+class TlVdoSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     val sd: ShapeDrawer = App.root.shapeDrawer

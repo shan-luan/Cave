@@ -134,7 +134,7 @@ object UndoManager {
   }
 
   case class RemoveSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track,
-                                 segment: Segment[?], group: SegmentGroup) extends UndoableCommand {
+                                 segment: Segment, group: SegmentGroup) extends UndoableCommand {
     override def undo(): Unit = {
       timeline.setTrack(index, before)
       if (group != null) group.add(segment)
@@ -164,7 +164,7 @@ object UndoManager {
     }
   }
 
-  private def filterList(segment: Segment[?]): util.List[Filter[?]] = {
+  private def filterList(segment: Segment): util.List[Filter[?]] = {
     segment.filters.asInstanceOf[util.List[Filter[?]]]
   }
 
@@ -245,18 +245,18 @@ object UndoManager {
   }
 
   object RemoveSegmentsCommand {
-    case class RemoveEntry(edit: TrackEdit, segment: Segment[?], group: SegmentGroup)
+    case class RemoveEntry(edit: TrackEdit, segment: Segment, group: SegmentGroup)
   }
 
   /** 节点图被改动后通知界面重建，只在片段确实位于时间轴上时通知。 */
-  private def postRefresh(project: Project, segment: Segment[?]): Unit = {
+  private def postRefresh(project: Project, segment: Segment): Unit = {
     if (segment != null && project.timeline.findTrackOf(segment) != null) {
       project.projEventBus.post(SegmentNodeChangedEvent(segment))
       project.projEventBus.post(RefreshRequestEvent)
     }
   }
 
-  case class AddFilterCommand(project: Project, segment: Segment[?], filter: Filter[?]) extends UndoableCommand {
+  case class AddFilterCommand(project: Project, segment: Segment, filter: Filter[?]) extends UndoableCommand {
     override def undo(): Unit = {
       filterList(segment).remove(filter)
       postRefresh(project, segment)
@@ -268,7 +268,7 @@ object UndoManager {
     }
   }
 
-  case class RemoveFilterCommand(project: Project, segment: Segment[?], filter: Filter[?], index: Int) extends UndoableCommand {
+  case class RemoveFilterCommand(project: Project, segment: Segment, filter: Filter[?], index: Int) extends UndoableCommand {
     override def undo(): Unit = {
       filterList(segment).add(index, filter)
       postRefresh(project, segment)
@@ -280,7 +280,7 @@ object UndoManager {
     }
   }
 
-  case class ReorderFilterCommand(project: Project, segment: Segment[?], filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
+  case class ReorderFilterCommand(project: Project, segment: Segment, filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
     override def undo(): Unit = {
       filterList(segment).remove(filter)
       filterList(segment).add(oldIndex, filter)
@@ -294,7 +294,7 @@ object UndoManager {
     }
   }
 
-  case class FpPortValueCommand(project: Project, port: Node.InPort[?], segment: Segment[?], oldValue: Double, newValue: Double) extends UndoableCommand {
+  case class FpPortValueCommand(project: Project, port: Node.InPort[?], segment: Segment, oldValue: Double, newValue: Double) extends UndoableCommand {
     override def undo(): Unit = {
       setValue(oldValue)
     }
@@ -313,7 +313,7 @@ object UndoManager {
                             dRotation: Float,
                             flipX: Boolean, flipY: Boolean)
 
-  case class TransformNodeCommand(project: Project, segment: Segment[?], node: TransNode, oldState: TransNodeState, newState: TransNodeState) extends UndoableCommand {
+  case class TransformNodeCommand(project: Project, segment: Segment, node: TransNode, oldState: TransNodeState, newState: TransNodeState) extends UndoableCommand {
     override def undo(): Unit = {
       applyState(oldState)
     }

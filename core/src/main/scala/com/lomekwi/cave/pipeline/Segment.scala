@@ -15,12 +15,12 @@ import java.util
  * 它是 [[Element]] 中承载内容的那一支，内部再分内容与转场。
  * 只关心"这里是不是片段"的调用方匹配 Segment 即可，不必往下看那一层。
  *
- * @tparam T 帧类型
+ * 片段不参数化帧类型，帧类型只在 Source 与 Filter 层流动。
  */
 @SerialVersionUID(1L)
-sealed abstract class Segment[T <: Frame](val source: Source[T])
-  extends Element with Serializable with Duplicatable[Segment[T]] {
-  final val filters: util.List[Filter[? >: T]] = new FilterList[T](source)
+sealed abstract class Segment(val source: Source[? <: Frame])
+  extends Element with Serializable with Duplicatable[Segment] {
+  final val filters: FilterList = new FilterList(source)
   @transient private lazy val segmentActor: TlSegmentActor = createTlSegmentActor()
 
   /**
@@ -29,9 +29,9 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
    * @param time 片段内时间
    * @return 产品
    */
-  final def get(time: Long, track: Track): T = {
+  final def get(time: Long, track: Track): Frame = {
     val generated = source.generate(time, track, this)
-    if (filters.isEmpty) generated        else filters.get(filters.size() - 1).filterOut.getData.asInstanceOf[T]
+    if (filters.isEmpty) generated        else filters.get(filters.size() - 1).filterOut.getData.asInstanceOf[Frame]
   }
 
   /**
@@ -55,12 +55,15 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
   }
 
 
-  def attach(filter: Filter[? >: T]): Segment[T] = {
+  /** 挂载滤镜。滤镜处理的帧类型必须接受本片段源的产出类型，否则抛 IllegalArgumentException。 */
+  def attach(filter: Filter[?]): Segment = {
+    require(filter.getType.isAssignableFrom(source.getType),
+      "滤镜的帧类型与本片段源的产出类型不兼容: " + filter.name)
     filters.add(filter)
     this
   }
 
-  def getType: Class[T] = {
+  def getType: Class[? <: Frame] = {
     source.getType
   }
 
@@ -96,7 +99,7 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
   /** 本片段在时间线上的可视化 actor，随取随建。 */
   def getTlSegmentActor: TlSegmentActor = segmentActor
 
-  override def duplicate(): Segment[T] = {
+  override def duplicate(): Segment = {
     val copy = super[Duplicatable].duplicate()
     copy.source.onDuplicate(source)
     copy
@@ -108,10 +111,10 @@ sealed abstract class Segment[T <: Frame](val source: Source[T])
  * 不再需要为此开放继承。
  */
 @SerialVersionUID(1L)
-class Content[T <: Frame](source: Source[T]) extends Segment[T](source) {
+class Content(source: Source[? <: Frame]) extends Segment(source) {
 
   /** 本片段能否与给定内容片段构造转场。 */
-  def canCreateTransitionWith(other: Content[? <: T]): Boolean = {
+  def canCreateTransitionWith(other: Content): Boolean = {
     source.canCreateTransitionWith(other.source)
   }
 
@@ -119,17 +122,17 @@ class Content[T <: Frame](source: Source[T]) extends Segment[T](source) {
    * 以本片段为前段、另一个内容片段为后段，构造转场片段。
    * 转场源由 [[Source.createTransition]] 提供。
    */
-  def createTransition(other: Content[? <: T]): Transition[T] = {
-    new Transition[T](source.createTransition(other.source)) {}
+  def createTransition(other: Content): Transition = {
+    new Transition(source.createTransition(other.source)) {}
   }
 }
 
 /**
  * 转场。一种特殊的片段。对其来说的障碍与[[Content]]看到的障碍不同。
- * WIP.
+ * 转场由相邻内容的重叠区派生，由 [[com.lomekwi.cave.timeline.Track]] 自行维护。
  */
 @SerialVersionUID(1L)
-abstract class Transition[T <: Frame](source: Source[T]) extends Segment[T](source)
+abstract class Transition(source: Source[? <: Frame]) extends Segment(source)
 
 /**
  * 轨道元素，一个ADT，是 [[Track.get]] 的返回值。片段是轨道上真实存在的条目，

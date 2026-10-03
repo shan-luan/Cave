@@ -8,7 +8,6 @@ import com.lomekwi.cave.pipeline.{Source, Node, Segment}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
 import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTextSegmentActor}
 
 import java.util.concurrent.CountDownLatch
@@ -24,7 +23,6 @@ class TextSource(text: String) extends Source[TextFrame] {
   @transient private var font: BitmapFont = uninitialized
   /** 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体。 */
   @transient private var generatedFontSize: Int = 0
-  @transient private lazy val actor: TransFrameActor = new TransFrameActor(frame)
   @volatile @transient private var initialized: Boolean = false
 
   textIn.defaultData = text
@@ -79,7 +77,7 @@ class TextSource(text: String) extends Source[TextFrame] {
     initialized = false
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment[TextFrame]): TextFrame = {
+  override protected def produce(time: Long, track: Track, segment: Segment): TextFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -98,8 +96,6 @@ class TextSource(text: String) extends Source[TextFrame] {
         frame = new TextFrame(track.index, segment)
         frame.setFont(font)
         frame.transform = new Transform(0, 0, 0)
-        actor.rebind(frame)
-        frame.actor = actor
         initialized = true
         cd.countDown()
       })
@@ -133,7 +129,7 @@ class TextSource(text: String) extends Source[TextFrame] {
     "文本源"
   }
 
-  override def createTlSegmentActor(segment: Segment[?]): TlSegmentActor = {
+  override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     new TlTextSegmentActor(segment)
   }
 

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.GL30
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.timeline.Track
@@ -14,13 +15,14 @@ import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
-class ImgFrame(trackIndex: Int, segment: Segment[?]) extends Frame(trackIndex, segment) with Transformable with Renderable {
+class ImgFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, segment) with Transformable with Renderable {
   override var transform: Transform = uninitialized
   private var pixels: ByteBuffer = uninitialized
   @volatile private var pixelsDirty: Boolean = false
   var texture: Texture = uninitialized
-  var actor: TransFrameActor = uninitialized
   var unpackRowLength: Int = 0
+
+  override protected def createActor(): Actor = new TransFrameActor(this)
 
   def this(trackIndex: Int) = {
     this(trackIndex, null)

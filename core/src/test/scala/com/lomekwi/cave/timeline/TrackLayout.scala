@@ -13,8 +13,8 @@ import scala.jdk.CollectionConverters.*
 object TrackLayout {
 
   /** 轨道上按时间排列的全部内容。 */
-  def contentsOf(track: Track): Vector[Content[?]] =
-    track.asScala.collect { case c: Content[?] => c }.toVector
+  def contentsOf(track: Track): Vector[Content] =
+    track.asScala.collect { case c: Content => c }.toVector
 
   /** 相邻内容交叉、隔项不重叠、转场区间恒等于重叠区。 */
   def assertValid(track: Track): Unit = {
@@ -36,7 +36,7 @@ object TrackLayout {
     }
     for (s <- track.asScala) {
       s match {
-        case t: Transition[?] =>
+        case t: Transition =>
           val sides = track.transitionSides(t)
           assertNotNull(sides, "转场两侧缺失")
           if (sides != null) {

@@ -1,0 +1,21 @@
+package com.lomekwi.cave.pipeline.image
+
+import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.scenes.scene2d.Actor
+import com.lomekwi.cave.pipeline.Frame
+import com.lomekwi.cave.ui.editpanel.previewarea.ImgFrameActor
+
+/**
+ * 持有两个 Renderable 的帧。render 时按持有顺序依次绘制，b 画在 a 之上，
+ * 持有为 null 的子项跳过。自身 opacity 不参与渲染，画面完全由子 Renderable 各自的 render 决定。
+ */
+@SerialVersionUID(1L)
+class BiRenderFrame(trackIndex: Int, val a: Renderable, val b: Renderable) extends Frame(trackIndex) with Renderable {
+
+  override protected def createActor(): Actor = new ImgFrameActor(this)
+
+  override def render(batch: Batch): Unit = {
+    if (a != null) a.render(batch)
+    if (b != null) b.render(batch)
+  }
+}
