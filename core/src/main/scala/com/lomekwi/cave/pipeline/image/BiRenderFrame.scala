@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.editpanel.previewarea.ImgFrameActor
  * 持有为 null 的子项跳过。自身 opacity 不参与渲染，画面完全由子 Renderable 各自的 render 决定。
  */
 @SerialVersionUID(1L)
-class BiRenderFrame(trackIndex: Int, val a: Renderable, val b: Renderable) extends Frame(trackIndex) with Renderable {
+class BiRenderFrame(trackIndex: Int, var a: Renderable, var b: Renderable) extends Frame(trackIndex) with Renderable {
 
   override protected def createActor(): Actor = new ImgFrameActor(this)
 

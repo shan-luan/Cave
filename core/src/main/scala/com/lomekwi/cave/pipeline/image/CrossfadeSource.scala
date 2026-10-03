@@ -4,7 +4,7 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.TransitionSource
 
 /**
- * 叠化转场。前帧线性淡出、后帧线性淡入，帧经 [[BiRenderFrame]] 按透明度叠加。
+ * 叠化转场。后帧经 [[BiRenderFrame]] 以渐显的透明度叠在前帧之上。
  */
 @SerialVersionUID(1L)
 class CrossfadeSource(from: Source[? <: ImgFrame], to: Source[? <: ImgFrame])
@@ -12,11 +12,19 @@ class CrossfadeSource(from: Source[? <: ImgFrame], to: Source[? <: ImgFrame])
 
   //FIXME 前后两段内容来自同一媒体资源时，两个源在相同轨道上共用同一个底层解码器，
   // 转场期间交替向它取帧来回定位，转场画面因此不流畅
+
+  // 只让后帧从 0 渐显，前帧保持子源重置的全显。若两侧同时按 1-p 与 p 调透明度，
+  // 前帧会被 over 合成压两次，贡献变成 (1-p)²，不再是线性叠化
   override def mix(fromFrame: ImgFrame, toFrame: ImgFrame, progress: Float): BiRenderFrame = {
-    val trackIndex = (if (fromFrame != null) fromFrame else toFrame).trackIndex
-    if (fromFrame != null) fromFrame.opacity = 1f - progress
     if (toFrame != null) toFrame.opacity = progress
-    new BiRenderFrame(trackIndex, fromFrame, toFrame)
+    val trackIndex = (if (fromFrame != null) fromFrame else toFrame).trackIndex
+    val result =
+      if (frame == null) new BiRenderFrame(trackIndex, fromFrame, toFrame)
+      else frame
+    result.a = fromFrame
+    result.b = toFrame
+    frame = result
+    result
   }
 
   override def displayName: String = {
