@@ -6,40 +6,53 @@ class Playhead(@transient private val projEventBus: EventBus) {
 
   @volatile private var anchor: Long = 0
   @volatile private var frozenTime: Long = 0L
-  @volatile private var playing: Boolean = false
+  @volatile private var playState: PlayState = PlayState.Paused
+  // SEEKING 会话的目标状态与版本号
+  @volatile private var seekTargetState: PlayState = PlayState.Paused
+  @volatile private var seekVersion: Long = 0L
 
-  def setPlaying(playing: Boolean): Unit = {
-    if (playing != isPlaying) {
-      if (playing) {
+  def state: PlayState = playState
+
+  def state_=(state: PlayState): Unit = {
+    if (state != playState) {
+      if (state == PlayState.Playing) {
         anchor = System.nanoTime() - frozenTime
-      } else {
+      } else if (playState == PlayState.Playing) {
         frozenTime = System.nanoTime() - anchor
       }
+      // SEEKING 期间 anchor 失效，从 SEEKING 进入 Paused 保留 frozenTime 的 seek 目标
 
-      this.playing = playing
+      playState = state
       projEventBus.post(PlayStateChangedEvent)
     }
   }
 
-  def isPlaying: Boolean = playing
+  def getSeekVersion: Long = seekVersion
 
   def seek(time: Long): Unit = {
     var t = time
     t *= 1000
 
-    if (isPlaying) {
-      anchor = System.nanoTime() - t
-    } else {
-      frozenTime = t
+    frozenTime = t
+    seekVersion += 1
+    if (playState != PlayState.Seeking) {
+      seekTargetState = playState
+      playState = PlayState.Seeking
+      projEventBus.post(PlayStateChangedEvent)
     }
 
     projEventBus.post(SeekEvent)
   }
 
+  /** 所有轨道 sync 到 seek 目标后由 [[Timeline]] 聚合调用，恢复 seek 前的状态 */
+  def finishSeek(): Unit = {
+    state = seekTargetState
+  }
+
   def getTime: Long = getNanoTime / 1000
 
   private def getNanoTime: Long = {
-    if (isPlaying) {
+    if (playState == PlayState.Playing) {
       System.nanoTime() - anchor
     } else {
       frozenTime

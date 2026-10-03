@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.timeline.playback.PlayState
 import com.lomekwi.cave.util.Units.SECOND
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
@@ -38,11 +39,11 @@ class SegmentStepOutTest extends GdxTestBase {
       assertEquals(duration + SECOND / 10, segment.getLastStepOutTime, "应报告离开时的源内时间")
 
       project.playhead.seek(0)
-      project.playhead.setPlaying(true)
+      project.playhead.state = PlayState.Playing
       assertTrue(segment.awaitStepOut(SECOND), "自然播放越过源终点应触发 onStepOut")
       assertEquals(2, segment.getStepOutCount)
       assertTrue(segment.getLastStepOutTime >= duration, "越界时间不应早于源终点")
-      project.playhead.setPlaying(false)
+      project.playhead.state = PlayState.Paused
     } finally {
       thread.interrupt()
       thread.join(2000)
