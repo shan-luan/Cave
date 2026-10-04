@@ -71,7 +71,7 @@ trait PortActor extends Actor with PortHolder {
 
   /**
    * 连线拖拽开始后每帧重算鼠标位置，画布在拖拽期间平移缩放后连线端点仍跟手。
-   * 只延续 detached 之后的过程，提起连接本身仍由鼠标移动事件触发，保持不动不提起的语义。
+   * 只延续 [[detached]] 之后的过程，提起连接本身仍由鼠标移动事件触发，保持不动不提起的语义。
    */
   override def act(delta: Float): Unit = {
     super.act(delta)
@@ -197,11 +197,9 @@ trait PortActor extends Actor with PortHolder {
     toDrawingFrame(cursor)
   }
 
-  /**
-   * 绘制坐标系，即绘制时批次所在的坐标系。分组默认关闭变换，改为把自身 x/y 折算进子 actor，
-   * 因此坐标系由更上层第一个开启变换的祖先决定。
-   */
+  /** 绘制坐标系，即绘制时批次所在的坐标系。 */
   private def drawingFrame: Group = {
+    // 分组默认关闭变换，改为把自身 x/y 折算进子 actor，因此坐标系由更上层第一个开启变换的祖先决定
     var current: Group = getParent
     while (current != null && !current.isTransform) {
       current = current.getParent

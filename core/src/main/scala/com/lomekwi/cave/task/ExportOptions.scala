@@ -32,7 +32,7 @@ class ExportOptions extends Json.Serializable {
     bitrate = other.bitrate
   }
 
-  /** bitrate Mbps 的便捷 getter/setter（存为 bps） */
+  /** 以 Mbps 为单位读写 [[bitrate]]，字段本身以 bps 存储。 */
   def getBitrateMbps: Double = {
     bitrate / Units.MEGA.toDouble
   }

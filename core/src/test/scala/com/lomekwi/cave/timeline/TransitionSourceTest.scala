@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertTrue, f
 import org.junit.jupiter.api.{BeforeEach, Test}
 
 /**
- * 转场源框架的模型级测试。框架在 produce 里反查轨道布局，
- * 驱动两侧子源并把换算结果交给 mix，覆盖如下。
+ * 转场源框架的模型级测试。框架在 [[TransitionSource.produce]] 里反查轨道布局，
+ * 驱动两侧子源并把换算结果交给 [[TransitionSource.mix]]，覆盖如下。
  *  - 时间换算：两侧子源各自收到正确的片段内时间，progress 为转场内局部进度
  *  - 方向还原：后段兜底构造的转场源 mix 仍先起点侧后终点侧，progress 相应翻转
  *  - 无帧退化：一侧子源暂时无帧时退化为另一侧，两侧都无帧才交出无帧
@@ -121,7 +121,7 @@ class TransitionSourceTest extends GdxTestBase {
   @Test
   def flippedTransitionRestoresSidesAndReversesProgress(): Unit = {
     val (track, transition, source) = placedTrack(leftLead = false, _ => false, _ => false)
-    // 兜底构造：转场源由右侧内容造出，from 指向右内容
+    // 兜底构造：转场源由右侧内容造出，[[TransitionSource.from]] 指向右内容
     val right = track.get(1200L) match {
       case c: Content => c
       case _ => fail("转场终点之外应是右内容")
@@ -129,7 +129,7 @@ class TransitionSourceTest extends GdxTestBase {
     assertTrue(source.from eq right.source)
 
     track.frameAt(transition, 600L)
-    // mix 的视角仍是起点侧在前，progress 翻转
+    // [[mix]] 的视角仍是起点侧在前，`progress` 翻转
     assertEquals(600L, source.lastFrom.producedAt)
     assertEquals(100L, source.lastTo.producedAt)
     assertEquals(0.8f, source.lastProgress, 1e-6f)
@@ -168,7 +168,7 @@ class TransitionSourceTest extends GdxTestBase {
     val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
 
     track.syncAt(transition, 600L)
-    // from 指向右内容，转发仍按各自的原始配对换算
+    // [[TransitionSource.from]] 指向右内容，转发仍按各自的原始配对换算
     assertEquals(600L, leftSource.lastSync)
     assertEquals(100L, rightSource.lastSync)
   }

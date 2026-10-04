@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.{assertNotSame, assertNotNull}
 import org.junit.jupiter.api.Test
 
 /**
- * 片段的 `TlSegmentActor` 随取随建，且不参与序列化：
+ * 片段的 [[com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor]] 随取随建，且不参与序列化：
  * [[com.lomekwi.cave.util.Duplicatable.duplicate]] 以序列化产出副本，
  * 副本首次访问必须重建 actor，而不是沿用原片段的实例。
  */

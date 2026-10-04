@@ -43,7 +43,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   private[tlarea] final val view: TimelineView.ViewState = new TimelineView.ViewState()
 
-  /** 拖拽吸附时的吸附时间点，-1 表示无吸附（由 TlSegmentActor 拖拽时设置） */
+  /** 拖拽吸附时的吸附时间点，-1 表示无吸附（由 [[TlSegmentActor]] 拖拽时设置） */
   private[tlarea] var snapIndicatorTime: Long = -1
 
   private[tlarea] var dirty: Boolean = true
@@ -54,10 +54,10 @@ class TimelineView(project0: Project) extends Group with Focusable {
   private final val inputListener: TlInputListener = new TlInputListener(this)
   private final val captureListener: TlCaptureListener = new TlCaptureListener(this)
 
-  /** 当前有拖拽会话的片段，拖拽中每帧由 act 驱动 [[TlSegmentActor.dragTo]]；转场拖到消失被移出舞台时仍需驱动 */
+  /** 当前有拖拽会话的片段，拖拽中每帧由 [[act]] 驱动 [[TlSegmentActor.dragTo]]；转场拖到消失被移出舞台时仍需驱动 */
   private[tlarea] var draggingActor: TlSegmentActor = uninitialized
 
-  /** SEEK 快捷键按住时的刷动会话标志，按住期间播放头与拖拽刷动同样冻结在 Seeking */
+  /** [[TimelineView.Actions.SEEK]] 快捷键按住时的刷动会话标志，按住期间播放头与拖拽刷动同样冻结在 Seeking */
   private var seekScrubbing: Boolean = false
 
   private[tlarea] var marqueeActive: Boolean = false

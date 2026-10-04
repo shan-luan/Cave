@@ -189,7 +189,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       fb.dispose()
       batch.dispose()
     })
-    timeline.project.close() //这里的project是反序列化出来的副本，所以可以关闭而不影响用户编辑中的项目。
+    timeline.project.close() // [[Timeline.project]] 是反序列化出来的副本，关闭它不影响用户正在编辑的项目。
     cvFrame.close()
     recorder.close()
   }

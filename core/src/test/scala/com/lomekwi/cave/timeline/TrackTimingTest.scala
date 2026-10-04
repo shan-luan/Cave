@@ -137,7 +137,7 @@ class TrackTimingTest extends GdxTestBase {
     out
   }
 
-  /** 预热后重复 [[TrackTimingTest.REPEATS]] 次 op，返回单次的（最快, 平均）耗时。 */
+  /** 预热后重复 [[TrackTimingTest.REPEATS]] 次 op，返回单次的（最快，平均）耗时。 */
   private def time(op: => Unit): (Long, Long) = time(op, ())
 
   /**

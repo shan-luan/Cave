@@ -23,7 +23,7 @@ import TimelineViewDragSimTest.*
  * 用真实 TlSegmentActor 拖拽会话模拟"鼠标拖拽"交互，验证 UI 拖拽逻辑。
  * 1) 小幅拖拽不应被放大成大幅移动；
  * 2) 拖拽边缘裁切时不该改变片段内偏移 origin；
- * 3) act() 重建是模型的纯投影，重建不得改动模型，模型状态必须稳定。
+ * 3) [[TimelineView.act]] 重建是模型的纯投影，重建不得改动模型，模型状态必须稳定。
  *
  * TimelineView 的字段初始化会创建 vis-ui 菜单组件（需已加载 Skin），
  * 在 headless 测试里不便构造。因此这里用 Objenesis 绕过构造函数实例化，
@@ -71,7 +71,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tl.getHeight + view.trackYShift - (index + 1) * view.trackHeight
   }
 
-  /** 在模型上放置一个片段，并按 act() 的重建逻辑摆好 Actor。 */
+  /** 在模型上放置一个片段，并按 [[TimelineView.act]] 的重建逻辑摆好 Actor。 */
   private def place(track: Track, segment: Segment, start: Long, end: Long, origin: Long): TlSegmentActor = {
     timeline.tryAdd(track, segment, start ~~ end, origin)
     val actor = segment.getTlSegmentActor
@@ -81,7 +81,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor
   }
 
-  /** 模拟 act() 重建，actor 纯粹按模型摆位，不得改动模型。 */
+  /** 模拟 [[TimelineView.act]] 重建，actor 纯粹按模型摆位，不得改动模型。 */
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
     val segment = actor.segment
     val track = timeline.findTrackOf(segment)

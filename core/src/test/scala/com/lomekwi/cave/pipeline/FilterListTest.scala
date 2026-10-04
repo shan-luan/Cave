@@ -14,13 +14,13 @@ import FilterListTest.*
  * 验证 [[FilterList]]，双向链表行为 + 端口连接自动维护。
  *
  * 覆盖如下。
- * 1) 空列表，Segment.get() 无 filter 时返回源自身帧；
+ * 1) 空列表，[[Segment.get]] 无 filter 时返回源自身帧；
  * 2) add 后端口链 segment.out → f.in → f.out → …；
  * 3) 按索引 add/remove 后连接保持；
  * 4) set 替换后连接更新；
  * 5) clear 后回到空链状态；
  * 6) listIterator 的 add/remove/set 维护连接；
- * 7) 求值，Segment.get() 沿链传播。
+ * 7) 求值，[[Segment.get]] 沿链传播。
  */
 class FilterListTest {
 
@@ -198,7 +198,7 @@ class FilterListTest {
 
 object FilterListTest {
 
-  /** 最小可测 Filter，把传入帧的 val 加 delta。 */
+  /** 最小可测 [[Filter]]，把传入帧的 val 加 [[delta]]。 */
   private[pipeline] final class AddFilter extends Filter[Fpable] {
     private[FilterListTest] final val delta: Node.InPort[Double] = addInPort(
       new Node.InPort[Double]("delta", 0.0, classOf[Double]) {})

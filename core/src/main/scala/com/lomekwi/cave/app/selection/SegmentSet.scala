@@ -42,11 +42,9 @@ class SegmentSet(@transient var timeline: Timeline) extends util.AbstractCollect
     segments.size()
   }
 
-  /**
-   * 抓一份剪贴板模板，片段深拷贝，位置与组结构一并带走。
-   * 位置必须随模板走，否则原对象被删除后粘贴就失去了落点依据。
-   */
+  /** 抓一份剪贴板模板，片段深拷贝，位置与组结构一并带走。 */
   override def copy(): Copyable = {
+    // 位置必须随模板走，否则原对象被删除后粘贴就失去了落点依据。
     PasteTemplate.of(this, timeline)
   }
 }

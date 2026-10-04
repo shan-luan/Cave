@@ -15,7 +15,7 @@ import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
 import java.util.Objects
 
 /**
- * String 输入端口编辑 widget，VisTextArea 行。直接持有端口模型，修改写默认值并刷新预览。
+ * [[String]] 输入端口编辑 widget，[[VisTextArea]] 行。直接持有端口模型，修改写默认值并刷新预览。
  */
 final class TextPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override final val port: Node.InPort[?] = port0

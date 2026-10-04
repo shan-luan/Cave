@@ -77,7 +77,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
 
   @Subscribe
   def sink(frame: Renderable): Unit = {
-    // 进预览的 Renderable 都承载在 Frame 上，trackIndex 与生命周期状态都在 Frame 一侧
+    // 进预览的 [[Renderable]] 都承载在 [[Frame]] 上，[[Frame.trackIndex]] 与生命周期状态都在 [[Frame]] 一侧
     val f = frame.asInstanceOf[Frame & Renderable]
     val idx: Int = f.trackIndex
     project.timeline.getWorker(idx).sinkPhaser.register()

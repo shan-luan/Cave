@@ -46,7 +46,7 @@ class Inspector extends VisTable {
     }
   }
 
-  /** 节点图改动后重建，条件是这个片段正在被显示。 */
+  /** 片段的节点图改动后，若该片段正在显示则重建内容。 */
   @Subscribe
   def onSegmentNodeChanged(e: SegmentNodeChangedEvent): Unit = {
     val shown = if (currentSet != null) currentSet.contains(e.segment)

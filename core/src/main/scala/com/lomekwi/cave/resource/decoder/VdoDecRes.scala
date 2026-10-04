@@ -96,7 +96,6 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
 
   /**
    * 解码指定时间戳的视频帧，并将像素数据更新到提供的帧对象中。
-   * 内部会根据时间戳判断是否使用缓存、跳转或抓取新帧。
    *
    * @param time  目标时间
    * @param frame 要更新的帧对象
@@ -107,6 +106,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
       start()
     }
 
+    // 根据时间戳判断沿用缓存帧还是抓取新帧
     if (isTimeLegal(time)) {
       val nextFrameTime = getTimestamp + lengthPerFrame
 

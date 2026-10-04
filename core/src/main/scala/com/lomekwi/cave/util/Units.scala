@@ -7,7 +7,7 @@ object Units {
   private final val TERA = KILO * GIGA
   final val PETA = KILO * TERA
 
-  private final val MICROSECOND = 1//timebase
+  private final val MICROSECOND = 1 // 时间基准为一微秒
   private final val MILLISECOND = KILO * MICROSECOND
   final val SECOND = KILO * MILLISECOND
   private final val MINUTE = 60 * SECOND
@@ -31,7 +31,7 @@ object Units {
   }
 
   /**
-   * niceScale 的浮点版本，把原始区间舍入到最近的"整齐"数（1、2、5、10 × 10^n）。
+   * [[niceScale]] 的浮点版本，把原始区间舍入到最近的"整齐"数（1、2、5、10 × 10^n）。
    */
   def niceInterval(raw: Float): Float = {
     val mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-10f)))).toFloat

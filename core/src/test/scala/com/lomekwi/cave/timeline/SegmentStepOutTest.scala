@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 播放头离开片段时 `Segment.onStepOut` 的触发时机，自然播放越过片段终点，
+ * 播放头离开片段时 [[Segment.onStepOut]] 的触发时机，自然播放越过片段终点，
  * 以及 seek 把播放头挪到片段区间之外（暂停状态下同样如此）。
  */
 class SegmentStepOutTest extends GdxTestBase {

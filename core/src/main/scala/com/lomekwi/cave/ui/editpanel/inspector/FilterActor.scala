@@ -23,7 +23,7 @@ import scala.jdk.CollectionConverters.*
 import java.util
 
 /**
- * 过滤器节点卡，显示 filter 名称，可编辑其数值输入端口（默认值），支持删除、
+ * 过滤器节点卡，显示 `filter` 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
 final class FilterActor(private val segment: Segment, private val filter: Filter[?]) extends Card(filter.name) {
@@ -69,7 +69,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
     }
   })
   for (in <- filter.inPorts.asScala) {
-    // 链端口由 filter 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
+    // 链端口由 [[filter]] 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
     if (in != filter.filterIn) {
       val widget = App.cardWidgetsRegistry.createEditor(in, segment)
       // 未注册该端口类型的 widget，不显示
@@ -79,7 +79,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
     }
   }
 
-  /** 标题栏加上/下移动按钮，用于交换相邻 filter 的顺序。 */
+  /** 标题栏加上/下移动按钮，用于交换相邻过滤器的顺序。 */
   private def addMoveButton(up: Boolean): Unit = {
     val style = new VisImageButton.VisImageButtonStyle(
       VisUI.getSkin.get("close-window", classOf[VisImageButton.VisImageButtonStyle]))
@@ -119,7 +119,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
     }
   }
 
-  /** 拖拽结束后，根据卡片在列表中的位置计算目标索引并重排。 */
+  /** 拖拽结束后，按卡片与其他过滤器卡片的垂直位置计算目标索引并重排。 */
   private def doReorder(): Unit = {
     if (segment == null) return
     val p = getParent

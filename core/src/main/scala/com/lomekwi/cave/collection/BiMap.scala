@@ -7,20 +7,21 @@ import java.io.Serializable
 /**
  * 不可变双向映射，[[forward]] 与 [[reverse]] 互为逆映射。
  *
- * K2VM 与 V2KM 具体化正反两个 Map 的实现类型，构造时传入两者的空实例，
- * 之后所有操作返回的 Map 沿用同一实现，各自的性能特征全程保持。
- * [[forward]] 与 [[reverse]] 即两条只读视图，静态类型分别为 K2VM 与 V2KM。
- *
- * 互逆性无需内容校验：初始两个 Map 被约束为空（空集的逆映射仍是空集），
- * 所有修改又构造性地维持一一对应，归纳可知任意状态下互逆。
- * K2VM、V2KM 须遵循 Scala 集合约定，updated 与 removed 返回同类型实例
- * （标准库实现均满足），内部据此恢复具体类型。
+ * @tparam K    键类型
+ * @tparam V    值类型
+ * @tparam K2VM 正向视图的实现类型
+ * @tparam V2KM 反向视图的实现类型
  */
 @SerialVersionUID(1L)
 final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]] private (
     val forward: K2VM,
     val reverse: V2KM
 ) extends Serializable {
+
+  // 互逆性无需内容校验。初始两个 Map 为空，空集的逆映射仍是空集，
+  // 所有修改又构造性地维持一一对应，归纳可知任意状态下互逆。
+  // K2VM 与 V2KM 须遵循 Scala 集合约定，updated 与 removed 返回同类型实例
+  // （标准库实现均满足），各方法据此恢复具体类型。
 
   def get(key: K): Option[V] = forward.get(key)
 

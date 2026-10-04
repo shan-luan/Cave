@@ -194,7 +194,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   }
 
   /**
-   * 拖拽中每帧调用，按 dragSide 分派到三种分支（含吸附）。
+   * 拖拽中每帧调用，按 [[dragSide]] 分派到三种分支（含吸附）。
    * 驱动来自鼠标移动事件与 [[TimelineView.act]] 两处，本方法幂等，重复调用无副作用。
    * 坐标是鼠标在 [[TimelineView]] 中的位置，不由本 actor 的坐标系换算。
    */
@@ -241,7 +241,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     tl.dirty = true
   }
 
-  // 吸附点由 Timeline.snapTime 获取，这里只做阈值换算、忽略集与指示线。
+  // 吸附点由 [[com.lomekwi.cave.timeline.Timeline.snapTime]] 获取，这里只做阈值换算、忽略集与指示线。
 
   private def snapThreshold(): Long = {
     Math.max(1, (TlSegmentActor.SNAP_THRESHOLD_PX / tl.getWidth * tl.view.durationTime).toLong)
@@ -274,7 +274,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
 
   /**
    * 整体移动吸附，起点与终点各求吸附点，取更近者。
-   * 随拖动一起动的边都不参与吸附：成员自身，以及端点由成员端点派生的相邻转场。
+   * 随拖动一起动的边都不参与吸附，包括成员自身以及端点由成员端点派生的相邻转场。
    * 拖内容时邻居不动，它的边缘是静止的吸附点，照常参与。
    */
   private def snapMoveTarget(target: Long, duration: Long): Long = {
@@ -324,11 +324,9 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     }
   }
 
-  /**
-   * 拖转场本体时两侧内容跟着平移（见 [[Track.shiftTransition]]），
-   * 转场及其两侧内容的端点都在变，必须整体退出吸附。
-   */
+  /** 把转场及其两侧内容整体加入忽略集。 */
   private def ignoreTransition(ignore: util.Set[Segment], track: Track, t: Transition): Unit = {
+    // 拖转场本体时两侧内容跟着平移（见 [[Track.shiftTransition]]），转场及其两侧内容的端点都在变，必须整体退出吸附
     if (t != null) {
       ignore.add(t)
       val sides = track.transitionSides(t)
@@ -350,7 +348,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     }
   }
 
-  /** 拖转场边缘就是拖某条内容边：左缘是右内容的起点，右缘是左内容的终点。 */
+  /** 拖转场边缘就是拖某条内容边，左缘是右内容的起点，右缘是左内容的终点。 */
   private def resizeTarget(member: Segment): Segment = member match {
     case t: Transition =>
       val memberTrack = tl.timeline.findTrackOf(t)

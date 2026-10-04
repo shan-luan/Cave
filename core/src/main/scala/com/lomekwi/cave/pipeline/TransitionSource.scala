@@ -8,11 +8,9 @@ import scala.reflect.ClassTag
 /**
  * 转场源。由前后两段内容的源组合而成，是唯一输入与输出帧型分离的源。
  *
- * 转场的区间与两侧内容都由轨道持有，本类不保存任何布局数值，
- * 求值时用 [[Track.getRange]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查，
- * 保证与轨道布局一致。
+ * 转场的区间与两侧内容都由轨道持有，本类不保存任何布局数值，求值结果与轨道布局一致。
  *
- * 实现具体效果只需覆盖 [[TransitionSource.mix]]，不要覆盖 produce。
+ * 实现具体效果只需覆盖 [[TransitionSource.mix]]，不要覆盖 [[produce]]。
  *
  * @tparam I 两侧内容源产出的帧型
  * @tparam O 转场自身产出的帧型
@@ -21,6 +19,7 @@ import scala.reflect.ClassTag
 abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I], val to: Source[? <: I])
   (using ClassTag[O]) extends Source[O] {
 
+  // 求值时用 [[Track.getRange]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查轨道布局
   final override def canCreateTransitionWith(source: Source[?]): Boolean = false
 
   final override def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
@@ -38,8 +37,8 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
   protected def mix(fromFrame: I, toFrame: I, progress: Float): O
 
   /**
-   * from 与 to 各自对应的内容片段（原始配对），以及方向标志。
-   * 后段兜底构造的转场源 from 与 to 顺序互换，flipped 为 true 表示 from 指向终点侧。
+   * [[from]] 与 [[to]] 各自对应的内容片段（原始配对），以及方向标志。
+   * 后段兜底构造的转场源 [[from]] 与 [[to]] 顺序互换，flipped 为 true 表示 [[from]] 指向终点侧。
    */
   private def rawSides(segment: Segment, track: Track): (Content, Content, Boolean) = {
     val sides = track.transitionSides(segment.asInstanceOf[Transition])
@@ -54,11 +53,11 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     val abs = track.getOrigin(segment) + time
     val a = from.asInstanceOf[Source[I]].generate(abs - track.getOrigin(fromSeg), track, fromSeg)
     val b = to.asInstanceOf[Source[I]].generate(abs - track.getOrigin(toSeg), track, toSeg)
-    // 两侧都无帧才交出无帧，单侧无帧原样交给 mix，由效果决定表现
+    // 两侧都无帧才交出无帧，单侧无帧原样交给 [[mix]]，由效果决定表现
     if (a == null && b == null) null.asInstanceOf[O]
     else {
       val progress = time.toFloat / (track.getRange(segment).hi - track.getRange(segment).lo)
-      // mix 的视角固定为起点侧在前，flipped 时参数对调、进度翻转
+      // [[mix]] 的视角固定为起点侧在前，flipped 时参数对调、进度翻转
       if (flipped) mix(b, a, 1f - progress) else mix(a, b, progress)
     }
   }
