@@ -70,6 +70,10 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
     vdoRes.duration
   }
 
+  override def getDefaultDuration: Option[Long] = {
+    Some(vdoRes.duration)
+  }
+
   override def displayName: String = {
     "视频源"
   }

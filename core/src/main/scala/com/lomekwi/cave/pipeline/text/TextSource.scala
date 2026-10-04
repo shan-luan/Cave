@@ -121,8 +121,8 @@ class TextSource(text: String) extends Source[TextFrame] {
     Long.MaxValue
   }
 
-  override def getDefaultDuration: Long = {
-    5 * SECOND
+  override def getDefaultDuration: Option[Long] = {
+    Some(5 * SECOND)
   }
 
   override def displayName: String = {

@@ -95,5 +95,7 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
 
   override def getDuration: Long = Long.MaxValue
 
+  override def getDefaultDuration: Option[Long] = None
+
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = new TlTransitionActor(segment)
 }

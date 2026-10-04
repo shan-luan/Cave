@@ -2,7 +2,7 @@ package com.lomekwi.cave.pipeline.image
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
-import com.lomekwi.cave.pipeline.{Content, Frame, NodeRegistry, Segment, Source}
+import com.lomekwi.cave.pipeline.{Boundless, Frame, NodeRegistry, Segment, Source}
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
@@ -77,7 +77,7 @@ object OpacityNodeTest {
     override protected def createActor(): Actor = null
   }
 
-  private final class OpCont extends Content(new OpSource)
+  private final class OpCont extends Boundless(new OpSource)
 
   private final class OpSource extends Source[OpFrame] {
     override protected def produce(time: Long, track: Track, segment: Segment): OpFrame = {
@@ -95,6 +95,10 @@ object OpacityNodeTest {
 
     override def getDuration: Long = {
       Long.MaxValue
+    }
+
+    override def getDefaultDuration: Option[Long] = {
+      None
     }
 
     override def displayName: String = {

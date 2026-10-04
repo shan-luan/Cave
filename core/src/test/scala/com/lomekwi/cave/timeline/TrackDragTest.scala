@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test
 
 import java.util.{List, Set}
 
-import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{Boundless, Content, Gap, Segment, Source, Transition}
+import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -38,6 +39,35 @@ class TrackDragTest extends GdxTestBase {
 
   private def placeAt(track: Track, segment: Segment, range: Interval, origin: Long): Unit = {
     timeline.addOrThrow(track, segment, range, origin)
+  }
+
+  /** 无界测试片段，与 [[TestCont]] 相对，用于验证无界内容的前边缘约束。 */
+  private class TestUnbounded extends Boundless(new UnbSource)
+
+  private class UnbSource extends Source[TestCont.TestFrame] {
+    override protected def produce(time: Long, track: Track, segment: Segment): TestCont.TestFrame = {
+      new TestCont.TestFrame(track.index)
+    }
+
+    override def getLengthPerExportFrame: Long = {
+      1
+    }
+
+    override def getDuration: Long = {
+      Long.MaxValue
+    }
+
+    override def getDefaultDuration: Option[Long] = {
+      None
+    }
+
+    override def displayName: String = {
+      "test-unbounded"
+    }
+
+    override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
+      null
+    }
   }
 
   /** 该时间点上的片段；落在空隙或轨道外时为 null。 */
@@ -542,6 +572,32 @@ class TrackDragTest extends GdxTestBase {
     val transition = srcAt(t0, 10)
     assertTrue(transition.isInstanceOf[Transition])
     assertEquals(TrackDragTest.rng(1, 30), t0.getRange(transition))
+  }
+
+  @Test
+  def setStartBackwardClipClampsToOrigin(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val s: Segment = newSegment(100)
+    placeAt(t0, s, TrackDragTest.rng(100, 200), 100) // 素材起点即 origin
+
+    // 素材前面没有内容，前边缘回退不到 origin 之前
+    val applied: Long = timeline.setStart(List.of(s), -50)
+
+    assertEquals(0, applied)
+    assertEquals(TrackDragTest.rng(100, 200), t0.getRange(s))
+  }
+
+  @Test
+  def setStartBackwardBoundlessReachesTimelineStart(): Unit = {
+    def t0: Track = timeline.getTrackOrCreate(0)
+    val s: Segment = new TestUnbounded
+    placeAt(t0, s, TrackDragTest.rng(100, 200), 100) // origin 是落点，无界内容不被它卡住
+
+    // 没有素材起点，前边缘一直回退到时间轴 0
+    val applied: Long = timeline.setStart(List.of(s), -150)
+
+    assertEquals(-100, applied)
+    assertEquals(TrackDragTest.rng(0, 200), t0.getRange(s))
   }
 
   @Test

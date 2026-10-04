@@ -23,9 +23,6 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   addOutPort(new Node.OutPort[Double]("高度", classOf[Double]) {
     override def getData: Double = imgRes.height.toDouble
   })
-  addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
-    override def getData: Double = getDuration.toDouble
-  })
 
   override def sync(time: Long, track: Track, segment: Segment): Unit = {
     imgRes.sync(track.index, time)
@@ -72,8 +69,8 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     Long.MaxValue
   }
 
-  override def getDefaultDuration: Long = {
-    5 * SECOND
+  override def getDefaultDuration: Option[Long] = {
+    Some(5 * SECOND)
   }
 
   override def displayName: String = {

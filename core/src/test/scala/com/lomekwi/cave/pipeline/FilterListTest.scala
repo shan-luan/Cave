@@ -222,7 +222,7 @@ object FilterListTest {
   /** 可复用帧，以 val 为内容。 */
   private[pipeline] final class Fpable(private[pipeline] var `val`: Double) extends Frame(-1)
 
-  private[pipeline] final class FpCont(base: Double) extends Content(new FpSource(base))
+  private[pipeline] final class FpCont(base: Double) extends Boundless(new FpSource(base))
 
   /** 以固定 val 产出帧的最小源。 */
   private[pipeline] final class FpSource(private val base: Double) extends Source[Fpable] {
@@ -236,6 +236,10 @@ object FilterListTest {
 
     override def getDuration: Long = {
       Long.MaxValue
+    }
+
+    override def getDefaultDuration: Option[Long] = {
+      None
     }
 
     override def displayName: String = {
