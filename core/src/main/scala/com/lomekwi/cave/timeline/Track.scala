@@ -1,5 +1,6 @@
 package com.lomekwi.cave.timeline
 
+import com.lomekwi.cave.collection.BiMap
 import com.lomekwi.cave.pipeline.{BlockSource, Content, Element, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
@@ -18,21 +19,21 @@ import scala.jdk.CollectionConverters.*
 @SerialVersionUID(1L)
 final class Track private (val timeline: Timeline, val index: Int,
                            private val blockSegment: Segment,
-                           private val intervalToSeg: TreeMap[Interval, Segment],
-                           private val segToInterval: Map[Segment, Interval],
+                           private val layout: Track.Layout,
                            private val segToOrigin: Map[Segment, Long],
-                           private val contentToTransition: Map[Content, Transition],
-                           private val transitionToContent: Map[Transition, Content]) extends Serializable with java.lang.Iterable[Segment] {
+                           private val transitions: Track.TransitionIndex) extends Serializable with java.lang.Iterable[Segment] {
 
   private def isBlock(segment: Segment): Boolean = segment.eq(blockSegment)
+
+  private def intervalToSeg: TreeMap[Interval, Segment] = layout.forward
 
   /** 是否没有用户内容。 */
   protected[timeline] def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(isBlock)
 
   /** 片段占用的区间。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def getRange(segment: Segment): Interval = {
-    require(segToInterval.contains(segment))
-    segToInterval(segment)
+    require(layout.containsValue(segment))
+    layout.reverse(segment)
   }
 
   /** 片段的 0 秒在时间轴中的位置。要求片段在本轨道，否则抛 IllegalArgumentException。 */
@@ -41,7 +42,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     segToOrigin(segment)
   }
 
-  def contains(segment: Segment): Boolean = segToInterval.contains(segment)
+  def contains(segment: Segment): Boolean = layout.containsValue(segment)
 
   /** 最后一个片段的终点；没有片段时为 0。 */
   lazy val length: Long = intervalToSeg.iterator.filter { case (_, s) => !isBlock(s) }.map(_._1.hi).maxOption.getOrElse(0L)
@@ -54,7 +55,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /** left 与 right 之间的转场，仅在两者确实相邻时返回；否则 null。 */
   private[timeline] def transitionBetween(left: Content, right: Content): Transition = {
-    contentToTransition.get(left) match {
+    transitions.get(left) match {
       case Some(t) if nextContent(left) eq right => t
       case _ => null
     }
@@ -70,7 +71,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def placedTransitionAfter(c: Content): Transition = {
-    val t = contentToTransition.getOrElse(c, null)
+    val t = transitions.get(c).orNull
     if (t != null && contains(t)) t else null
   }
 
@@ -85,7 +86,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /** 转场两侧的内容，左前右后；转场不在本轨道时返回 null。 */
   def transitionSides(t: Transition): (Content, Content) = {
-    val left = transitionToContent.getOrElse(t, null)
+    val left = transitions.getKey(t).orNull
     if (left == null || !contains(left)) null else (left, nextContent(left))
   }
 
@@ -110,15 +111,10 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def put(element: Segment, r: Interval, origin: Long): Track =
-    derived(intervalToSeg.updated(r, element), segToInterval.updated(element, r), segToOrigin.updated(element, origin))
+    derived(layout.updated(r, element), segToOrigin.updated(element, origin))
 
   private def drop(element: Segment): Track =
-    derived(intervalToSeg.removed(segToInterval(element)), segToInterval.removed(element), segToOrigin.removed(element))
-
-  private def rekey(element: Segment, r: Interval, origin: Long): Track =
-    derived(intervalToSeg.removed(segToInterval(element)).updated(r, element),
-      segToInterval.updated(element, r),
-      segToOrigin.updated(element, origin))
+    derived(layout.removedValue(element), segToOrigin.removed(element))
 
   private def canPlaceAt(c: Content, r: Interval): Boolean = canPlaceAt(c, r, null)
 
@@ -178,7 +174,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def syncTransition(left: Content): Track = {
-    val old = contentToTransition.getOrElse(left, null)
+    val old = transitions.get(left).orNull
     val right = nextContent(left)
     if (right == null) {
       // 右邻居暂时缺席，索引项留着等它回来，表里的条目先摘掉
@@ -189,10 +185,9 @@ final class Track private (val timeline: Timeline, val index: Int,
       if (lo < hi) {
         if (old != null && contains(old)) {
           val current = getRange(old)
-          // 这一格已经是对应的转场时无需改动。被内容顶掉（区间键相撞）时要重新放回去，
-          // 撞掉它的那个内容正是本对的右内容，所以只有本对能把它重建出来
-          if (current.lo == lo && current.hi == hi && (intervalToSeg.getOrElse(current, null) eq old)) this
-          else rekey(old, lo ~~ hi, lo)
+          // 已在对应区间时无需改动
+          if (current.lo == lo && current.hi == hi) this
+          else put(old, lo ~~ hi, lo)
         } else {
           val tr = if (old == null) newTransition(left, right) else old
           put(tr, lo ~~ hi, lo).indexTransition(left, tr)
@@ -208,18 +203,15 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def unplaceTransition(c: Content): Track = {
-    val old = contentToTransition.getOrElse(c, null)
+    val old = transitions.get(c).orNull
     if (old != null && contains(old)) drop(old) else this
   }
 
   private def indexTransition(left: Content, tr: Transition): Track =
-    withTransitions(contentToTransition.updated(left, tr), transitionToContent.updated(tr, left))
+    withTransitions(transitions.updated(left, tr))
 
-  private def unindexTransition(left: Content): Track = {
-    val tr = contentToTransition.getOrElse(left, null)
-    withTransitions(contentToTransition.removed(left),
-      if (tr == null) transitionToContent else transitionToContent.removed(tr))
-  }
+  private def unindexTransition(left: Content): Track =
+    withTransitions(transitions.removed(left))
 
   /** 移除片段。片段不在本轨道时原样返回本实例。 */
   protected[timeline] def remove(segment: Segment): Track = {
@@ -243,7 +235,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       if (nr.lo < pr.hi && !(pr.lo < nr.lo && pr.hi < nr.hi)) {
         val target = Math.max(nr.lo, pr.hi)
         if (target < nr.hi) {
-          t = t.rekey(n, target ~~ nr.hi, t.getOrigin(n))
+          t = t.put(n, target ~~ nr.hi, t.getOrigin(n))
         }
       }
     }
@@ -272,8 +264,8 @@ final class Track private (val timeline: Timeline, val index: Int,
     // 右后继的上限把交界点压回下界之下时两侧内容不再交叉，消除重叠无解，放弃本次删除
     if (boundary < lower || boundary <= lr.lo || boundary >= rr.hi) return this
     val next = drop(t)
-      .rekey(left, lr.lo ~~ boundary, getOrigin(left))
-      .rekey(right, boundary ~~ rr.hi, getOrigin(right))
+      .put(left, lr.lo ~~ boundary, getOrigin(left))
+      .put(right, boundary ~~ rr.hi, getOrigin(right))
     next.syncAround(left)
   }
 
@@ -292,7 +284,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (s == null) return this
     s match {
       case c: Content =>
-        val r = segToInterval(c)
+        val r = layout.reverse(c)
         if (time <= r.lo || time >= r.hi) return this
         val origin: Long = getOrigin(c)
         val right = c.duplicate().asInstanceOf[Content]
@@ -341,7 +333,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (lower > upper) return this
     val target = Math.max(lower, Math.min(upper, r.lo + deltaTime))
     if (target == r.lo) return this
-    rekey(c, target ~~ r.hi, getOrigin(c)).syncAround(c)
+    put(c, target ~~ r.hi, getOrigin(c)).syncAround(c)
   }
 
   private def setContentEnd(c: Content, deltaTime: Long): Track = {
@@ -351,7 +343,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (lower > upper) return this
     val target = Math.max(lower, Math.min(upper, r.hi + deltaTime))
     if (target == r.hi) return this
-    rekey(c, r.lo ~~ target, getOrigin(c)).syncAround(c)
+    put(c, r.lo ~~ target, getOrigin(c)).syncAround(c)
   }
 
   private def setTransitionStart(t: Transition, deltaTime: Long): Track = {
@@ -453,19 +445,17 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (minShift > maxShift) return this
     val applied = Math.max(minShift, Math.min(maxShift, delta))
     if (applied == 0) return this
-    rekey(left, lr.lo ~~ (lr.hi + applied), getOrigin(left))
-      .rekey(right, (rr.lo + applied) ~~ rr.hi, getOrigin(right))
+    put(left, lr.lo ~~ (lr.hi + applied), getOrigin(left))
+      .put(right, (rr.lo + applied) ~~ rr.hi, getOrigin(right))
       .syncAround(left)
   }
 
-  private def derived(intervalToSeg: immutable.TreeMap[Interval, Segment],
-                      segToInterval: Map[Segment, Interval],
+  private def derived(layout: Track.Layout,
                       segToOrigin: Map[Segment, Long]): Track =
-    new Track(timeline, index, blockSegment, intervalToSeg, segToInterval, segToOrigin, contentToTransition, transitionToContent)
+    new Track(timeline, index, blockSegment, layout, segToOrigin, transitions)
 
-  private def withTransitions(contentToTransition: Map[Content, Transition],
-                              transitionToContent: Map[Transition, Content]): Track =
-    new Track(timeline, index, blockSegment, intervalToSeg, segToInterval, segToOrigin, contentToTransition, transitionToContent)
+  private def withTransitions(transitions: Track.TransitionIndex): Track =
+    new Track(timeline, index, blockSegment, layout, segToOrigin, transitions)
 
   private def getShift(r: Interval): Long = pickShift(shiftScan(r, true), shiftScan(r, false))
 
@@ -678,7 +668,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   /** time 是否落在某个内容片段的区间内部，即能否在此分割。 */
   def canSplit(time: Long): Boolean = segmentAt(time) match {
     case c: Content =>
-      val r = segToInterval(c)
+      val r = layout.reverse(c)
       time > r.lo && time < r.hi
     case _ => false
   }
@@ -822,15 +812,18 @@ final class Track private (val timeline: Timeline, val index: Int,
 }
 
 object Track {
+  private type Layout = BiMap[Interval, Segment, TreeMap[Interval, Segment], Map[Segment, Interval]]
+
+  private type TransitionIndex = BiMap[Content, Transition, Map[Content, Transition], Map[Transition, Content]]
+
   /** 新建空轨道。 */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
     val blockSegment: Segment = new Content(new BlockSource)
-    new Track(timeline, index, blockSegment,
-      immutable.TreeMap[Interval, Segment](Long.MinValue ~~ 0L -> blockSegment),
-      Map[Segment, Interval](blockSegment -> (Long.MinValue ~~ 0L)),
+    val layout = BiMap(TreeMap.empty[Interval, Segment], Map.empty[Segment, Interval])
+      .updated(Long.MinValue ~~ 0L, blockSegment)
+    new Track(timeline, index, blockSegment, layout,
       Map[Segment, Long](blockSegment -> 0L),
-      Map.empty,
-      Map.empty)
+      BiMap(Map.empty[Content, Transition], Map.empty[Transition, Content]))
   }
 
   private final val MAX_SLIDE_STEPS = 10000
