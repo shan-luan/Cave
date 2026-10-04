@@ -64,4 +64,19 @@ class CrossfadeSourceTest {
     assertSame(b2, second.b)
     assertEquals(0.75f, b2.opacity, 1e-6f)
   }
+
+  @Test
+  def mixResetsOwnOpacityForEachProduce(): Unit = {
+    val source = new CrossfadeSource(null, null)
+    val a = new ImgFrame(0)
+    val b = new ImgFrame(0)
+
+    val first = source.mix(a, b, 0.25f)
+    // 模拟滤镜链在两次产出之间对自身 opacity 的累乘
+    first.opacity = 0.3f
+
+    val second = source.mix(a, b, 0.5f)
+
+    assertEquals(1f, second.opacity, 1e-6f)
+  }
 }

@@ -1,10 +1,10 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Frame, Segment, Source, Transition, TransitionSource}
+import com.lomekwi.cave.pipeline.{Content, Filter, Frame, Segment, Source, Transition, TransitionSource}
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertTrue, fail}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertSame, assertTrue, fail}
 import org.junit.jupiter.api.{BeforeEach, Test}
 
 /**
@@ -86,6 +86,24 @@ class TransitionSourceTest extends GdxTestBase {
     override def displayName: String = "probe-transition"
   }
 
+  /** 透传滤镜，记录被拉取的次数与最近一帧，用于断言转场求值经过片段滤镜链。 */
+  private class CountingFilter extends Filter[Frame] {
+    var count: Int = 0
+    var lastFrame: Frame = null
+
+    addInPort(new FilterIn("输入"))
+    addOutPort(new FilterOut("输出") {
+      override def getData: Frame = {
+        val frame = filterIn.getData
+        count += 1
+        lastFrame = frame
+        frame
+      }
+    })
+
+    override val name: String = "计数"
+  }
+
   /** 左右两块内容重叠出转场；左块 [0,1000) origin 0，右块 [500,1500) origin 500。 */
   private def placedTrack(leftLead: Boolean, leftNullAt: Long => Boolean, rightNullAt: Long => Boolean)
   : (Track, Transition, ProbeTransitionSource) = {
@@ -116,6 +134,29 @@ class TransitionSourceTest extends GdxTestBase {
     assertEquals(999L, source.lastFrom.producedAt)
     assertEquals(499L, source.lastTo.producedAt)
     assertEquals(499f / 500f, source.lastProgress, 1e-6f)
+  }
+
+  @Test
+  def produceConsumesSideFilterChains(): Unit = {
+    val track = timeline.getTrackOrCreate(0)
+    val left = new ProbeContent(1000, canLead = true)
+    val right = new ProbeContent(1000, canLead = true)
+    timeline.addOrThrow(track, left, 0L ~~ 1000L, 0L)
+    timeline.addOrThrow(track, right, 500L ~~ 1500L, 500L)
+    val current = timeline.getTrackOrCreate(0)
+    val transition = current.get(600L) match {
+      case t: Transition => t
+      case other => fail("重叠处应是转场，实际: " + other + "；轨道: " + current)
+    }
+    val source = transition.source.asInstanceOf[ProbeTransitionSource]
+
+    val filter = new CountingFilter
+    left.attach(filter)
+    current.frameAt(transition, 600L)
+
+    assertEquals(1, filter.count)
+    // mix 收到的是滤镜链输出的同一帧
+    assertSame(filter.lastFrame, source.lastFrom)
   }
 
   @Test

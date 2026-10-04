@@ -9,7 +9,10 @@ import org.junit.jupiter.api.Test
 class BiRenderFrameTest {
 
   private class RecordingRenderable(calls: StringBuilder, tag: Char) extends Renderable {
+    var renderedOpacity: Float = -1f
+
     override def render(batch: Batch): Unit = {
+      renderedOpacity = opacity
       calls.append(tag)
     }
 
@@ -47,5 +50,23 @@ class BiRenderFrameTest {
     val frame = new BiRenderFrame(0, new RecordingRenderable(new StringBuilder, 'a'), new RecordingRenderable(new StringBuilder, 'b'))
 
     assertEquals(1f, frame.opacity, 0f)
+  }
+
+  @Test
+  def renderMultipliesOwnOpacityIntoSidesAndRestores(): Unit = {
+    val a = new RecordingRenderable(new StringBuilder, 'a')
+    val b = new RecordingRenderable(new StringBuilder, 'b')
+    val frame = new BiRenderFrame(0, a, b)
+    frame.opacity = 0.5f
+    a.opacity = 0.4f
+
+    frame.render(null)
+
+    // 绘制期间子帧收到自身与帧 opacity 的乘积
+    assertEquals(0.2f, a.renderedOpacity, 1e-6f)
+    assertEquals(0.5f, b.renderedOpacity, 1e-6f)
+    // 绘制后子帧原值还原，不残留累计
+    assertEquals(0.4f, a.opacity, 1e-6f)
+    assertEquals(1f, b.opacity, 1e-6f)
   }
 }
