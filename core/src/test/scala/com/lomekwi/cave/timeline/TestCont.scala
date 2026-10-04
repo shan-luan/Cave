@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Clip, Frame, Source, Segment}
+import com.lomekwi.cave.pipeline.{Clip, Frame, Source, Segment, Transition, TransitionSource}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
@@ -36,6 +36,25 @@ object TestCont {
 
     override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
       new TlTestSegmentActor(segment)
+    }
+
+    override def canCreateTransitionWith(source: Source[?]): Boolean = true
+
+    override def createTransition(source: Source[?]): TransitionSource[TestFrame, TestFrame] = {
+      new TestTransition(this, source.asInstanceOf[Source[TestFrame]])
+    }
+  }
+
+  /** 忽略两侧帧与进度的最小转场源，供轨道布局类测试构造转场。 */
+  private final class TestTransition(from: Source[? <: TestFrame], to: Source[? <: TestFrame])
+    extends TransitionSource[TestFrame, TestFrame](from, to) {
+
+    override protected def mix(fromFrame: TestFrame, toFrame: TestFrame, progress: Float): TestFrame = {
+      new TestFrame((if (fromFrame != null) fromFrame else toFrame).trackIndex)
+    }
+
+    override def displayName: String = {
+      "test-transition"
     }
   }
 }
