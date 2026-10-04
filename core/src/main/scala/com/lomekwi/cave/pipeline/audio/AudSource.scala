@@ -39,6 +39,10 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     audRes.duration
   }
 
+  override def getDefaultDuration: Option[Long] = {
+    Some(audRes.duration)
+  }
+
   override def displayName: String = {
     "音频源"
   }

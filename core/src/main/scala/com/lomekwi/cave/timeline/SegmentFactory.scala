@@ -2,7 +2,7 @@ package com.lomekwi.cave.timeline
 
 
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.pipeline.{Content, Segment}
+import com.lomekwi.cave.pipeline.{Boundless, Clip, Segment}
 import com.lomekwi.cave.pipeline.audio.{AudFrame, AudSource}
 import com.lomekwi.cave.pipeline.image.{ImgFrame, ImgSource, VdoSource}
 import com.lomekwi.cave.resource.Resource
@@ -33,9 +33,9 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
   initDefaultConstructors()
 
   private def initDefaultConstructors(): Unit = {
-    register(classOf[VdoRes], (segment: Resource) => new Content(new VdoSource(segment.asInstanceOf[VdoRes])))
-    register(classOf[AudRes], (segment: Resource) => new Content(new AudSource(segment.asInstanceOf[AudRes])))
-    register(classOf[ImgRes], (segment: Resource) => new Content(new ImgSource(segment.asInstanceOf[ImgRes])))
+    register(classOf[VdoRes], (segment: Resource) => new Clip(new VdoSource(segment.asInstanceOf[VdoRes])))
+    register(classOf[AudRes], (segment: Resource) => new Clip(new AudSource(segment.asInstanceOf[AudRes])))
+    register(classOf[ImgRes], (segment: Resource) => new Boundless(new ImgSource(segment.asInstanceOf[ImgRes])))
   }
   def register(clazz: ResourceClass, constructor: SegmentCtor): Unit = {
     constructors.put(clazz, constructor)

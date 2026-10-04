@@ -23,6 +23,10 @@ class NumSource extends Source[NumFrame] {
     Long.MaxValue
   }
 
+  override def getDefaultDuration: Option[Long] = {
+    Some(5 * SECOND)
+  }
+
   override def displayName: String = {
     "数值源"
   }

@@ -12,7 +12,7 @@ import java.util
  * 片段。由 [[Source]]（帧的产出）与 [[FilterList]]（过滤链）组合而成，
  * 自身只持有这两者并转发对外门面，不参与生成。
  *
- * 它是 [[Element]] 中承载内容的那一支，内部再分内容与转场。
+ * 它是 [[Element]] 中承载内容的那一支，内部再分内容（[[Clip]] 与 [[Boundless]]）与转场。
  * 只关心"这里是不是片段"的调用方匹配 [[Segment]] 即可，不必往下看那一层。
  *
  * 片段不参数化帧类型，帧类型只在 [[Source]] 与 [[Filter]] 层流动。
@@ -77,11 +77,10 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   }
 
   /**
-   * 插入时间轴时片段使用的默认时长。时长无界（[[Segment.getDuration]] 为
-   * [[Long.MAX_VALUE]]）的片段必须返回有限值。
+   * 插入时间轴时片段使用的默认时长。源未声明默认时长时在此抛 [[IllegalStateException]]。
    */
-  def getDefaultDuration: Long = {
-    source.getDefaultDuration
+  final def getDefaultDuration: Long = {
+    source.getDefaultDuration.getOrElse(throw new IllegalStateException("该源没有可放置的默认时长: " + displayName))
   }
 
   def displayName: String = {
@@ -107,11 +106,11 @@ sealed abstract class Segment(val source: Source[? <: Frame])
 }
 
 /**
- * 内容片段，时间线上承载实际素材的那些。不同素材由构造时注入的 [[Source]] 组合而来。
+ * 内容片段，与 [[Transition]] 相对的可放置用户内容。不同素材由构造时注入的 [[Source]] 组合而来。
+ * 有界素材用 [[Clip]]，时长无界的用 [[Boundless]]，源与叶子的配对由两者构造器的 require 保证。
  */
 @SerialVersionUID(1L)
-class Content(source: Source[? <: Frame]) extends Segment(source) {
-  // 不同素材的组合不必为此开放继承
+abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
 
   /** 本片段能否与给定内容片段构造转场。 */
   def canCreateTransitionWith(other: Content): Boolean = {
@@ -125,6 +124,24 @@ class Content(source: Source[? <: Frame]) extends Segment(source) {
   def createTransition(other: Content): Transition = {
     new Transition(source.createTransition(other.source)) {}
   }
+}
+
+/**
+ * 有界素材内容。origin 是素材 0 秒在时间轴上的位置，前边缘最多回退到素材起点。
+ */
+@SerialVersionUID(1L)
+class Clip(source: Source[? <: Frame]) extends Content(source) {
+  require(source.getDuration != Long.MaxValue,
+    "有界片段的源时长必须有限: " + source.displayName)
+}
+
+/**
+ * 时长无界的内容，没有素材起点。origin 仅作内时间锚，前边缘不受它约束。
+ */
+@SerialVersionUID(1L)
+class Boundless(source: Source[? <: Frame]) extends Content(source) {
+  require(source.getDuration == Long.MaxValue,
+    "无界片段的源时长必须无界: " + source.displayName)
 }
 
 /**

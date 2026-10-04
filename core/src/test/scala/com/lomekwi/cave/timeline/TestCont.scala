@@ -1,12 +1,12 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Frame, Source, Segment}
+import com.lomekwi.cave.pipeline.{Clip, Frame, Source, Segment}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
  * 测试用最小片段，仅提供拖拽/轨道逻辑测试所需的时序数据，不涉及真实编解码。
  */
-class TestCont(duration0: Long) extends Content(new TestCont.TestSource(duration0))
+class TestCont(duration0: Long) extends Clip(new TestCont.TestSource(duration0))
 
 object TestCont {
   class TestFrame(trackIndex: Int) extends Frame(trackIndex) {
@@ -24,6 +24,10 @@ object TestCont {
 
     override def getDuration: Long = {
       duration
+    }
+
+    override def getDefaultDuration: Option[Long] = {
+      Some(duration)
     }
 
     override def displayName: String = {

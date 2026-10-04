@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
-import com.lomekwi.cave.pipeline.{BlockSource, Content, Element, Frame, Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
 import java.util
@@ -549,13 +549,16 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (sides == null) 0L else probeContentEnd(sides._1, forward)
   }
 
-  private def minStartOf(segment: Segment): Long = {
-    Math.max(0, getOrigin(segment))
+  /** 素材起点。有界素材是 origin，无界内容没有素材起点，视作时间轴 0。 */
+  private def minStartOf(segment: Segment): Long = segment match {
+    case _: Clip => Math.max(0, getOrigin(segment))
+    case _ => 0L
   }
 
-  private def maxEndOf(segment: Segment): Long = {
-    val duration = segment.getDuration
-    if (duration == Long.MaxValue) Long.MaxValue else getOrigin(segment) + duration
+  /** 素材终点。有界素材是 origin 加时长，无界内容与转场没有素材终点。 */
+  private def maxEndOf(segment: Segment): Long = segment match {
+    case c: Clip => getOrigin(c) + c.getDuration
+    case _ => Long.MaxValue
   }
 
   protected[timeline] def probeMove(segments: util.Collection[Segment], forward: Boolean): Long = {
@@ -818,7 +821,7 @@ object Track {
 
   /** 新建空轨道。 */
   private[timeline] def apply(timeline: Timeline, index: Int): Track = {
-    val blockSegment: Segment = new Content(new BlockSource)
+    val blockSegment: Segment = new Boundless(new BlockSource)
     val layout = BiMap(TreeMap.empty[Interval, Segment], Map.empty[Segment, Interval])
       .updated(Long.MinValue ~~ 0L, blockSegment)
     new Track(timeline, index, blockSegment, layout,

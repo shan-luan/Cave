@@ -18,6 +18,8 @@ class BlockSource extends Source[Frame] {
 
   override def getDuration: Long = Long.MaxValue
 
+  override def getDefaultDuration: Option[Long] = None
+
   override def displayName: String = ""
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

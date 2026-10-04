@@ -69,12 +69,10 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   def getDuration: Long
 
   /**
-   * 插入时间轴时源使用的默认时长。时长无界（[[Source.getDuration]] 为
-   * [[Long.MAX_VALUE]]）的源必须返回有限值。
+   * 插入时间轴时源使用的默认时长；没有可放置默认时长的源（如阻挡片段）返回 None。
+   * 由 [[Segment.getDefaultDuration]] 解包，None 在放置路径上抛 [[IllegalStateException]]。
    */
-  def getDefaultDuration: Long = {
-    getDuration
-  }
+  def getDefaultDuration: Option[Long]
 
   def displayName: String
 
