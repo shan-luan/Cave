@@ -13,10 +13,15 @@ import com.lomekwi.cave.timeline.playback.PlayState
 /** 时间线空白区输入监听器，处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
 class TlInputListener(private final val timelineView: TimelineView) extends InputListener {
 
+  /** 左键在空白区按下即进入播放头刷动会话，松开结束，供 [[TimelineView.act]] 每帧驱动。 */
+  private[tlarea] var scrubbing: Boolean = false
+
   override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
     if (button == Input.Buttons.LEFT && !timelineView.marqueeActive) {
       timelineView.clearSelection()
+      timelineView.playhead.beginScrub()
       timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
+      scrubbing = true
       true
     } else if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
       timelineView.viewMenu.setContext(Math.max(timelineView.xToAbsoluteTime(x), 0))
@@ -27,6 +32,10 @@ class TlInputListener(private final val timelineView: TimelineView) extends Inpu
   }
 
   override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
+    if (button == Input.Buttons.LEFT) {
+      scrubbing = false
+      timelineView.playhead.endScrub()
+    }
     if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
       timelineView.viewMenu.showMenu(timelineView.getStage, event.getStageX, event.getStageY)
     }

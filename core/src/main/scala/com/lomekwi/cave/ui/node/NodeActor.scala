@@ -1,6 +1,8 @@
 package com.lomekwi.cave.ui.node
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
@@ -53,10 +55,12 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     addCloseButton()
   }
 
-  addListener(new DragListener {
-    private var grabX: Float = 0f
-    private var grabY: Float = 0f
+  private final val dragPos: Vector2 = new Vector2()
+  // 按下时鼠标在卡片本地坐标系中的位置，拖拽目标是鼠标回到这个偏移
+  private var grabX: Float = 0f
+  private var grabY: Float = 0f
 
+  private final val dragListener: DragListener = new DragListener {
     setButton(Input.Buttons.LEFT)
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
@@ -71,10 +75,27 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     }
 
     override def drag(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
-      moveBy(x - grabX, y - grabY)
-      nodeGraph.foreach(graph => graph.setPosition(node, getX, getY))
+      applyDrag(x, y)
     }
-  })
+  }
+  addListener(dragListener)
+
+  /** 把卡片贴到鼠标下；x/y 是鼠标在卡片本地坐标系中的位置。 */
+  private def applyDrag(x: Float, y: Float): Unit = {
+    moveBy(x - grabX, y - grabY)
+    nodeGraph.foreach(graph => graph.setPosition(node, getX, getY))
+  }
+
+  /** 拖拽中每帧重算鼠标位置，画布在拖拽期间平移缩放后卡片仍跟手。 */
+  override def act(delta: Float): Unit = {
+    super.act(delta)
+    if (dragListener.isDragging && getStage != null) {
+      dragPos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(dragPos)
+      stageToLocalCoordinates(dragPos)
+      applyDrag(dragPos.x, dragPos.y)
+    }
+  }
 
   override protected def close(): Unit = {
     nodeGraph.foreach(graph => graph.remove(node))

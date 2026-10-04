@@ -1,5 +1,6 @@
 package com.lomekwi.cave.ui.node
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
@@ -22,6 +23,7 @@ trait PortActor extends Actor with PortHolder {
   private final val anchorTmp: Vector2 = new Vector2()
   private final val peerTmp: Vector2 = new Vector2()
   private final val cursor: Vector2 = new Vector2()
+  private final val dragPos: Vector2 = new Vector2()
   private var dragging: Boolean = false
   private var detached: Boolean = false
   private var pendingPeer: PortActor = null
@@ -66,6 +68,19 @@ trait PortActor extends Actor with PortHolder {
       }
     }
   })
+
+  /**
+   * 连线拖拽开始后每帧重算鼠标位置，画布在拖拽期间平移缩放后连线端点仍跟手。
+   * 只延续 detached 之后的过程，提起连接本身仍由鼠标移动事件触发，保持不动不提起的语义。
+   */
+  override def act(delta: Float): Unit = {
+    super.act(delta)
+    if (detached && getStage != null) {
+      dragPos.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(dragPos)
+      setCursor(dragPos.x, dragPos.y)
+    }
+  }
 
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
     // 容器与表格默认是 childrenOnly，圆点仍需能被直接命中，因此只排除 disabled
