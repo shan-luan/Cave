@@ -55,7 +55,6 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
     pathField.getText.trim()
   }
 
-  /** 设置路径文本。 */
   def setPath(path: String): Unit = {
     pathField.setText(path)
   }

@@ -14,9 +14,10 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 
 /**
- * 可平移/缩放的画布容器，内部持有 canvas Group，滚轮以光标为中心缩放，
- * 键盘焦点获得时按 SCROLL_* 热键平移。缩放由 zoom * baseScale 构成，
- * baseScale 供外部按视口尺寸适配（如预览区），默认 1。
+ * 可平移/缩放的画布容器，内容放在 [[canvas]] 内。滚轮以光标为中心缩放，
+ * 键盘焦点获得时按 [[TimelineView.Actions]] 的 SCROLL_* 热键平移。
+ * 最终缩放为 [[zoom]] 与 `baseScale` 的乘积，`baseScale` 供外部通过
+ * [[setBaseScale]] 按视口尺寸适配（如预览区），默认 1。
  */
 class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, private val moveSpeed: Float) extends WidgetGroup {
   final val canvas: Group = new Group()
@@ -85,9 +86,7 @@ class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, priv
     updateCanvas()
   }
 
-  /**
-   * 以屏幕坐标 (stageX, stageY) 为锚点缩放。
-   */
+  /** 以 stage 坐标（`stageX`，`stageY`）为锚点缩放。 */
   def zoomAt(stageX: Float, stageY: Float, amountY: Float): Unit = {
     val zoomFactor = 1.1f
     val oldScale = getScale

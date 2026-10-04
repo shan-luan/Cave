@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 import java.util
 
 /**
- * 验证 BinaryNode 抽象节点，两个主输入 In 与一个主输出 Out 的数量约束、类型推断与求值。
+ * 验证 [[BinaryNode]] 抽象节点，两个主输入 [[BinaryNode.In]] 与一个主输出 [[BinaryNode.Out]] 的数量约束、类型推断与求值。
  */
 class BinaryNodeTest {
 

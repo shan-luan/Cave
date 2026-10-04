@@ -7,10 +7,10 @@ import java.io.Serializable
 import scala.reflect.ClassTag
 
 /**
- * 帧源。filter 链的起点，自身没有 FilterIn，
- * 输出 produce() 生成的帧供第一个 filter 消费。
+ * 帧源。filter 链的起点，自身没有 [[Filter.filterIn]]，
+ * 输出 [[produce]] 生成的帧供第一个 filter 消费。
  *
- * 驱动（sync/onStepOut/prefetch）与时长等元数据也由它承担，
+ * 驱动（[[sync]]/[[onStepOut]]/[[prefetch]]）与时长等元数据也由它承担，
  * [[Segment]] 只做这两者的持有与对外门面。
  *
  * @tparam T 帧类型
@@ -82,15 +82,15 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
     displayName
   }
 
-  /** 本片段在时间线上的可视化 actor。 */
+  /** 宿主片段在时间线上的可视化 actor。 */
   def createTlSegmentActor(segment: Segment): TlSegmentActor
 
   /** 本源与给定源能否构造转场。 */
   def canCreateTransitionWith(source: Source[?]): Boolean = true
 
   /**
-   * 由本源与给定源构造转场源。默认返回测试转场源。
-   * 要求 [[canCreateTransitionWith]] 为 true，否则抛 UnsupportedOperationException。
+   * 由本源与给定源构造转场源。默认返回 [[TestTransitionSource]]。
+   * 要求 [[canCreateTransitionWith]] 为 true，否则抛 [[UnsupportedOperationException]]。
    */
   def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
     new TestTransitionSource[T, T](this, source.asInstanceOf[Source[T]])(using classTag)

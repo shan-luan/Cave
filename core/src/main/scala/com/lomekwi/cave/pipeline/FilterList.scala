@@ -9,13 +9,13 @@ import scala.compiletime.uninitialized
  * 有序的 filter 链表。链表本身是 [[Source]]（作为头）与各 [[Filter]] 组成的
  * 节点链，并维护相邻端口连接。
  *
- * <pre>
+ * ```
  * source.FilterOut → f1.FilterIn → f1.FilterOut → f2.FilterIn → ...
- * </pre>
+ * ```
  *
- * <p>列表每个元素都是 [[Filter]]；第 0 个元素的 FilterIn 连到头 filter（Source）的
- * FilterOut。链的末端就是最后一个元素自身的 FilterOut（不额外连接端口），
- * {@code Segment.get()} 直接从它取数据。添加/移除/重排时自动维护连接。</p>
+ * 列表每个元素都是 [[Filter]]；第 0 个元素的 [[Filter.filterIn]] 连到头（[[Source]]）的
+ * [[Filter.filterOut]]。链的末端就是最后一个元素自身的 [[Filter.filterOut]]（不额外连接端口），
+ * [[Segment.get]] 直接从它取数据。添加/移除/重排时自动维护连接。
  */
 @SerialVersionUID(1L)
 class FilterList(private final val head: Filter[?]) extends util.AbstractSequentialList[Filter[?]] with Serializable {
@@ -45,11 +45,11 @@ class FilterList(private final val head: Filter[?]) extends util.AbstractSequent
 
   /**
    * 把 filter 插入到 succ 之前，并维护连接。
-   * 断开 pred.out → succ.in，改为 pred.out → filter.in → filter.out → succ.in。
-   * pred 可能为 headEntry（此时 pred.out = head.FilterOut），
+   * pred 可能为 [[headEntry]]（此时 pred.out = [[head.filterOut]]），
    * succ 可能为 tailEntry（此时 succ.in = tail.FilterIn）。
    */
   private def linkBefore(filter: Filter[?], succ: FilterList.Entry): Unit = {
+    // 断开 pred.out → succ.in，改为 pred.out → filter.in → filter.out → succ.in
     if (filter == null) {
       throw new NullPointerException("filter")
     }
@@ -106,7 +106,7 @@ class FilterList(private final val head: Filter[?]) extends util.AbstractSequent
   }
 
   private def portIn(entry: FilterList.Entry): Node.InPort[?] = {
-    // 链末端不连接端口，输出即最后一个 filter 的 FilterOut
+    // 链末端不连接端口，输出即最后一个 filter 的 [[Filter.filterOut]]
     if (entry == tailEntry || entry == headEntry) null
     else entry.filter.filterIn
   }

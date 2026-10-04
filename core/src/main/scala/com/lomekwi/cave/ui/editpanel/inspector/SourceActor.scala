@@ -8,7 +8,7 @@ import com.lomekwi.cave.ui.widget.Card
 import scala.jdk.CollectionConverters.*
 
 /**
- * 源信息卡，显示源名称与输入端口、信息输出端口（不含参与 filter 链的 FilterOut）。
+ * 源信息卡，显示源名称与输入端口、信息输出端口（不含参与过滤器链的 [[FilterOut]]）。
  * 一个片段的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
  * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
@@ -26,7 +26,7 @@ final class SourceActor(private val segment: Segment) extends Card(segment.displ
   }
   for (out <- source.outPorts.asScala) {
     val row = App.cardWidgetsRegistry.createOutputRow(out)
-    // FilterOut 与未知类型的输出端口不显示
+    // [[FilterOut]] 与未知类型的输出端口不显示
     if (row != null) {
       add(row).pad(2).left().row()
     }

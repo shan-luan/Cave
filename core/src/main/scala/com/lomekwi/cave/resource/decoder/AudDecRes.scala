@@ -23,7 +23,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
   }
 
   override def seek(time: Long): Unit = {
-    seek(time, 0)        //由于鬼知道什么的原因，有时候即使传参的时间合法也会在底层触发一个非法参数的跳跃（比如目标负数时间），所以加个保险。
+    seek(time, 0)        // 底层即使传入合法时间也可能触发一次非法跳跃（如目标时间为负），这里用重试兜底。
   }
 
   @tailrec

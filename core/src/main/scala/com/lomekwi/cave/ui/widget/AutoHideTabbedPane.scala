@@ -34,7 +34,7 @@ class AutoHideTabbedPane extends TabbedPane {
     updateVisibility()
   }
 
-  /** 必须在面板的 table 加入其布局之后调用。 */
+  /** 必须在 [[getTable]] 返回的表加入其布局之后调用。 */
   def refreshVisibility(): Unit = {
     updateVisibility()
   }

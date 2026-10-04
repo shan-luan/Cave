@@ -26,14 +26,14 @@ class NodeGraphFilter extends Filter[Object] {
     }
   })
 
-  /** 反序列化的旧存档里没有入口节点（构造器不执行），取图时补建，避免图里缺边界。 */
+  // 旧存档没有入口节点，反序列化也不执行构造器，取图时补建，避免图里缺边界
   private def readObject(in: ObjectInputStream): Unit = {
     in.defaultReadObject()
     ensureInnerIn()
   }
 
   /**
-   * 创建图入口节点。入口依赖自身的 FilterIn，因此必须在 addInPort 之后调用。
+   * 创建图入口节点。入口依赖 [[Filter.filterIn]]，因此必须在 [[Node.addInPort]] 之后调用。
    */
   private def ensureInnerIn(): Unit = {
     if (innerIn != null) {

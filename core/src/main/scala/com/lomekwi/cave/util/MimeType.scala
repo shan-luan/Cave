@@ -39,9 +39,9 @@ object MimeType {
   )
 
   /**
-   * 检测文件的MIME类型，优先使用系统检测，失败时使用扩展名匹配
+   * 检测文件的 MIME 类型，优先使用系统检测，失败时使用扩展名匹配
    * @param file 要检测的文件
-   * @return MIME类型字符串，如果无法检测则返回null
+   * @return MIME 类型字符串，如果无法检测则返回 null
    */
   def detectMimeType(file: File): String = {
     if (file == null || !file.exists()) {
@@ -71,26 +71,26 @@ object MimeType {
   }
 
   /**
-   * 获取type/{@code *}形式的通配MIME类型
-   * @param mimeType 完整的MIME类型，如 "video/mp4"
-   * @return type/{@code *}形式，如 "video/{@code *}"
+   * 获取 type/`*` 形式的通配 MIME 类型
+   * @param mimeType 完整的 MIME 类型，如 "video/mp4"
+   * @return 将 subtype 部分替换为 `*`，如 "video/mp4" 得到通配形式
    */
   def getTypeWildcard(mimeType: String): String = {
     mimeType.substring(0, slashIndex(mimeType)) + "/*"
   }
 
   /**
-   * 获取{@code *}/subtype形式的通配MIME类型
-   * @param mimeType 完整的MIME类型，如 "video/mp4"
-   * @return {@code *}/subtype形式，如 "{@code *}/mp4"
+   * 获取 `*`/subtype 形式的通配 MIME 类型
+   * @param mimeType 完整的 MIME 类型，如 "video/mp4"
+   * @return 将 type 部分替换为 `*`，如 "video/mp4" 得到子类型通配形式
    */
   def getSubtypeWildcard(mimeType: String): String = {
     "*/" + mimeType.substring(slashIndex(mimeType) + 1)
   }
 
   /**
-   * 获取{@code *}/{@code *}通配MIME类型
-   * @return "{@code *}/{@code *}"
+   * 获取全通配 MIME 类型
+   * @return type 与 subtype 均为 `*` 的字符串
    */
   def getAllWildcard: String = {
     "*/*"

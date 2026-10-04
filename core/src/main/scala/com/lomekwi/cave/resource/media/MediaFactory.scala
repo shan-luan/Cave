@@ -23,7 +23,7 @@ class MediaFactory {
 
   /**
    * 为一个文件创建所有可用的媒体资源。
-   * 视频文件如果包含音频流，会额外创建 AudRes。
+   * 视频文件如果包含音频流，会额外创建 [[AudRes]]。
    */
   def createAll(mimeType: String, path: String): List[MedRes] = {
     val typeWildcard = MimeType.getTypeWildcard(mimeType)

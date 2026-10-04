@@ -8,11 +8,10 @@ import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
- * 二元节点，两个主输入端口 In 与一个主输出端口 Out，两个输入与输出同为帧类型 T。
+ * 二元节点，两个主输入端口 [[BinaryNode.In]] 与一个主输出端口 [[BinaryNode.Out]]，
+ * 两个输入与输出同为帧类型 `T`。
  *
- * <p>二元节点有两条主输入，不参与 [[FilterList]] 的单向链，只用于节点图内部。</p>
- *
- * @author shan_luan_
+ * 二元节点有两条主输入，不参与 [[FilterList]] 的单向链，只用于节点图内部。
  */
 @SerialVersionUID(1L)
 abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
@@ -54,9 +53,10 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
 
   class In(name: String) extends Node.InPort[T](name, BinaryNode.this.getType) {
     /**
-     * 两个输入共用同一输出，因此各自把输出下游的约束并入自身约束。
+     * 约束取输出下游各端口的约束与自身帧类型的并集。
      */
     override def constraint: util.Set[Class[?]] = {
+      // 两个输入共用同一输出，各自把输出下游的约束并入自身约束
       if (out.isLinked) {
         (out.next.asScala.flatMap(_.constraint.asScala).union(Set(BinaryNode.this.getType))).asJava
       } else {
@@ -72,7 +72,7 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
 
     /**
      * 两个输入都未连接时类型未知，返回 null 让任意输入端口都能接入；
-     * 否则取 A 的实际上游类型，A 未连接时退回 B。
+     * 否则取 [[BinaryNode.inA]] 的实际上游类型，[[BinaryNode.inA]] 未连接时退回 [[BinaryNode.inB]]。
      */
     override def getType: Class[? <: T] = {
       val prev: Node.OutPort[? <: T] = linkedUpstream

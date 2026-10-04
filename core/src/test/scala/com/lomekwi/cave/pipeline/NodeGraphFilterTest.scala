@@ -87,7 +87,7 @@ class NodeGraphFilterTest {
   @Test
   def serialization_repairsMissingGraphInput(): Unit = {
     val ngf = new NodeGraphFilter()
-    // 模拟改动前的旧存档，入口节点字段与图内节点都不存在
+    // 模拟旧存档，入口节点字段与图内节点都不存在
     val field = classOf[NodeGraphFilter].getDeclaredField("innerIn")
     field.setAccessible(true)
     field.set(ngf, null)
@@ -110,7 +110,7 @@ class NodeGraphFilterTest {
     ngf.innerNodes.asScala.collectFirst { case node: Sink => node }.orNull
   }
 
-  /** AddFilter 的 delta 端口是 filter 私有的，按端口名取值设置默认数据。 */
+  /** [[AddFilter.delta]] 端口是私有的，按端口名取值设置默认数据。 */
   private def setDelta(add: AddFilter, value: Double): Unit = {
     add.inPorts.asScala.find(_.name == "delta").get.asInstanceOf[Node.InPort[Any]].defaultData = value
   }

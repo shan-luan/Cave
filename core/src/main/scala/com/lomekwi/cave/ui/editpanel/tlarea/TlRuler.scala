@@ -19,7 +19,7 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val sb: java.lang.StringBuilder = new java.lang.StringBuilder(8)
   private final val pointer: Vector2 = new Vector2()
 
-  /** 左键按下即进入播放头刷动会话，松开结束，供 act 每帧驱动。 */
+  /** 左键按下即进入播放头刷动会话，松开结束，供 [[act]] 每帧驱动。 */
   private var scrubbing: Boolean = false
 
 

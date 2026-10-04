@@ -8,9 +8,7 @@ import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
- * 过滤器节点，单一 FilterIn/FilterOut，可挂载到某个 [[Segment]] 的 filter 链上。
- *
- * @author shan_luan_
+ * 过滤器节点，单一 [[Filter.FilterIn]] 与 [[Filter.FilterOut]]，可挂载到某个 [[Segment]] 的 filter 链上。
  */
 @SerialVersionUID(1L)
 abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node with Serializable {
@@ -64,7 +62,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
     }
 
     /**
-     * @return 输入已连接时返回上游实际类型,否则返回 null 表示类型未知.
+     * @return 输入已连接时返回上游实际类型，否则返回 null 表示类型未知。
      */
     override def getType: Class[? <: T] = {
       if (filterIn.isLinked) {

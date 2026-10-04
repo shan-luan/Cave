@@ -228,8 +228,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   /**
-   * 判断事件点(x, y)是否落在「本Actor在stage坐标下的AABB 与 预览区域AABB」的交集内。
-   * 仅处理交集内的事件，避免 TransFrameActor 抢夺预览区域之外的事件。
+   * 判断事件点 (x, y) 是否落在本 actor 在 stage 坐标下的 AABB 与预览区域 AABB
+   * 的交集内，仅处理交集内的事件，避免本 actor 抢夺预览区域之外的事件。
    */
   private def insidePreviewHitRegion(x: Float, y: Float): Boolean = {
     val w = getWidth
@@ -251,7 +251,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val extTop = h + handleOff
     if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false
 
-    // 帧 actor 挂在画布上，画布在 PanZoomCanvas 里，PreviewArea 还要更上几层，因此沿祖先链找
+    // 帧 actor 挂在画布上，画布在 [[PanZoomCanvas]] 里，[[PreviewArea]] 还要更上几层，因此沿祖先链找
     var preview: Actor = getParent
     while (preview != null && !preview.isInstanceOf[PreviewArea]) {
       preview = preview.getParent
@@ -376,7 +376,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     gizmoAnchorStageX = TransFrameActor.tmp1.x
     gizmoAnchorStageY = TransFrameActor.tmp1.y
 
-    // 总变换（含 dragModifier 自身的旋转/翻转）
+    // 总变换（含 [[dragModifier]] 自身的旋转/翻转）
     val totalRad = Math.toRadians(getRotation.toDouble).toFloat
     gizmoCos = Math.cos(totalRad.toDouble).toFloat
     gizmoSin = Math.sin(totalRad.toDouble).toFloat
@@ -471,7 +471,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val posDeltaX = rotCompX - (scaleChangeW - 1f) * halfW
     val posDeltaY = rotCompY - (scaleChangeH - 1f) * halfH
 
-    // 画布位移 → dragModifier 本地位移（仅用其之前的变换）
+    // 画布位移 → [[dragModifier]] 本地位移（仅用其之前的变换）
     var ddx = (posDeltaX * dragCos + posDeltaY * dragSin) / dragScaleX
     var ddy = (-posDeltaX * dragSin + posDeltaY * dragCos) / dragScaleY
     if (dragFlipX) ddx = -ddx

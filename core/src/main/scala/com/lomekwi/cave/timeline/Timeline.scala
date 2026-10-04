@@ -120,12 +120,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
   }
 
-  /** 裁切一组片段的起始边缘（各自终点不变）。@return 实际应用的偏移量（截断到最大可用量），0 表示未移动。 */
+  /** 裁切一组片段的起始边缘（各自终点不变）。返回实际应用的偏移量（截断到最大可用量），0 表示未移动。 */
   def setStart(segments: util.Collection[Segment], deltaTime: Long): Long = {
     applyPerTrack(segments, deltaTime, false)
   }
 
-  /** 裁切一组片段的结束边缘（各自起点不变）。@return 同 [[Timeline.setStart]]。 */
+  /** 裁切一组片段的结束边缘（各自起点不变）。返回值语义同 [[Timeline.setStart]]。 */
   def setEnd(segments: util.Collection[Segment], deltaTime: Long): Long = {
     applyPerTrack(segments, deltaTime, true)
   }
@@ -154,7 +154,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     applied
   }
 
-  /** 仅按时间平移片段（轨道不变）。deltaTime 截断到最大可用量后应用，整组最多移到与障碍贴合。@return 实际应用的偏移量；0 表示未移动。 */
+  /** 仅按时间平移片段（轨道不变）。`deltaTime` 截断到最大可用量后应用，整组最多移到与障碍贴合。返回实际应用的偏移量，0 表示未移动。 */
   def moveTime(segments: util.Collection[Segment], deltaTime: Long): Long = {
     if (deltaTime == 0 || segments.isEmpty) return 0L
     val forward = deltaTime > 0
@@ -431,11 +431,11 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   /** 已有轨道的条数。 */
   def getTrackCount: Int = tracks.size
 
-  /** 指定索引的轨迹线程，不存在则创建。 */
+  /** 指定索引的轨道线程，不存在则创建。 */
   private[cave] def getWorker(index: Int): TrackWorker = {
     var worker = workers.get(index)
     if (worker == null) {
-      getTrackOrCreate(index) // 线程的 gapFrame 需要一个轨道
+      getTrackOrCreate(index) // 线程的 [[TrackWorker.gapFrame]] 需要一个轨道
       worker = new TrackWorker(index)
       workers.put(index, worker)
     }
@@ -443,7 +443,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 轨迹线程在 SEEKING 下完成一轮 sync 后调用。按会话版本去重聚合，
+   * 轨道线程在 SEEKING 下完成一轮 sync 后调用。按会话版本去重聚合，
    * 聚齐所有轨道后在 GDX 线程恢复 seek 前的状态，版本过期的事件丢弃。
    */
   private def reportSeekDone(version: Long, index: Int): Unit = synchronized {
@@ -535,7 +535,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /**
-   * 轨迹线程，按时间独立推进播放头，把帧投到项目事件总线上，
+   * 轨道线程，按时间独立推进播放头，把帧投到项目事件总线上，
    * 并用 Phaser 与消费方（预览、音频混音）做握手。
    */
   class TrackWorker(private val index: Int) extends Runnable {
@@ -659,7 +659,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
 }
 
 object Timeline {
-  /** 记录句柄，用于 try-with-resources，close() 即 [[Timeline.submit]]。 */
+  /** 记录句柄，用于 try-with-resources，[[close]] 即 [[Timeline.submit]]。 */
   trait Recording extends AutoCloseable {
     override def close(): Unit
   }

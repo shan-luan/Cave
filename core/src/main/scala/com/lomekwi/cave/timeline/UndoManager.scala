@@ -102,15 +102,15 @@ object UndoManager {
    */
   trait MergeableCommand extends UndoableCommand {
     /**
-     * 将 other 合并到当前命令中。合并后，undo() 应能撤销两者的效果，
-     * redo() 应能重做合并后的效果。
+     * 将 other 合并到当前命令中。合并后，[[UndoableCommand.undo]] 应能撤销两者的效果，
+     * [[UndoableCommand.redo]] 应能重做合并后的效果。
      * @return true 表示合并成功
      */
     def merge(other: UndoableCommand): Boolean
   }
 
   /**
-   * 一条轨道的一次版本替换，撤销即换回 before，重做即换成 after。
+   * 一条轨道的一次版本替换，撤销即换回 [[before]]，重做即换成 [[after]]。
    */
   case class TrackEdit(index: Int, before: Track, after: Track)
 

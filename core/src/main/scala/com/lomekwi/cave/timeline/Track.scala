@@ -421,7 +421,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def newTransition(from: Content, to: Content): Transition = {
-    // 后段兜底构造出的转场源，from与to相对时间顺序互换
+    // 后段兜底构造出的转场源，[[TransitionSource.from]]与[[TransitionSource.to]]相对时间顺序互换
     if (from.canCreateTransitionWith(to)) from.createTransition(to) else to.createTransition(from)
   }
 
@@ -708,7 +708,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     segment.sync(time - getOrigin(segment), this)
   }
 
-  /** 本轨道的轨迹线程。 */
+  /** 本轨道的轨道线程。 */
   def getWorker: timeline.TrackWorker = timeline.getWorker(index)
 
   /** 轨道上的用户片段；阻挡片段对遍历不可见。 */

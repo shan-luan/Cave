@@ -6,9 +6,6 @@ import java.util
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-/**
- * @author shan_luan_
- */
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
   final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
@@ -68,7 +65,7 @@ object Node {
     def getData: T = if (prev == null) defaultData else prev.getData
 
     /**
-     * @return 可以连接到此输入端口的输出端口所需要满足的全部约束.即交叉类型(&).
+     * @return 可连接到此输入端口的输出端口需满足的全部约束，即交叉类型（&）。
      */
     def constraint: util.Set[Class[?]] = constraintSet
 
