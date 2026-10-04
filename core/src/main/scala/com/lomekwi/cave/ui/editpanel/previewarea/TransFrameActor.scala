@@ -94,13 +94,16 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return true
       }
 
-      dragModifier = TransFrameActor.findOrCreateTransNode(segment)
-      startNodeDx = dragModifier.getDx.toFloat
-      startNodeDy = dragModifier.getDy.toFloat
+      // 只找现成节点，创建推迟到确认进入拖动，避免单击也在滤镜链里留下空变换
+      dragModifier = TransFrameActor.findTransNode(segment)
+      if (dragModifier != null) {
+        startNodeDx = dragModifier.getDx.toFloat
+        startNodeDy = dragModifier.getDy.toFloat
+        computeDragContext()
+      }
       val p = getParent
       startCanvasX = (event.getStageX - p.getX) / p.getScaleX
       startCanvasY = (event.getStageY - p.getY) / p.getScaleY
-      computeDragContext()
       captureSnapData()
       dragging = false
       true
@@ -109,9 +112,18 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       if (gizmoDragging) {
         updateGizmoDrag(event.getStageX, event.getStageY)
-      } else if (dragModifier != null) {
-        dragging = true
-        updateDrag(event.getStageX, event.getStageY)
+      } else {
+        // 首次拖动才创建节点
+        if (dragModifier == null && frame.segment != null) {
+          dragModifier = TransFrameActor.findOrCreateTransNode(frame.segment)
+          startNodeDx = dragModifier.getDx.toFloat
+          startNodeDy = dragModifier.getDy.toFloat
+          computeDragContext()
+        }
+        if (dragModifier != null) {
+          dragging = true
+          updateDrag(event.getStageX, event.getStageY)
+        }
       }
     }
 
@@ -144,7 +156,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
           p.projEventBus.post(RefreshRequestEvent)
         }
       }
-      if (dragModifier != null && !dragging && !gizmoDragging) {
+      if (!dragging && !gizmoDragging) {
         val segment: Segment = frame.segment
         val editPanel = App.root.getFrontendEditPanel
         if (segment != null && editPanel != null) {
@@ -480,7 +492,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     dragModifier.setDx(gizmoStartDx + ddx)
     dragModifier.setDy(gizmoStartDy + ddy)
 
-    applyModifiers()
+    requestRefresh()
   }
 
   private def updateRotateDrag(stageX: Float, stageY: Float): Unit = {
@@ -499,7 +511,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
 
     dragModifier.setDRotation(gizmoStartRotation + delta)
-    applyModifiers()
+    requestRefresh()
   }
 
   private def finishGizmoDrag(): Unit = {
@@ -538,31 +550,13 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     if (dragFlipY) localDy = -localDy
     dragModifier.setDx(startNodeDx + localDx)
     dragModifier.setDy(startNodeDy + localDy)
-    applyModifiers()
+    requestRefresh()
   }
 
-  private def applyModifiers(): Unit = {
-    transformable.reset()
-    val segment = frame.segment
-    if (segment != null) {
-      val filters: util.List[Filter[?]] = segment.filters.asInstanceOf[util.List[Filter[?]]]
-      filters.asScala.foreach {
-        case node: TransNode => applyTransNode(node)
-        case _ =>
-      }
-    }
-  }
-
-  private def applyTransNode(node: TransNode): Unit = {
-    val target = transformable
-    var t = target.transform
-    if (t == null) {
-      t = new Transform()
-      target.transform = t
-    }
-    t.applyLocal(node.getDx.toFloat, node.getDy.toFloat,
-      node.getScaleX.toFloat, node.getScaleY.toFloat,
-      node.getDRotation.toFloat, node.flipX(), node.flipY())
+  /** 拖拽改值后请求轨道线程重新求值，画面统一由管线滤镜链刷新，UI 不做本地重放 */
+  private def requestRefresh(): Unit = {
+    val p: Project = App.root.getFrontendProject
+    if (p != null) p.projEventBus.post(RefreshRequestEvent)
   }
 
   private def computeDragContext(): Unit = {
@@ -1009,12 +1003,17 @@ object TransFrameActor {
   private final val SNAP_THRESHOLD_SCREEN: Float = 10f
   private final val snapAdjust: Vector2 = new Vector2()
 
+  private def findTransNode(segment: Segment): TransNode = {
+    segment.filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.orNull
+  }
+
   private def findOrCreateTransNode(segment: Segment): TransNode = {
-    val filters: util.List[Filter[?]] = segment.filters
-    filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.getOrElse {
-      val tf = new TransNode(0, 0, 1, 1, 0)
-      segment.attach(tf)
-      tf
+    findTransNode(segment) match {
+      case null =>
+        val tf = new TransNode(0, 0, 1, 1, 0)
+        segment.attach(tf)
+        tf
+      case tf => tf
     }
   }
 }

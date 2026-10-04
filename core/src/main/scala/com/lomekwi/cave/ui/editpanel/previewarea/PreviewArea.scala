@@ -94,6 +94,8 @@ class PreviewArea(project0: Project) extends Group with Focusable {
       frames.append(null)
     }
     val legacy = frames(idx)
+    // 同一帧重发时不动 actor，摘挂会经 Stage.unfocus 取消触控捕获，打断进行中的拖拽
+    if (legacy eq frame) return
     frames(idx) = frame
     if (legacy != null && legacy.actor != null) {
       canvas.removeActor(legacy.actor)
