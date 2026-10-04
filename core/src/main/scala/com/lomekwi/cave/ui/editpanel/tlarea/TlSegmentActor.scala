@@ -190,10 +190,12 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     firstY = diffToActorY
     tl.timeline.record()
     initDragMembers()
+    tl.draggingActor = this
   }
 
   /**
-   * 拖拽中，每次鼠标移动都会调用，按 dragSide 分派到三种分支（含吸附）。
+   * 拖拽中每帧调用，按 dragSide 分派到三种分支（含吸附）。
+   * 驱动来自鼠标移动事件与 [[TimelineView.act]] 两处，本方法幂等，重复调用无副作用。
    * 坐标是鼠标在 [[TimelineView]] 中的位置，不由本 actor 的坐标系换算。
    */
   private[tlarea] def dragTo(viewX: Float, viewY: Float): Unit = {
@@ -340,6 +342,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   /** 松手时调用，提交 undo 并清空会话。 */
   private[tlarea] def finishDrag(): Unit = {
     if (tl != null) {
+      tl.draggingActor = null
       tl.dirty = true
       tl.snapIndicatorTime = -1
       tl.timeline.submit()

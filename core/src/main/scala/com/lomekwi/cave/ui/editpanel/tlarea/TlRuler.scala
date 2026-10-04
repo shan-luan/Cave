@@ -17,13 +17,19 @@ import com.lomekwi.cave.app.App
 class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val font: BitmapFont = VisUI.getSkin.getFont("default-font")
   private final val sb: java.lang.StringBuilder = new java.lang.StringBuilder(8)
+  private final val pointer: Vector2 = new Vector2()
+
+  /** 左键按下即进入播放头刷动会话，松开结束，供 act 每帧驱动。 */
+  private var scrubbing: Boolean = false
 
 
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       if (button == Input.Buttons.LEFT) {
+        timelineView.playhead.beginScrub()
         timelineView.clearSelection()
         timelineView.seekPlayheadAtX(x)
+        scrubbing = true
         true
       } else {
         false
@@ -32,12 +38,25 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
     override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
       timelineView.seekPlayheadAtX(x)
     }
+    override def touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Unit = {
+      if (button == Input.Buttons.LEFT) {
+        scrubbing = false
+        timelineView.playhead.endScrub()
+      }
+    }
   })
 
   override def act(delta: Float): Unit = {
     super.act(delta)
+    // 刷动中每帧重算鼠标位置，时间线视图在刷动期间滚动后播放头仍跟手
+    if (scrubbing) {
+      pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      getStage.screenToStageCoordinates(pointer)
+      stageToLocalCoordinates(pointer)
+      timelineView.seekPlayheadAtX(pointer.x)
+    }
     if (App.shortcutManager.isActive(TimelineView.Actions.SEEK)) {
-      val pointer: Vector2 = new Vector2(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+      pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
       getStage.screenToStageCoordinates(pointer)
       stageToLocalCoordinates(pointer)
       if (pointer.x >= 0 && pointer.x <= getWidth && pointer.y >= 0 && pointer.y <= getHeight) {

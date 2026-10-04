@@ -51,6 +51,15 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   private final val pointer: Vector2 = new Vector2()
 
+  private final val inputListener: TlInputListener = new TlInputListener(this)
+  private final val captureListener: TlCaptureListener = new TlCaptureListener(this)
+
+  /** 当前有拖拽会话的片段，拖拽中每帧由 act 驱动 [[TlSegmentActor.dragTo]]；转场拖到消失被移出舞台时仍需驱动 */
+  private[tlarea] var draggingActor: TlSegmentActor = uninitialized
+
+  /** SEEK 快捷键按住时的刷动会话标志，按住期间播放头与拖拽刷动同样冻结在 Seeking */
+  private var seekScrubbing: Boolean = false
+
   private[tlarea] var marqueeActive: Boolean = false
   private[tlarea] var marqueeStartX: Float = 0
   private[tlarea] var marqueeStartY: Float = 0
@@ -71,8 +80,8 @@ class TimelineView(project0: Project) extends Group with Focusable {
   addDefaultListeners()
 
   private def addDefaultListeners(): Unit = {
-    addListener(new TlInputListener(this))
-    addCaptureListener(new TlCaptureListener(this))
+    addListener(inputListener)
+    addCaptureListener(captureListener)
     App.root.dragAndDrop.addTarget(new TlDropTarget(this))
     addListener(new DragListener {
       setButton(Input.Buttons.MIDDLE)
@@ -137,6 +146,32 @@ class TimelineView(project0: Project) extends Group with Focusable {
       }
 
       if (acted) dirty = true
+
+      // SEEK 按住与拖拽刷动走同一套会话，两者叠加时靠 Playhead 的会话计数保持冻结，全部结束才恢复
+      if (App.shortcutManager.isActive(TimelineView.Actions.SEEK)) {
+        if (!seekScrubbing) {
+          playhead.beginScrub()
+          seekScrubbing = true
+        }
+      } else if (seekScrubbing) {
+        playhead.endScrub()
+        seekScrubbing = false
+      }
+
+      // 拖拽会话每帧驱动一次回调，视图在拖拽期间滚动缩放时目标仍跟手。
+      // 视图状态可能已被上面的滚动改变，鼠标位置要重算，不能复用本次开头的 pointer
+      if (draggingActor != null || inputListener.scrubbing || marqueeActive) {
+        pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
+        getStage.screenToStageCoordinates(pointer)
+        stageToLocalCoordinates(pointer)
+
+        if (draggingActor != null) draggingActor.dragTo(pointer.x, pointer.y)
+        if (inputListener.scrubbing) seekPlayheadAtX(pointer.x)
+        if (marqueeActive) {
+          marqueeEndX = pointer.x
+          marqueeEndY = pointer.y
+        }
+      }
     }
 
     // dirty 时按模型重建 UI，所有 Actor（含拖拽中）都是模型的纯投影。
@@ -612,7 +647,7 @@ object TimelineView {
     case PLAY_PAUSE extends Actions("播放/暂停", SPACE)
     case GROUP extends Actions("分组", F)
     case MARQUEE_SELECT extends Actions("框选", CONTROL_LEFT)
-    case SEEK extends Actions("定位播放头", E)
+    case SEEK extends Actions("定位播放头", ALT_LEFT)
     case SNAP_IGNORE extends Actions("忽略吸附", CONTROL_LEFT)
     case COPY extends Actions("复制", CONTROL_LEFT, C)
     case PASTE extends Actions("粘贴", CONTROL_LEFT, V)
