@@ -11,7 +11,8 @@ import org.bytedeco.javacv.FFmpegFrameGrabber
  * @tparam F 产生的帧类型
  */
 abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) extends Resource {
-  protected final val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(segment.path)
+  // 构造即加载 FFmpeg 原生库，推迟到 start 等首次访问，解码器可以在无原生库的环境里被替身测试
+  protected final lazy val grabber: FFmpegFrameGrabber = new FFmpegFrameGrabber(segment.path)
   @volatile var initialized: Boolean = false
 
   def start(): Unit = this.synchronized {

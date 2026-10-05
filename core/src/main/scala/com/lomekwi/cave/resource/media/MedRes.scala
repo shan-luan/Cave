@@ -4,22 +4,10 @@ import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.decoder.DecRes
 
-import com.google.common.cache.Cache
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.RemovalListener
-import com.google.common.cache.RemovalNotification
-
 import java.io.ObjectInputStream
 import java.io.Serializable
-import java.util
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
@@ -27,24 +15,13 @@ import scala.util.Using
  */
 @SerialVersionUID(1L)
 abstract class MedRes(val path: String) extends Resource with Serializable {
-  import MedRes.*
 
   var duration: Long = 0
   var codecName: String = uninitialized
   var codec: Int = 0
 
-  @transient private var decoderCache: Cache[Integer, DecRes[?]] = CacheBuilder.newBuilder()
-    .asInstanceOf[CacheBuilder[Integer, DecRes[?]]]
-    .expireAfterAccess(DECODER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    .removalListener(((notification: RemovalNotification[Integer, DecRes[?]]) => {
-      val dec = notification.getValue
-      if (dec != null) {
-        try { dec.close() } catch { case _: Exception => () }
-      }
-    }): RemovalListener[Integer, DecRes[?]])
-    .build()
+  @transient private var pool: DecoderPool = newPool()
 
-  instances.add(this)
   try {
     Using.resource(newDecoder()) { metadataDecRes =>
       metadataDecRes.start()
@@ -56,59 +33,38 @@ abstract class MedRes(val path: String) extends Resource with Serializable {
       throw new RuntimeException(e)
   }
 
-  def getDecoder(trackIndex: Int): DecRes[?] = {
-    try {
-      decoderCache.get(trackIndex, () => newDecoder())
-    } catch {
-      case e: ExecutionException =>
-        throw new RuntimeException(e)
-    }
+  private def newPool(): DecoderPool = new DecoderPool(() => newDecoder(), decoderWeight)
+
+  /** 借出 consumer 专用的解码器，用完必须 [[DecoderLease.close]] 归还。 */
+  def acquire(consumer: AnyRef): DecoderLease = {
+    pool.acquire(consumer)
   }
 
-  def get(trackIndex: Int, time: Long, frame: Frame): Unit = {
-    getDecoder(trackIndex).asInstanceOf[DecRes[Frame]].get(time, frame)
+  def get(consumer: AnyRef, time: Long, frame: Frame): Unit = {
+    val lease = acquire(consumer)
+    try lease.dec.asInstanceOf[DecRes[Frame]].get(time, frame)
+    finally lease.close()
   }
-  def sync(trackIndex: Int, time: Long): Unit = {
-    getDecoder(trackIndex).sync(time)
+
+  def sync(consumer: AnyRef, time: Long): Unit = {
+    val lease = acquire(consumer)
+    try lease.dec.sync(time)
+    finally lease.close()
   }
 
   override def close(): Unit = {
-    instances.remove(this)
-    decoderCache.invalidateAll()
+    pool.disposeAll()
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
     ois.defaultReadObject()
-    instances.add(this)
-    decoderCache = CacheBuilder.newBuilder()
-      .asInstanceOf[CacheBuilder[Integer, DecRes[?]]]
-      .expireAfterAccess(DECODER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      .removalListener(((notification: RemovalNotification[Integer, DecRes[?]]) => {
-        val dec = notification.getValue
-        if (dec != null) {
-          try { dec.close() } catch { case _: Exception => () }
-        }
-      }): RemovalListener[Integer, DecRes[?]])
-      .build()
+    pool = newPool()
   }
+
   protected def newDecoder(): DecRes[?]
+
+  /** 本资源的解码器在全局预算中的权重，以视频解码器为 1。覆写必须是常量，池在超类构造期间读取它。 */
+  protected def decoderWeight: Double = 0.1
+
   protected def generateMetadata(metadataDecRes: DecRes[?]): Unit
-}
-
-object MedRes {
-  private final val DECODER_TIMEOUT_SECONDS = 30
-
-  private final val instances: util.Set[MedRes] = ConcurrentHashMap.newKeySet[MedRes]()
-
-  private final val CLEANUP: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
-    val t = new Thread(r, "decoder-cache-cleanup")
-    t.setDaemon(true)
-    t
-  })
-
-  CLEANUP.scheduleWithFixedDelay(() => {
-    for (res <- instances.asScala) {
-      res.decoderCache.cleanUp()
-    }
-  }, DECODER_TIMEOUT_SECONDS, 15, TimeUnit.SECONDS)
 }

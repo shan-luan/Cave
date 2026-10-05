@@ -13,7 +13,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
   })
 
   override def sync(time: Long, track: Track, segment: Segment): Unit = {
-    audRes.sync(track.index, time)
+    audRes.sync(segment, time)
   }
 
   override protected def produce(time: Long, track: Track, segment: Segment): AudFrame = {
@@ -23,7 +23,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     }
 
     try {
-      audRes.get(track.index, time, frame)
+      audRes.get(segment, time, frame)
       if (frame.samples == null) null else frame
     } catch {
       case e: Exception =>
