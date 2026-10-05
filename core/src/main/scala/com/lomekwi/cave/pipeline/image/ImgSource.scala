@@ -25,7 +25,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   })
 
   override def sync(time: Long, track: Track, segment: Segment): Unit = {
-    imgRes.sync(track.index, time)
+    imgRes.sync(segment, time)
   }
 
   override protected def produce(time: Long, track: Track, segment: Segment): ImgFrame = {
@@ -50,7 +50,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
       }
     }
     try {
-      imgRes.get(track.index, time, frame)
+      imgRes.get(segment, time, frame)
     } catch {
       case e: Exception =>
         e.printStackTrace()

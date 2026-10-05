@@ -72,9 +72,6 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 
   override def close(): Unit = {
     super.close()
-    if (waveformerRef != null) {
-      waveformerRef.dispose()
-    }
     if (singleWaveform != null) {
       singleWaveform.dispose()
     }
@@ -98,11 +95,14 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
 
     private def generate(): Unit = {
-      val dec = newDecoder()
-      val frame = new AudFrame(44100, -1)
-      val peaks = new Array[Float](W)
+      val lease = acquire(SingleWaveform.Consumer)
       try {
-        dec.start()
+        val dec = lease.dec.asInstanceOf[AudDecRes]
+        if (!dec.initialized) {
+          dec.start()
+        }
+        val frame = new AudFrame(44100, -1)
+        val peaks = new Array[Float](W)
         val frameLen = dec.lengthPerFrame
         var t = 0L
         var col = 0
@@ -150,11 +150,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         case e: Exception =>
           Gdx.app.error("AudRes", "Single waveform failed for " + path, e)
       } finally {
-        try {
-          dec.close()
-        } catch {
-          case _: Exception => ()
-        }
+        lease.close()
       }
     }
 
@@ -169,6 +165,8 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
   private object SingleWaveform {
     private final val W = 160
     private final val H = 90
+
+    private[media] final val Consumer: AnyRef = new Object
   }
 
   class Waveformer private[media] {
@@ -224,18 +222,10 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
       }
     }
 
-    @transient private var cachedDec: AudDecRes = uninitialized
-
-    private def getCachedDecoder: AudDecRes = {
-      if (cachedDec == null) {
-        cachedDec = newDecoder()
-      }
-      cachedDec
-    }
-
     private def processPendingSlots(): Unit = {
-      val dec = getCachedDecoder
+      val lease = acquire(Waveformer.Consumer)
       try {
+        val dec = lease.dec.asInstanceOf[AudDecRes]
         if (!dec.initialized) {
           dec.start()
         }
@@ -293,6 +283,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         case e: Exception =>
           Gdx.app.error("AudRes", "Waveform worker failed for " + path, e)
       } finally {
+        lease.close()
         workerRunning.set(false)
         if (!pendingSlots.isEmpty) {
           ensureWorker()
@@ -317,21 +308,12 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         batchCount = 0
       }
     }
-
-    private[media] def dispose(): Unit = {
-      if (cachedDec != null) {
-        try {
-          cachedDec.close()
-        } catch {
-          case _: Exception => ()
-        }
-        cachedDec = null
-      }
-    }
   }
 
   object Waveformer {
     private[media] final val DECIMATED_RATE = 400
     private final val BATCH_SIZE = 64
+
+    private[media] final val Consumer: AnyRef = new Object
   }
 }

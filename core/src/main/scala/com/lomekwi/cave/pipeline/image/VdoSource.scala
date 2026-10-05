@@ -26,7 +26,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
   })
 
   override def sync(time: Long, track: Track, segment: Segment): Unit = {
-    vdoRes.sync(track.index, time)
+    vdoRes.sync(segment, time)
   }
 
   override protected def produce(time: Long, track: Track, segment: Segment): ImgFrame = {
@@ -51,7 +51,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
       }
     }
     try {
-      vdoRes.get(track.index, time, frame)
+      vdoRes.get(segment, time, frame)
     } catch {
       case e: Exception =>
         e.printStackTrace()

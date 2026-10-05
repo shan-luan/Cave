@@ -34,9 +34,8 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     thumbnailer
   }
 
-  override def getDecoder(trackIndex: Int): VdoDecRes = {
-    super.getDecoder(trackIndex).asInstanceOf[VdoDecRes]
-  }
+  override protected def decoderWeight: Double = 1.0
+
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val vdr = metadataDecRes.asInstanceOf[VdoDecRes]
     width = vdr.getWidth
@@ -127,18 +126,10 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
       }
     }
 
-    @transient private var cachedDec: VdoDecRes = uninitialized
-
-    private def getCachedDecoder: VdoDecRes = {
-      if (cachedDec == null) {
-        cachedDec = newDecoder()
-      }
-      cachedDec
-    }
-
     private def processPendingSlots(): Unit = {
-      val dec = getCachedDecoder
+      val lease = acquire(Thumbnailer.Consumer)
       try {
+        val dec = lease.dec.asInstanceOf[VdoDecRes]
         if (!dec.initialized) {
           dec.start()
         }
@@ -180,6 +171,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
         case e: Exception =>
           Gdx.app.error("VdoRes", "Thumbnail worker failed for " + path, e)
       } finally {
+        lease.close()
         workerRunning.set(false)
         if (!pendingSlots.isEmpty) {
           ensureWorker()
@@ -209,19 +201,13 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
       while (textureIt.hasNext) {
         textureIt.next().dispose()
       }
-      if (cachedDec != null) {
-        try {
-          cachedDec.close()
-        } catch {
-          case _: Exception => ()
-        }
-        cachedDec = null
-      }
     }
   }
 
   private object Thumbnailer {
     private final val THUMB_HEIGHT = 80
     private final val BATCH_SIZE = 16
+
+    private[media] final val Consumer: AnyRef = new Object
   }
 }

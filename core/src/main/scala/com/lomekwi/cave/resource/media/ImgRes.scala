@@ -32,6 +32,8 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     new ImgDecRes(this)
   }
 
+  override protected def decoderWeight: Double = 0.05
+
   override protected def generateMetadata(metadataDecRes: DecRes[?]): Unit = {
     val idr = metadataDecRes.asInstanceOf[ImgDecRes]
     width = idr.getWidth
@@ -50,7 +52,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
 
   final val frameLength: Long = SECOND / 30
 
-  override def get(trackIndex: Int, time: Long, frame: Frame): Unit = {
+  override def get(consumer: AnyRef, time: Long, frame: Frame): Unit = {
     if (!decoded) {
       Using.resource(new ImgDecRes(this)) { dec =>
         dec.start()
@@ -66,7 +68,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     imgFrame.unpackRowLength = unpackRowLength
   }
 
-  override def sync(trackIndex: Int, time: Long): Unit = {
+  override def sync(consumer: AnyRef, time: Long): Unit = {
   }
 
   def getTexture: Texture = {
