@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.app.AppAudioOut
-import com.lomekwi.cave.pipeline.{Source, Node, Segment}
+import com.lomekwi.cave.pipeline.{Source, Node, Segment, TransitionSource}
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSegmentActor, TlSegmentActor}
@@ -49,6 +49,14 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
     new TlAudSegmentActor(segment)
+  }
+
+  override def canCreateTransitionWith(source: Source[?]): Boolean = {
+    classOf[AudFrame].isAssignableFrom(source.getType)
+  }
+
+  override def createTransition(source: Source[?]): TransitionSource[AudFrame, AudFrame] = {
+    new AudCrossfadeSource(this, source.asInstanceOf[Source[AudFrame]])
   }
 
   override def onDuplicate(original: Source[?]): Unit = {
