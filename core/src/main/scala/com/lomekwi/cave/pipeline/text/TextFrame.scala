@@ -44,6 +44,8 @@ class TextFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, seg
     version += 1
   }
 
+  def getText: String = text
+
   def setFont(font: BitmapFont): Unit = {
     this.font = font
     version += 1
