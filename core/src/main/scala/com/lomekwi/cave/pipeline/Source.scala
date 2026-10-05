@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
  * 帧源。filter 链的起点，自身没有 [[Filter.filterIn]]，
  * 输出 [[produce]] 生成的帧供第一个 filter 消费。
  *
- * 驱动（[[sync]]/[[onStepOut]]/[[prefetch]]）与时长等元数据也由它承担，
+ * 驱动（[[sync]]/[[prefetch]]）与时长等元数据也由它承担，
  * [[Segment]] 只做这两者的持有与对外门面。
  *
  * @tparam T 帧类型
@@ -53,13 +53,6 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * @param segment 宿主片段
    */
   def sync(time: Long, track: Track, segment: Segment): Unit = {}
-
-  /**
-   * 播放头离开本片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
-   * @param time 片段内时间，即离开时播放头所在的片段内位置
-   * @param segment 宿主片段
-   */
-  def onStepOut(time: Long, track: Track, segment: Segment): Unit = {}
 
   def prefetch(): Unit = {}
 
