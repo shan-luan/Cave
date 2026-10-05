@@ -71,20 +71,6 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     to.sync(abs - track.getOrigin(toSeg), track, toSeg)
   }
 
-  override def onStepOut(time: Long, track: Track, segment: Segment): Unit = {
-    // 收尾可能发生在转场已被删除或摘出轨道之后，此时无从换算，直接跳过
-    if (!track.contains(segment)) return
-    val sides = track.transitionSides(segment.asInstanceOf[Transition])
-    if (sides == null || sides._2 == null) return
-    val left = sides._1
-    val right = sides._2
-    val fromSeg = if (left.source eq from) left else right
-    val toSeg = if (fromSeg eq left) right else left
-    val abs = track.getOrigin(segment) + time
-    from.onStepOut(abs - track.getOrigin(fromSeg), track, fromSeg)
-    to.onStepOut(abs - track.getOrigin(toSeg), track, toSeg)
-  }
-
   override def prefetch(): Unit = {
     from.prefetch()
     to.prefetch()

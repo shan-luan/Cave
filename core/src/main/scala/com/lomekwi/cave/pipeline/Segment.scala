@@ -42,14 +42,6 @@ sealed abstract class Segment(val source: Source[? <: Frame])
     source.sync(time, track, this)
   }
 
-  /**
-   * 播放头离开本片段时调用。自然播放越过片段终点，或 seek 使播放头落到片段区间之外。
-   * @param time 片段内时间，即离开时播放头所在的片段内位置
-   */
-  def onStepOut(time: Long, track: Track): Unit = {
-    source.onStepOut(time, track, this)
-  }
-
   def prefetch(): Unit = {
     source.prefetch()
   }

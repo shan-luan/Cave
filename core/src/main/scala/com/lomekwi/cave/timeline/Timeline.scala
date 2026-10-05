@@ -553,10 +553,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
       Gdx.app.log("Track" + index, "轨道线程启动: " + tracks(index))
       try {
         val p = project.playhead
-        // 播放头当前所在的片段。播放头离开它时在该片段上收尾。
-        // origin 按切入时的版本记下，收尾时不必再向轨道查，片段已被删除或移走时也仍然成立。
-        var activeSegment: Segment = null
-        var activeOrigin: Long = 0L
         while (!Thread.currentThread().isInterrupted) {
           val track = tracks(index)
           var t: Long = p.getTime
@@ -565,20 +561,12 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
             case s: Segment => s
             case _: Gap => null
           }
-          // 片段被删除、移走或播放头进入了转场，都要在原片段上收尾
-          if (activeSegment != null && current != activeSegment) {
-            val out = activeSegment
-            activeSegment = null
-            out.onStepOut(t - activeOrigin, track)
-          }
           if (p.state != PlayState.Playing) {
             Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
 
             var f: com.lomekwi.cave.pipeline.Frame = null
             if (current != null) {
               track.syncAt(current, t)
-              activeSegment = current
-              activeOrigin = track.getOrigin(current)
               f = track.frameAt(current, t)
             }
             project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
@@ -593,8 +581,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
               val s = current
               Gdx.app.debug("Track" + index, "找到源: " + s)
               track.syncAt(s, t)
-              activeSegment = s
-              activeOrigin = track.getOrigin(s)
               // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
               val end: Long = track.soloEndOf(s)
               while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {

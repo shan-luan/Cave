@@ -28,14 +28,9 @@ class TransitionSourceTest extends GdxTestBase {
 
   private class ProbeSource(duration: Long, nullAt: Long => Boolean) extends Source[TimedFrame] {
     var lastSync: Long = -1L
-    var lastStepOut: Long = -1L
 
     override def sync(time: Long, track: Track, segment: Segment): Unit = {
       lastSync = time
-    }
-
-    override def onStepOut(time: Long, track: Track, segment: Segment): Unit = {
-      lastStepOut = time
     }
 
     override protected def produce(time: Long, track: Track, segment: Segment): TimedFrame = {
@@ -190,7 +185,7 @@ class TransitionSourceTest extends GdxTestBase {
   }
 
   @Test
-  def syncAndStepOutReachBothSidesWithConvertedTimes(): Unit = {
+  def syncReachesBothSidesWithConvertedTimes(): Unit = {
     val (track, transition, _) = placedTrack(leftLead = true, _ => false, _ => false)
     val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
     val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
@@ -198,10 +193,6 @@ class TransitionSourceTest extends GdxTestBase {
     track.syncAt(transition, 600L)
     assertEquals(600L, leftSource.lastSync)
     assertEquals(100L, rightSource.lastSync)
-
-    transition.onStepOut(100L, track)
-    assertEquals(600L, leftSource.lastStepOut)
-    assertEquals(100L, rightSource.lastStepOut)
   }
 
   @Test
@@ -214,19 +205,6 @@ class TransitionSourceTest extends GdxTestBase {
     // [[TransitionSource.from]] 指向右内容，转发仍按各自的原始配对换算
     assertEquals(600L, leftSource.lastSync)
     assertEquals(100L, rightSource.lastSync)
-  }
-
-  @Test
-  def onStepOutSkippedAfterTransitionRemoved(): Unit = {
-    val (track, transition, source) = placedTrack(leftLead = true, _ => false, _ => false)
-
-    // 播放头在转场中删除转场，收尾发生在转场已摘出轨道之后
-    timeline.remove(transition)
-    val current = timeline.getTrackOrCreate(0)
-
-    transition.onStepOut(100L, current)
-    assertEquals(-1L, source.from.asInstanceOf[ProbeSource].lastStepOut)
-    assertEquals(-1L, source.to.asInstanceOf[ProbeSource].lastStepOut)
   }
 
   @Test
