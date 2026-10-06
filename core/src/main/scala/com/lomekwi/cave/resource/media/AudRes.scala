@@ -78,7 +78,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
   }
 
   private class SingleWaveform {
-    import SingleWaveform.*
+    import com.lomekwi.cave.resource.media.SingleWaveform.*
 
     private final val generating: AtomicBoolean = new AtomicBoolean(false)
     @transient @volatile private var texture: Texture = uninitialized
@@ -162,15 +162,8 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
   }
 
-  private object SingleWaveform {
-    private final val W = 160
-    private final val H = 90
-
-    private[media] final val Consumer: AnyRef = new Object
-  }
-
   class Waveformer private[media] {
-    import Waveformer.*
+    import com.lomekwi.cave.resource.media.Waveformer.*
 
     final val bucketDuration: Long = 1_000_000L / DECIMATED_RATE
     final val totalBuckets: Int = Math.max(1, (duration / 1_000_000L * DECIMATED_RATE).toInt)
@@ -309,11 +302,18 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
       }
     }
   }
+}
 
-  object Waveformer {
-    private[media] final val DECIMATED_RATE = 400
-    private final val BATCH_SIZE = 64
+private[media] object SingleWaveform {
+  private[media] final val W = 160
+  private[media] final val H = 90
 
-    private[media] final val Consumer: AnyRef = new Object
-  }
+  private[media] final val Consumer: AnyRef = new Object
+}
+
+private[media] object Waveformer {
+  private[media] final val DECIMATED_RATE = 400
+  private[media] final val BATCH_SIZE = 64
+
+  private[media] final val Consumer: AnyRef = new Object
 }

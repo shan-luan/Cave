@@ -37,10 +37,6 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
 
   for (out <- node.outPorts.asScala) {
-    val row: Actor = App.cardWidgetsRegistry.createOutputRow(out)
-    if (row != null) {
-      outTable.add(row).growX()
-    }
     val portActor = new OutPortActor(out)
     portActors.put(out, portActor)
     outTable.add(portActor).row()

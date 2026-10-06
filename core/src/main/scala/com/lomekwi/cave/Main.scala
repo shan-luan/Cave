@@ -40,6 +40,7 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   override def create(): Unit = {
     App.audioOut = new AppAudioOut()
     Gdx.app.setLogLevel(Application.LOG_DEBUG)
+    System.setProperty("sun.io.serialization.extendedDebugInfo", "true")
     ui = new Root()
     ui.create()
   }

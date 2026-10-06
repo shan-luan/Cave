@@ -2,7 +2,7 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.audio.GainNode
 import com.lomekwi.cave.pipeline.image.{OpacityNode, TransNode}
-import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode}
+import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode, TimeNode}
 import com.lomekwi.cave.pipeline.text.TextFilter
 
 import java.lang.{IllegalAccessException, InstantiationException}
@@ -26,6 +26,7 @@ class NodeRegistry {
   register(classOf[GainNode])
   register(classOf[NodeGraphFilter])
   register(classOf[RandomNode])
+  register(classOf[TimeNode])
   register(classOf[AddNode])
   register(classOf[SubNode])
   register(classOf[MulNode])

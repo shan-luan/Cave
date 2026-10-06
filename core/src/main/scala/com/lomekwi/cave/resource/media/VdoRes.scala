@@ -82,7 +82,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   }
 
   private class Thumbnailer {
-    import Thumbnailer.*
+    import com.lomekwi.cave.resource.media.Thumbnailer.*
 
     private[media] final val interval: Long = SECOND
     private[media] final val slotCount: Int = (duration / interval).toInt + 1
@@ -203,11 +203,11 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
       }
     }
   }
+}
 
-  private object Thumbnailer {
-    private final val THUMB_HEIGHT = 80
-    private final val BATCH_SIZE = 16
+private[media] object Thumbnailer {
+  private[media] final val THUMB_HEIGHT = 80
+  private[media] final val BATCH_SIZE = 16
 
-    private[media] final val Consumer: AnyRef = new Object
-  }
+  private[media] final val Consumer: AnyRef = new Object
 }
