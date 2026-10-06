@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
-import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, Frame, Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, EvalClock, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
 import java.util
@@ -700,9 +700,12 @@ final class Track private (val timeline: Timeline, val index: Int,
     intersectingEntries(intervalToSeg, range).map(_._2).filterNot(isBlock).toList.asJava
   }
 
-  /** 生成片段在绝对时间 time 的帧。 */
+  /** 生成片段在绝对时间 time 的帧，求值期间经 [[EvalClock]] 向节点提供时刻。 */
   def frameAt(segment: Segment, time: Long): Frame = {
-    val f = segment.get(time - getOrigin(segment), this)
+    val relative = time - getOrigin(segment)
+    val f = EvalClock.withTime(time, relative) {
+      segment.get(relative, this)
+    }
     if (f == null) null else f.withTime(time)
   }
 
