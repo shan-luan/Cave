@@ -26,19 +26,22 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   /**
    * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
    * 返回链上最后一个 filter 的输出；无 filter 时返回原生帧。
+   *
+   * 求值全程持有本片段的锁，源、解码器与帧槽因此同一时刻只被一个线程使用。
+   * 跨轨搬运后旧轨道线程尚未退出时在此排队，不会与新轨道线程并发借用同一解码器。
    * @param time 片段内时间
    * @return 产品
    */
-  final def get(time: Long, track: Track): Frame = {
+  final def get(time: Long, track: Track): Frame = this.synchronized {
     val generated = source.generate(time, track, this)
     if (filters.isEmpty) generated        else filters.get(filters.size() - 1).filterOut.getData.asInstanceOf[Frame]
   }
 
   /**
-   * 同步到指定时间
+   * 同步到指定时间，与 [[get]] 同锁。
    * @param time 片段内时间
    */
-  def sync(time: Long, track: Track): Unit = {
+  def sync(time: Long, track: Track): Unit = this.synchronized {
     source.sync(time, track, this)
   }
 

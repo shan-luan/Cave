@@ -59,17 +59,24 @@ class TrackWorker(private val timeline: Timeline, private val index: Int) extend
             track.syncAt(s, t)
             // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
             val end: Long = track.soloEndOf(s)
-            while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
+            var owns: Boolean = true
+            while (t < end && owns && !updateNeeded && !Thread.currentThread().isInterrupted) {
               t = timeline.project.playhead.getTime
-              val frame = track.frameAt(s, t)
-              if (!updateNeeded && frame != null) {
-                timeline.project.projEventBus.post(frame)
-                val phase = sinkPhaser.arrive()
-                try {
-                  sinkPhaser.awaitAdvanceInterruptibly(phase)
-                } catch {
-                  case _: InterruptedException =>
-                    Thread.currentThread().interrupt()
+              // 片段可能已被搬到别的轨道，本线程不再驱动它，交由外层重新解析
+              val cur = timeline.getTrackOrCreate(index)
+              if (!cur.contains(s)) {
+                owns = false
+              } else {
+                val frame = cur.frameAt(s, t)
+                if (!updateNeeded && frame != null) {
+                  timeline.project.projEventBus.post(frame)
+                  val phase = sinkPhaser.arrive()
+                  try {
+                    sinkPhaser.awaitAdvanceInterruptibly(phase)
+                  } catch {
+                    case _: InterruptedException =>
+                      Thread.currentThread().interrupt()
+                  }
                 }
               }
             }
