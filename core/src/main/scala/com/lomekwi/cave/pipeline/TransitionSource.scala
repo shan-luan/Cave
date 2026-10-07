@@ -67,8 +67,8 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
   override def sync(time: Long, track: Track, segment: Segment): Unit = {
     val (fromSeg, toSeg, _) = rawSides(segment, track)
     val abs = track.getOrigin(segment) + time
-    from.sync(abs - track.getOrigin(fromSeg), track, fromSeg)
-    to.sync(abs - track.getOrigin(toSeg), track, toSeg)
+    fromSeg.sync(abs - track.getOrigin(fromSeg), track)
+    toSeg.sync(abs - track.getOrigin(toSeg), track)
   }
 
   override def prefetch(): Unit = {
