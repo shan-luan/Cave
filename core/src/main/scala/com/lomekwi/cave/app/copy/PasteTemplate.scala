@@ -1,6 +1,6 @@
 package com.lomekwi.cave.app.copy
 
-import com.lomekwi.cave.pipeline.{Segment, Transition}
+import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline}
 
 import java.util
@@ -23,7 +23,7 @@ class PasteTemplate private (val entries: util.List[PasteTemplate.Entry]) extend
 }
 
 object PasteTemplate {
-  case class Entry(trackIndex: Int, segment: Segment, range: Interval, origin: Long, group: SegmentGroup)
+  case class Entry(trackIndex: Int, segment: Content, range: Interval, origin: Long, group: SegmentGroup)
 
   /** 把时间线上的一批片段抓成模板。转场不参与复制。 */
   def of(segments: util.Collection[Segment], timeline: Timeline): PasteTemplate = {
@@ -32,10 +32,10 @@ object PasteTemplate {
     for (segment <- segments.asScala) {
       segment match {
         case _: Transition =>
-        case _ =>
-          val track = timeline.findTrackOf(segment)
+        case c: Content =>
+          val track = timeline.findTrackOf(c)
           if (track != null) {
-            raw.add(Entry(track.index, segment, track.getRange(segment), track.getOrigin(segment), timeline.getGroup(segment)))
+            raw.add(Entry(track.index, c, track.getRange(c), track.getOrigin(c), timeline.getGroup(c)))
           }
       }
     }
@@ -47,7 +47,7 @@ object PasteTemplate {
     val copied = new util.ArrayList[Entry](entries.size())
     val groupCopies: util.Map[SegmentGroup, SegmentGroup] = new util.HashMap[SegmentGroup, SegmentGroup]()
     for (entry <- entries.asScala) {
-      val dup = entry.segment.duplicate()
+      val dup = entry.segment.duplicate().asInstanceOf[Content]
       var groupCopy: SegmentGroup = null
       if (entry.group != null) {
         groupCopy = groupCopies.get(entry.group)

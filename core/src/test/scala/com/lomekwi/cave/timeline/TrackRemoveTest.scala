@@ -28,7 +28,7 @@ class TrackRemoveTest extends GdxTestBase {
 
   private def newContent(duration: Long): Content = new TestCont(duration)
 
-  private def place(track: Track, segment: Segment, range: Interval, origin: Long = 0L): Unit = {
+  private def place(track: Track, segment: Content, range: Interval, origin: Long = 0L): Unit = {
     timeline.addOrThrow(track, segment, range, origin)
   }
 

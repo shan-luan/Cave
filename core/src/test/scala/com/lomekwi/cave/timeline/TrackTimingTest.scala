@@ -67,7 +67,7 @@ class TrackTimingTest extends GdxTestBase {
     assertEquals(TrackTimingTest.DELTA, timeline.moveTime(grouped, TrackTimingTest.DELTA), "含转场的成组拖拽应移动")
     assertEquals(-TrackTimingTest.DELTA, timeline.moveTime(grouped, -TrackTimingTest.DELTA), "含转场的成组拖拽应移回")
 
-    val victim = segments.get(TrackTimingTest.VICTIM_AT)
+    val victim = segments.get(TrackTimingTest.VICTIM_AT).asInstanceOf[Content]
     val victimRange = timeline.getTrackOrCreate(0).getRange(victim)
     val victimOrigin = timeline.getTrackOrCreate(0).getOrigin(victim)
     timeline.remove(victim)

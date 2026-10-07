@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.pipeline.{Content, Segment}
 
 import java.util.{ArrayList, List, Random, Set}
 
@@ -28,7 +28,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
                            private val trackCount: Int = 4,
                            private val minDuration: Long = 1_000L,
                            private val maxDuration: Long = 15_000L,
-                           private val segmentFactory: Long => Segment = duration => new TestCont(duration)) {
+                           private val segmentFactory: Long => Content = duration => new TestCont(duration)) {
 
   /** 组注册表。组跨轨道，放在引擎里才能在分组时并入已有的随机一个组。 */
   private final val groups: List[SegmentGroup] = new ArrayList[SegmentGroup]()

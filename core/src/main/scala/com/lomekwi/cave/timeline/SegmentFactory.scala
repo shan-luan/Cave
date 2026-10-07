@@ -2,7 +2,7 @@ package com.lomekwi.cave.timeline
 
 
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.pipeline.{Boundless, Clip, Segment}
+import com.lomekwi.cave.pipeline.{Boundless, Clip, Content}
 import com.lomekwi.cave.pipeline.audio.{AudFrame, AudSource}
 import com.lomekwi.cave.pipeline.image.{ImgFrame, ImgSource, VdoSource}
 import com.lomekwi.cave.resource.Resource
@@ -21,7 +21,7 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 片段构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Segment]]。
+ * 片段构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Content]]。
  */
 @SerialVersionUID(1L)
 class SegmentFactory(@transient var project: Project) extends Serializable {
@@ -48,8 +48,8 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
    * 获取文件对应的所有片段。
    * 对于同时包含视频和音频流的文件，可能返回多个片段。
    */
-  def getAll(file: File): util.List[Segment] = {
-    val segments: util.List[Segment] = new util.ArrayList[Segment]()
+  def getAll(file: File): util.List[Content] = {
+    val segments: util.List[Content] = new util.ArrayList[Content]()
     for (resource <- ensureResources(file).asScala) {
       segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
     }
@@ -82,11 +82,11 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
   /**
    * 获取文件对应的第一个主要片段。
    */
-  def get(file: File): Segment = {
+  def get(file: File): Content = {
     getAll(file).get(0)
   }
-  private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Segment = {
-    fn.asInstanceOf[Function[R, Segment]].apply(resource)
+  private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Content = {
+    fn.asInstanceOf[Function[R, Content]].apply(resource)
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
@@ -100,6 +100,6 @@ object SegmentFactory {
   /** 资源类型，构造器登记表的键。 */
   private type ResourceClass = Class[? <: Resource]
 
-  /** 由单个资源构造片段。 */
-  private type SegmentCtor = Function[? <: Resource, Segment]
+  /** 由单个资源构造内容片段。 */
+  private type SegmentCtor = Function[? <: Resource, Content]
 }

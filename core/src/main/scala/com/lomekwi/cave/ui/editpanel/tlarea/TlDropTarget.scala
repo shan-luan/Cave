@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.pipeline.{Content, Segment}
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.timeline.Interval
 import com.lomekwi.cave.timeline.~~
@@ -31,7 +31,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: util.List[Segment] = timelineView.project.sourceFactory.getAll(file)
+      val segments: util.List[Content] = timelineView.project.sourceFactory.getAll(file)
       val startTime: Long = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
