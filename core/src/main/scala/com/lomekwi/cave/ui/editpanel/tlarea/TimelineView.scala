@@ -15,7 +15,7 @@ import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
 import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline, Track, UndoManager}
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.playback.Playhead
+import com.lomekwi.cave.playback.Playhead
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.{Colors, Focusable}

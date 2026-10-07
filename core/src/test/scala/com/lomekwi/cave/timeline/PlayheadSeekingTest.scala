@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.playback.PlayState
+import com.lomekwi.cave.playback.PlayState
 import com.lomekwi.cave.util.Units.SECOND
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}

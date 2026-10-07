@@ -1,6 +1,9 @@
-package com.lomekwi.cave.timeline.playback
+package com.lomekwi.cave.playback
 
+import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.EventBus
+
+import scala.collection.mutable
 
 class Playhead(@transient private val projEventBus: EventBus) {
 
@@ -13,6 +16,9 @@ class Playhead(@transient private val projEventBus: EventBus) {
   // 进行中的刷动会话计数，鼠标拖拽与 SEEK 按住可叠加。计数大于 0 时聚合到齐也不恢复，
   // 状态停在 Seeking，时间冻结在 seek 目标
   @volatile private var scrubSessions: Int = 0
+  // SEEKING 聚合会话的运行时状态
+  private var seekSessionVersion: Long = -1L
+  private var seekDoneIndexes: mutable.HashSet[Int] = mutable.HashSet.empty[Int]
 
   def state: PlayState = playState
 
@@ -47,8 +53,29 @@ class Playhead(@transient private val projEventBus: EventBus) {
     projEventBus.post(SeekEvent)
   }
 
-  /** 所有轨道 sync 到 seek 目标后由 [[Timeline]] 聚合调用，恢复 seek 前的状态；刷动会话计数大于 0 时不恢复 */
-  def finishSeek(): Unit = {
+  /**
+   * 轨道线程在 SEEKING 下完成一轮 sync 后调用。按会话版本去重聚合，
+   * 聚齐所有轨道后在 GDX 线程恢复 seek 前的状态，版本过期的事件丢弃。
+   */
+  def reportSeekDone(version: Long, index: Int, trackCount: Int): Unit = synchronized {
+    if (version >= seekSessionVersion) {
+      if (version > seekSessionVersion) {
+        seekSessionVersion = version
+        seekDoneIndexes.clear()
+      }
+      if (seekDoneIndexes.add(index) && seekDoneIndexes.size >= trackCount) {
+        seekDoneIndexes.clear()
+        Gdx.app.postRunnable { () =>
+          if (state == PlayState.Seeking && getSeekVersion == version) {
+            finishSeek()
+          }
+        }
+      }
+    }
+  }
+
+  /** 聚齐后恢复 seek 前的状态；刷动会话计数大于 0 时不恢复 */
+  private def finishSeek(): Unit = {
     if (scrubSessions > 0) return
     state = seekTargetState
   }

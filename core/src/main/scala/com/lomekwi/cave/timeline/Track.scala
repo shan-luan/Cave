@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
+import com.lomekwi.cave.playback.TrackWorker
 import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, EvalClock, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
@@ -715,7 +716,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 本轨道的轨道线程。 */
-  def getWorker: timeline.TrackWorker = timeline.getWorker(index)
+  def getWorker: TrackWorker = timeline.getWorker(index)
 
   /** 轨道上的用户片段；阻挡片段对遍历不可见。 */
   override def iterator(): util.Iterator[Segment] = {

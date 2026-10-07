@@ -23,7 +23,7 @@ import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.pipeline.image.TransNode
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager
-import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
+import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 

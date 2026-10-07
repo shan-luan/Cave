@@ -10,7 +10,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
+import com.lomekwi.cave.playback.RefreshRequestEvent
 
 import java.util.Objects
 
