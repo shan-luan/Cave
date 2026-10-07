@@ -11,7 +11,6 @@ import com.lomekwi.cave.resource.decoder.DecRes
 import com.lomekwi.cave.resource.decoder.VdoDecRes
 import org.bytedeco.javacv.Frame
 
-import java.io.ObjectInputStream
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -25,14 +24,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   var height: Int = scala.compiletime.uninitialized
   var frameLength: Long = scala.compiletime.uninitialized
 
-  @transient private var thumbnailer: Thumbnailer = uninitialized
-
-  private def getThumbnailer: Thumbnailer = {
-    if (thumbnailer == null) {
-      thumbnailer = new Thumbnailer()
-    }
-    thumbnailer
-  }
+  @transient private lazy val thumbnailer: Thumbnailer = new Thumbnailer()
 
   override protected def decoderWeight: Double = 1.0
 
@@ -50,37 +42,31 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   }
 
   override def getPreview(time: Long): Texture = {
-    getThumbnailer.get(time)
+    thumbnailer.get(time)
   }
 
   override def getPreview: Texture = {
-    getThumbnailer.get(duration / 2)
+    thumbnailer.get(duration / 2)
   }
 
   override def getPreviewInterval: Long = {
-    getThumbnailer.interval
+    thumbnailer.interval
   }
 
   def getThumbnail(srcTime: Long): Texture = {
-    getThumbnailer.get(srcTime)
+    thumbnailer.get(srcTime)
   }
 
   def getThumbInterval: Long = {
-    getThumbnailer.interval
+    thumbnailer.interval
   }
 
   override def close(): Unit = {
     super.close()
-    if (thumbnailer != null) {
-      thumbnailer.dispose()
-    }
+    thumbnailer.dispose()
   }
 
-  private def readObject(ois: ObjectInputStream): Unit = {
-    ois.defaultReadObject()
-    thumbnailer = null
-  }
-
+//TODO:把纹理拼在一起，减少drawcall。
   private class Thumbnailer {
     import com.lomekwi.cave.resource.media.Thumbnailer.*
 
