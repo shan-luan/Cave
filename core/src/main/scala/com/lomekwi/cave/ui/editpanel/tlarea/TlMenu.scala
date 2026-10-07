@@ -7,7 +7,7 @@ import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
-import com.lomekwi.cave.pipeline.{Boundless, Segment}
+import com.lomekwi.cave.pipeline.{Boundless, Content, Segment}
 import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.Interval
@@ -74,7 +74,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val segment: Segment = new Boundless(new TextSource())
+    val segment: Content = new Boundless(new TextSource())
     val duration: Long = segment.getDefaultDuration
 
     val timeline = timelineView.timeline
@@ -98,7 +98,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.project
     try {
-      val segments: util.List[Segment] = project.sourceFactory.getAll(file)
+      val segments: util.List[Content] = project.sourceFactory.getAll(file)
       if (!segments.isEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0

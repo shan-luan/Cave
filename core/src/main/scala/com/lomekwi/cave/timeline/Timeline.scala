@@ -52,7 +52,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
   }
 
-  def tryAdd(track: Track, segment: Segment, range: Interval, origin: Long): Long = {
+  def tryAdd(track: Track, segment: Content, range: Interval, origin: Long): Long = {
     val current = getTrackOrCreate(track.index)
     val (next, shift) = current.tryAdd(segment, range, origin)
     if (shift == 0) {
@@ -62,7 +62,7 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     shift
   }
 
-  protected[timeline] def addOrThrow(track: Track, segment: Segment, range: Interval, origin: Long): Unit = {
+  protected[timeline] def addOrThrow(track: Track, segment: Content, range: Interval, origin: Long): Unit = {
     val current = getTrackOrCreate(track.index)
     val next = current.addOrThrow(segment, range, origin)
     setTrack(track.index, next)
@@ -218,12 +218,14 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     val applied = findPlaceableTrack(segments, deltaTrack)
     if (applied == 0) return 0
 
-    val moves = new util.ArrayList[(Segment, Int, Int, Interval, Long)]()
+    val moves = new util.ArrayList[(Content, Int, Int, Interval, Long)]()
     for (s <- segments.asScala) {
       val from = findTrackOf(s)
       if (from != null) {
+        // 入口已排除转场
+        val c = s.asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
-        moves.add((s, from.index, to.index, from.getRange(s), from.getOrigin(s)))
+        moves.add((c, from.index, to.index, from.getRange(c), from.getOrigin(c)))
       }
     }
     if (moves.isEmpty) return 0
@@ -331,12 +333,8 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   }
 
   /** 持有该片段的轨道；未放置时返回 null。 */
-  def findTrackOf(segment: Segment): Track = {
-    for (track <- tracks) {
-      if (track.contains(segment)) return track
-    }
-    null
-  }
+  def findTrackOf(segment: Segment): Track =
+    tracks.find(_.contains(segment)).orNull
 
   /** 新建一个组并纳入注册表。 */
   def newGroup(): SegmentGroup = {

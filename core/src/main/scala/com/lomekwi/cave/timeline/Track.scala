@@ -95,20 +95,14 @@ final class Track private (val timeline: Timeline, val index: Int,
    * 尝试把内容片段放进指定区间，与已有内容的重叠自然成为转场。
    * @return 放得下时是 `(新轨道, 0)`；放不下时不加入，返回 `(本轨道, 最近的可容纳偏移)`
    */
-  protected[timeline] def tryAdd(segment: Segment, r: Interval, origin: Long): (Track, Long) = segment match {
-    case _: Transition =>
-      throw new IllegalArgumentException("不允许手动添加转场片段")
-    case c: Content =>
-      if (canPlaceAt(c, r)) (put(c, r, origin).syncAround(c), 0L) else (this, getShift(r))
+  protected[timeline] def tryAdd(c: Content, r: Interval, origin: Long): (Track, Long) = {
+    if (canPlaceAt(c, r)) (put(c, r, origin).syncAround(c), 0L) else (this, getShift(r))
   }
 
   /** 把内容片段放到指定区间。放不下时抛 IllegalArgumentException。要求片段不在本轨道上。 */
-  protected[timeline] def addOrThrow(segment: Segment, r: Interval, origin: Long): Track = segment match {
-    case _: Transition =>
-      throw new IllegalArgumentException("不允许手动添加转场片段")
-    case c: Content =>
-      if (!canPlaceAt(c, r)) throw new IllegalArgumentException("目标区间无法放置内容: " + r)
-      put(c, r, origin).syncAround(c)
+  protected[timeline] def addOrThrow(c: Content, r: Interval, origin: Long): Track = {
+    if (!canPlaceAt(c, r)) throw new IllegalArgumentException("目标区间无法放置内容: " + r)
+    put(c, r, origin).syncAround(c)
   }
 
   private def put(element: Segment, r: Interval, origin: Long): Track =
@@ -731,8 +725,6 @@ final class Track private (val timeline: Timeline, val index: Int,
           c.displayName + "=[" + r.lo + "," + Track.timeText(r.hi) + ") o=" + segToOrigin(c) + " m=" + Track.timeText(maxEndOf(c))
         case t: Transition =>
           t.displayName + "=[" + r.lo + "," + Track.timeText(r.hi) + ")"
-        case _ =>
-          "Seg=[" + r.lo + "," + Track.timeText(r.hi) + ")"
       }
     }
     parts.mkString(", ")

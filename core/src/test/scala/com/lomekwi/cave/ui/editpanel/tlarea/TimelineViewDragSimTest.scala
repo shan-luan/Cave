@@ -1,7 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
 import com.lomekwi.cave.app.selection.SegmentSet
-import com.lomekwi.cave.pipeline.{Segment, Transition}
+import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.GdxTestBase
 import com.lomekwi.cave.timeline.~~
@@ -59,7 +59,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     setField(tl, "view", view)
   }
 
-  private def newSegment(duration: Long): Segment = {
+  private def newSegment(duration: Long): Content = {
     new TestCont(duration)
   }
 
@@ -72,7 +72,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   }
 
   /** 在模型上放置一个片段，并按 [[TimelineView.act]] 的重建逻辑摆好 Actor。 */
-  private def place(track: Track, segment: Segment, start: Long, end: Long, origin: Long): TlSegmentActor = {
+  private def place(track: Track, segment: Content, start: Long, end: Long, origin: Long): TlSegmentActor = {
     timeline.tryAdd(track, segment, start ~~ end, origin)
     val actor = segment.getTlSegmentActor
     actor.tl = tl
