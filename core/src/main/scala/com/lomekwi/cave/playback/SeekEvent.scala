@@ -1,4 +1,4 @@
-package com.lomekwi.cave.timeline.playback
+package com.lomekwi.cave.playback
 
 sealed trait SeekEvent
 

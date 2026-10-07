@@ -1,20 +1,15 @@
 package com.lomekwi.cave.timeline
 
-import com.badlogic.gdx.Gdx
-import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.pipeline.{Content, Gap, GapFrame, Segment, Transition}
+import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
-import com.lomekwi.cave.timeline.playback.{PlayStateChangedEvent, PlayState, RefreshRequestEvent, SeekEvent}
+import com.lomekwi.cave.playback.TrackWorker
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.{ObjectInputStream, Serializable}
 import java.util
-import java.util.concurrent.{Future, Phaser}
-import java.util.concurrent.locks.LockSupport
 
 import scala.collection.mutable
-import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -27,9 +22,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
   @transient private var recorded: util.List[UndoableCommand] = new util.ArrayList[UndoableCommand]()
   @volatile private var tracks: Vector[Track] = Vector.empty[Track]
   @transient private var workers: util.Map[Integer, TrackWorker] = new util.HashMap[Integer, TrackWorker]()
-  // SEEKING 聚合会话的运行时状态
-  @transient private var seekSessionVersion: Long = -1L
-  @transient private var seekDoneIndexes: mutable.HashSet[Int] = mutable.HashSet.empty[Int]
   private final val groups: util.List[SegmentGroup] = new util.ArrayList[SegmentGroup]()
 
   private def readObject(in: ObjectInputStream): Unit = {
@@ -37,8 +29,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     recording = false
     recorded = new util.ArrayList[UndoableCommand]()
     workers = new util.HashMap[Integer, TrackWorker]()
-    seekSessionVersion = -1L
-    seekDoneIndexes = mutable.HashSet.empty[Int]
   }
 
   /** 把 index 处的轨道替换为新版本。 */
@@ -436,32 +426,10 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     var worker = workers.get(index)
     if (worker == null) {
       getTrackOrCreate(index) // 线程的 [[TrackWorker.gapFrame]] 需要一个轨道
-      worker = new TrackWorker(index)
+      worker = new TrackWorker(this, index)
       workers.put(index, worker)
     }
     worker
-  }
-
-  /**
-   * 轨道线程在 SEEKING 下完成一轮 sync 后调用。按会话版本去重聚合，
-   * 聚齐所有轨道后在 GDX 线程恢复 seek 前的状态，版本过期的事件丢弃。
-   */
-  private def reportSeekDone(version: Long, index: Int): Unit = synchronized {
-    if (version >= seekSessionVersion) {
-      if (version > seekSessionVersion) {
-        seekSessionVersion = version
-        seekDoneIndexes.clear()
-      }
-      if (seekDoneIndexes.add(index) && seekDoneIndexes.size >= tracks.size) {
-        seekDoneIndexes.clear()
-        Gdx.app.postRunnable { () =>
-          val ph = project.playhead
-          if (ph.state == PlayState.Seeking && ph.getSeekVersion == version) {
-            ph.finishSeek()
-          }
-        }
-      }
-    }
   }
 
   override def toString: String = {
@@ -534,114 +502,6 @@ class Timeline(final val project: Project) extends Serializable with java.lang.I
     }
   }
 
-  /**
-   * 轨道线程，按时间独立推进播放头，把帧投到项目事件总线上，
-   * 并用 Phaser 与消费方（预览、音频混音）做握手。
-   */
-  class TrackWorker(private val index: Int) extends Runnable {
-    private final val gapFrame: GapFrame = new GapFrame(index)
-    var sinkPhaser: Phaser = uninitialized
-    var future: Future[?] = uninitialized
-    @volatile private var workerThread: Thread = uninitialized
-    @volatile private var updateNeeded: Boolean = false
-
-    project.projEventBus.register(this)
-
-    override def run(): Unit = {
-      workerThread = Thread.currentThread()
-      sinkPhaser = new Phaser(1)
-      Gdx.app.log("Track" + index, "轨道线程启动: " + tracks(index))
-      try {
-        val p = project.playhead
-        while (!Thread.currentThread().isInterrupted) {
-          val track = tracks(index)
-          var t: Long = p.getTime
-          // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
-          val current: Segment = track.get(t) match {
-            case s: Segment => s
-            case _: Gap => null
-          }
-          if (p.state != PlayState.Playing) {
-            Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
-
-            var f: com.lomekwi.cave.pipeline.Frame = null
-            if (current != null) {
-              track.syncAt(current, t)
-              f = track.frameAt(current, t)
-            }
-            project.projEventBus.post(util.Objects.requireNonNullElse(f, gapFrame))
-            if (p.state == PlayState.Seeking) {
-              reportSeekDone(p.getSeekVersion, index)
-            }
-
-            LockSupport.park()
-          } else {
-            updateNeeded = false
-            if (current != null) {
-              val s = current
-              Gdx.app.debug("Track" + index, "找到源: " + s)
-              track.syncAt(s, t)
-              // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
-              val end: Long = track.soloEndOf(s)
-              while (t < end && !updateNeeded && !Thread.currentThread().isInterrupted) {
-                t = project.playhead.getTime
-                val frame = track.frameAt(s, t)
-                if (!updateNeeded && frame != null) {
-                  project.projEventBus.post(frame)
-                  val phase = sinkPhaser.arrive()
-                  try {
-                    sinkPhaser.awaitAdvanceInterruptibly(phase)
-                  } catch {
-                    case _: InterruptedException =>
-                      Thread.currentThread().interrupt()
-                  }
-                }
-              }
-            } else {
-              project.projEventBus.post(gapFrame)
-              val gapEnd: Long = track.rangeAt(t).hi
-              val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
-              Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
-              LockSupport.parkNanos(parkTime)
-            }
-          }
-        }
-      } catch {
-        case e: Exception =>
-          if (!e.isInstanceOf[InterruptedException]) {
-            Gdx.app.error("Track" + index, "在更新轨道时发生错误", e)
-            Gdx.app.postRunnable(() => {
-              throw new RuntimeException(e)
-            })
-          }
-      } finally {
-        workerThread = null
-        Gdx.app.log("Track" + index, "轨道线程结束: " + tracks(index))
-      }
-    }
-    @Subscribe
-    def onPlayStateChanged(event: PlayStateChangedEvent): Unit = {
-      update()
-    }
-    @Subscribe
-    def onRefreshRequested(event: RefreshRequestEvent): Unit = {
-      update()
-    }
-    @Subscribe
-    def onSeek(event: SeekEvent): Unit = {
-      update()
-    }
-    protected[timeline] def onTrackChanged(): Unit = {
-      update()
-    }
-    private def update(): Unit = {
-      val t = workerThread
-      if (t != null) {
-        LockSupport.unpark(t)
-      }
-      updateNeeded = true
-    }
-  }
 }
 
 object Timeline {

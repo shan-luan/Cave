@@ -7,7 +7,7 @@ import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.TransNode
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent
-import com.lomekwi.cave.timeline.playback.RefreshRequestEvent
+import com.lomekwi.cave.playback.RefreshRequestEvent
 
 
 import scala.collection.mutable

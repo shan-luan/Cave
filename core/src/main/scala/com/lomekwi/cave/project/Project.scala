@@ -10,7 +10,7 @@ import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.SegmentFactory
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.UndoManager
-import com.lomekwi.cave.timeline.playback.Playhead
+import com.lomekwi.cave.playback.Playhead
 import com.lomekwi.cave.app.App
 
 import com.google.common.collect.ArrayListMultimap
