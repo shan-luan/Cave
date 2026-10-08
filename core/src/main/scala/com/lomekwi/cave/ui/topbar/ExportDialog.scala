@@ -26,7 +26,6 @@ import com.lomekwi.cave.app.App
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 class ExportDialog(private val project: Project) extends VisDialog(i18n("导出视频")) {
   private var fileChooserField: FileChooserField = uninitialized
@@ -164,7 +163,7 @@ class ExportDialog(private val project: Project) extends VisDialog(i18n("导出�
   }
 
   private def detectDimensions(): Array[Int] = {
-    project.resources.values().asScala
+    project.resources.valuesIterator.flatMap(_.iterator)
       .collectFirst { case v: VdoRes => Array(v.width, v.height) }
       .getOrElse(Array(1920, 1080))
   }

@@ -6,8 +6,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 
-import scala.jdk.CollectionConverters.*
-
 class OutPortActor(port0: Node.OutPort[?]) extends Actor with PortActor {
   override final val port: Node.OutPort[?] = port0
 
@@ -18,7 +16,7 @@ class OutPortActor(port0: Node.OutPort[?]) extends Actor with PortActor {
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
     val drawer = App.root.shapeDrawer
-    for (in <- port.next.asScala) {
+    for (in <- port.next) {
       val peer: PortActor = findPortActor(in)
       if (peer != null) {
         drawLink(drawer, peer)

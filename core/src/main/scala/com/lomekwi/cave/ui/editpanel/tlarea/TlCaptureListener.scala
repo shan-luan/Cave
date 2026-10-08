@@ -10,8 +10,7 @@ import com.lomekwi.cave.timeline.{Interval, Track}
 import com.lomekwi.cave.timeline.~~
 
 
-import scala.jdk.CollectionConverters.*
-import java.util
+import scala.collection.mutable
 
 /** 时间线捕获阶段监听器，处理框选与空白区播放头 seek。 */
 class TlCaptureListener(private final val timelineView: TimelineView) extends InputListener {
@@ -64,7 +63,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val firstTrack: Int = Math.max(0, timelineView.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(timelineView.timeline.getTrackCount - 1, timelineView.yToTrackIndex(minY))
 
-    val toSelect: util.Set[Segment] = new util.HashSet[Segment]()
+    val toSelect: mutable.LinkedHashSet[Segment] = mutable.LinkedHashSet.empty
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = timelineView.timeline.getTrackOrCreate(i)
@@ -82,7 +81,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
 
         val timeRange: Interval = rangeStartTime ~~ rangeEndTime
         // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
-        val hits = track.getIntersecting(timeRange).asScala
+        val hits = track.getIntersecting(timeRange)
         val covering = hits.collectFirst {
           case t: Transition if track.getRange(t).contains(timeRange.lo) => t
         }
@@ -108,7 +107,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       i += 1
     }
 
-    if (!toSelect.isEmpty) {
+    if (toSelect.nonEmpty) {
       timelineView.selectSegments(toSelect)
     }
   }

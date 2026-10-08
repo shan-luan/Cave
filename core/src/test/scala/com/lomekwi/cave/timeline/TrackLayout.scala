@@ -4,7 +4,6 @@ import com.lomekwi.cave.pipeline.{Content, Transition}
 
 import org.junit.jupiter.api.Assertions.*
 
-import scala.jdk.CollectionConverters.*
 
 /**
  * 轨道布局不变量校验，供各测试复用。删除路径的场景测试与随机拖拽场景都依赖它兜住
@@ -14,7 +13,7 @@ object TrackLayout {
 
   /** 轨道上按时间排列的全部内容。 */
   def contentsOf(track: Track): Vector[Content] =
-    track.asScala.collect { case c: Content => c }.toVector
+    track.collect { case c: Content => c }.toVector
 
   /** 相邻内容交叉、隔项不重叠、转场区间恒等于重叠区。 */
   def assertValid(track: Track): Unit = {
@@ -34,7 +33,7 @@ object TrackLayout {
       }
       i += 1
     }
-    for (s <- track.asScala) {
+    for (s <- track) {
       s match {
         case t: Transition =>
           val sides = track.transitionSides(t)

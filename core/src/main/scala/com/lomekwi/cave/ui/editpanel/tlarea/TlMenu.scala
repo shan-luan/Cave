@@ -17,15 +17,14 @@ import com.lomekwi.cave.util.MimeType
 
 import java.io.File
 import java.io.IOException
-import java.util
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.util.Using
-import scala.jdk.CollectionConverters.*
 
 class TlMenu private[tlarea] (private final val timelineView: TimelineView) extends PopupMenu {
   private var time: Long = 0L
@@ -98,15 +97,15 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   private def addMediaFile(file: File): Unit = {
     val project: Project = timelineView.project
     try {
-      val segments: util.List[Content] = project.sourceFactory.getAll(file)
-      if (!segments.isEmpty) {
+      val segments: mutable.ArrayBuffer[Content] = project.sourceFactory.getAll(file)
+      if (segments.nonEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
-        val added: util.List[Segment] = new util.ArrayList[Segment]()
+        val added = mutable.ArrayBuffer.empty[Segment]
 
         val timeline = timelineView.timeline
         Using.resource(timeline.record()) { h =>
-          for (segment <- segments.asScala) {
+          for (segment <- segments) {
             val duration: Long = segment.getDefaultDuration
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
@@ -121,14 +120,14 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
               }
 
               trackOffset = targetTrack - baseTrack + 1
-              added.add(segment)
+              added += segment
             }
           }
         }
 
-        if (added.size() >= 2) {
+        if (added.size >= 2) {
           val group = timeline.newGroup()
-          for (segment <- added.asScala) {
+          for (segment <- added) {
             group.add(segment)
           }
         }

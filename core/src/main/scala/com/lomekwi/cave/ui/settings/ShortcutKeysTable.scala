@@ -15,11 +15,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 
-import java.util
-
 import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 class ShortcutKeysTable extends EntryTable {
 
@@ -80,7 +77,7 @@ class ShortcutKeysTable extends EntryTable {
     listTable.top().left()
     listTable.add(header).fillX().row()
 
-    for (action <- App.shortcutManager.getAllActions.asScala) {
+    for (action <- App.shortcutManager.getAllActions) {
       val row = new VisTable()
       row.add(new VisLabel(action.displayName())).pad(5).width(200)
 
@@ -142,11 +139,11 @@ class ShortcutKeysTable extends EntryTable {
   }
 
   private def keyDisplay(action: ShortcutAction): String = {
-    val keys: util.Collection[Integer] = App.shortcutManager.getKeys(action)
+    val keys: mutable.ArrayBuffer[Int] = App.shortcutManager.getKeys(action)
     if (keys.isEmpty) {
       i18n("未设置")
     } else {
-      val list: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(keys.asScala.map(_.intValue))
+      val list: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(keys)
       list.sortInPlaceWith((a: Int, b: Int) => {
         val aMod = if (ShortcutKeysTable.isModifier(a)) 0 else 1
         val bMod = if (ShortcutKeysTable.isModifier(b)) 0 else 1
@@ -169,12 +166,12 @@ class ShortcutKeysTable extends EntryTable {
 object ShortcutKeysTable {
 
   private def hasCustomKeys(action: ShortcutAction): Boolean = {
-    val current: util.Collection[Integer] = App.shortcutManager.getKeys(action)
+    val current: mutable.ArrayBuffer[Int] = App.shortcutManager.getKeys(action)
     val defaults = action.defaultKeys()
-    if (current.size() != defaults.length) {
+    if (current.size != defaults.length) {
       true
     } else {
-      val curSorted: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(current.asScala.map(_.intValue))
+      val curSorted: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(current)
       curSorted.sortInPlace()
       val defSorted: Array[Int] = defaults.sorted
       curSorted.zipWithIndex.exists((k, i) => k != defSorted(i))

@@ -20,7 +20,6 @@ import com.lomekwi.cave.ui.widget.Card
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
-import java.util
 
 /**
  * 过滤器节点卡，显示 `filter` 名称，可编辑其数值输入端口（默认值），支持删除、
@@ -68,7 +67,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
       }
     }
   })
-  for (in <- filter.inPorts.asScala) {
+  for (in <- filter.inPorts) {
     // 链端口由 [[filter]] 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
     if (in != filter.filterIn) {
       val widget = App.cardWidgetsRegistry.createEditor(in, segment)
@@ -100,13 +99,13 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
   }
 
   private def move(up: Boolean): Unit = {
-    val filters = if (segment == null) null else segment.filters.asInstanceOf[util.List[Filter[?]]]
+    val filters = if (segment == null) null else segment.filters
     if (filters != null) {
       val index = filters.indexOf(filter)
       val target = if (up) index - 1 else index + 1
-      if (index >= 0 && target >= 0 && target < filters.size()) {
+      if (index >= 0 && target >= 0 && target < filters.size) {
         filters.remove(index)
-        filters.add(target, filter)
+        filters.insert(target, filter)
         val p: Project = App.root.getFrontendProject
         if (p != null) {
           p.undoManager.record(UndoManager.ReorderFilterCommand(p, segment, filter, index, target))
@@ -125,7 +124,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
     val p = getParent
     p match {
       case content: VisTable =>
-        val filters = segment.filters.asInstanceOf[util.List[Filter[?]]]
+        val filters = segment.filters
         val myIndex = filters.indexOf(filter)
         if (myIndex < 0) return
 
@@ -140,7 +139,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
         if (target == myIndex) return
 
         filters.remove(myIndex)
-        filters.add(target, filter)
+        filters.insert(target, filter)
 
         val pj: Project = App.root.getFrontendProject
         if (pj != null) {
@@ -154,7 +153,7 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
   override def close(): Unit = {
     val index = segment.filters.indexOf(filter)
     if (index >= 0) {
-      segment.filters.remove(filter)
+      segment.filters -= filter
       val p: Project = App.root.getFrontendProject
       if (p != null) {
         p.undoManager.record(UndoManager.RemoveFilterCommand(p, segment, filter, index))

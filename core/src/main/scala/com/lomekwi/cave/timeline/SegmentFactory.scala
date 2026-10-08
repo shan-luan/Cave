@@ -14,11 +14,9 @@ import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.util.MimeType
 
 import java.io.{File, IOException, ObjectInputStream, Serializable}
-import java.util
-import java.util.function.Function
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 /**
  * 片段构造厂。按资源类型登记构造器，据此把 [[Resource]] 变成时间线上可用的 [[Content]]。
@@ -27,9 +25,9 @@ import scala.jdk.CollectionConverters.*
 class SegmentFactory(@transient var project: Project) extends Serializable {
   import SegmentFactory.*
 
-  @transient private var constructors: util.Map[ResourceClass, SegmentCtor] = uninitialized
+  @transient private var constructors: mutable.HashMap[ResourceClass, SegmentCtor] = uninitialized
 
-  this.constructors = new util.HashMap[ResourceClass, SegmentCtor]()
+  this.constructors = mutable.HashMap.empty[ResourceClass, SegmentCtor]
   initDefaultConstructors()
 
   private def initDefaultConstructors(): Unit = {
@@ -48,10 +46,10 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
    * 获取文件对应的所有片段。
    * 对于同时包含视频和音频流的文件，可能返回多个片段。
    */
-  def getAll(file: File): util.List[Content] = {
-    val segments: util.List[Content] = new util.ArrayList[Content]()
-    for (resource <- ensureResources(file).asScala) {
-      segments.add(applyUnchecked(constructors.get(resource.getClass), resource))
+  def getAll(file: File): mutable.ArrayBuffer[Content] = {
+    val segments = mutable.ArrayBuffer.empty[Content]
+    for (resource <- ensureResources(file)) {
+      segments += applyUnchecked(constructors.getOrElse(resource.getClass, null), resource)
     }
     segments
   }
@@ -60,38 +58,36 @@ class SegmentFactory(@transient var project: Project) extends Serializable {
    * 为尚无资源的文件创建并登记媒体资源，返回该文件的全部资源。
    * 对于同时包含视频和音频流的文件，可能返回多个资源。
    */
-  def ensureResources(file: File): util.Collection[Resource] = {
-    var existing: util.Collection[Resource] = project.resources.get(file)
+  def ensureResources(file: File): mutable.ArrayBuffer[Resource] = {
+    project.resources.getOrElseUpdate(file, createResources(file))
+  }
 
-    if (existing.isEmpty) {
-      val mimeType = MimeType.detectMimeType(file)
-      if (mimeType == null) {
-        throw new IOException("无法检测文件MIME类型: " + file.getName)
-      }
-
-      for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {
-        project.resources.put(file, medRes)
-        project.projEventBus.post(MediaCreatedEvent(file, medRes))
-      }
-      existing = project.resources.get(file)
+  private def createResources(file: File): mutable.ArrayBuffer[Resource] = {
+    val mimeType = MimeType.detectMimeType(file)
+    if (mimeType == null) {
+      throw new IOException("无法检测文件MIME类型: " + file.getName)
     }
-
-    existing
+    val created = mutable.ArrayBuffer.empty[Resource]
+    for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {
+      created += medRes
+      project.projEventBus.post(MediaCreatedEvent(file, medRes))
+    }
+    created
   }
 
   /**
    * 获取文件对应的第一个主要片段。
    */
   def get(file: File): Content = {
-    getAll(file).get(0)
+    getAll(file).head
   }
   private def applyUnchecked[R <: Resource](fn: SegmentCtor, resource: R): Content = {
-    fn.asInstanceOf[Function[R, Content]].apply(resource)
+    fn(resource)
   }
 
   private def readObject(ois: ObjectInputStream): Unit = {
     ois.defaultReadObject()
-    this.constructors = new util.HashMap[ResourceClass, SegmentCtor]()
+    this.constructors = mutable.HashMap.empty[ResourceClass, SegmentCtor]
     initDefaultConstructors()
   }
 }
@@ -101,5 +97,5 @@ object SegmentFactory {
   private type ResourceClass = Class[? <: Resource]
 
   /** 由单个资源构造内容片段。 */
-  private type SegmentCtor = Function[? <: Resource, Content]
+  private type SegmentCtor = Resource => Content
 }

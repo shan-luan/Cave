@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, ObjectInputStream, ObjectOutputStream}
 import javax.sound.sampled.{AudioFileFormat, AudioFormat, AudioInputStream, AudioSystem}
-import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
@@ -93,7 +92,7 @@ class SegmentDuplicateReproTest extends GdxTestBase {
     graph.innerNodes.add(time)
     add.inA.linkFrom(time.segmentOut)
     add.inB.linkFrom(random.out)
-    val sink = graph.innerNodes.iterator().asScala.collectFirst { case s: Sink => s }.get
+    val sink = graph.innerNodes.iterator.collectFirst { case s: Sink => s }.get
     sink.in.linkFrom(add.out)
 
     segment.attach(graph)
@@ -116,7 +115,7 @@ class SegmentDuplicateReproTest extends GdxTestBase {
     graph.innerNodes.add(add)
     graph.innerNodes.add(time)
     add.inA.linkFrom(time.segmentOut)
-    val sink = graph.innerNodes.iterator().asScala.collectFirst { case s: Sink => s }.get
+    val sink = graph.innerNodes.iterator.collectFirst { case s: Sink => s }.get
     sink.in.linkFrom(add.out)
     segment.attach(graph)
 
@@ -157,11 +156,11 @@ class SegmentDuplicateReproTest extends GdxTestBase {
     outer.innerNodes.add(add)
     outer.innerNodes.add(time)
     add.inA.linkFrom(time.segmentOut)
-    val nestedSink = nested.innerNodes.iterator().asScala.collectFirst { case s: Sink => s }.get
+    val nestedSink = nested.innerNodes.iterator.collectFirst { case s: Sink => s }.get
     // 嵌套图的输入直连本层的加法输出
     nested.filterIn.linkFrom(add.out)
     nestedSink.in.linkFrom(nested.filterOut)
-    val outerSink = outer.innerNodes.iterator().asScala.collectFirst { case s: Sink => s }.get
+    val outerSink = outer.innerNodes.iterator.collectFirst { case s: Sink => s }.get
     outerSink.in.linkFrom(nested.filterOut)
     segment.attach(outer)
 

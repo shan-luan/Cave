@@ -8,7 +8,6 @@ import com.google.common.eventbus.Subscribe
 import com.kotcrab.vis.ui.layout.FlowGroup
 import com.kotcrab.vis.ui.widget.VisImage
 import com.kotcrab.vis.ui.widget.VisTable
-import com.google.common.collect.Multimap
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.media.MediaCreatedEvent
 import com.lomekwi.cave.resource.media.Showable
@@ -18,11 +17,12 @@ import com.lomekwi.cave.app.App
 
 import java.io.File
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 
-class MediaPool(private val resources: Multimap[File, Resource], eventBus: EventBus) extends FlowGroup(false) {
+class MediaPool(private val resources: mutable.LinkedHashMap[File, mutable.ArrayBuffer[Resource]], eventBus: EventBus) extends FlowGroup(false) {
   private var dnd: DragAndDrop = uninitialized
 
   {
@@ -38,7 +38,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
         if (!source.getActor.isDescendantOf(MediaPool.this)) {
           val file = payload.getObject.asInstanceOf[File]
-          if (!resources.containsKey(file)) {
+          if (!resources.contains(file)) {
             val item = new MediaPoolItem(file, findShowable(file))
             addActor(item)
             registerDragSegment(item)
@@ -47,7 +47,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
       }
     })
 
-    for (file <- resources.keySet().asScala) {
+    for (file <- resources.keys) {
       val item = new MediaPoolItem(file, findShowable(file))
       addActor(item)
       registerDragSegment(item)
@@ -57,7 +57,7 @@ class MediaPool(private val resources: Multimap[File, Resource], eventBus: Event
   }
 
   private def findShowable(file: File): Showable = {
-    resources.get(file).asScala.collectFirst { case showable: Showable => showable }.orNull
+    resources.get(file).flatMap(_.collectFirst { case showable: Showable => showable }).orNull
   }
 
   @Subscribe

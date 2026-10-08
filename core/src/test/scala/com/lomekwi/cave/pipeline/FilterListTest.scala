@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNull, 
 import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import java.util.List
 
 import scala.util.Using
 
@@ -19,7 +18,7 @@ import FilterListTest.*
  * 3) 按索引 add/remove 后连接保持；
  * 4) set 替换后连接更新；
  * 5) clear 后回到空链状态；
- * 6) listIterator 的 add/remove/set 维护连接；
+ * 6) 按索引 insert/remove 维护连接；
  * 7) 求值，[[Segment.get]] 沿链传播。
  */
 class FilterListTest {
@@ -35,8 +34,8 @@ class FilterListTest {
     val segment = new FpCont(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
-    segment.filters.add(f1)
-    segment.filters.add(f2)
+    segment.filters += f1
+    segment.filters += f2
 
     assertSame(segment.source.headOut, f1.filterIn.prev)
     assertSame(f1.filterOut, f2.filterIn.prev)
@@ -53,9 +52,9 @@ class FilterListTest {
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    segment.filters.add(a)
-    segment.filters.add(c)
-    segment.filters.add(1, b)
+    segment.filters += a
+    segment.filters += c
+    segment.filters.insert(1, b)
 
     assertSame(segment.source.headOut, a.filterIn.prev)
     assertSame(a.filterOut, b.filterIn.prev)
@@ -73,12 +72,12 @@ class FilterListTest {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    segment.filters.add(a)
-    segment.filters.add(1, b)
+    segment.filters += a
+    segment.filters.insert(1, b)
 
-    assertEquals(2, segment.filters.size())
-    assertEquals(a, segment.filters.get(0))
-    assertEquals(b, segment.filters.get(1))
+    assertEquals(2, segment.filters.size)
+    assertEquals(a, segment.filters(0))
+    assertEquals(b, segment.filters(1))
     assertSame(a.filterOut, b.filterIn.prev)
   }
 
@@ -88,12 +87,12 @@ class FilterListTest {
     val a = new AddFilter()
     val b = new AddFilter()
     val c = new AddFilter()
-    segment.filters.add(a)
-    segment.filters.add(b)
-    segment.filters.add(c)
-    segment.filters.remove(b)
+    segment.filters += a
+    segment.filters += b
+    segment.filters += c
+    segment.filters -= b
 
-    assertEquals(2, segment.filters.size())
+    assertEquals(2, segment.filters.size)
     assertSame(segment.source.headOut, a.filterIn.prev)
     assertSame(a.filterOut, c.filterIn.prev)
     assertFalse(c.filterOut.isLinked)
@@ -105,8 +104,8 @@ class FilterListTest {
     assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
 
     // 链表顺序正确
-    assertEquals(a, segment.filters.get(0))
-    assertEquals(c, segment.filters.get(1))
+    assertEquals(a, segment.filters(0))
+    assertEquals(c, segment.filters(1))
   }
 
   @Test
@@ -114,11 +113,11 @@ class FilterListTest {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    segment.filters.add(a)
-    segment.filters.add(b)
+    segment.filters += a
+    segment.filters += b
 
     val c = new AddFilter()
-    segment.filters.set(0, c)
+    segment.filters.update(0, c)
 
     assertSame(segment.source.headOut, c.filterIn.prev)
     assertSame(c.filterOut, b.filterIn.prev)
@@ -136,39 +135,37 @@ class FilterListTest {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    segment.filters.add(a)
-    segment.filters.add(b)
+    segment.filters += a
+    segment.filters += b
     segment.filters.clear()
 
-    assertEquals(0, segment.filters.size())
+    assertEquals(0, segment.filters.size)
     assertFalse(segment.source.headOut.isLinked)
     assertEquals(10.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
-  def listIterator_add_remove_keepsChain(): Unit = {
+  def insert_removeAtIndex_keepsChain(): Unit = {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
-    val filters: List[Filter[Fpable]] = segment.filters.asInstanceOf[List[Filter[Fpable]]]
+    val filters = segment.filters
 
-    filters.add(a)
-    filters.add(b)
+    filters += a
+    filters += b
 
     val mid = new AddFilter()
-    var lit = filters.listIterator(1)
-    lit.add(mid)
+    filters.insert(1, mid)
 
-    assertEquals(3, filters.size())
+    assertEquals(3, filters.size)
     assertSame(segment.source.headOut, a.filterIn.prev)
     assertSame(a.filterOut, mid.filterIn.prev)
     assertSame(mid.filterOut, b.filterIn.prev)
     assertFalse(b.filterOut.isLinked)
 
-    lit = filters.listIterator(1)
-    assertEquals(mid, lit.next())
-    lit.remove()
-    assertEquals(2, filters.size())
+    assertEquals(mid, filters(1))
+    filters.remove(1)
+    assertEquals(2, filters.size)
     assertSame(a.filterOut, b.filterIn.prev)
     assertNull(mid.filterIn.prev)
     assertFalse(mid.filterOut.isLinked)
@@ -179,7 +176,7 @@ class FilterListTest {
     val segment = new FpCont(10)
     val f1 = new AddFilter()
     f1.delta.defaultData = 3
-    segment.filters.add(f1)
+    segment.filters += f1
 
     val bos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(bos)) { oos =>
@@ -189,9 +186,9 @@ class FilterListTest {
       ois.readObject().asInstanceOf[FpCont]
     }
 
-    assertEquals(1, copy.filters.size())
-    assertSame(copy.source.headOut, copy.filters.get(0).filterIn.prev)
-    assertFalse(copy.filters.get(0).filterOut.isLinked)
+    assertEquals(1, copy.filters.size)
+    assertSame(copy.source.headOut, copy.filters(0).filterIn.prev)
+    assertFalse(copy.filters(0).filterOut.isLinked)
     assertEquals(13.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 }

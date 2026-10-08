@@ -26,10 +26,8 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.util.Using
-import scala.jdk.CollectionConverters.*
 
 import com.badlogic.gdx.Input.Keys.*
-import java.util
 
 class TimelineView(project0: Project) extends Group with Focusable {
 
@@ -180,11 +178,11 @@ class TimelineView(project0: Project) extends Group with Focusable {
       clearChildren(false)
 
       val visibleRange = view.visibleRange()
-      for (i <- timeline.getTracks.asScala.indices.reverse) {
-        val track = timeline.getTracks.get(i)
+      for (i <- timeline.getTracks.indices.reverse) {
+        val track = timeline.getTracks(i)
 
         // 转场排在最后添加，压在两侧内容之上，重叠区里鼠标命中的是转场
-        val entries = track.getIntersecting(visibleRange).asScala.toSeq.sortBy {
+        val entries = track.getIntersecting(visibleRange).sortBy {
           case _: Transition => 1
           case _ => 0
         }
@@ -251,13 +249,13 @@ class TimelineView(project0: Project) extends Group with Focusable {
     val group = timeline.getGroup(segment)
     if (group != null) {
       if (addToSelection) {
-        val anySelected = group.asScala.exists(s => selectedSegments.contains(s))
-        for (s <- group.asScala) {
+        val anySelected = group.exists(s => selectedSegments.contains(s))
+        for (s <- group) {
           if (anySelected) selectedSegments.remove(s) else selectedSegments.add(s)
         }
       } else {
         selectedSegments.clear()
-        for (s <- group.asScala) {
+        for (s <- group) {
           selectedSegments.add(s)
         }
       }
@@ -273,9 +271,9 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 
   /** 整体替换选中集。 */
-  private[tlarea] def selectSegments(segments: util.Collection[Segment]): Unit = {
+  private[tlarea] def selectSegments(segments: Iterable[Segment]): Unit = {
     selectedSegments.clear()
-    for (segment <- segments.asScala) {
+    for (segment <- segments) {
       selectedSegments.add(segment)
     }
     publishSelection()
@@ -287,7 +285,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 
   private def publishSelection(): Unit = {
-    val e = SegmentSetSelectedEvent(selectedSegments, selectedSegments.size())
+    val e = SegmentSetSelectedEvent(selectedSegments, selectedSegments.size)
     project.projEventBus.post(e)
     App.appEventBus.post(e)
   }
@@ -327,9 +325,9 @@ class TimelineView(project0: Project) extends Group with Focusable {
     val track = timeline.findTrackOf(segment)
     if (track == null) return
     val group = timeline.getGroup(segment)
-    val members: Seq[Segment] = if (group != null) group.asScala.toList else List(segment)
-    val beforeSegments: util.List[Segment] = new util.ArrayList[Segment]()
-    val afterSegments: util.List[Segment] = new util.ArrayList[Segment]()
+    val members: Seq[Segment] = if (group != null) group.toList else List(segment)
+    val beforeSegments: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.empty
+    val afterSegments: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.empty
     var splitAny = false
     Using.resource(timeline.record()) { h =>
       for (member <- members) {
@@ -339,25 +337,25 @@ class TimelineView(project0: Project) extends Group with Focusable {
         val end: Long = range.hi
         if (time > start && time < end) {
           timeline.split(memberTrack, time)
-          beforeSegments.add(member)
+          beforeSegments += member
           // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
           timeline.getTrackOrCreate(memberTrack.index).get(time) match {
-            case s: Segment => afterSegments.add(s)
+            case s: Segment => afterSegments += s
             case _: Gap =>
           }
           splitAny = true
         } else if (end <= time) {
-          beforeSegments.add(member)
+          beforeSegments += member
         } else {
-          afterSegments.add(member)
+          afterSegments += member
         }
       }
     }
     if (splitAny && group != null) {
       for (member <- members) group.remove(member)
       timeline.dropGroup(group)
-      if (beforeSegments.size() >= 2) regroup(beforeSegments)
-      if (afterSegments.size() >= 2) regroup(afterSegments)
+      if (beforeSegments.size >= 2) regroup(beforeSegments)
+      if (afterSegments.size >= 2) regroup(afterSegments)
     }
   }
 
@@ -382,7 +380,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     if (selectedSegments.isEmpty) {
       deleteAtCursor()
     } else {
-      val segments: util.List[Segment] = util.List.copyOf(selectedSegments)
+      val segments: Seq[Segment] = selectedSegments.toSeq
       clearSelection()
       Using.resource(timeline.record()) { h =>
         timeline.remove(segments)
@@ -393,35 +391,35 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
   /** 选中的片段里但凡有已分组的就先解散，否则把它们合成一组。 */
   private[tlarea] def groupSelectedSegments(): Unit = {
-    if (selectedSegments.size() < 2) return
+    if (selectedSegments.size < 2) return
 
-    val anyInGroup = selectedSegments.asScala.exists(segment => timeline.getGroup(segment) != null)
+    val anyInGroup = selectedSegments.exists(segment => timeline.getGroup(segment) != null)
 
     if (anyInGroup) {
-      val savedState: util.Map[Segment, SegmentGroup] = new util.HashMap[Segment, SegmentGroup]()
-      val affectedGroups: util.Set[SegmentGroup] = new util.HashSet[SegmentGroup]()
-      for (segment <- selectedSegments.asScala) {
+      val savedState: mutable.HashMap[Segment, SegmentGroup] = mutable.HashMap.empty
+      val affectedGroups: mutable.LinkedHashSet[SegmentGroup] = mutable.LinkedHashSet.empty
+      for (segment <- selectedSegments) {
         val group = timeline.getGroup(segment)
         if (group != null) {
           savedState.put(segment, group)
           affectedGroups.add(group)
         }
       }
-      val dissolvedMembers: util.Map[SegmentGroup, util.Set[Segment]] = new util.HashMap[SegmentGroup, util.Set[Segment]]()
-      for (group <- affectedGroups.asScala) {
-        dissolvedMembers.put(group, new util.HashSet[Segment](group))
+      val dissolvedMembers: mutable.HashMap[SegmentGroup, mutable.LinkedHashSet[Segment]] = mutable.HashMap.empty
+      for (group <- affectedGroups) {
+        dissolvedMembers.put(group, mutable.LinkedHashSet.from(group))
       }
 
       def dissolve(): Unit = {
-        for (segment <- selectedSegments.asScala) {
+        for (segment <- selectedSegments) {
           val group = timeline.getGroup(segment)
           if (group != null) {
             group.remove(segment)
           }
         }
-        for (group <- affectedGroups.asScala) {
-          if (group.size() < 2) {
-            for (s <- new util.HashSet[Segment](group).asScala) {
+        for (group <- affectedGroups) {
+          if (group.size < 2) {
+            for (s <- mutable.LinkedHashSet.from(group)) {
               group.remove(s)
             }
             timeline.dropGroup(group)
@@ -433,13 +431,13 @@ class TimelineView(project0: Project) extends Group with Focusable {
 
       project.undoManager.record(new UndoManager.UndoableCommand {
         override def undo(): Unit = {
-          for (e <- dissolvedMembers.entrySet().asScala) {
-            timeline.adoptGroup(e.getKey)
-            e.getKey.addAll(e.getValue)
+          for (e <- dissolvedMembers) {
+            timeline.adoptGroup(e._1)
+            e._1.addAll(e._2)
           }
-          for (e <- savedState.entrySet().asScala) {
-            val segment = e.getKey
-            val group = e.getValue
+          for (e <- savedState) {
+            val segment = e._1
+            val group = e._2
             if (group != null && !group.contains(segment)) {
               group.add(segment)
             }
@@ -454,12 +452,12 @@ class TimelineView(project0: Project) extends Group with Focusable {
       })
     } else {
       val group = timeline.newGroup()
-      val segments: util.List[Segment] = new util.ArrayList[Segment](selectedSegments)
+      val segments: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(selectedSegments)
       group.addAll(segments)
 
       project.undoManager.record(new UndoManager.UndoableCommand {
         override def undo(): Unit = {
-          for (segment <- segments.asScala) {
+          for (segment <- segments) {
             group.remove(segment)
           }
           timeline.dropGroup(group)
@@ -485,12 +483,12 @@ class TimelineView(project0: Project) extends Group with Focusable {
       val baseTime = Math.max(xToAbsoluteTime(local.x), 0)
       val baseTrack = Math.max(yToTrackIndex(local.y), 0)
 
-      val pasted: util.List[Segment] = template match {
+      val pasted: mutable.ArrayBuffer[Segment] = template match {
         case template: PasteTemplate => pasteTemplate(template, baseTime, baseTrack)
-        case _ => util.List.of[Segment]()
+        case _ => mutable.ArrayBuffer.empty
       }
 
-      if (!pasted.isEmpty) {
+      if (pasted.nonEmpty) {
         selectSegments(pasted)
       }
 
@@ -499,13 +497,13 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 
   /** 把剪贴板模板整批放进时间轴，保持成员相对间距，冲突时整组顺移轨道。 */
-  private def pasteTemplate(template: PasteTemplate, baseTime: Long, baseTrack: Int): util.List[Segment] = {
+  private def pasteTemplate(template: PasteTemplate, baseTime: Long, baseTrack: Int): mutable.ArrayBuffer[Segment] = {
     val entries = template.entries
-    if (entries.isEmpty) return util.List.of[Segment]()
+    if (entries.isEmpty) return mutable.ArrayBuffer.empty
 
-    val pasted = new util.ArrayList[Segment](entries.size())
+    val pasted = mutable.ArrayBuffer.empty[Segment]
 
-    val sorted: mutable.ArrayBuffer[PasteTemplate.Entry] = mutable.ArrayBuffer.from(entries.asScala)
+    val sorted: mutable.ArrayBuffer[PasteTemplate.Entry] = mutable.ArrayBuffer.from(entries)
     sorted.sortInPlaceBy(_.trackIndex)
 
     val minTrack = sorted.head.trackIndex
@@ -513,7 +511,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
     val timeOffset = baseTime - minStart
 
     // 模板里的组要登记进本时间线，粘贴后的片段才查得到自己的组
-    for (entry <- entries.asScala) {
+    for (entry <- entries) {
       if (entry.group != null) {
         timeline.adoptGroup(entry.group)
       }
@@ -539,7 +537,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
             }
           }
 
-          pasted.add(entry.segment)
+          pasted += entry.segment
         }
       }
     }
@@ -549,7 +547,7 @@ class TimelineView(project0: Project) extends Group with Focusable {
   }
 
   /** 把一组成员合成新组。 */
-  private def regroup(members: util.Collection[Segment]): SegmentGroup = {
+  private def regroup(members: Iterable[Segment]): SegmentGroup = {
     val group = timeline.newGroup()
     group.addAll(members)
     group

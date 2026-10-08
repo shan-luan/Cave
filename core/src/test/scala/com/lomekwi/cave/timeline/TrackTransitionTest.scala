@@ -6,11 +6,7 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertNotNull, assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-import java.util.List
-
 import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
-
-import scala.jdk.CollectionConverters.*
 
 /**
  * 转场拓扑的模型级测试。内容保留覆盖完整的区间，转场是相邻两块内容的重叠区，
@@ -109,7 +105,7 @@ class TrackTransitionTest extends GdxTestBase {
 
     // c 放在 [800,1800) 会与 a 和 b 同时重叠，隔项不重叠被破坏
     assertThrows(classOf[IllegalArgumentException], () => place(t0, c, 800 ~~ 1800))
-    assertEquals(3, t0.asScala.size)
+    assertEquals(3, t0.size)
   }
 
   @Test
@@ -121,7 +117,7 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
 
     // a 伸尾吃穿 b 会把 b 变成 a 的真子集，最多吃到 b 只剩一微秒
-    val applied: Long = timeline.setEnd(List.of(a), 100000)
+    val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(499, applied)
     assertEquals(0 ~~ 1499, t0.getRange(a))
@@ -139,7 +135,7 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, c, 1500 ~~ 2500)
 
     // 与 b 交叉时本可吃到 1999，但 a 与 c 会被挤成隔项重叠，上限收到 c 的起点
-    val applied: Long = timeline.setEnd(List.of(a), 100000)
+    val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(500, applied)
     assertEquals(0 ~~ 1500, t0.getRange(a))
@@ -158,7 +154,7 @@ class TrackTransitionTest extends GdxTestBase {
     assertNotNull(transition)
 
     // 平移远处的内容，a 与 b 之间的转场不受影响，应当复用同一个对象
-    timeline.moveTime(List.of(c), 100)
+    timeline.moveTime(Seq(c), 100)
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(2100 ~~ 3100, after.getRange(c))
@@ -212,7 +208,7 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 1200 ~~ 2500)
 
     // c 缩短到落进 a 内部时会变成 a 的真子集，终点必须留在 a 的终点之后
-    val applied: Long = timeline.setEnd(List.of(c), -100000)
+    val applied: Long = timeline.setEnd(Seq(c), -100000)
 
     assertEquals(-999, applied)
     assertEquals(500 ~~ 1001, t0.getRange(c))
@@ -251,6 +247,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
 
     assertThrows(classOf[IllegalArgumentException], () => place(t0, b, 500 ~~ 1500))
-    assertEquals(1, t0.asScala.size)
+    assertEquals(1, t0.size)
   }
 }

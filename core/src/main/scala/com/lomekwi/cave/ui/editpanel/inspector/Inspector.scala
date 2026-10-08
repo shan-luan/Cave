@@ -18,9 +18,8 @@ import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.timeline.UndoManager
 
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
-import java.util
 
 
 class Inspector extends VisTable {
@@ -40,7 +39,7 @@ class Inspector extends VisTable {
     if (count == 0) {
       showEmpty()
     } else if (count == 1) {
-      showInfo(e.set.iterator().next())
+      showInfo(e.set.head)
     } else {
       showMultiInfo(e.set)
     }
@@ -78,10 +77,10 @@ class Inspector extends VisTable {
     content.clear()
     content.setFillParent(false)
     content.top()
-    val segments: util.List[Segment] = new util.ArrayList[Segment](set)
+    val segments: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(set)
     sortByPlacement(segments)
     var first = true
-    for (segment <- segments.asScala) {
+    for (segment <- segments) {
       if (!first) {
         content.row()
       }
@@ -102,30 +101,29 @@ class Inspector extends VisTable {
   }
 
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
-  private def sortByPlacement(segments: util.List[Segment]): Unit = {
+  private def sortByPlacement(segments: mutable.ArrayBuffer[Segment]): Unit = {
     val project = App.root.getFrontendProject
     if (project == null) return
     val timeline = project.timeline
-    segments.sort((a: Segment, b: Segment) => {
+    segments.sortInPlaceWith((a: Segment, b: Segment) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
       val ia = if (ta == null) Integer.MAX_VALUE else ta.index
       val ib = if (tb == null) Integer.MAX_VALUE else tb.index
       val c = Integer.compare(ia, ib)
       if (c != 0) {
-        c
+        c < 0
       } else {
         val ra = if (ta == null) null else ta.getRange(a)
         val rb = if (tb == null) null else tb.getRange(b)
-        java.lang.Long.compare(if (ra == null) Long.MaxValue else ra.lo,
-          if (rb == null) Long.MaxValue else rb.lo)
+        (if (ra == null) Long.MaxValue else ra.lo) < (if (rb == null) Long.MaxValue else rb.lo)
       }
     })
   }
 
   private def appendSegmentInfo(segment: Segment): Unit = {
     content.add(new SourceActor(segment)).growX().pad(4).row()
-    for (filter <- segment.filters.asScala) {
+    for (filter <- segment.filters) {
       val actor = new FilterActor(segment, filter)
       actor.setRebuildCallback(() => rebuildContent())
       content.add(actor).growX().pad(4).row()
@@ -137,7 +135,7 @@ class Inspector extends VisTable {
       val idx = fi
       val created: Node = App.nodeRegistry.createCompatible(segment, idx)
       filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
-        segment.filters.asInstanceOf[util.List[Filter[?]]].add(created.asInstanceOf[Filter[?]])
+        segment.filters += created.asInstanceOf[Filter[?]]
         val p = App.root.getFrontendProject
         if (p != null) p.undoManager.record(UndoManager.AddFilterCommand(p, segment, created.asInstanceOf[Filter[?]]))
         rebuildContent()
