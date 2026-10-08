@@ -27,12 +27,11 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.AppAudioOut
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooser
-import scala.compiletime.uninitialized
 
 
 /** 各平台共用的 [[com.badlogic.gdx.ApplicationListener]] 实现。 */
 class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
-  private var ui: Root = uninitialized
+  private lazy val ui: Root = new Root()
   private var backgrounded: Boolean = false
 
   App.fileChooser = fileChooser
@@ -41,7 +40,6 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
     App.audioOut = new AppAudioOut()
     Gdx.app.setLogLevel(Application.LOG_DEBUG)
     System.setProperty("sun.io.serialization.extendedDebugInfo", "true")
-    ui = new Root()
     ui.create()
   }
 
