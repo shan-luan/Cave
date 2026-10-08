@@ -3,7 +3,6 @@ package com.lomekwi.cave.pipeline
 import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
 import org.junit.jupiter.api.Test
 
-import scala.jdk.CollectionConverters.*
 
 /**
  * 验证 [[NodeGraph]] 的增删语义，移除节点时同时断开它在图内的全部连接。
@@ -40,7 +39,7 @@ class NodeGraphTest {
   @Test
   def boundaryNodesAreNotRemovable(): Unit = {
     val ngf = new NodeGraphFilter()
-    val nodes = ngf.innerNodes.asScala.toSeq
+    val nodes = ngf.innerNodes.toSeq
     assertFalse(nodes.collectFirst { case n: GraphInNode => n }.get.canRemove)
     assertFalse(nodes.collectFirst { case n: Sink => n }.get.canRemove)
   }

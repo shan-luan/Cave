@@ -4,8 +4,6 @@ import com.lomekwi.cave.pipeline.FilterListTest.{Fpable, FpCont}
 import org.junit.jupiter.api.Assertions.{assertEquals, assertNotNull, assertNotSame, assertNull, assertSame, assertThrows}
 import org.junit.jupiter.api.Test
 
-import java.util
-
 /**
  * 验证 [[BinaryNode]] 抽象节点，两个主输入 [[BinaryNode.In]] 与一个主输出 [[BinaryNode.Out]] 的数量约束、类型推断与求值。
  */
@@ -14,12 +12,12 @@ class BinaryNodeTest {
   @Test
   def hasTwoInputsAndOneOutput(): Unit = {
     val node = new SumNode()
-    assertEquals(2, node.inPorts.size())
-    assertEquals(1, node.outPorts.size())
+    assertEquals(2, node.inPorts.size)
+    assertEquals(1, node.outPorts.size)
     assertNotSame(node.inA, node.inB)
-    assertSame(node.inA, node.inPorts.get(0))
-    assertSame(node.inB, node.inPorts.get(1))
-    assertSame(node.out, node.outPorts.get(0))
+    assertSame(node.inA, node.inPorts(0))
+    assertSame(node.inB, node.inPorts(1))
+    assertSame(node.out, node.outPorts(0))
   }
 
   @Test
@@ -56,12 +54,12 @@ class BinaryNodeTest {
   @Test
   def constraint_mergesDownstream(): Unit = {
     val node = new SumNode()
-    assertEquals(util.Set.of(classOf[Fpable]), node.inA.constraint)
+    assertEquals(Set(classOf[Fpable]), node.inA.constraint)
 
     val downstream = new Node.InPort[AnyRef]("下游", classOf[AnyRef])
     node.out.link(downstream)
-    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.inA.constraint)
-    assertEquals(util.Set.of(classOf[Fpable], classOf[AnyRef]), node.inB.constraint)
+    assertEquals(Set(classOf[Fpable], classOf[AnyRef]), node.inA.constraint)
+    assertEquals(Set(classOf[Fpable], classOf[AnyRef]), node.inB.constraint)
   }
 
   @Test

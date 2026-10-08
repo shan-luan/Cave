@@ -1,10 +1,8 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util
 
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
@@ -55,12 +53,12 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
     /**
      * 约束取输出下游各端口的约束与自身帧类型的并集。
      */
-    override def constraint: util.Set[Class[?]] = {
+    override def constraint: Set[Class[?]] = {
       // 两个输入共用同一输出，各自把输出下游的约束并入自身约束
       if (out.isLinked) {
-        (out.next.asScala.flatMap(_.constraint.asScala).union(Set(BinaryNode.this.getType))).asJava
+        out.next.flatMap(_.constraint).toSet + BinaryNode.this.getType
       } else {
-        util.Set.of(BinaryNode.this.getType)
+        Set(BinaryNode.this.getType)
       }
     }
   }

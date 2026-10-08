@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, ObjectInputStream, ObjectOutputStream}
 import javax.sound.sampled.{AudioFileFormat, AudioFormat, AudioInputStream, AudioSystem}
-import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**

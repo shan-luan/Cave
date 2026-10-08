@@ -1,22 +1,21 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
-  final val inPorts: util.List[Node.InPort[?]] = new util.ArrayList[Node.InPort[?]]()
-  final val outPorts: util.List[Node.OutPort[?]] = new util.ArrayList[Node.OutPort[?]]()
+  final val inPorts: mutable.ArrayBuffer[Node.InPort[?]] = mutable.ArrayBuffer.empty
+  final val outPorts: mutable.ArrayBuffer[Node.OutPort[?]] = mutable.ArrayBuffer.empty
 
   protected[pipeline] def remove(): Unit = {
-    for (in <- inPorts.asScala) {
+    for (in <- inPorts) {
       in.unlink()
     }
 
-    for (out <- outPorts.asScala) {
+    for (out <- outPorts) {
       out.unlink()
     }
   }
@@ -27,11 +26,11 @@ abstract class Node extends Serializable {
   def canRemove: Boolean = true
 
   protected def addInPort[P <: Node.InPort[?]](p: P): P = {
-    inPorts.add(p)
+    inPorts += p
     p
   }
   protected def addOutPort[P <: Node.OutPort[?]](p: P): P = {
-    outPorts.add(p)
+    outPorts += p
     p
   }
   def name: String
@@ -46,7 +45,7 @@ object Node {
 
   @SerialVersionUID(1L)
   class InPort[T](override val name: String, constraints: Class[?]*) extends Port {
-    private final val constraintSet: util.Set[Class[?]] = util.Set.of(constraints*)
+    private final val constraintSet: Set[Class[?]] = constraints.toSet
 
     var defaultData: T = null.asInstanceOf[T]
 
@@ -67,11 +66,11 @@ object Node {
     /**
      * @return 可连接到此输入端口的输出端口需满足的全部约束，即交叉类型（&）。
      */
-    def constraint: util.Set[Class[?]] = constraintSet
+    def constraint: Set[Class[?]] = constraintSet
 
     def canLinkFrom(p: Node.OutPort[?]): Boolean = {
       val outType = p.getType
-      outType == null || constraint.asScala.forall(c => c.isAssignableFrom(outType))
+      outType == null || constraint.forall(c => c.isAssignableFrom(outType))
     }
 
     def linkFrom(p: Node.OutPort[?]): Boolean = {
@@ -104,7 +103,7 @@ object Node {
       case _ => false
     }
 
-    final val next: util.Set[Node.InPort[? >: T]] = new util.HashSet[Node.InPort[? >: T]]()
+    final val next: mutable.LinkedHashSet[Node.InPort[? >: T]] = mutable.LinkedHashSet.empty
 
     def getData: T
 
@@ -119,23 +118,23 @@ object Node {
     }
 
     private[Node] def removeNext(p: Node.InPort[?]): Unit = {
-      next.remove(p)
+      next.remove(p.asInstanceOf[Node.InPort[? >: T]])
     }
 
     def unlink(p: Node.InPort[?]): Unit = {
-      if (next.contains(p)) {
+      if (next.exists(_ eq p)) {
         p.unlink()
       }
     }
 
     override def unlink(): Unit = {
-      for (p <- util.Set.copyOf(next).asScala) {
+      for (p <- next.toVector) {
         p.unlink()
       }
 
       next.clear()
     }
 
-    def isLinked: Boolean = !next.isEmpty
+    def isLinked: Boolean = next.nonEmpty
   }
 }

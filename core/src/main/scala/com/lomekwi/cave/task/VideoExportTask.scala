@@ -25,7 +25,6 @@ import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 class VideoExportTask(private val timeline: Timeline, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
   private var recorder: FFmpegFrameRecorder = uninitialized
@@ -43,7 +42,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
 
   {
     var i = 0
-    for (_ <- timeline.asScala) {
+    for (_ <- timeline) {
       i += 1
     }
     frames = new AtomicReferenceArray[Frame](i)
@@ -70,7 +69,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       var i: Int = 0
       while (t < timeline.getLength) {
         i = 0
-        for (track <- timeline.asScala) {
+        for (track <- timeline) {
           // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
           val segment = track.get(t) match {
             case s: Segment => s
@@ -102,7 +101,7 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
   }
 
   private def exportAudio(): Unit = {
-    val tracks: Array[Track] = timeline.getTracks.toArray(new Array[Track](0))
+    val tracks: Array[Track] = timeline.getTracks.toArray
     val active: Array[Segment] = new Array[Segment](tracks.length)
     val mixBuf: Array[Float] = new Array[Float](VideoExportTask.AUDIO_FRAME_SIZE)
 

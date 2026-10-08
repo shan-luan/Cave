@@ -2,9 +2,9 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.{Content, Segment}
 
-import java.util.{ArrayList, List, Random, Set}
+import java.util.Random
 
-import scala.jdk.CollectionConverters.*
+import scala.collection.mutable
 import scala.util.Using
 
 /**
@@ -31,21 +31,21 @@ class RandomTimelineFiller(final val timeline: Timeline,
                            private val segmentFactory: Long => Content = duration => new TestCont(duration)) {
 
   /** 组注册表。组跨轨道，放在引擎里才能在分组时并入已有的随机一个组。 */
-  private final val groups: List[SegmentGroup] = new ArrayList[SegmentGroup]()
+  private final val groups: mutable.ArrayBuffer[SegmentGroup] = mutable.ArrayBuffer.empty
 
   /** 随机往各轨道塞入 count 个片段，时长与落点均随机；该轨道放不下就跳过。 */
   def fill(count: Int): Unit = {
-    val occupied: List[List[Interval]] = new ArrayList[List[Interval]]()
+    val occupied = mutable.ArrayBuffer.empty[mutable.ArrayBuffer[Interval]]
     var i = 0
     while (i < trackCount) {
-      occupied.add(new ArrayList[Interval]())
+      occupied += mutable.ArrayBuffer.empty[Interval]
       i += 1
     }
     i = 0
     while (i < count) {
       val duration = randomDuration()
       val trackIndex = rnd.nextInt(trackCount)
-      val range = pickFreeRange(occupied.get(trackIndex), duration)
+      val range = pickFreeRange(occupied(trackIndex), duration)
       if (range == null) {
         // 该轨道放不下就跳过
       } else {
@@ -64,7 +64,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, span - duration))
       val range: Interval = start ~~ (start + duration)
-      if (track.isFree(range, Set.of[Segment]())) {
+      if (track.isFree(range, Set.empty)) {
         val segment = segmentFactory(duration)
         Using.resource(timeline.record()) { _ =>
           timeline.tryAdd(track, segment, range, rnd.nextLong(span))
@@ -81,15 +81,15 @@ class RandomTimelineFiller(final val timeline: Timeline,
    * 并入已有的随机一个组，否则新建一个组。
    */
   def group(probability: Float = 0.35f, reuseProbability: Float = 0.5f): Unit = {
-    for (track <- timeline.getTracks.asScala) {
-      for (s <- track.asScala) {
+    for (track <- timeline.getTracks) {
+      for (s <- track) {
         if (rnd.nextFloat() < probability) {
           var target: SegmentGroup = null
           if (!groups.isEmpty && rnd.nextFloat() < reuseProbability) {
-            target = groups.get(rnd.nextInt(groups.size()))
+            target = groups(rnd.nextInt(groups.size))
           } else {
             target = timeline.newGroup()
-            groups.add(target)
+            groups += target
           }
           target.add(s)
         }
@@ -117,7 +117,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
   }
 
   private def assertLayoutValid(): Unit = {
-    for (track <- timeline.getTracks.asScala) {
+    for (track <- timeline.getTracks) {
       TrackLayout.assertValid(track)
     }
   }
@@ -135,16 +135,16 @@ class RandomTimelineFiller(final val timeline: Timeline,
   }
 
   /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
-  private def dragMembers(segment: Segment): List[Segment] = {
+  private def dragMembers(segment: Segment): mutable.ArrayBuffer[Segment] = {
     val group = timeline.getGroup(segment)
-    if (group != null) List.copyOf(group) else List.of(segment)
+    if (group != null) mutable.ArrayBuffer.from(group) else mutable.ArrayBuffer(segment)
   }
 
-  private def moveOp(placed: List[Segment]): Unit = {
+  private def moveOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
-    val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
+    val members = dragMembers(placed(rnd.nextInt(placed.size)))
     var minIdx = Integer.MAX_VALUE
-    for (m <- members.asScala) {
+    for (m <- members) {
       minIdx = Math.min(minIdx, timeline.findTrackOf(m).index)
     }
     var trackDelta = rnd.nextInt(3) - 1 // -1..1
@@ -157,27 +157,27 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def frontResizeOp(placed: List[Segment]): Unit = {
+  private def frontResizeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
-    val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
+    val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
     Using.resource(timeline.record()) { _ =>
       timeline.setStart(members, delta)
     }
   }
 
-  private def behindResizeOp(placed: List[Segment]): Unit = {
+  private def behindResizeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
-    val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
+    val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
     Using.resource(timeline.record()) { _ =>
       timeline.setEnd(members, delta)
     }
   }
 
-  private def splitOp(placed: List[Segment]): Unit = {
+  private def splitOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
-    val segment = placed.get(rnd.nextInt(placed.size()))
+    val segment = placed(rnd.nextInt(placed.size))
     val track = timeline.findTrackOf(segment)
     val r = track.getRange(segment)
     val lo: Long = r.lo
@@ -189,9 +189,9 @@ class RandomTimelineFiller(final val timeline: Timeline,
     }
   }
 
-  private def removeOp(placed: List[Segment]): Unit = {
+  private def removeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
-    val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
+    val members = dragMembers(placed(rnd.nextInt(placed.size)))
     Using.resource(timeline.record()) { _ =>
       timeline.remove(members)
     }
@@ -204,27 +204,27 @@ class RandomTimelineFiller(final val timeline: Timeline,
       addOne() // 仍失败则放弃这一步
       return
     }
-    val members = dragMembers(placed.get(rnd.nextInt(placed.size())))
+    val members = dragMembers(placed(rnd.nextInt(placed.size)))
     Using.resource(timeline.record()) { _ =>
       timeline.remove(members)
     }
   }
 
   /** 在 [0, span] 内试探一个不与 occupied 相连的区间，50 次内找不到返回 null。 */
-  private def pickFreeRange(occupied: List[Interval], duration: Long): Interval = {
+  private def pickFreeRange(occupied: mutable.ArrayBuffer[Interval], duration: Long): Interval = {
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(span - duration + 1)
       val range: Interval = start ~~ (start + duration)
       var free = true
-      val it = occupied.iterator()
+      val it = occupied.iterator
       while (it.hasNext && free) {
         if (it.next().isConnected(range)) {
           free = false
         }
       }
       if (free) {
-        occupied.add(range)
+        occupied += range
         return range
       }
       attempt += 1
@@ -233,11 +233,11 @@ class RandomTimelineFiller(final val timeline: Timeline,
   }
 
   /** 当前时间线上已放置的全部片段。 */
-  private def placedSegments(): List[Segment] = {
-    val out: List[Segment] = new ArrayList[Segment]()
-    for (track <- timeline.getTracks.asScala) {
-      for (s <- track.asScala) {
-        out.add(s)
+  private def placedSegments(): mutable.ArrayBuffer[Segment] = {
+    val out = mutable.ArrayBuffer.empty[Segment]
+    for (track <- timeline.getTracks) {
+      for (s <- track) {
+        out += s
       }
     }
     out

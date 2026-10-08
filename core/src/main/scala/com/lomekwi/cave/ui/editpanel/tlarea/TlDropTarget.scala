@@ -11,10 +11,9 @@ import com.lomekwi.cave.timeline.~~
 
 import java.io.File
 import java.io.IOException
-import java.util
 
+import scala.collection.mutable
 import scala.util.Using
-import scala.jdk.CollectionConverters.*
 
 /** 时间线拖放目标，接收拖入的文件并落地为片段。 */
 class TlDropTarget(private final val timelineView: TimelineView) extends DragAndDrop.Target(timelineView) {
@@ -31,13 +30,13 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: util.List[Content] = timelineView.project.sourceFactory.getAll(file)
+      val segments: mutable.ArrayBuffer[Content] = timelineView.project.sourceFactory.getAll(file)
       val startTime: Long = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
-      val added: util.List[Segment] = new util.ArrayList[Segment]()
+      val added = mutable.ArrayBuffer.empty[Segment]
       Using.resource(timelineView.timeline.record()) { h =>
-        for (segment <- segments.asScala) {
+        for (segment <- segments) {
           val duration: Long = segment.getDefaultDuration
           if (duration > 0) {
             var targetTrack: Int = baseTrack + trackOffset
@@ -53,13 +52,13 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
               }
             }
             trackOffset = targetTrack - baseTrack + 1
-            added.add(segment)
+            added += segment
           }
         }
       }
-      if (added.size() >= 2) {
+      if (added.size >= 2) {
         val group = timelineView.timeline.newGroup()
-        for (segment <- added.asScala) {
+        for (segment <- added) {
           group.add(segment)
         }
       }

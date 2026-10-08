@@ -31,7 +31,6 @@ import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
-import java.util
 
 class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectable {
   private var frame: Frame = uninitialized
@@ -563,8 +562,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val t = new Transform(0, 0, 0)
     val segment = frame.segment
     if (segment != null) {
-      val filters: util.List[Filter[?]] = segment.filters.asInstanceOf[util.List[Filter[?]]]
-      filters.asScala.takeWhile(f => !(f eq dragModifier)).foreach {
+      val filters = segment.filters
+      filters.takeWhile(f => !(f eq dragModifier)).foreach {
         case tf: TransNode =>
           t.applyLocal(tf.getDx.toFloat, tf.getDy.toFloat,
             tf.getScaleX.toFloat, tf.getScaleY.toFloat,
@@ -1004,7 +1003,7 @@ object TransFrameActor {
   private final val snapAdjust: Vector2 = new Vector2()
 
   private def findTransNode(segment: Segment): TransNode = {
-    segment.filters.asScala.reverseIterator.collectFirst { case tf: TransNode => tf }.orNull
+    segment.filters.reverseIterator.collectFirst { case tf: TransNode => tf }.orNull
   }
 
   private def findOrCreateTransNode(segment: Segment): TransNode = {

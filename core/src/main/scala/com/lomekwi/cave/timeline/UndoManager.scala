@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.app.selection.SegmentNodeChangedEvent
+import com.lomekwi.cave.pipeline.FilterList
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
@@ -11,8 +12,6 @@ import com.lomekwi.cave.playback.RefreshRequestEvent
 
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
-import java.util
 
 class UndoManager(@transient private val project: Project) {
   private final val undoStack: mutable.ArrayDeque[UndoManager.UndoableCommand] = mutable.ArrayDeque.empty[UndoManager.UndoableCommand]
@@ -164,34 +163,34 @@ object UndoManager {
     }
   }
 
-  private def filterList(segment: Segment): util.List[Filter[?]] = {
-    segment.filters.asInstanceOf[util.List[Filter[?]]]
+  private def filterList(segment: Segment): FilterList = {
+    segment.filters
   }
 
   /**
    * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
    */
   private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
-                                                     protected val edits: util.List[TrackEdit]) extends MergeableCommand {
-    override def undo(): Unit = timeline.setTracks(UndoManager.foldBefore(edits.asScala))
+                                                     protected val edits: mutable.ArrayBuffer[TrackEdit]) extends MergeableCommand {
+    override def undo(): Unit = timeline.setTracks(UndoManager.foldBefore(edits))
 
-    override def redo(): Unit = timeline.setTracks(UndoManager.foldAfter(edits.asScala))
+    override def redo(): Unit = timeline.setTracks(UndoManager.foldAfter(edits))
 
     /** 合并时同一轨道保留最早的 before、取最新的 after。 */
-    protected def mergeEdits(other: util.List[TrackEdit]): Unit = {
-      for (ne <- other.asScala) {
-        val idx = edits.asScala.indexWhere(e => e.index == ne.index)
+    protected def mergeEdits(other: mutable.ArrayBuffer[TrackEdit]): Unit = {
+      for (ne <- other) {
+        val idx = edits.indexWhere(e => e.index == ne.index)
         if (idx < 0) {
-          edits.add(ne)
+          edits += ne
         } else {
-          edits.set(idx, TrackEdit(ne.index, edits.get(idx).before, ne.after))
+          edits(idx) = TrackEdit(ne.index, edits(idx).before, ne.after)
         }
       }
     }
   }
 
-  final class MoveSegmentsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
-    extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
+  final class MoveSegmentsCommand(timeline0: Timeline, entries0: mutable.ArrayBuffer[TrackEdit])
+    extends BatchTrackCommand(timeline0, entries0.clone()) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
       case o: MoveSegmentsCommand =>
@@ -202,8 +201,8 @@ object UndoManager {
     }
   }
 
-  final class ResizeSegmentsCommand(timeline0: Timeline, entries0: util.List[TrackEdit])
-    extends BatchTrackCommand(timeline0, new util.ArrayList[TrackEdit](entries0)) {
+  final class ResizeSegmentsCommand(timeline0: Timeline, entries0: mutable.ArrayBuffer[TrackEdit])
+    extends BatchTrackCommand(timeline0, entries0.clone()) {
 
     override def merge(other: UndoableCommand): Boolean = other match {
       case o: ResizeSegmentsCommand =>
@@ -214,19 +213,19 @@ object UndoManager {
     }
   }
 
-  final class RemoveSegmentsCommand(private val timeline: Timeline, entries0: util.List[RemoveSegmentsCommand.RemoveEntry]) extends MergeableCommand {
-    private final val entries: util.List[RemoveSegmentsCommand.RemoveEntry] = new util.ArrayList[RemoveSegmentsCommand.RemoveEntry](entries0)
+  final class RemoveSegmentsCommand(private val timeline: Timeline, entries0: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry]) extends MergeableCommand {
+    private final val entries: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry] = entries0.clone()
 
     override def undo(): Unit = {
-      timeline.setTracks(UndoManager.foldBefore(entries.asScala.map(_.edit)))
-      for (e <- entries.asScala.reverseIterator) {
+      timeline.setTracks(UndoManager.foldBefore(entries.map(_.edit)))
+      for (e <- entries.reverseIterator) {
         if (e.group != null) e.group.add(e.segment)
       }
     }
 
     override def redo(): Unit = {
-      timeline.setTracks(UndoManager.foldAfter(entries.asScala.map(_.edit)))
-      for (e <- entries.asScala) {
+      timeline.setTracks(UndoManager.foldAfter(entries.map(_.edit)))
+      for (e <- entries) {
         if (e.group != null) e.group.remove(e.segment)
       }
     }
@@ -234,8 +233,8 @@ object UndoManager {
     override def merge(other: UndoableCommand): Boolean = {
       other match {
         case o: RemoveSegmentsCommand =>
-          for (ne <- o.entries.asScala) {
-            if (!entries.asScala.exists(e => e.segment eq ne.segment)) entries.add(ne)
+          for (ne <- o.entries) {
+            if (!entries.exists(e => e.segment eq ne.segment)) entries += ne
           }
           true
         case _ =>
@@ -258,38 +257,38 @@ object UndoManager {
 
   case class AddFilterCommand(project: Project, segment: Segment, filter: Filter[?]) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(segment).remove(filter)
+      filterList(segment) -= filter
       postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(segment).add(filter)
+      filterList(segment) += filter
       postRefresh(project, segment)
     }
   }
 
   case class RemoveFilterCommand(project: Project, segment: Segment, filter: Filter[?], index: Int) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(segment).add(index, filter)
+      filterList(segment).insert(index, filter)
       postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(segment).remove(filter)
+      filterList(segment) -= filter
       postRefresh(project, segment)
     }
   }
 
   case class ReorderFilterCommand(project: Project, segment: Segment, filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
     override def undo(): Unit = {
-      filterList(segment).remove(filter)
-      filterList(segment).add(oldIndex, filter)
+      filterList(segment) -= filter
+      filterList(segment).insert(oldIndex, filter)
       postRefresh(project, segment)
     }
 
     override def redo(): Unit = {
-      filterList(segment).remove(filter)
-      filterList(segment).add(newIndex, filter)
+      filterList(segment) -= filter
+      filterList(segment).insert(newIndex, filter)
       postRefresh(project, segment)
     }
   }

@@ -13,24 +13,21 @@ import com.lomekwi.cave.timeline.UndoManager
 import com.lomekwi.cave.playback.Playhead
 import com.lomekwi.cave.app.App
 
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
-
 import java.io.File
 import java.io.ObjectInputStream
 import java.io.Serializable
 import java.nio.file.Path
 import java.util.UUID
 
+import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 
 @SerialVersionUID(2L)
 class Project protected[project] extends Serializable with AutoCloseable {
   @transient var savePath: Path = uninitialized
   var timeline: Timeline = uninitialized
   @transient var playhead: Playhead = uninitialized
-  final val resources: Multimap[File, Resource] = ArrayListMultimap.create[File, Resource]()
+  final val resources: mutable.LinkedHashMap[File, mutable.ArrayBuffer[Resource]] = mutable.LinkedHashMap.empty
   final val sourceFactory: SegmentFactory = new SegmentFactory(this)
   @transient var projEventBus: EventBus = uninitialized
   @transient var undoManager: UndoManager = uninitialized
@@ -52,7 +49,7 @@ class Project protected[project] extends Serializable with AutoCloseable {
 
   def update(): Unit = {
     if (isActive) {
-      for (track <- timeline.getTracks.asScala) {
+      for (track <- timeline.getTracks) {
         if (track.getWorker.future == null || track.getWorker.future.isDone) {
           val future = App.workerExecutor.submit(track.getWorker)
           track.getWorker.future = future
@@ -80,7 +77,7 @@ class Project protected[project] extends Serializable with AutoCloseable {
   }
 
   private def stopTrackLoops(): Unit = {
-    for (track <- timeline.getTracks.asScala) {
+    for (track <- timeline.getTracks) {
       val future = track.getWorker.future
       if (future != null) {
         future.cancel(true)
@@ -95,14 +92,14 @@ class Project protected[project] extends Serializable with AutoCloseable {
     App.appEventBus.unregister(this)
     isActive = false
     stopTrackLoops()
-    resources.values().forEach((resource: Resource) => {
+    for (buffer <- resources.values; resource <- buffer) {
       try {
         resource.close()
       } catch {
         case e: Exception =>
           throw new RuntimeException(e)
       }
-    })
+    }
   }
 
   private def readObject(in: ObjectInputStream): Unit = {

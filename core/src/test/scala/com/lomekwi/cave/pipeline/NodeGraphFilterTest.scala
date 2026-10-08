@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotEqu
 import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
 /**
@@ -23,7 +22,7 @@ class NodeGraphFilterTest {
   @Test
   def newGraph_hasBoundaryNodes(): Unit = {
     val ngf = new NodeGraphFilter()
-    val nodes = ngf.innerNodes.asScala.toSeq
+    val nodes = ngf.innerNodes.toSeq
 
     assertEquals(2, nodes.size)
     assertEquals(1, nodes.count(_.isInstanceOf[GraphInNode]))
@@ -47,7 +46,7 @@ class NodeGraphFilterTest {
     assertNull(graphIn(ngf).out.getType)
 
     val segment = new FpCont(10)
-    segment.filters.add(ngf)
+    segment.filters += ngf
     assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).out.getType)
   }
 
@@ -55,12 +54,12 @@ class NodeGraphFilterTest {
   def graphInput_forwardsFrameToInnerFilter(): Unit = {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    segment.filters.add(ngf)
+    segment.filters += ngf
 
     val add = new AddFilter()
     setDelta(add, 5)
     add.filterIn.linkFrom(graphIn(ngf).out)
-    val sinkIn = sink(ngf).inPorts.get(0).asInstanceOf[Node.InPort[Object]]
+    val sinkIn = sink(ngf).inPorts(0).asInstanceOf[Node.InPort[Object]]
     sinkIn.linkFrom(add.filterOut)
 
     assertEquals(15.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
@@ -70,15 +69,15 @@ class NodeGraphFilterTest {
   def serialization_roundTrip_keepsGraphInput(): Unit = {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
-    segment.filters.add(ngf)
+    segment.filters += ngf
     val add = new AddFilter()
     setDelta(add, 5)
     add.filterIn.linkFrom(graphIn(ngf).out)
-    sink(ngf).inPorts.get(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.filterOut)
+    sink(ngf).inPorts(0).asInstanceOf[Node.InPort[Object]].linkFrom(add.filterOut)
 
     val copy: FpCont = roundTrip(segment)
 
-    val copyNgf = copy.filters.get(0).asInstanceOf[NodeGraphFilter]
+    val copyNgf = copy.filters(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))
     // 入口节点反向引用宿主 filter，往返后仍能取到图外连入的帧
     assertEquals(15.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
@@ -96,23 +95,23 @@ class NodeGraphFilterTest {
     val copy: NodeGraphFilter = roundTrip(ngf)
 
     assertNotNull(graphIn(copy))
-    assertEquals(2, copy.innerNodes.size())
+    assertEquals(2, copy.innerNodes.size)
     assertNotEquals(copy.innerNodes.getPosition(graphIn(copy)), copy.innerNodes.getPosition(sink(copy)))
     // 补建不自动连线，旧存档里用户已有的连接不被覆盖
     assertFalse(graphIn(copy).out.isLinked)
   }
 
   private def graphIn(ngf: NodeGraphFilter): GraphInNode = {
-    ngf.innerNodes.asScala.collectFirst { case node: GraphInNode => node }.orNull
+    ngf.innerNodes.collectFirst { case node: GraphInNode => node }.orNull
   }
 
   private def sink(ngf: NodeGraphFilter): Sink = {
-    ngf.innerNodes.asScala.collectFirst { case node: Sink => node }.orNull
+    ngf.innerNodes.collectFirst { case node: Sink => node }.orNull
   }
 
   /** [[AddFilter.delta]] 端口是私有的，按端口名取值设置默认数据。 */
   private def setDelta(add: AddFilter, value: Double): Unit = {
-    add.inPorts.asScala.find(_.name == "delta").get.asInstanceOf[Node.InPort[Any]].defaultData = value
+    add.inPorts.find(_.name == "delta").get.asInstanceOf[Node.InPort[Any]].defaultData = value
   }
 
   private def roundTrip[T](o: T): T = {

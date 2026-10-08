@@ -6,7 +6,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.Serializable
-import java.util
 
 /**
  * 片段。由 [[Source]]（帧的产出）与 [[FilterList]]（过滤链）组合而成，
@@ -34,7 +33,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
    */
   final def get(time: Long, track: Track): Frame = this.synchronized {
     val generated = source.generate(time, track, this)
-    if (filters.isEmpty) generated        else filters.get(filters.size() - 1).filterOut.getData.asInstanceOf[Frame]
+    if (filters.isEmpty) generated        else filters.last.filterOut.getData.asInstanceOf[Frame]
   }
 
   /**
@@ -54,7 +53,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   def attach(filter: Filter[?]): Segment = {
     require(filter.getType.isAssignableFrom(source.getType),
       "滤镜的帧类型与本片段源的产出类型不兼容: " + filter.name)
-    filters.add(filter)
+    filters += filter
     this
   }
 

@@ -2,23 +2,17 @@ package com.lomekwi.cave.app.shortcut
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Preferences
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.Multimap
 
-import java.util
-import java.util.{Collections}
-
-import scala.jdk.CollectionConverters.*
+import scala.collection.mutable
 
 class ShortcutManager {
-  private final val actionToKeys: Multimap[ShortcutAction, Integer] = ArrayListMultimap.create[ShortcutAction, Integer]()
-  private final val registeredActions: util.Set[ShortcutAction] = new util.LinkedHashSet[ShortcutAction]()
+  private final val actionToKeys: mutable.LinkedHashMap[ShortcutAction, mutable.ArrayBuffer[Int]] = mutable.LinkedHashMap.empty
+  private final val registeredActions: mutable.LinkedHashSet[ShortcutAction] = mutable.LinkedHashSet.empty
 
   def register(action: ShortcutAction, keyCode: Int*): Unit = {
-    actionToKeys.removeAll(action)
-    for (k <- keyCode) {
-      actionToKeys.put(action, k)
-    }
+    val keys = actionToKeys.getOrElseUpdate(action, mutable.ArrayBuffer.empty[Int])
+    keys.clear()
+    keys ++= keyCode
     registeredActions.add(action)
   }
 
@@ -26,22 +20,22 @@ class ShortcutManager {
     register(action, action.defaultKeys()*)
   }
 
-  def getKeys(action: ShortcutAction): util.Collection[Integer] = {
-    actionToKeys.get(action)
+  def getKeys(action: ShortcutAction): mutable.ArrayBuffer[Int] = {
+    actionToKeys.getOrElse(action, mutable.ArrayBuffer.empty[Int])
   }
 
-  def getAllActions: util.Set[ShortcutAction] = {
-    Collections.unmodifiableSet(registeredActions)
+  def getAllActions: mutable.LinkedHashSet[ShortcutAction] = {
+    mutable.LinkedHashSet.from(registeredActions)
   }
 
   def isActive(action: ShortcutAction): Boolean = {
-    val keys = actionToKeys.get(action)
-    !keys.isEmpty && keys.asScala.forall(key => Gdx.input.isKeyPressed(key))
+    val keys = actionToKeys.getOrElse(action, mutable.ArrayBuffer.empty[Int])
+    keys.nonEmpty && keys.forall(key => Gdx.input.isKeyPressed(key))
   }
 
   def load(): Unit = {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
-    for (action <- registeredActions.asScala) {
+    for (action <- registeredActions) {
       val v: String = prefs.getString(action.toString, null)
       if (v != null && !v.isEmpty) {
         val keys: Array[Int] = v.split(",").map((s: String) => Integer.parseInt(s))
@@ -53,10 +47,10 @@ class ShortcutManager {
   def persist(): Unit = {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
     prefs.clear()
-    for (action <- registeredActions.asScala) {
-      val keys: util.Collection[Integer] = actionToKeys.get(action)
-      if (!keys.isEmpty) {
-        val v: String = keys.asScala.mkString(",")
+    for (action <- registeredActions) {
+      val keys = actionToKeys.getOrElse(action, mutable.ArrayBuffer.empty[Int])
+      if (keys.nonEmpty) {
+        val v: String = keys.mkString(",")
         prefs.putString(action.toString, v)
       }
     }

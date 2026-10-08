@@ -14,7 +14,6 @@ import com.lomekwi.cave.ui.TextInputs
 import com.lomekwi.cave.ui.widget.Card
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 
 class NodeActor(node0: Node) extends Card(node0.name) {
   final val node: Node = node0
@@ -29,14 +28,14 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   add(inTable).top().left()
   add(outTable).top().right().growX()
 
-  for (in <- node.inPorts.asScala) {
+  for (in <- node.inPorts) {
     val editor: Actor = App.cardWidgetsRegistry.createEditor(in, null)
     val portActor = new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])
     portActors.put(in, portActor)
     inTable.add(portActor).growX().row()
   }
 
-  for (out <- node.outPorts.asScala) {
+  for (out <- node.outPorts) {
     val portActor = new OutPortActor(out)
     portActors.put(out, portActor)
     outTable.add(portActor).row()

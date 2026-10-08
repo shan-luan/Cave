@@ -40,7 +40,6 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 import com.badlogic.gdx.Input.Keys.*
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 
 class TopBar extends MenuBar {
   private final val toastTimeOut: Float = 2f
@@ -131,7 +130,7 @@ class TopBar extends MenuBar {
             val content: Table = getContentTable
 
             current.clear()
-            for (task <- App.taskPool.asScala) {
+            for (task <- App.taskPool) {
               current += task
               var row: VisTable = rows.getOrElse(task, null)
               if (row == null) {
@@ -194,7 +193,7 @@ class TopBar extends MenuBar {
   def applyCustomShortcuts(): Unit = {
     for ((action, item) <- actionItems) {
       val keys = App.shortcutManager.getKeys(action)
-      val arr: Array[Int] = keys.asScala.iterator.map((i: Integer) => i.intValue).toArray
+      val arr: Array[Int] = keys.toArray
       item.setShortcut(arr*)
     }
   }

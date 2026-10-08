@@ -7,10 +7,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-import java.util.List
-
-import scala.jdk.CollectionConverters.*
-
 /**
  * 删除路径的场景测试。内容与转场的删除在各种邻居与边界形态下的行为；
  * 移除后 [[TrackLayout]] 校验的布局不变量由本测试守护。
@@ -122,7 +118,7 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertTrue(after.isEmpty)
     assertEquals(0L, after.length)
-    assertTrue(after.asScala.isEmpty)
+    assertTrue(after.isEmpty)
   }
 
   @Test
@@ -206,7 +202,7 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
     place(t0, c, 2000 ~~ 3000)
 
-    timeline.remove(List.of(a, c))
+    timeline.remove(Seq(a, c))
 
     val after = timeline.getTrackOrCreate(0)
     val remaining = TrackLayout.contentsOf(after)
@@ -353,7 +349,7 @@ class TrackRemoveTest extends GdxTestBase {
 
       val after = tl.getTrackOrCreate(0)
       for (s <- Vector(p, a, b, rn)) {
-        if (after.contains(s) != after.asScala.exists(_ eq s)) {
+        if (after.contains(s) != after.exists(_ eq s)) {
           fail("内容在轨道反查里存在却从迭代中消失: " + s + " rnLo=" + rnLo)
         }
       }
@@ -375,7 +371,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertNotNull(ab)
     assertNotNull(bc)
 
-    timeline.remove(List.of(ab, bc))
+    timeline.remove(Seq(ab, bc))
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(0 ~~ 750, after.getRange(a))

@@ -5,11 +5,9 @@ import com.lomekwi.cave.playback.TrackWorker
 import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, EvalClock, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
-import java.util
 import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.immutable.TreeMap
-import scala.jdk.CollectionConverters.*
 
 /**
  * 轨道。不可变，每次编辑返回新实例。
@@ -22,14 +20,14 @@ final class Track private (val timeline: Timeline, val index: Int,
                            private val blockSegment: Segment,
                            private val layout: Track.Layout,
                            private val segToOrigin: Map[Segment, Long],
-                           private val transitions: Track.TransitionIndex) extends Serializable with java.lang.Iterable[Segment] {
+                           private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Segment] {
 
   private def isBlock(segment: Segment): Boolean = segment.eq(blockSegment)
 
   private def intervalToSeg: TreeMap[Interval, Segment] = layout.forward
 
   /** 是否没有用户内容。 */
-  protected[timeline] def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(isBlock)
+  override def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(isBlock)
 
   /** 片段占用的区间。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def getRange(segment: Segment): Interval = {
@@ -49,10 +47,10 @@ final class Track private (val timeline: Timeline, val index: Int,
   lazy val length: Long = intervalToSeg.iterator.filter { case (_, s) => !isBlock(s) }.map(_._1.hi).maxOption.getOrElse(0L)
 
   /** 按起点顺序的下一个内容片段；没有时返回 null。 */
-  private[timeline] def nextContent(c: Content): Content = contentAtOrAfter(getRange(c).lo + 1, null)
+  private[timeline] def nextContent(c: Content): Content = contentAtOrAfter(getRange(c).lo + 1, Set.empty)
 
   /** 按起点顺序的上一个内容片段；没有时返回 null。 */
-  private[timeline] def prevContent(c: Content): Content = contentBefore(getRange(c).lo, null)
+  private[timeline] def prevContent(c: Content): Content = contentBefore(getRange(c).lo, Set.empty)
 
   /** left 与 right 之间的转场，仅在两者确实相邻时返回；否则 null。 */
   private[timeline] def transitionBetween(left: Content, right: Content): Transition = {
@@ -111,9 +109,9 @@ final class Track private (val timeline: Timeline, val index: Int,
   private def drop(element: Segment): Track =
     derived(layout.removedValue(element), segToOrigin.removed(element))
 
-  private def canPlaceAt(c: Content, r: Interval): Boolean = canPlaceAt(c, r, null)
+  private def canPlaceAt(c: Content, r: Interval): Boolean = canPlaceAt(c, r, Set.empty)
 
-  private[timeline] def canPlaceAt(c: Content, r: Interval, skip: util.Collection[Segment]): Boolean = {
+  private[timeline] def canPlaceAt(c: Content, r: Interval, skip: Set[Segment]): Boolean = {
     if (r.isEmpty) return false
     val left = contentBefore(r.lo, skip)
     if (left != null) {
@@ -139,13 +137,13 @@ final class Track private (val timeline: Timeline, val index: Int,
   /**
    * 起点小于 time 的最后一个内容片段，跳过 skip 里的条目；没有时返回 null。
    */
-  private def contentBefore(time: Long, skip: util.Collection[Segment]): Content = {
+  private def contentBefore(time: Long, skip: Set[Segment]): Content = {
     var bound = at(time)
     var entry = intervalToSeg.rangeUntil(bound).lastOption
     while (entry.isDefined) {
       val current = entry.get
       current._2 match {
-        case x: Content if !isBlock(x) && (skip == null || !skip.contains(x)) => return x
+        case x: Content if !isBlock(x) && !skip.contains(x) => return x
         case _ =>
       }
       bound = current._1
@@ -155,10 +153,10 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 起点不小于 time 的第一个内容片段，跳过 skip 里的条目；没有时返回 null。 */
-  private def contentAtOrAfter(time: Long, skip: util.Collection[Segment]): Content = {
+  private def contentAtOrAfter(time: Long, skip: Set[Segment]): Content = {
     intervalToSeg.rangeFrom(at(time)).iterator
       .map(_._2)
-      .collectFirst { case x: Content if !isBlock(x) && (skip == null || !skip.contains(x)) => x }
+      .collectFirst { case x: Content if !isBlock(x) && !skip.contains(x) => x }
       .orNull
   }
 
@@ -265,9 +263,9 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 移除这批片段，返回新版本。不在本轨道的片段会被忽略。 */
-  protected[timeline] def removeAll(segments: util.Collection[Segment]): Track = {
+  protected[timeline] def removeAll(segments: Iterable[Segment]): Track = {
     var t = this
-    for (s <- segments.asScala) {
+    for (s <- segments) {
       t = t.remove(s)
     }
     t
@@ -294,9 +292,9 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 裁切一组片段的起始边缘（各自终点不变）。 */
-  protected[timeline] def setStart(segments: util.Collection[Segment], deltaTime: Long): Track = {
+  protected[timeline] def setStart(segments: Iterable[Segment], deltaTime: Long): Track = {
     var t = this
-    for (s <- segments.asScala) {
+    for (s <- segments) {
       if (t.contains(s)) t = t.setStart(s, deltaTime)
     }
     t
@@ -308,9 +306,9 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 裁切一组片段的结束边缘（各自起点不变）。 */
-  protected[timeline] def setEnd(segments: util.Collection[Segment], deltaTime: Long): Track = {
+  protected[timeline] def setEnd(segments: Iterable[Segment], deltaTime: Long): Track = {
     var t = this
-    for (s <- segments.asScala) {
+    for (s <- segments) {
       if (t.contains(s)) t = t.setEnd(s, deltaTime)
     }
     t
@@ -498,12 +496,12 @@ final class Track private (val timeline: Timeline, val index: Int,
     !intersectingEntries(intervalToSeg, range).hasNext
 
   /** range 内是否没有被 ignore 之外的片段占用。 */
-  def isFree(range: Interval, ignore: util.Collection[Segment]): Boolean = {
+  def isFree(range: Interval, ignore: Set[Segment]): Boolean = {
     intersectingEntries(intervalToSeg, range).forall { case (_, s) => ignore.contains(s) }
   }
 
-  protected[timeline] def probeSetStart(segments: util.Collection[Segment], forward: Boolean): Long = {
-    val offsets = segments.asScala.iterator
+  protected[timeline] def probeSetStart(segments: Iterable[Segment], forward: Boolean): Long = {
+    val offsets = segments.iterator
       .filter((s: Segment) => contains(s))
       .map {
         case t: Transition => probeTransitionStart(t, forward)
@@ -513,8 +511,8 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
-  protected[timeline] def probeSetEnd(segments: util.Collection[Segment], forward: Boolean): Long = {
-    val offsets = segments.asScala.iterator
+  protected[timeline] def probeSetEnd(segments: Iterable[Segment], forward: Boolean): Long = {
+    val offsets = segments.iterator
       .filter((s: Segment) => contains(s))
       .map {
         case t: Transition => probeTransitionEnd(t, forward)
@@ -556,9 +554,9 @@ final class Track private (val timeline: Timeline, val index: Int,
     case _ => Long.MaxValue
   }
 
-  protected[timeline] def probeMove(segments: util.Collection[Segment], forward: Boolean): Long = {
+  protected[timeline] def probeMove(segments: Iterable[Segment], forward: Boolean): Long = {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍，视作无界
-    val moving = segments.asScala.toSet
+    val moving = segments.toSet
     // 两侧内容都不动的转场要带着它们一起平移，得在摘掉整组后的布局上单独探测，按需构造
     lazy val bare: Track = removeAll(segments)
     val offsets = moving.iterator
@@ -691,8 +689,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 与 range 有公共点的用户片段，按区间升序；返回快照。 */
-  def getIntersecting(range: Interval): util.List[Segment] = {
-    intersectingEntries(intervalToSeg, range).map(_._2).filterNot(isBlock).toList.asJava
+  def getIntersecting(range: Interval): Seq[Segment] = {
+    intersectingEntries(intervalToSeg, range).map(_._2).filterNot(isBlock).toList
   }
 
   /** 生成片段在绝对时间 time 的帧，求值期间经 [[EvalClock]] 向节点提供时刻。 */
@@ -713,8 +711,8 @@ final class Track private (val timeline: Timeline, val index: Int,
   def getWorker: TrackWorker = timeline.getWorker(index)
 
   /** 轨道上的用户片段；阻挡片段对遍历不可见。 */
-  override def iterator(): util.Iterator[Segment] = {
-    intervalToSeg.valuesIterator.filterNot(isBlock).asJava
+  override def iterator: Iterator[Segment] = {
+    intervalToSeg.valuesIterator.filterNot(isBlock)
   }
 
   /** 调试用摘要，按时间顺序列出片段，内容附带 origin 与素材终点。 */

@@ -1,8 +1,8 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util
-import java.util.{AbstractSequentialList, NoSuchElementException}
+
+import scala.collection.mutable
 import scala.compiletime.uninitialized
 
 /**
@@ -18,29 +18,101 @@ import scala.compiletime.uninitialized
  * [[Segment.get]] 直接从它取数据。添加/移除/重排时自动维护连接。
  */
 @SerialVersionUID(1L)
-class FilterList(private final val head: Filter[?]) extends util.AbstractSequentialList[Filter[?]] with Serializable {
+class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer[Filter[?]] with Serializable {
   private final val headEntry: FilterList.Entry = new FilterList.Entry(null)
   private final val tailEntry: FilterList.Entry = new FilterList.Entry(null)
   private var _size: Int = 0
 
-  if (head == null) {
+  if (headFilter == null) {
     throw new IllegalArgumentException("head 不能为 null")
   }
-  if (head.filterOut == null) {
+  if (headFilter.filterOut == null) {
     throw new IllegalArgumentException("head 必须有 FilterOut")
   }
   headEntry.next = tailEntry
   tailEntry.prev = headEntry
 
-  override def size(): Int = {
-    _size
+  override def length: Int = _size
+
+  override def apply(index: Int): Filter[?] = entryAt(index).filter
+
+  /** 替换 index 处的 filter，旧 filter 的端口连接被断开。 */
+  override def update(index: Int, filter: Filter[?]): Unit = {
+    val entry = entryAt(index)
+    val old = entry.filter
+    disconnect(entry.prev, entry)
+    disconnect(entry, entry.next)
+    entry.filter = filter
+    connect(entry.prev, entry)
+    connect(entry, entry.next)
+    old.filterIn.unlink()
+    old.filterOut.unlink()
   }
 
-  override def listIterator(index: Int): util.ListIterator[Filter[?]] = {
+  /** 在 index 处插入 filter 并维护连接。index == size 表示追加到尾部。 */
+  override def insert(index: Int, filter: Filter[?]): Unit = {
     if (index < 0 || index > _size) {
       throw new IndexOutOfBoundsException("index: " + index + ", size: " + _size)
     }
-    new FilterListIterator(index)
+    linkBefore(filter, if (index == _size) tailEntry else entryAt(index))
+  }
+
+  override def remove(index: Int): Filter[?] = {
+    val entry = entryAt(index)
+    val f = entry.filter
+    unlink(entry)
+    f
+  }
+
+  override def insertAll(index: Int, elems: IterableOnce[Filter[?]]): Unit = {
+    if (index < 0 || index > _size) {
+      throw new IndexOutOfBoundsException("index: " + index + ", size: " + _size)
+    }
+    var i = index
+    for (f <- elems.iterator) {
+      insert(i, f)
+      i += 1
+    }
+  }
+
+  override def addOne(elem: Filter[?]): this.type = {
+    insert(_size, elem)
+    this
+  }
+
+  override def prepend(elem: Filter[?]): this.type = {
+    insert(0, elem)
+    this
+  }
+
+  override def remove(index: Int, count: Int): Unit = {
+    var c = count
+    while (c > 0 && index < _size) {
+      remove(index)
+      c -= 1
+    }
+  }
+
+  override def patchInPlace(from: Int, patch: IterableOnce[Filter[?]], replaced: Int): this.type = {
+    remove(from, replaced)
+    insertAll(from, patch)
+    this
+  }
+
+  override def clear(): Unit = {
+    var x = headEntry.next
+    while (x != tailEntry) {
+      val next = x.next
+      x.filter.filterIn.unlink()
+      x.filter.filterOut.unlink()
+      x.filter = null
+      x.prev = null
+      x.next = null
+      x = next
+    }
+    headEntry.next = tailEntry
+    tailEntry.prev = headEntry
+    _size = 0
   }
 
   /**
@@ -100,7 +172,7 @@ class FilterList(private final val head: Filter[?]) extends util.AbstractSequent
   }
 
   private def portOut(entry: FilterList.Entry): Node.OutPort[?] = {
-    if (entry == headEntry) head.filterOut
+    if (entry == headEntry) headFilter.filterOut
     else if (entry == tailEntry) null
     else entry.filter.filterOut
   }
@@ -134,113 +206,16 @@ class FilterList(private final val head: Filter[?]) extends util.AbstractSequent
     x
   }
 
-  override def add(filter: Filter[?]): Boolean = {
-    linkBefore(filter, tailEntry)
-    true
-  }
+  override def iterator: Iterator[Filter[?]] = new Iterator[Filter[?]] {
+    private var cursor: FilterList.Entry = headEntry.next
 
-  override def add(index: Int, filter: Filter[?]): Unit = {
-    // index == size 表示追加到尾部（AbstractSequentialList 语义）
-    linkBefore(filter, if (index == _size) tailEntry else entryAt(index))
-  }
-
-  override def remove(index: Int): Filter[?] = {
-    val entry = entryAt(index)
-    val f = entry.filter
-    unlink(entry)
-    f
-  }
-
-  override def set(index: Int, filter: Filter[?]): Filter[?] = {
-    val entry = entryAt(index)
-    val old = entry.filter
-    disconnect(entry.prev, entry)
-    disconnect(entry, entry.next)
-    entry.filter = filter
-    connect(entry.prev, entry)
-    connect(entry, entry.next)
-    old.filterIn.unlink()
-    old.filterOut.unlink()
-    old
-  }
-
-  override def clear(): Unit = {
-    var x = headEntry.next
-    while (x != tailEntry) {
-      val next = x.next
-      x.filter.filterIn.unlink()
-      x.filter.filterOut.unlink()
-      x.filter = null
-      x.prev = null
-      x.next = null
-      x = next
-    }
-    headEntry.next = tailEntry
-    tailEntry.prev = headEntry
-    _size = 0
-  }
-
-  private final class FilterListIterator(index: Int) extends util.ListIterator[Filter[?]] {
-    private var lastReturned: FilterList.Entry = uninitialized
-    private var _next: FilterList.Entry = uninitialized
-    private var _nextIndex: Int = 0
-
-    _next = if (index == _size) tailEntry else entryAt(index)
-    _nextIndex = index
-
-    override def hasNext: Boolean = {
-      _nextIndex < _size
-    }
+    override def hasNext: Boolean = cursor != tailEntry
 
     override def next(): Filter[?] = {
-      if (!hasNext) throw new NoSuchElementException()
-      lastReturned = _next
-      _next = _next.next
-      _nextIndex += 1
-      lastReturned.filter
-    }
-
-    override def hasPrevious: Boolean = {
-      _nextIndex > 0
-    }
-
-    override def previous(): Filter[?] = {
-      if (!hasPrevious) throw new NoSuchElementException()
-      _next = if (_next == null) tailEntry else _next.prev
-      lastReturned = _next
-      _nextIndex -= 1
-      lastReturned.filter
-    }
-
-    override def nextIndex(): Int = {
-      _nextIndex
-    }
-
-    override def previousIndex(): Int = {
-      _nextIndex - 1
-    }
-
-    override def remove(): Unit = {
-      if (lastReturned == null) throw new IllegalStateException()
-      val entry = lastReturned
-      lastReturned = null
-      unlink(entry)
-      _nextIndex -= 1
-    }
-
-    override def set(filter: Filter[?]): Unit = {
-      if (lastReturned == null) throw new IllegalStateException()
-      disconnect(lastReturned.prev, lastReturned)
-      disconnect(lastReturned, lastReturned.next)
-      lastReturned.filter = filter
-      connect(lastReturned.prev, lastReturned)
-      connect(lastReturned, lastReturned.next)
-    }
-
-    override def add(filter: Filter[?]): Unit = {
-      lastReturned = null
-      linkBefore(filter, _next)
-      _nextIndex += 1
+      if (!hasNext) throw new java.util.NoSuchElementException()
+      val f = cursor.filter
+      cursor = cursor.next
+      f
     }
   }
 }

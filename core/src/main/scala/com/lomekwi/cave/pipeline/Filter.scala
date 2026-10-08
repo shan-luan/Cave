@@ -1,10 +1,8 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util
 
 import scala.compiletime.uninitialized
-import scala.jdk.CollectionConverters.*
 import scala.reflect.ClassTag
 
 /**
@@ -48,11 +46,11 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
       this("输入")
     }
 
-    override def constraint: util.Set[Class[?]] = {
+    override def constraint: Set[Class[?]] = {
       if (filterOut.isLinked) {
-        (filterOut.next.asScala.flatMap(_.constraint.asScala).union(Set(Filter.this.getType))).asJava
+        filterOut.next.flatMap(_.constraint).toSet + Filter.this.getType
       } else {
-        util.Set.of(Filter.this.getType)
+        Set(Filter.this.getType)
       }
     }
   }

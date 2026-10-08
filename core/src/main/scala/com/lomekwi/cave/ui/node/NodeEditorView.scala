@@ -53,14 +53,14 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
   }
 
   private def isUpToDate: Boolean = {
-    displayedNodes.size == nodeGraph.size() && displayedNodes.forall(node => nodeGraph.contains(node))
+    displayedNodes.size == nodeGraph.size && displayedNodes.forall(node => nodeGraph.contains(node))
   }
 
   private def syncNodeActors(): Unit = {
-    val toAdd: mutable.HashSet[Node] = mutable.HashSet.from(nodeGraph.asScala)
+    val toAdd: mutable.HashSet[Node] = mutable.HashSet.from(nodeGraph)
     toAdd --= displayedNodes
     val toRemove: mutable.HashSet[Node] = mutable.HashSet.from(displayedNodes)
-    toRemove --= nodeGraph.asScala
+    toRemove --= nodeGraph
 
     for (actor <- canvas.getChildren.asScala.toSeq) {
       actor match {

@@ -1,34 +1,16 @@
 package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
-import java.util
 import com.badlogic.gdx.math.Vector2
 
-import scala.jdk.CollectionConverters.*
+import scala.collection.mutable
 
 @SerialVersionUID(1L)
-class NodeGraph extends util.AbstractSet[Node] with Serializable {
-  private val delegate: util.Set[Node] = new util.HashSet[Node]()
-  private val node2pos: util.Map[Node,Vector2] = new util.HashMap[Node,Vector2]()
+class NodeGraph extends Iterable[Node] with Serializable {
+  private val delegate: mutable.LinkedHashSet[Node] = mutable.LinkedHashSet.empty
+  private val node2pos: mutable.HashMap[Node, Vector2] = mutable.HashMap.empty
 
-  def this(nodes: util.Collection[? <: Node]) = {
-    this()
-    nodes.asScala.foreach(add)
-  }
-
-  override def iterator(): util.Iterator[Node] = {
-    delegate.iterator()
-  }
-
-  override def size(): Int = {
-    delegate.size()
-  }
-
-  override def contains(o: Any): Boolean = {
-    delegate.contains(o)
-  }
-
-  override def add(node: Node): Boolean = {
+  def add(node: Node): Boolean = {
     if (delegate.add(node)) {
       node2pos.put(node, new Vector2())
       true
@@ -37,30 +19,31 @@ class NodeGraph extends util.AbstractSet[Node] with Serializable {
     }
   }
 
-  override def remove(o: Any): Boolean = {
-    if (delegate.remove(o)) {
-      node2pos.remove(o)
-      o match {
-        case node: Node => node.remove()
-        case _ =>
-      }
-      true
-    } else {
-      false
+  def remove(o: Any): Boolean = {
+    o match {
+      case node: Node if delegate.remove(node) =>
+        node2pos.remove(node)
+        node.remove()
+        true
+      case _ => false
     }
   }
 
-  override def clear(): Unit = {
+  def contains(node: Node): Boolean = delegate.contains(node)
+
+  override def size: Int = delegate.size
+
+  override def iterator: Iterator[Node] = delegate.iterator
+
+  def clear(): Unit = {
     delegate.clear()
     node2pos.clear()
   }
 
-  def getPosition(node: Node): Vector2 = {
-    node2pos.get(node)
-  }
+  def getPosition(node: Node): Vector2 = node2pos.getOrElse(node, null)
 
   def setPosition(node: Node, x: Float, y: Float): Unit = {
-    val position = node2pos.get(node)
+    val position = node2pos.getOrElse(node, null)
     require(position != null, "节点不在节点图中")
     position.set(x, y)
   }

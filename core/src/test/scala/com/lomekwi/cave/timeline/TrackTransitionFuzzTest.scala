@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import java.util.Random
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 
 /**
  * 转场删除的随机形态测试。反复删除转场并断言：内容不会被转场顶掉区间而从迭代里消失，
@@ -44,7 +43,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     var step = 0
     while (step < 400) {
       val track = timeline.getTrackOrCreate(0)
-      val transitions = track.asScala.collect { case t: Transition => t }.toVector
+      val transitions = track.collect { case t: Transition => t }.toVector
       if (transitions.nonEmpty && rnd.nextInt(4) != 0) {
         timeline.remove(transitions(rnd.nextInt(transitions.size)))
       } else {
@@ -123,8 +122,8 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   private def assertConsistent(timeline: Timeline, known: Vector[Segment], label: String): Unit = {
-    for (track <- timeline.getTracks.asScala) {
-      val visible = track.asScala.toVector
+    for (track <- timeline.getTracks) {
+      val visible = track.toVector
 
       // 反查还在却从迭代里消失，说明它被同键的转场顶掉了，这正是内容与转场同区间的表现形式
       for (s <- known) {
