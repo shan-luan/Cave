@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.project.UndoManager
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotNull, assertNotSame, assertSame, assertTrue}
 import org.junit.jupiter.api.BeforeEach

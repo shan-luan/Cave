@@ -15,7 +15,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.timeline.UndoManager
+import com.lomekwi.cave.project.UndoManager
 
 
 import scala.collection.mutable

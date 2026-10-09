@@ -1,4 +1,4 @@
-package com.lomekwi.cave.timeline
+package com.lomekwi.cave.project
 
 import com.lomekwi.cave.app.selection.SegmentNodeChangedEvent
 import com.lomekwi.cave.pipeline.FilterList
@@ -6,9 +6,8 @@ import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.ProjectDirtyChangedEvent
 import com.lomekwi.cave.playback.RefreshRequestEvent
+import com.lomekwi.cave.timeline.{SegmentGroup, Timeline, Track}
 
 
 import scala.collection.mutable
@@ -53,7 +52,7 @@ class UndoManager(@transient private val project: Project) {
   }
 
   def undo(): Unit = {
-    if (!undoStack.isEmpty) {
+    if (undoStack.nonEmpty) {
       val wasDirty = project.isDirty
       project.currentVersion = project.currentVersion - 1
       val command = undoStack.removeHead()
@@ -66,7 +65,7 @@ class UndoManager(@transient private val project: Project) {
   }
 
   def redo(): Unit = {
-    if (!redoStack.isEmpty) {
+    if (redoStack.nonEmpty) {
       val wasDirty = project.isDirty
       project.currentVersion = project.currentVersion + 1
       val command = redoStack.removeHead()
@@ -78,9 +77,9 @@ class UndoManager(@transient private val project: Project) {
     }
   }
 
-  def canUndo: Boolean = !undoStack.isEmpty
+  def canUndo: Boolean = undoStack.nonEmpty
 
-  def canRedo: Boolean = !redoStack.isEmpty
+  def canRedo: Boolean = redoStack.nonEmpty
 
   def clear(): Unit = {
     undoStack.clear()
@@ -170,7 +169,7 @@ object UndoManager {
   /**
    * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
    */
-  private[timeline] abstract class BatchTrackCommand(protected val timeline: Timeline,
+  private[project] abstract class BatchTrackCommand(protected val timeline: Timeline,
                                                      protected val edits: mutable.ArrayBuffer[TrackEdit]) extends MergeableCommand {
     override def undo(): Unit = timeline.setTracks(UndoManager.foldBefore(edits))
 
@@ -214,7 +213,7 @@ object UndoManager {
   }
 
   final class RemoveSegmentsCommand(private val timeline: Timeline, entries0: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry]) extends MergeableCommand {
-    private final val entries: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry] = entries0.clone()
+    private val entries: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry] = entries0.clone()
 
     override def undo(): Unit = {
       timeline.setTracks(UndoManager.foldBefore(entries.map(_.edit)))
