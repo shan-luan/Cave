@@ -2,7 +2,7 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.timeline.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
+import com.lomekwi.cave.project.UndoManager.{AddSegmentCommand, CompoundCommand, MergeableCommand, MoveSegmentsCommand, RemoveSegmentCommand, RemoveSegmentsCommand, ResizeSegmentsCommand, SplitSegmentCommand, TrackEdit, UndoableCommand}
 import com.lomekwi.cave.playback.TrackWorker
 import com.lomekwi.cave.util.Duplicatable
 
@@ -30,10 +30,10 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
   }
 
   /** 把 index 处的轨道替换为新版本。 */
-  protected[timeline] def setTrack(index: Int, track: Track): Unit = publish(Seq(index -> track))
+  private[cave] def setTrack(index: Int, track: Track): Unit = publish(Seq(index -> track))
 
   /** 一次性替换多条轨道。 */
-  protected[timeline] def setTracks(changes: Seq[(Int, Track)]): Unit = publish(changes)
+  private[cave] def setTracks(changes: Seq[(Int, Track)]): Unit = publish(changes)
 
   private def publish(changes: Seq[(Int, Track)]): Unit = {
     if (changes.isEmpty) return

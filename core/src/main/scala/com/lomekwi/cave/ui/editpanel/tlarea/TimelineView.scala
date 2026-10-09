@@ -12,7 +12,8 @@ import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
-import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline, Track, UndoManager}
+import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline, Track}
+import com.lomekwi.cave.project.UndoManager
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.playback.Playhead
