@@ -144,9 +144,8 @@ class Root extends ApplicationListener {
     VisUI.load(injectChineseFont(VisUI.SkinScale.X2))
     stage = new Stage(new ScreenViewport())
     stage.addCaptureListener(new InputListener {
-      override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-        // 文本输入控件自己会接管键盘焦点，这里再抢一次会让它立刻失焦
-        if (button == Input.Buttons.LEFT && !TextInputs.contains(event.getTarget)) {
+      override def enter(event: InputEvent, x: Float, y: Float, pointer: Int,fromActor: Actor): Unit = {
+        if (!TextInputs.contains(event.getTarget)) {
           var target: Actor = event.getTarget
           while (target != null && !target.isInstanceOf[Focusable]) {
             target = target.getParent
@@ -159,7 +158,6 @@ class Root extends ApplicationListener {
             })
           }
         }
-        false
       }
     })
     multiplexer.addProcessor(stage)
