@@ -19,7 +19,7 @@ import scala.collection.immutable.TreeMap
 final class Track private (val timeline: Timeline, val index: Int,
                            private val blockSegment: Segment,
                            private val layout: Track.Layout,
-                           private val segToOrigin: Map[Segment, Long],
+                           private val segToOrigin: Map[Clip, Long],
                            private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Segment] {
 
   private def isBlock(segment: Segment): Boolean = segment.eq(blockSegment)
@@ -36,15 +36,17 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   /** 片段的 0 秒在时间轴中的位置。要求片段在本轨道，否则抛 IllegalArgumentException。 */
-  def getOrigin(segment: Segment): Long = {
-    require(segToOrigin.contains(segment))
-    segToOrigin(segment)
+  def getOrigin(segment: Segment): Long = segment match {
+    case c: Clip =>
+      require(segToOrigin.contains(c))
+      segToOrigin(c)
+    case _ =>
+      getRange(segment).lo
   }
 
   def contains(segment: Segment): Boolean = layout.containsValue(segment)
 
-  /** 最后一个片段的终点；没有片段时为 0。 */
-  lazy val length: Long = intervalToSeg.iterator.filter { case (_, s) => !isBlock(s) }.map(_._1.hi).maxOption.getOrElse(0L)
+  def length: Long = intervalToSeg.last._1.hi
 
   /** 按起点顺序的下一个内容片段；没有时返回 null。 */
   private[timeline] def nextContent(c: Content): Content = contentAtOrAfter(getRange(c).lo + 1, Set.empty)
@@ -104,10 +106,16 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def put(element: Segment, r: Interval, origin: Long): Track =
-    derived(layout.updated(r, element), segToOrigin.updated(element, origin))
+    derived(layout.updated(r, element), element match {
+      case c: Clip => segToOrigin.updated(c, origin)
+      case _ => segToOrigin
+    })
 
   private def drop(element: Segment): Track =
-    derived(layout.removedValue(element), segToOrigin.removed(element))
+    derived(layout.removedValue(element), element match {
+      case c: Clip => segToOrigin.removed(c)
+      case _ => segToOrigin
+    })
 
   private def canPlaceAt(c: Content, r: Interval): Boolean = canPlaceAt(c, r, Set.empty)
 
@@ -138,7 +146,7 @@ final class Track private (val timeline: Timeline, val index: Int,
    * 起点小于 time 的最后一个内容片段，跳过 skip 里的条目；没有时返回 null。
    */
   private def contentBefore(time: Long, skip: Set[Segment]): Content = {
-    var bound = at(time)
+    var bound = Interval.at(time)
     var entry = intervalToSeg.rangeUntil(bound).lastOption
     while (entry.isDefined) {
       val current = entry.get
@@ -154,7 +162,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /** 起点不小于 time 的第一个内容片段，跳过 skip 里的条目；没有时返回 null。 */
   private def contentAtOrAfter(time: Long, skip: Set[Segment]): Content = {
-    intervalToSeg.rangeFrom(at(time)).iterator
+    intervalToSeg.rangeFrom(Interval.at(time)).iterator
       .map(_._2)
       .collectFirst { case x: Content if !isBlock(x) && !skip.contains(x) => x }
       .orNull
@@ -444,7 +452,7 @@ final class Track private (val timeline: Timeline, val index: Int,
   }
 
   private def derived(layout: Track.Layout,
-                      segToOrigin: Map[Segment, Long]): Track =
+                      segToOrigin: Map[Clip, Long]): Track =
     new Track(timeline, index, blockSegment, layout, segToOrigin, transitions)
 
   private def withTransitions(transitions: Track.TransitionIndex): Track =
@@ -619,7 +627,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     def skip(x: Content): Boolean = x.eq(left) || x.eq(right)
     if (forward) {
       var bound = hiCap - lr.hi
-      val n = intervalToSeg.rangeFrom(at(rr.lo)).iterator.map(_._2)
+      val n = intervalToSeg.rangeFrom(Interval.at(rr.lo)).iterator.map(_._2)
         .collectFirst { case x: Content if !isBlock(x) && !skip(x) => x }
         .orNull
       if (n != null) {
@@ -628,7 +636,7 @@ final class Track private (val timeline: Timeline, val index: Int,
       Math.max(bound, 0)
     } else {
       var bound = Math.max(loCap - rr.lo, lr.lo + 1 - lr.hi)
-      val p = intervalToSeg.rangeUntil(at(lr.lo)).iterator.map(_._2)
+      val p = intervalToSeg.rangeUntil(Interval.at(lr.lo)).iterator.map(_._2)
         .collect { case x: Content if !isBlock(x) && !skip(x) => x }
         .toSeq.lastOption
         .orNull
@@ -653,7 +661,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     } else {
       // 空隙从上一个条目的终点延伸到下一个条目的起点
       // 条目按 (lo, hi) 有序时 hi 不减（见 [[segmentAt]]），lo ≤ time 的条目里最后一个 hi 最大
-      val from = lastAtOrBefore(upTo(time)) match {
+      val from = lastAtOrBefore(Interval.upTo(time)) match {
         case Some((r, _)) => Math.max(0L, r.hi)
         case None => 0L
       }
@@ -677,7 +685,7 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   /** 起点不小于 time 的首个片段；没有时返回 null。 */
   private[timeline] def sourceAtOrAfter(time: Long): Segment = {
-    intervalToSeg.rangeFrom(at(time)).iterator.map(_._2).nextOption().orNull
+    intervalToSeg.rangeFrom(Interval.at(time)).iterator.map(_._2).nextOption().orNull
   }
 
   /** 起点小于 time 的最后一个片段；没有时返回 null。 */
@@ -720,7 +728,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     val parts = intervalToSeg.iterator.filterNot((_, s) => isBlock(s)).map { case (r, s) =>
       s match {
         case c: Content =>
-          c.displayName + "=[" + r.lo + "," + Track.timeText(r.hi) + ") o=" + segToOrigin(c) + " m=" + Track.timeText(maxEndOf(c))
+          c.displayName + "=[" + r.lo + "," + Track.timeText(r.hi) + ") o=" + getOrigin(c) + " m=" + Track.timeText(maxEndOf(c))
         case t: Transition =>
           t.displayName + "=[" + r.lo + "," + Track.timeText(r.hi) + ")"
       }
@@ -765,7 +773,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     // 遇到 hi ≤ time 的条目即可停止，其之前的条目 hi 更短，不可能覆盖 time
     var best: Segment = null
     var bestLen = Long.MaxValue
-    var current = lastAtOrBefore(upTo(time))
+    var current = lastAtOrBefore(Interval.upTo(time))
     while (current.isDefined) {
       val (r, s) = current.get
       if (r.hi <= time) return best
@@ -783,17 +791,13 @@ final class Track private (val timeline: Timeline, val index: Int,
     if (range.isEmpty) {
       Iterator.empty
     } else {
-      bt.rangeUntil(at(range.hi)).iterator
+      bt.rangeUntil(Interval.at(range.hi)).iterator
         .dropWhile(_._1.hi <= range.lo)
     }
   }
 
-  private def upTo(time: Long): Interval = time ~~ Long.MaxValue
-
-  private def at(time: Long): Interval = time ~~ time
-
   private def lastBefore(bt: immutable.TreeMap[Interval, Segment], time: Long): (Interval, Segment) = {
-    bt.maxBefore(at(time)).orNull
+    bt.maxBefore(Interval.at(time)).orNull
   }
 
   /** 键不大于 bound 的最后一个条目。 */
@@ -804,7 +808,7 @@ final class Track private (val timeline: Timeline, val index: Int,
     }
 
   private def nextStart(time: Long): Long = {
-    intervalToSeg.minAfter(at(time)).map(_._1.lo).getOrElse(Long.MaxValue)
+    intervalToSeg.minAfter(Interval.at(time)).map(_._1.lo).getOrElse(Long.MaxValue)
   }
 }
 
@@ -819,7 +823,7 @@ object Track {
     val layout = BiMap(TreeMap.empty[Interval, Segment], Map.empty[Segment, Interval])
       .updated(Long.MinValue ~~ 0L, blockSegment)
     new Track(timeline, index, blockSegment, layout,
-      Map[Segment, Long](blockSegment -> 0L),
+      Map.empty[Clip, Long],
       BiMap(Map.empty[Content, Transition], Map.empty[Transition, Content]))
   }
 

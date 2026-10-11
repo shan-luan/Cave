@@ -18,11 +18,6 @@ final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]
     val reverse: V2KM
 ) extends Serializable {
 
-  // 互逆性无需内容校验。初始两个 Map 为空，空集的逆映射仍是空集，
-  // 所有修改又构造性地维持一一对应，归纳可知任意状态下互逆。
-  // K2VM 与 V2KM 须遵循 Scala 集合约定，updated 与 removed 返回同类型实例
-  // （标准库实现均满足），各方法据此恢复具体类型。
-
   def get(key: K): Option[V] = forward.get(key)
 
   def getKey(value: V): Option[K] = reverse.get(value)
