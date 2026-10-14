@@ -58,6 +58,7 @@ object Lwjgl3Launcher {
     configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png")
     configuration.setPauseWhenLostFocus(false)
     configuration.setPauseWhenMinimized(false)
+    configuration.setStencilBits(8)
     configuration
   }
 }

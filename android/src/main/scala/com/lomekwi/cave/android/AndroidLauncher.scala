@@ -14,6 +14,7 @@ class AndroidLauncher extends AndroidApplication {
         super.onCreate(savedInstanceState);
         val configuration: AndroidApplicationConfiguration = new AndroidApplicationConfiguration();
         configuration.useImmersiveMode = true; // Recommended, but not required.
+        configuration.stencil = 8;
         initialize(new Main(new AndroidFileChooser(this)), configuration);
     }
 }
