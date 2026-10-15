@@ -21,8 +21,7 @@ import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.UndoManager
+import com.lomekwi.cave.project.ProjectContext
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
@@ -70,7 +69,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private var gizmoSin: Float = 0
   private var gizmoFlipX: Boolean = false
   private var gizmoFlipY: Boolean = false
-  private var gizmoOldState: UndoManager.TransNodeState = uninitialized
 
   private var myStartBBox: Array[Float] = uninitialized
   private var siblingBBoxes: mutable.ArrayBuffer[Array[Float]] = uninitialized
@@ -132,27 +130,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return
       }
       if (dragModifier != null && dragging) {
-        val p: Project = App.root.getFrontendProject
-        if (p != null) {
-          val node: TransNode = dragModifier
-          val oldDx: Float = startNodeDx
-          val oldDy: Float = startNodeDy
-          val newDx: Float = node.getDx.toFloat
-          val newDy: Float = node.getDy.toFloat
-          val oldScaleX: Float = node.getScaleX.toFloat
-          val oldScaleY: Float = node.getScaleY.toFloat
-          val newScaleX: Float = gizmoStartScaleX
-          val newScaleY: Float = gizmoStartScaleY
-          val oldRotation: Float = gizmoStartRotation
-          val newRotation: Float = node.getDRotation.toFloat
-          val oldFlipX: Boolean = gizmoFlipX
-          val oldFlipY: Boolean = gizmoFlipY
-          val newFlipX: Boolean = node.flipX()
-          val newFlipY: Boolean = node.flipY()
-          p.undoManager.record(UndoManager.TransformNodeCommand(p, frame.segment, node,
-            UndoManager.TransNodeState(oldDx, oldDy, oldScaleX, oldScaleY, oldRotation, oldFlipX, oldFlipY),
-            UndoManager.TransNodeState(newDx, newDy, newScaleX, newScaleY, newRotation, newFlipX, newFlipY)))
-          p.projEventBus.post(RefreshRequestEvent)
+        val c: ProjectContext = App.root.getFrontendContext
+        if (c != null) {
+          c.touch()
+          c.bus.post(RefreshRequestEvent)
         }
       }
       if (!dragging && !gizmoDragging) {
@@ -346,11 +327,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     gizmoStartScaleX = dragModifier.getScaleX.toFloat
     gizmoStartScaleY = dragModifier.getScaleY.toFloat
     gizmoStartRotation = dragModifier.getDRotation.toFloat
-    gizmoOldState = UndoManager.TransNodeState(
-      gizmoStartDx, gizmoStartDy,
-      gizmoStartScaleX, gizmoStartScaleY,
-      gizmoStartRotation,
-      dragModifier.flipX(), dragModifier.flipY())
 
     computeDragContext()
 
@@ -514,24 +490,16 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   private def finishGizmoDrag(): Unit = {
-    val p: Project = App.root.getFrontendProject
-    if (p != null && dragModifier != null && gizmoOldState != null) {
-      val node: TransNode = dragModifier
-      val newState = UndoManager.TransNodeState(
-        node.getDx.toFloat, node.getDy.toFloat,
-        node.getScaleX.toFloat, node.getScaleY.toFloat,
-        node.getDRotation.toFloat,
-        node.flipX(), node.flipY())
-      if (!gizmoOldState.equals(newState)) {
-        p.undoManager.record(UndoManager.TransformNodeCommand(
-          p, frame.segment, node, gizmoOldState, newState))
+    if (dragModifier != null) {
+      val c: ProjectContext = App.root.getFrontendContext
+      if (c != null) {
+        c.touch()
+        c.bus.post(RefreshRequestEvent)
       }
-      p.projEventBus.post(RefreshRequestEvent)
     }
     gizmoDragging = false
     gizmoHandle = null
     dragModifier = null
-    gizmoOldState = null
   }
 
   private def updateDrag(stageX: Float, stageY: Float): Unit = {
@@ -554,8 +522,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   /** 拖拽改值后请求轨道线程重新求值，画面统一由管线滤镜链刷新，UI 不做本地重放 */
   private def requestRefresh(): Unit = {
-    val p: Project = App.root.getFrontendProject
-    if (p != null) p.projEventBus.post(RefreshRequestEvent)
+    val c: ProjectContext = App.root.getFrontendContext
+    if (c != null) c.bus.post(RefreshRequestEvent)
   }
 
   private def computeDragContext(): Unit = {

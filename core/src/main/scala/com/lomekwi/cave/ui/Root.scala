@@ -42,6 +42,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane
 import com.lomekwi.cave.project.Project
+import com.lomekwi.cave.project.ProjectContext
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.tabs.app.ProjectTab
@@ -84,7 +85,7 @@ class Root extends ApplicationListener {
 
     multiplexer.addProcessor(0, new InputProcessor {
       override def keyDown(keycode: Int): Boolean = {
-        val project: Project = getFrontendProject
+        val context: ProjectContext = getFrontendContext
         val ep: EditPanel = getFrontendEditPanel
         // 无需项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
@@ -96,7 +97,7 @@ class Root extends ApplicationListener {
         } else if (App.shortcutManager.isActive(TopBar.TopActions.CLOSE)) {
           topBar.performClose()
           true
-        } else if (project == null || project.undoManager == null) {
+        } else if (context == null) {
           false
         } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
           // 需要项目的 TopActions
@@ -112,11 +113,11 @@ class Root extends ApplicationListener {
           App.copyManager.copy()
           true
         } else if (App.shortcutManager.isActive(TimelineView.Actions.UNDO)) {
-          project.undoManager.undo()
+          context.undo.undo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
         } else if (App.shortcutManager.isActive(TimelineView.Actions.REDO)) {
-          project.undoManager.redo()
+          context.undo.redo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
         } else {
@@ -295,6 +296,11 @@ class Root extends ApplicationListener {
     case _ => null
   }
 
+  def getFrontendContext: ProjectContext = tabbedPane.getActiveTab match {
+    case tab: ProjectTab => tab.context
+    case _ => null
+  }
+
   def getFrontendEditPanel: EditPanel = tabbedPane.getActiveTab match {
     case tab: ProjectTab => tab.editPanel
     case _ => null
@@ -302,8 +308,8 @@ class Root extends ApplicationListener {
 
   /** 处理从系统桌面或文件管理器拖入窗口的文件，为前台项目创建媒体资源 */
   def importDroppedFiles(paths: Array[String]): Unit = {
-    val project = getFrontendProject
-    if (project == null) {
+    val context = getFrontendContext
+    if (context == null) {
       toastManager.show(i18n("请先打开或新建项目"), 2f)
       return
     }
@@ -316,7 +322,7 @@ class Root extends ApplicationListener {
         failed += file.getName
       } else {
         try {
-          project.sourceFactory.ensureResources(file)
+          context.sourceFactory.ensureResources(file)
           imported += 1
         } catch {
           case e: Exception =>

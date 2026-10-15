@@ -22,7 +22,7 @@ import scala.util.Using
  * @param maxDuration    片段最大时长（µs）
  * @param segmentFactory 按随机时长构造片段，默认 [[TestCont]]
  */
-class RandomTimelineFiller(final val timeline: Timeline,
+class RandomTimelineFiller(final val timeline: TestTimeline,
                            final val rnd: Random,
                            private val span: Long = 200_000L,
                            private val trackCount: Int = 4,
@@ -84,14 +84,15 @@ class RandomTimelineFiller(final val timeline: Timeline,
     for (track <- timeline.getTracks) {
       for (s <- track) {
         if (rnd.nextFloat() < probability) {
-          var target: SegmentGroup = null
+          var reuse = -1
           if (!groups.isEmpty && rnd.nextFloat() < reuseProbability) {
-            target = groups(rnd.nextInt(groups.size))
-          } else {
-            target = timeline.newGroup()
-            groups += target
+            reuse = rnd.nextInt(groups.size)
           }
-          target.add(s)
+          if (reuse >= 0) {
+            groups(reuse) = timeline.groupAdd(groups(reuse), s)
+          } else {
+            groups += timeline.groupAdd(timeline.newGroup(), s)
+          }
         }
       }
     }
@@ -104,9 +105,9 @@ class RandomTimelineFiller(final val timeline: Timeline,
   def randomDrag(): Unit = {
     var attempt = 0
     while (attempt < 40) {
-      val before = timeline.project.currentVersion
+      val before = timeline.context.version
       performRandomOp()
-      if (timeline.project.currentVersion != before) {
+      if (timeline.context.version != before) {
         assertLayoutValid()
         return // 成功记录了一步
       }

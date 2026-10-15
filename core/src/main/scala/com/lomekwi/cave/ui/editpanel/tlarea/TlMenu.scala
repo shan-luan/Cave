@@ -9,7 +9,6 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.pipeline.{Boundless, Content, Segment}
 import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
-import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.timeline.Interval
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
@@ -76,14 +75,14 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val segment: Content = new Boundless(new TextSource())
     val duration: Long = segment.getDefaultDuration
 
-    val timeline = timelineView.timeline
+    val context = timelineView.context
     val range: Interval = time ~~ (time + duration)
-    Using.resource(timeline.record()) { h =>
+    Using.resource(context.record()) { h =>
       // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
       var targetTrack: Int = 0
       var placed = false
       while (!placed) {
-        if (timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+        if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
           placed = true
         } else {
           targetTrack += 1
@@ -95,16 +94,15 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def addMediaFile(file: File): Unit = {
-    val project: Project = timelineView.project
+    val context = timelineView.context
     try {
-      val segments: mutable.ArrayBuffer[Content] = project.sourceFactory.getAll(file)
+      val segments: mutable.ArrayBuffer[Content] = context.sourceFactory.getAll(file)
       if (segments.nonEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
         val added = mutable.ArrayBuffer.empty[Segment]
 
-        val timeline = timelineView.timeline
-        Using.resource(timeline.record()) { h =>
+        Using.resource(context.record()) { h =>
           for (segment <- segments) {
             val duration: Long = segment.getDefaultDuration
             if (duration > 0) {
@@ -112,7 +110,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
               val range: Interval = time ~~ (time + duration)
               var placed = false
               while (!placed) {
-                if (timeline.tryAdd(timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+                if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
                   placed = true
                 } else {
                   targetTrack += 1
@@ -126,10 +124,8 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
         }
 
         if (added.size >= 2) {
-          val group = timeline.newGroup()
-          for (segment <- added) {
-            group.add(segment)
-          }
+          val (t, group) = context.timeline.newGroup()
+          context.applyTimeline(t.replaceGroup(group, group.addAll(added)))
         }
 
         timelineView.markTimelineDirty()

@@ -6,6 +6,7 @@ import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.GdxTestBase
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.timeline.TestCont
+import com.lomekwi.cave.timeline.TestTimeline
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
@@ -34,7 +35,7 @@ import TimelineViewDragSimTest.*
 class TimelineViewDragSimTest extends GdxTestBase {
 
   private var project: TestProject = null
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
   private var tl: TimelineView = null
   private var view: TimelineView.ViewState = null
 
@@ -46,9 +47,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tl = new ObjenesisStd().newInstance(classOf[TimelineView])
     tl.setSize(WIDTH, HEIGHT)
 
-    setField(tl, "timeline", timeline)
-    setField(tl, "project", project)
-    setField(tl, "selectedSegments", new SegmentSet(timeline))
+    setField(tl, "context", project.context)
+    setField(tl, "selectedSegments", new SegmentSet(project.context))
     setField(tl, "dirty", true)
 
     view = new TimelineView.ViewState()
@@ -122,7 +122,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     actor.finishDrag()
 
-    project.undoManager.undo()
+    project.undo.undo()
     assertEquals(0L ~~ 1000_000L, t0.getRange(s))
     assertEquals(5_000_000L, t0.getOrigin(s))
   }
@@ -254,7 +254,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
 
     aActor.finishDrag()
-    project.undoManager.undo()
+    project.undo.undo()
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
     assertTrue(timeline.findTrackOf(transition).isDefined)
   }
@@ -303,7 +303,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
 
     tActor.finishDrag()
-    project.undoManager.undo()
+    project.undo.undo()
     assertTrue(timeline.findTrackOf(transition).isDefined)
   }
 
@@ -411,7 +411,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertTrue(Math.abs(bRange.lo - 1200_000L) <= 1000L, "b 起点应跟手到约 1200000，实际 " + bRange.lo)
 
     tActor.finishDrag()
-    project.undoManager.undo()
+    project.undo.undo()
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
     assertEquals(500_000L ~~ 1500_000L, t0.getRange(b))
     assertTrue(timeline.findTrackOf(transition).isDefined)

@@ -5,7 +5,7 @@ import com.lomekwi.cave.util.i18n.I18N.i18n
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.app.selection.{SegmentNodeChangedEvent, SegmentSet, SegmentSetSelectedEvent}
+import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.kotcrab.vis.ui.widget.VisLabel
@@ -42,16 +42,6 @@ class Inspector extends VisTable {
       showInfo(e.set.head)
     } else {
       showMultiInfo(e.set)
-    }
-  }
-
-  /** 片段的节点图改动后，若该片段正在显示则重建内容。 */
-  @Subscribe
-  def onSegmentNodeChanged(e: SegmentNodeChangedEvent): Unit = {
-    val shown = if (currentSet != null) currentSet.contains(e.segment)
-                else currentSegment != null && (currentSegment eq e.segment)
-    if (shown) {
-      rebuildContent()
     }
   }
 
@@ -102,9 +92,9 @@ class Inspector extends VisTable {
 
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
   private def sortByPlacement(segments: mutable.ArrayBuffer[Segment]): Unit = {
-    val project = App.root.getFrontendProject
-    if (project == null) return
-    val timeline = project.timeline
+    val context = App.root.getFrontendContext
+    if (context == null) return
+    val timeline = context.timeline
     segments.sortInPlaceWith((a: Segment, b: Segment) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
@@ -136,8 +126,8 @@ class Inspector extends VisTable {
       val created: Node = App.nodeRegistry.createCompatible(segment, idx)
       filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
         segment.filters += created.asInstanceOf[Filter[?]]
-        val p = App.root.getFrontendProject
-        if (p != null) p.undoManager.record(UndoManager.AddFilterCommand(p, segment, created.asInstanceOf[Filter[?]]))
+        val c = App.root.getFrontendContext
+        if (c != null) c.touch()
         rebuildContent()
       }))
     }

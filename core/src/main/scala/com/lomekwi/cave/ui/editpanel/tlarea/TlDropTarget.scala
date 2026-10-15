@@ -30,12 +30,12 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: mutable.ArrayBuffer[Content] = timelineView.project.sourceFactory.getAll(file)
+      val segments: mutable.ArrayBuffer[Content] = timelineView.context.sourceFactory.getAll(file)
       val startTime: Long = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
       val added = mutable.ArrayBuffer.empty[Segment]
-      Using.resource(timelineView.timeline.record()) { h =>
+      Using.resource(timelineView.context.record()) { h =>
         for (segment <- segments) {
           val duration: Long = segment.getDefaultDuration
           if (duration > 0) {
@@ -44,8 +44,8 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
             // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
             var placed = false
             while (!placed) {
-              val track = timelineView.timeline.getTrackOrCreate(targetTrack)
-              if (timelineView.timeline.tryAdd(track, segment, range, startTime) == 0) {
+              val track = timelineView.context.timeline.getTrackOrCreate(targetTrack)
+              if (timelineView.context.tryAdd(track, segment, range, startTime) == 0) {
                 placed = true
               } else {
                 targetTrack += 1
@@ -57,10 +57,8 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
         }
       }
       if (added.size >= 2) {
-        val group = timelineView.timeline.newGroup()
-        for (segment <- added) {
-          group.add(segment)
-        }
+        val (t, group) = timelineView.context.timeline.newGroup()
+        timelineView.context.applyTimeline(t.replaceGroup(group, group.addAll(added)))
       }
       timelineView.dirty = true
     } catch {

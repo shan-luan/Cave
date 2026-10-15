@@ -1,50 +1,15 @@
 package com.lomekwi.cave.project
 
-import com.lomekwi.cave.app.selection.SegmentNodeChangedEvent
-import com.lomekwi.cave.pipeline.FilterList
-import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.playback.RefreshRequestEvent
-import com.lomekwi.cave.timeline.{SegmentGroup, Timeline, Track}
-
+import com.lomekwi.cave.timeline.Timeline
 
 import scala.collection.mutable
 
-class UndoManager(@transient private val project: Project) {
-  private final val undoStack: mutable.ArrayDeque[UndoManager.UndoableCommand] = mutable.ArrayDeque.empty[UndoManager.UndoableCommand]
-  private final val redoStack: mutable.ArrayDeque[UndoManager.UndoableCommand] = mutable.ArrayDeque.empty[UndoManager.UndoableCommand]
+final class UndoManager(@transient private val context: ProjectContext) {
+  private final val undoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
+  private final val redoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
 
-  def execute(command: UndoManager.UndoableCommand): Unit = {
-    val wasDirty = project.isDirty
-    project.currentVersion = project.currentVersion + 1
-    command.redo()
-    push(command)
-    if (wasDirty != project.isDirty) {
-      project.projEventBus.post(ProjectDirtyChangedEvent)
-    }
-  }
-
-  def record(command: UndoManager.UndoableCommand): Unit = {
-    val wasDirty = project.isDirty
-    project.currentVersion = project.currentVersion + 1
-    push(command)
-    if (wasDirty != project.isDirty) {
-      project.projEventBus.post(ProjectDirtyChangedEvent)
-    }
-  }
-
-  private def push(command: UndoManager.UndoableCommand): Unit = {
-    val top = if (undoStack.isEmpty) null else undoStack.head
-    val merged = (command, top) match {
-      case (_: UndoManager.MergeableCommand, topMc: UndoManager.MergeableCommand) =>
-        topMc.getClass == command.getClass && topMc.merge(command)
-      case _ => false
-    }
-    if (!merged) {
-      undoStack.prepend(command)
-    }
+  def push(edit: UndoManager.TimelineEdit): Unit = {
+    undoStack.prepend(edit)
     redoStack.clear()
     if (undoStack.size > UndoManager.MAX_UNDO) {
       undoStack.removeLast()
@@ -53,27 +18,19 @@ class UndoManager(@transient private val project: Project) {
 
   def undo(): Unit = {
     if (undoStack.nonEmpty) {
-      val wasDirty = project.isDirty
-      project.currentVersion = project.currentVersion - 1
-      val command = undoStack.removeHead()
-      command.undo()
-      redoStack.prepend(command)
-      if (wasDirty != project.isDirty) {
-        project.projEventBus.post(ProjectDirtyChangedEvent)
-      }
+      val edit = undoStack.removeHead()
+      context.applyTimeline(edit.before)
+      redoStack.prepend(edit)
+      context.bumpVersion(-1)
     }
   }
 
   def redo(): Unit = {
     if (redoStack.nonEmpty) {
-      val wasDirty = project.isDirty
-      project.currentVersion = project.currentVersion + 1
-      val command = redoStack.removeHead()
-      command.redo()
-      undoStack.prepend(command)
-      if (wasDirty != project.isDirty) {
-        project.projEventBus.post(ProjectDirtyChangedEvent)
-      }
+      val edit = redoStack.removeHead()
+      context.applyTimeline(edit.after)
+      undoStack.prepend(edit)
+      context.bumpVersion(1)
     }
   }
 
@@ -90,245 +47,5 @@ class UndoManager(@transient private val project: Project) {
 object UndoManager {
   private final val MAX_UNDO = 100
 
-  trait UndoableCommand {
-    def undo(): Unit
-    def redo(): Unit
-  }
-
-  /**
-   * 可合并命令，同类型命令可合并为一个。
-   */
-  trait MergeableCommand extends UndoableCommand {
-    /**
-     * 将 other 合并到当前命令中。合并后，[[UndoableCommand.undo]] 应能撤销两者的效果，
-     * [[UndoableCommand.redo]] 应能重做合并后的效果。
-     * @return true 表示合并成功
-     */
-    def merge(other: UndoableCommand): Boolean
-  }
-
-  /**
-   * 一条轨道的一次版本替换，撤销即换回 [[before]]，重做即换成 [[after]]。
-   */
-  case class TrackEdit(index: Int, before: Track, after: Track)
-
-  /** 把同轨道的多条替换折叠成「最早的 before」与「最新的 after」，用于成批且原子地恢复。 */
-  private def foldBefore(edits: Iterable[TrackEdit]): Seq[(Int, Track)] = {
-    val m = mutable.LinkedHashMap.empty[Int, Track]
-    for (e <- edits) if (!m.contains(e.index)) m.put(e.index, e.before)
-    m.toSeq
-  }
-
-  private def foldAfter(edits: Iterable[TrackEdit]): Seq[(Int, Track)] = {
-    val m = mutable.LinkedHashMap.empty[Int, Track]
-    for (e <- edits) m.put(e.index, e.after)
-    m.toSeq
-  }
-
-  case class AddSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
-    override def undo(): Unit = timeline.setTrack(index, before)
-
-    override def redo(): Unit = timeline.setTrack(index, after)
-  }
-
-  case class RemoveSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track,
-                                 segment: Segment, group: Option[SegmentGroup]) extends UndoableCommand {
-    override def undo(): Unit = {
-      timeline.setTrack(index, before)
-      group.foreach(_.add(segment))
-    }
-
-    override def redo(): Unit = {
-      timeline.setTrack(index, after)
-      group.foreach(_.remove(segment))
-    }
-  }
-
-  case class SplitSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track) extends UndoableCommand {
-    override def undo(): Unit = timeline.setTrack(index, before)
-
-    override def redo(): Unit = timeline.setTrack(index, after)
-  }
-
-  class CompoundCommand(commands: UndoableCommand*) extends UndoableCommand {
-    override def undo(): Unit = {
-      commands.reverseIterator.foreach(cmd => cmd.undo())
-    }
-
-    override def redo(): Unit = {
-      for (cmd <- commands) {
-        cmd.redo()
-      }
-    }
-  }
-
-  private def filterList(segment: Segment): FilterList = {
-    segment.filters
-  }
-
-  /**
-   * 批量轨道替换命令，一次操作在若干轨道上留下的版本变化。
-   */
-  private[project] abstract class BatchTrackCommand(protected val timeline: Timeline,
-                                                     protected val edits: mutable.ArrayBuffer[TrackEdit]) extends MergeableCommand {
-    override def undo(): Unit = timeline.setTracks(UndoManager.foldBefore(edits))
-
-    override def redo(): Unit = timeline.setTracks(UndoManager.foldAfter(edits))
-
-    /** 合并时同一轨道保留最早的 before、取最新的 after。 */
-    protected def mergeEdits(other: mutable.ArrayBuffer[TrackEdit]): Unit = {
-      for (ne <- other) {
-        val idx = edits.indexWhere(e => e.index == ne.index)
-        if (idx < 0) {
-          edits += ne
-        } else {
-          edits(idx) = TrackEdit(ne.index, edits(idx).before, ne.after)
-        }
-      }
-    }
-  }
-
-  final class MoveSegmentsCommand(timeline0: Timeline, entries0: mutable.ArrayBuffer[TrackEdit])
-    extends BatchTrackCommand(timeline0, entries0.clone()) {
-
-    override def merge(other: UndoableCommand): Boolean = other match {
-      case o: MoveSegmentsCommand =>
-        mergeEdits(o.edits)
-        true
-      case _ =>
-        false
-    }
-  }
-
-  final class ResizeSegmentsCommand(timeline0: Timeline, entries0: mutable.ArrayBuffer[TrackEdit])
-    extends BatchTrackCommand(timeline0, entries0.clone()) {
-
-    override def merge(other: UndoableCommand): Boolean = other match {
-      case o: ResizeSegmentsCommand =>
-        mergeEdits(o.edits)
-        true
-      case _ =>
-        false
-    }
-  }
-
-  final class RemoveSegmentsCommand(private val timeline: Timeline, entries0: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry]) extends MergeableCommand {
-    private val entries: mutable.ArrayBuffer[RemoveSegmentsCommand.RemoveEntry] = entries0.clone()
-
-    override def undo(): Unit = {
-      timeline.setTracks(UndoManager.foldBefore(entries.map(_.edit)))
-      for (e <- entries.reverseIterator) {
-        e.group.foreach(_.add(e.segment))
-      }
-    }
-
-    override def redo(): Unit = {
-      timeline.setTracks(UndoManager.foldAfter(entries.map(_.edit)))
-      for (e <- entries) {
-        e.group.foreach(_.remove(e.segment))
-      }
-    }
-
-    override def merge(other: UndoableCommand): Boolean = {
-      other match {
-        case o: RemoveSegmentsCommand =>
-          for (ne <- o.entries) {
-            if (!entries.exists(e => e.segment eq ne.segment)) entries += ne
-          }
-          true
-        case _ =>
-          false
-      }
-    }
-  }
-
-  object RemoveSegmentsCommand {
-    case class RemoveEntry(edit: TrackEdit, segment: Segment, group: Option[SegmentGroup])
-  }
-
-  /** 节点图被改动后通知界面重建，只在片段确实位于时间轴上时通知。 */
-  private def postRefresh(project: Project, segment: Segment): Unit = {
-    if (segment != null && project.timeline.findTrackOf(segment).isDefined) {
-      project.projEventBus.post(SegmentNodeChangedEvent(segment))
-      project.projEventBus.post(RefreshRequestEvent)
-    }
-  }
-
-  case class AddFilterCommand(project: Project, segment: Segment, filter: Filter[?]) extends UndoableCommand {
-    override def undo(): Unit = {
-      filterList(segment) -= filter
-      postRefresh(project, segment)
-    }
-
-    override def redo(): Unit = {
-      filterList(segment) += filter
-      postRefresh(project, segment)
-    }
-  }
-
-  case class RemoveFilterCommand(project: Project, segment: Segment, filter: Filter[?], index: Int) extends UndoableCommand {
-    override def undo(): Unit = {
-      filterList(segment).insert(index, filter)
-      postRefresh(project, segment)
-    }
-
-    override def redo(): Unit = {
-      filterList(segment) -= filter
-      postRefresh(project, segment)
-    }
-  }
-
-  case class ReorderFilterCommand(project: Project, segment: Segment, filter: Filter[?], oldIndex: Int, newIndex: Int) extends UndoableCommand {
-    override def undo(): Unit = {
-      filterList(segment) -= filter
-      filterList(segment).insert(oldIndex, filter)
-      postRefresh(project, segment)
-    }
-
-    override def redo(): Unit = {
-      filterList(segment) -= filter
-      filterList(segment).insert(newIndex, filter)
-      postRefresh(project, segment)
-    }
-  }
-
-  case class FpPortValueCommand(project: Project, port: Node.InPort[?], segment: Segment, oldValue: Double, newValue: Double) extends UndoableCommand {
-    override def undo(): Unit = {
-      setValue(oldValue)
-    }
-
-    override def redo(): Unit = {
-      setValue(newValue)
-    }
-
-    private def setValue(v: Double): Unit = {
-      port.asInstanceOf[Node.InPort[Double]].defaultData = v
-      postRefresh(project, segment)
-    }
-  }
-
-  case class TransNodeState(dx: Float, dy: Float, scaleX: Float, scaleY: Float,
-                            dRotation: Float,
-                            flipX: Boolean, flipY: Boolean)
-
-  case class TransformNodeCommand(project: Project, segment: Segment, node: TransNode, oldState: TransNodeState, newState: TransNodeState) extends UndoableCommand {
-    override def undo(): Unit = {
-      applyState(oldState)
-    }
-
-    override def redo(): Unit = {
-      applyState(newState)
-    }
-
-    private def applyState(s: TransNodeState): Unit = {
-      node.setDx(s.dx)
-      node.setDy(s.dy)
-      node.setScaleX(s.scaleX)
-      node.setScaleY(s.scaleY)
-      node.setDRotation(s.dRotation)
-      node.flipX(s.flipX)
-      node.flipY(s.flipY)
-      postRefresh(project, segment)
-    }
-  }
+  case class TimelineEdit(before: Timeline, after: Timeline)
 }

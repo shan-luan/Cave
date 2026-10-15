@@ -2,10 +2,26 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.Segment
 
-import scala.collection.mutable
+import java.io.Serializable
 
-/**
- * 一组被同时操作的片段。组可以跨轨道，因此不归属于任何轨道，由 [[Timeline]] 统一登记。
- */
 @SerialVersionUID(1L)
-class SegmentGroup extends mutable.LinkedHashSet[Segment] with Serializable
+final class SegmentGroup(val segments: Set[Segment]) extends Iterable[Segment] with Serializable {
+  def contains(segment: Segment): Boolean = segments.contains(segment)
+
+  def add(segment: Segment): SegmentGroup = new SegmentGroup(segments + segment)
+
+  def addAll(more: Iterable[Segment]): SegmentGroup = new SegmentGroup(segments ++ more)
+
+  def remove(segment: Segment): SegmentGroup = new SegmentGroup(segments - segment)
+
+  override def isEmpty: Boolean = segments.isEmpty
+
+  override def iterator: Iterator[Segment] = segments.iterator
+
+  override def equals(o: Any): Boolean = o match {
+    case other: SegmentGroup => segments == other.segments
+    case _ => false
+  }
+
+  override def hashCode(): Int = segments.hashCode()
+}

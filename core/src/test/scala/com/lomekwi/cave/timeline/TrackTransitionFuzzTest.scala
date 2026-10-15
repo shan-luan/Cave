@@ -56,7 +56,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   /** 用随机时长与随机落点堆叠片段；放得下才留下，因此每次得到的都是合法布局。 */
-  private def buildRandomTrack(timeline: Timeline, rnd: Random): Vector[Segment] = {
+  private def buildRandomTrack(timeline: TestTimeline, rnd: Random): Vector[Segment] = {
     val out = Vector.newBuilder[Segment]
     var added = 0
     var attempts = 0
@@ -72,7 +72,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   /** 试放一个随机片段，放得下返回它，否则返回 null。 */
-  private def tryAddRandom(timeline: Timeline, rnd: Random): Segment = {
+  private def tryAddRandom(timeline: TestTimeline, rnd: Random): Segment = {
     val duration = TrackTransitionFuzzTest.DURATION_MIN + rnd.nextLong(TrackTransitionFuzzTest.DURATION_MAX - TrackTransitionFuzzTest.DURATION_MIN + 1)
     val lo = rnd.nextLong(TrackTransitionFuzzTest.SPAN)
     val segment = new TestCont(duration)
@@ -121,7 +121,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     assertConsistent(tl, Vector(p, a, b, rn), "iter=" + iter)
   }
 
-  private def assertConsistent(timeline: Timeline, known: Vector[Segment], label: String): Unit = {
+  private def assertConsistent(timeline: TestTimeline, known: Vector[Segment], label: String): Unit = {
     for (track <- timeline.getTracks) {
       val visible = track.toVector
 

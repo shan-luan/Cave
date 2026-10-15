@@ -22,7 +22,7 @@ import scala.util.Using
 class TrackDragTest extends GdxTestBase {
 
   private var project: TestProject = null
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
 
   @BeforeEach
   def setUp(): Unit = {
@@ -87,10 +87,10 @@ class TrackDragTest extends GdxTestBase {
 
     val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
 
-    val group = timeline.newGroup()
-    assertTrue(group.add(a))
-    assertTrue(group.add(tr))
-    assertTrue(group.add(b))
+    var group = timeline.newGroup()
+    group = timeline.groupAdd(group, a)
+    group = timeline.groupAdd(group, tr)
+    group = timeline.groupAdd(group, b)
     assertEquals(3, group.size)
     assertEquals(Some(group), timeline.getGroup(tr))
   }
@@ -295,9 +295,9 @@ class TrackDragTest extends GdxTestBase {
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.rng(0, 100))
     place(t0, b, TrackDragTest.rng(500, 600))
-    val group: SegmentGroup = timeline.newGroup()
-    group.add(a)
-    group.add(b)
+    var group: SegmentGroup = timeline.newGroup()
+    group = timeline.groupAdd(group, a)
+    group = timeline.groupAdd(group, b)
 
     Using.resource(timeline.record()) { _ =>
       timeline.remove(a)
@@ -305,16 +305,17 @@ class TrackDragTest extends GdxTestBase {
 
     // 删除必须同步移出组，否则组里残留的片段会被整组选中带出，在找不到轨道时崩溃
     assertTrue(timeline.findTrackOf(a).isEmpty)
-    assertTrue(!group.contains(a))
-    assertTrue(group.contains(b))
-    assertEquals(Some(group), timeline.getGroup(b))
+    val remaining = timeline.getGroup(b).orNull
+    assertTrue(remaining != null)
+    assertTrue(!remaining.contains(a))
+    assertTrue(remaining.contains(b))
 
-    project.undoManager.undo()
+    project.undo.undo()
     assertEquals(Some(group), timeline.getGroup(a))
     assertEquals(Some(group), timeline.getGroup(b))
 
-    project.undoManager.redo()
-    assertTrue(!group.contains(a))
+    project.undo.redo()
+    assertTrue(!timeline.getGroup(b).orNull.contains(a))
   }
 
   @Test
@@ -716,71 +717,67 @@ class TrackDragTest extends GdxTestBase {
   }
 
   @Test
-  def undoRedoMoveSegmentsCommandRestoresState(): Unit = {
+  def undoRedoMoveRestoresState(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
-    def t1: Track = timeline.getTrackOrCreate(1)
     val s: Content = newSegment(100)
     placeAt(t0, s, TrackDragTest.rng(0, 100), 1000)
+    val before = timeline.timeline.duplicate()
 
-    val entries = scala.collection.mutable.ArrayBuffer.empty[UndoManager.TrackEdit]
-    entries += UndoManager.TrackEdit(0, t0, t0.remove(s))
-    entries += UndoManager.TrackEdit(1, t1, t1.addOrThrow(s, TrackDragTest.rng(50, 150), 1050))
-    project.undoManager.execute(new UndoManager.MoveSegmentsCommand(timeline, entries))
+    Using.resource(timeline.record()) { _ =>
+      timeline.moveTrack(Seq(s), 1)
+    }
+    val after = timeline.timeline.duplicate()
+    assertEquals(timeline.getTrackOrCreate(1), timeline.findTrackOf(s).orNull)
 
-    assertEquals(TrackDragTest.rng(50, 150), t1.getRange(s))
-    assertEquals(Some(t1), timeline.findTrackOf(s))
-    assertEquals(1050, t1.getOrigin(s))
-
-    project.undoManager.undo()
+    project.undo.undo()
+    assertEquals(before, timeline.timeline)
     assertEquals(Some(t0), timeline.findTrackOf(s))
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
     assertEquals(1000, t0.getOrigin(s))
 
-    project.undoManager.redo()
-    assertEquals(Some(t1), timeline.findTrackOf(s))
-    assertEquals(TrackDragTest.rng(50, 150), t1.getRange(s))
-    assertEquals(1050, t1.getOrigin(s))
+    project.undo.redo()
+    assertEquals(after, timeline.timeline)
   }
 
   @Test
-  def undoRedoResizeSegmentsCommandRestoresState(): Unit = {
+  def undoRedoResizeRestoresState(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.rng(0, 100))
+    val before = timeline.timeline.duplicate()
 
-    val before = t0
-    val entries = scala.collection.mutable.ArrayBuffer.empty[UndoManager.TrackEdit]
-    entries += UndoManager.TrackEdit(0, before,
-      before.remove(s).addOrThrow(s, TrackDragTest.rng(30, 100), 0L))
-    project.undoManager.execute(new UndoManager.ResizeSegmentsCommand(timeline, entries))
-    assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
+    Using.resource(timeline.record()) { _ =>
+      timeline.setEnd(Seq(s), -30)
+    }
+    assertEquals(TrackDragTest.rng(0, 70), t0.getRange(s))
 
-    project.undoManager.undo()
+    project.undo.undo()
+    assertEquals(before, timeline.timeline)
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
 
-    project.undoManager.redo()
-    assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
+    project.undo.redo()
+    assertEquals(TrackDragTest.rng(0, 70), t0.getRange(s))
   }
 
   @Test
-  def undoRedoSplitSegmentCommandRestoresState(): Unit = {
+  def undoRedoSplitRestoresState(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    place(t0, s, TrackDragTest.rng(0, 100))
-    val before = t0
-    val after = before.split(40)
-    val right: Segment = srcAt(after, 60)
+    val range = TrackDragTest.rng(0, 100)
+    place(t0, s, range)
+    val before = timeline.timeline.duplicate()
 
-    project.undoManager.execute(new UndoManager.SplitSegmentCommand(timeline, 0, before, after))
+    Using.resource(timeline.record()) { _ =>
+      timeline.split(t0, range.lo + 40)
+    }
+    assertEquals(2, countOn(timeline.getTrackOrCreate(0)))
 
-    assertEquals(TrackDragTest.rng(0, 40), t0.getRange(s))
-    assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
-    assertEquals(2, countOn(t0))
+    project.undo.undo()
+    assertEquals(before, timeline.timeline)
+    assertEquals(1, countOn(timeline.getTrackOrCreate(0)))
+    assertSame(s, srcAt(timeline.getTrackOrCreate(0), range.lo + 50))
 
-    project.undoManager.undo()
-    assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
-    assertEquals(1, countOn(t0))
-    assertSame(s, srcAt(t0, 50))
+    project.undo.redo()
+    assertEquals(2, countOn(timeline.getTrackOrCreate(0)))
   }
 
   @Test
@@ -801,7 +798,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(1500, 1600), t1.getRange(b))
     assertEquals(3000, t1.getOrigin(b))
 
-    project.undoManager.undo()
+    project.undo.undo()
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(a))
     assertEquals(1000, t0.getOrigin(a))
     assertEquals(TrackDragTest.rng(500, 600), t1.getRange(b))

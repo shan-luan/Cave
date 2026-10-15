@@ -23,7 +23,7 @@ import UndoRedoRobustnessTest.SOURCE_COUNT
 class UndoRedoRobustnessTest extends GdxTestBase {
 
   private var project: TestProject = null
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
 
   @Test
   def undoAfterRandomDragsRestoresSnapshot(): Unit = {
@@ -53,8 +53,8 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     // 清空命令历史，快照之后每执行一步就压入一条命令，
     // 之后"撤销同样的步数"即等价于撤销快照之后的全部操作，
     // 避免跨快照边界时同类型命令在撤销栈顶合并而污染步数统计。
-    val snapshot = timeline.duplicate()
-    project.undoManager.clear()
+    val snapshot = timeline.timeline.duplicate()
+    project.undo.clear()
 
     val postSteps = 5 + rnd.nextInt(16)
     i = 0
@@ -64,22 +64,22 @@ class UndoRedoRobustnessTest extends GdxTestBase {
     }
 
     // 再拍一份快照，稍后用于验证 redo
-    val afterOps = timeline.duplicate()
+    val afterOps = timeline.timeline.duplicate()
 
     var undoCalls = 0
-    while (project.undoManager.canUndo) {
-      project.undoManager.undo()
+    while (project.undo.canUndo) {
+      project.undo.undo()
       undoCalls += 1
     }
     assertTrue(undoCalls > 0, "快照后至少应产生一条可撤销的命令")
-    assertEquals(snapshot, timeline, "撤销后应恢复到序列化快照的状态")
+    assertEquals(snapshot, timeline.timeline, "撤销后应恢复到序列化快照的状态")
 
     var redoCalls = 0
-    while (project.undoManager.canRedo) {
-      project.undoManager.redo()
+    while (project.undo.canRedo) {
+      project.undo.redo()
       redoCalls += 1
     }
-    assertEquals(afterOps, timeline, "重做后应恢复到操作后的状态")
+    assertEquals(afterOps, timeline.timeline, "重做后应恢复到操作后的状态")
     assertEquals(undoCalls, redoCalls, "撤销与重做的步数应一致")
   }
 }

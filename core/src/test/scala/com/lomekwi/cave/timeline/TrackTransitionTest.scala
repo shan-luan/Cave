@@ -22,7 +22,7 @@ import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
 class TrackTransitionTest extends GdxTestBase {
 
   private var project: TestProject = null
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
 
   @BeforeEach
   def setUp(): Unit = {

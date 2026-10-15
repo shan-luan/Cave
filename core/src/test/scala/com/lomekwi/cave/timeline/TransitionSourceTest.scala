@@ -16,7 +16,7 @@ import org.junit.jupiter.api.{BeforeEach, Test}
  */
 class TransitionSourceTest extends GdxTestBase {
 
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
 
   @BeforeEach
   def setUp(): Unit = {

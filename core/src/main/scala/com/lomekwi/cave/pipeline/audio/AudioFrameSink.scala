@@ -2,27 +2,27 @@ package com.lomekwi.cave.pipeline.audio
 
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.project.{Project, ProjectBackgroundedEvent, ProjectFrontedEvent}
+import com.lomekwi.cave.project.{ProjectBackgroundedEvent, ProjectContext, ProjectFrontedEvent}
 import com.lomekwi.cave.resource.decoder.AudDecRes
 
 import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
 import scala.compiletime.uninitialized
 
-class AudioFrameSink(private val project: Project) {
-  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(project)
+class AudioFrameSink(private val context: ProjectContext) {
+  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(context)
   private var currentFuture: Future[?] = uninitialized
 
   @Subscribe
   def sink(frame: AudFrame): Unit = {
-    project.timeline.getWorker(frame.trackIndex).sinkPhaser.register()
+    context.worker(frame.trackIndex).sinkPhaser.register()
     afm.submit(frame)
   }
 
   @Subscribe
   def onProjectFronted(event: ProjectFrontedEvent): Unit = {
     stopMixer()
-    afm = new AudioFrameSink.AudioFrameMixer(project)
+    afm = new AudioFrameSink.AudioFrameMixer(context)
     currentFuture = App.workerExecutor.submit(afm)
   }
 
@@ -47,7 +47,7 @@ class AudioFrameSink(private val project: Project) {
 }
 
 object AudioFrameSink {
-  private[audio] class AudioFrameMixer(private val project: Project) extends Runnable {
+  private[audio] class AudioFrameMixer(private val context: ProjectContext) extends Runnable {
     private final val frames: LinkedBlockingQueue[AudFrame] = new LinkedBlockingQueue[AudFrame]()
     private final val output: Array[Float] = new Array[Float](AudDecRes.FRAME_SIZE)
     @volatile private var stopped: Boolean = false
@@ -74,7 +74,7 @@ object AudioFrameSink {
               output(j) += sample
               j += 1
             }
-            project.timeline.getWorker(f.trackIndex).sinkPhaser.arriveAndDeregister()
+            context.worker(f.trackIndex).sinkPhaser.arriveAndDeregister()
             if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {

@@ -1,7 +1,6 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
-import com.lomekwi.cave.playback.TrackWorker
 import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, EvalClock, Frame, Gap, Segment, Transition}
 
 import java.io.Serializable
@@ -16,7 +15,7 @@ import scala.collection.immutable.TreeMap
  * 转场由相邻内容的重叠区派生，由轨道自行维护，不通过 setter 直接修改。
  */
 @SerialVersionUID(1L)
-final class Track private (val timeline: Timeline, val index: Int,
+final class Track private (val index: Int,
                            private val blockSegment: Segment,
                            private val layout: Track.Layout,
                            private val segToOrigin: Map[Clip, Long],
@@ -428,10 +427,10 @@ final class Track private (val timeline: Timeline, val index: Int,
 
   private def derived(layout: Track.Layout,
                       segToOrigin: Map[Clip, Long]): Track =
-    new Track(timeline, index, blockSegment, layout, segToOrigin, transitions)
+    new Track(index, blockSegment, layout, segToOrigin, transitions)
 
   private def withTransitions(transitions: Track.TransitionIndex): Track =
-    new Track(timeline, index, blockSegment, layout, segToOrigin, transitions)
+    new Track(index, blockSegment, layout, segToOrigin, transitions)
 
   private def getShift(r: Interval): Long = pickShift(shiftScan(r, true), shiftScan(r, false))
 
@@ -651,9 +650,6 @@ final class Track private (val timeline: Timeline, val index: Int,
     segment.sync(time - getOrigin(segment), this)
   }
 
-  /** 本轨道的轨道线程。 */
-  def getWorker: TrackWorker = timeline.getWorker(index)
-
   /** 轨道上的用户片段；阻挡片段对遍历不可见。 */
   override def iterator: Iterator[Segment] = {
     intervalToSeg.valuesIterator.filterNot(isBlock)
@@ -749,11 +745,11 @@ object Track {
   private type TransitionIndex = BiMap[Content, Transition, Map[Content, Transition], Map[Transition, Content]]
 
   /** 新建空轨道。 */
-  private[timeline] def apply(timeline: Timeline, index: Int): Track = {
+  private[timeline] def apply(index: Int): Track = {
     val blockSegment: Segment = new Boundless(new BlockSource)
     val layout = BiMap(TreeMap.empty[Interval, Segment], Map.empty[Segment, Interval])
       .updated(Long.MinValue ~~ 0L, blockSegment)
-    new Track(timeline, index, blockSegment, layout,
+    new Track(index, blockSegment, layout,
       Map.empty[Clip, Long],
       BiMap(Map.empty[Content, Transition], Map.empty[Transition, Content]))
   }

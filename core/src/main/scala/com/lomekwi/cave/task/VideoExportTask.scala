@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Matrix4
 import com.lomekwi.cave.pipeline.{Frame, Gap, Segment}
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
+import com.lomekwi.cave.project.{Project, Projects}
 import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.timeline.{Timeline, Track}
 
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray
 
 import scala.compiletime.uninitialized
 
-class VideoExportTask(private val timeline: Timeline, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
+class VideoExportTask(private val timeline: Timeline, private val project: Project, outputFile: File, width: Int, height: Int, private val fps: Double, private val bitrate: Int) extends Task {
   private var recorder: FFmpegFrameRecorder = uninitialized
   private var frames: AtomicReferenceArray[Frame] = uninitialized
   private var activeSegments: Array[Segment] = uninitialized
@@ -187,12 +188,12 @@ class VideoExportTask(private val timeline: Timeline, outputFile: File, width: I
       fb.dispose()
       batch.dispose()
     })
-    timeline.project.close() // [[Timeline.project]] 是反序列化出来的副本，关闭它不影响用户正在编辑的项目。
+    Projects.closeResources(project)
     cvFrame.close()
     recorder.close()
   }
   override def getName: String = {
-    i18n("视频导出：") + timeline.project.name
+    i18n("视频导出：") + project.name
   }
 }
 

@@ -10,8 +10,6 @@ import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.UndoManager
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import java.util
 
@@ -30,12 +28,12 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
       val newVal: Double = model.getValue.toDouble
       val oldVal: Double = defaultValue
       if (oldVal != newVal) {
-        val p: Project = App.root.getFrontendProject
-        if (p != null) {
-          p.undoManager.record(UndoManager.FpPortValueCommand(p, port, segment, oldVal, newVal))
-          p.projEventBus.post(RefreshRequestEvent)
-        }
+        val c = App.root.getFrontendContext
         setDefaultValue(newVal)
+        if (c != null) {
+          c.touch()
+          c.bus.post(RefreshRequestEvent)
+        }
       }
     }
   })

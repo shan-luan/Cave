@@ -9,7 +9,6 @@ import com.kotcrab.vis.ui.widget.VisTextArea
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.playback.RefreshRequestEvent
 
 import java.util.Objects
@@ -32,9 +31,9 @@ final class TextPortEditor(port0: Node.InPort[?], segment: Segment) extends VisT
         if (!Objects.equals(oldVal, newVal)) {
           val strPort: Node.InPort[String] = port.asInstanceOf[Node.InPort[String]]
           strPort.defaultData = newVal
-          val p: Project = App.root.getFrontendProject
-          if (p != null) {
-            p.projEventBus.post(RefreshRequestEvent)
+          val c = App.root.getFrontendContext
+          if (c != null) {
+            c.bus.post(RefreshRequestEvent)
           }
         }
       }

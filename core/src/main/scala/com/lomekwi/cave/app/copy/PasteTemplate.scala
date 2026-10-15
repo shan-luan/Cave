@@ -41,16 +41,22 @@ object PasteTemplate {
 
   /** 逐条深拷贝，片段复制一份，同一原组映射到同一个新组。 */
   private def remap(entries: mutable.ArrayBuffer[Entry]): mutable.ArrayBuffer[Entry] = {
-    val copied = mutable.ArrayBuffer.empty[Entry]
-    val groupCopies: mutable.HashMap[SegmentGroup, SegmentGroup] = mutable.HashMap.empty
+    val dups = mutable.ArrayBuffer.empty[Content]
     for (entry <- entries) {
-      val dup = entry.segment.duplicate().asInstanceOf[Content]
-      val groupCopy = entry.group.map { original =>
-        val copy = groupCopies.getOrElseUpdate(original, new SegmentGroup())
-        copy.add(dup)
-        copy
+      dups += entry.segment.duplicate().asInstanceOf[Content]
+    }
+    // 组是值，成员必须一次成型，否则先建的模板条目会停在半满的旧版本上
+    val groupCopies: mutable.HashMap[SegmentGroup, SegmentGroup] = mutable.HashMap.empty
+    for (i <- entries.indices) {
+      entries(i).group.foreach { original =>
+        groupCopies.put(original, groupCopies.getOrElse(original, new SegmentGroup(Set.empty)).add(dups(i)))
       }
-      copied += Entry(entry.trackIndex, dup, entry.range, entry.origin, groupCopy)
+    }
+    val copied = mutable.ArrayBuffer.empty[Entry]
+    for (i <- entries.indices) {
+      val entry = entries(i)
+      val groupCopy = entry.group.map(original => groupCopies(original))
+      copied += Entry(entry.trackIndex, dups(i), entry.range, entry.origin, groupCopy)
     }
     copied
   }

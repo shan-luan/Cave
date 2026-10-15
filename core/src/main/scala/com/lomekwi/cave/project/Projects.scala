@@ -3,6 +3,7 @@ package com.lomekwi.cave.project
 import com.badlogic.gdx.files.FileHandle
 import com.lomekwi.cave.util.FileNameUtil
 
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.ObjectInputStream
@@ -15,32 +16,51 @@ object Projects {
 
   def open(fileHandle: FileHandle): Project = {
     val ois = new ObjectInputStream(fileHandle.read())
-    val p = ois.readObject().asInstanceOf[Project]
-    p.savePath = fileHandle.file.toPath
-    p
+    ois.readObject().asInstanceOf[Project]
   }
-  def create(): Project = {
-    new Project()
-  }
-  def save(project: Project, fileHandle: FileHandle): Unit = {
-    val target = ensureExtension(fileHandle)
-    project.savedVersion = project.currentVersion
+
+  def snapshot(project: Project): Project = {
     val baos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(baos)) { oos =>
       oos.writeObject(project)
+    }
+    Using.resource(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray))) { ois =>
+      ois.readObject().asInstanceOf[Project]
+    }
+  }
+
+  def closeResources(project: Project): Unit = {
+    for (buffer <- project.resources.values; resource <- buffer) {
+      try {
+        resource.close()
+      } catch {
+        case e: Exception =>
+          throw new RuntimeException(e)
+      }
+    }
+  }
+  def create(): Project = {
+    Project.create()
+  }
+  def save(context: ProjectContext, fileHandle: FileHandle): Unit = {
+    val target = ensureExtension(fileHandle)
+    context.markSaved()
+    val baos = new ByteArrayOutputStream()
+    Using.resource(new ObjectOutputStream(baos)) { oos =>
+      oos.writeObject(context.project)
     }
     val data = baos.toByteArray
     Using.resource(target.write(false)) { os =>
       os.write(data)
     }
-    project.savePath = target.file.toPath
-    project.projEventBus.post(ProjectDirtyChangedEvent)
+    context.savePath = target.file.toPath
+    context.bus.post(ProjectDirtyChangedEvent)
   }
-  def save(project: Project): Unit = {
-    if (project.savePath == null) {
+  def save(context: ProjectContext): Unit = {
+    if (context.savePath == null) {
       throw new FileNotFoundException()
     }
-    save(project, new FileHandle(project.savePath.toFile))
+    save(context, new FileHandle(context.savePath.toFile))
   }
 
   def hasProjectExtension(name: String): Boolean = {

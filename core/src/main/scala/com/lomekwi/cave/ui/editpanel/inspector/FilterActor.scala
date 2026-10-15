@@ -12,8 +12,6 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.UndoManager
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.widget.Card
 
@@ -106,10 +104,10 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
       if (index >= 0 && target >= 0 && target < filters.size) {
         filters.remove(index)
         filters.insert(target, filter)
-        val p: Project = App.root.getFrontendProject
-        if (p != null) {
-          p.undoManager.record(UndoManager.ReorderFilterCommand(p, segment, filter, index, target))
-          p.projEventBus.post(RefreshRequestEvent)
+        val c = App.root.getFrontendContext
+        if (c != null) {
+          c.touch()
+          c.bus.post(RefreshRequestEvent)
         }
         if (rebuildCallback != null) {
           rebuildCallback.run()
@@ -141,10 +139,10 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
         filters.remove(myIndex)
         filters.insert(target, filter)
 
-        val pj: Project = App.root.getFrontendProject
-        if (pj != null) {
-          pj.undoManager.record(UndoManager.ReorderFilterCommand(pj, segment, filter, myIndex, target))
-          pj.projEventBus.post(RefreshRequestEvent)
+        val c = App.root.getFrontendContext
+        if (c != null) {
+          c.touch()
+          c.bus.post(RefreshRequestEvent)
         }
       case _ =>
     }
@@ -154,10 +152,10 @@ final class FilterActor(private val segment: Segment, private val filter: Filter
     val index = segment.filters.indexOf(filter)
     if (index >= 0) {
       segment.filters -= filter
-      val p: Project = App.root.getFrontendProject
-      if (p != null) {
-        p.undoManager.record(UndoManager.RemoveFilterCommand(p, segment, filter, index))
-        p.projEventBus.post(RefreshRequestEvent)
+      val c = App.root.getFrontendContext
+      if (c != null) {
+        c.touch()
+        c.bus.post(RefreshRequestEvent)
       }
       remove()
       if (rebuildCallback != null) rebuildCallback.run()

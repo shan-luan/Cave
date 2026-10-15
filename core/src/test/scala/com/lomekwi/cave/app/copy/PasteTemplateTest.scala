@@ -2,7 +2,7 @@ package com.lomekwi.cave.app.copy
 
 import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, Timeline}
+import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline, Timeline}
 import com.lomekwi.cave.timeline.~~
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertNotEquals, assertNotSame, assertTrue}
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 class PasteTemplateTest extends GdxTestBase {
 
   private var project: TestProject = null
-  private var timeline: Timeline = null
+  private var timeline: TestTimeline = null
 
   @BeforeEach
   def setUp(): Unit = {
@@ -32,11 +32,11 @@ class PasteTemplateTest extends GdxTestBase {
     val b = new TestCont(100)
     timeline.tryAdd(t0, a, 0 ~~ 100, 1000)
     timeline.tryAdd(t1, b, 500 ~~ 600, 2000)
-    val group = timeline.newGroup()
-    group.add(a)
-    group.add(b)
+    var group = timeline.newGroup()
+    group = timeline.groupAdd(group, a)
+    group = timeline.groupAdd(group, b)
 
-    val selection = new SegmentSet(timeline)
+    val selection = new SegmentSet(project.context)
     selection.add(a)
     selection.add(b)
     val template = selection.copy().asInstanceOf[PasteTemplate]
@@ -74,11 +74,11 @@ class PasteTemplateTest extends GdxTestBase {
     val b = new TestCont(100)
     timeline.tryAdd(t0, a, 0 ~~ 100, 1000)
     timeline.tryAdd(t1, b, 500 ~~ 600, 2000)
-    val group = timeline.newGroup()
-    group.add(a)
-    group.add(b)
+    var group = timeline.newGroup()
+    group = timeline.groupAdd(group, a)
+    group = timeline.groupAdd(group, b)
 
-    val selection = new SegmentSet(timeline)
+    val selection = new SegmentSet(project.context)
     selection.add(a)
     selection.add(b)
     val first = selection.copy().asInstanceOf[PasteTemplate]
@@ -103,7 +103,7 @@ class PasteTemplateTest extends GdxTestBase {
     val a = new TestCont(100)
     timeline.tryAdd(t0, a, 0 ~~ 100, 5000)
 
-    val selection = new SegmentSet(timeline)
+    val selection = new SegmentSet(project.context)
     selection.add(a)
     val template = selection.copy().asInstanceOf[PasteTemplate]
 

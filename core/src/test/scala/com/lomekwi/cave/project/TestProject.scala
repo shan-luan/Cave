@@ -1,8 +1,29 @@
 package com.lomekwi.cave.project
 
-/**
- * 测试辅助类，把 [[Project]] 的 protected 构造器暴露为 public，
- * 供其它包（如 timeline 的单元测试）创建真实 [[Project]]。
- */
-class TestProject() extends Project() {
+import com.lomekwi.cave.playback.Playhead
+import com.lomekwi.cave.playback.TrackWorker
+import com.lomekwi.cave.resource.Resource
+import com.lomekwi.cave.timeline.{TestTimeline, Timeline}
+
+import java.io.File
+import java.util.UUID
+
+import scala.collection.mutable
+
+class TestProject() {
+  val project: Project = new Project(
+    "test",
+    Timeline.empty,
+    mutable.LinkedHashMap.empty[File, mutable.ArrayBuffer[Resource]],
+    UUID.randomUUID())
+  val context: ProjectContext = new ProjectContext(project)
+  val timeline: TestTimeline = new TestTimeline(context)
+
+  def playhead: Playhead = context.playhead
+
+  def undo: UndoManager = context.undo
+
+  def worker(index: Int): TrackWorker = context.worker(index)
+
+  def close(): Unit = context.close()
 }

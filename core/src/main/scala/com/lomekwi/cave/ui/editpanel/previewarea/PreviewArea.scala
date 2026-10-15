@@ -12,7 +12,7 @@ import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.GapFrame
 import com.lomekwi.cave.pipeline.image.Renderable
-import com.lomekwi.cave.project.Project
+import com.lomekwi.cave.project.ProjectContext
 import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.app.App
@@ -28,9 +28,9 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class PreviewArea(project0: Project) extends Group with Focusable {
+class PreviewArea(context0: ProjectContext) extends Group with Focusable {
 
-  private final val project: Project = project0
+  private final val context: ProjectContext = context0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.canvas
   // 此列表仅应在主线程读取。
@@ -40,7 +40,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   private var exportOpts: ExportOptionsSet = uninitialized
   private var lastHeight: Float = 0
 
-  project.projEventBus.register(this)
+  context.bus.register(this)
   App.appEventBus.register(this)
   addActor(panZoom)
   setupDragListener()
@@ -80,11 +80,11 @@ class PreviewArea(project0: Project) extends Group with Focusable {
     // 进预览的 [[Renderable]] 都承载在 [[Frame]] 上，[[Frame.trackIndex]] 与生命周期状态都在 [[Frame]] 一侧
     val f = frame.asInstanceOf[Frame & Renderable]
     val idx: Int = f.trackIndex
-    project.timeline.getWorker(idx).sinkPhaser.register()
+    context.worker(idx).sinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(f)
       canvas.addActor(f.actor)
-      project.timeline.getWorker(idx).sinkPhaser.arriveAndDeregister()
+      context.worker(idx).sinkPhaser.arriveAndDeregister()
     })
   }
 
@@ -122,7 +122,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   @Subscribe
   def onSelectionChanged(event: SegmentSetSelectedEvent): Unit = {
     // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
-    if (!(event.set.timeline eq project.timeline)) return
+    if (!(event.set.timeline eq context.timeline)) return
     for (frame <- frames) {
       if (frame != null) {
         frame.actor match {
@@ -255,7 +255,7 @@ class PreviewArea(project0: Project) extends Group with Focusable {
   }
 
   def dispose(): Unit = {
-    project.projEventBus.unregister(this)
+    context.bus.unregister(this)
     App.appEventBus.unregister(this)
   }
 }

@@ -1,7 +1,7 @@
 package com.lomekwi.cave.ui.editpanel
 
 import com.badlogic.gdx.scenes.scene2d.ui.Container
-import com.lomekwi.cave.project.Project
+import com.lomekwi.cave.project.ProjectContext
 import com.lomekwi.cave.ui.editpanel.previewarea.PreviewArea
 import com.lomekwi.cave.ui.editpanel.mediapool.MediaPool
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.tabs.edit.EditTabbedPane
 import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
-class EditPanel(private[editpanel] val project: Project) {
+class EditPanel(private[editpanel] val context: ProjectContext) {
   var previewArea: PreviewArea = uninitialized
   private[editpanel] var tl: VisTable = uninitialized
   private[editpanel] var tlMain: Container[TimelineView] = uninitialized
@@ -18,15 +18,15 @@ class EditPanel(private[editpanel] val project: Project) {
   var tlTabs: EditTabbedPane = uninitialized
 
   {
-    previewArea = new PreviewArea(project)
-    tlMain = new Container[TimelineView](new TimelineView(project)).fill().clip().minSize(0, 0)
+    previewArea = new PreviewArea(context)
+    tlMain = new Container[TimelineView](new TimelineView(context)).fill().clip().minSize(0, 0)
     tlTabs = new EditTabbedPane()
     tlTabs.add(new TimelineTab(tlMain))
     tl = new VisTable()
     tl.add(tlTabs.getTable).fillX().top().row()
     tl.add(tlTabs.contentHost).grow()
     tlTabs.refreshVisibility()
-    res = new Container[MediaPool](new MediaPool(project.resources, project.projEventBus))
+    res = new Container[MediaPool](new MediaPool(context.project.resources, context.bus))
   }
 
   def getTimelineView: TimelineView = {
