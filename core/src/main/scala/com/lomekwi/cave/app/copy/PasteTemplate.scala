@@ -21,7 +21,7 @@ class PasteTemplate private (val entries: mutable.ArrayBuffer[PasteTemplate.Entr
 }
 
 object PasteTemplate {
-  case class Entry(trackIndex: Int, segment: Content, range: Interval, origin: Long, group: SegmentGroup)
+  case class Entry(trackIndex: Int, segment: Content, range: Interval, origin: Long, group: Option[SegmentGroup])
 
   /** 把时间线上的一批片段抓成模板。转场不参与复制。 */
   def of(segments: Iterable[Segment], timeline: Timeline): PasteTemplate = {
@@ -31,8 +31,7 @@ object PasteTemplate {
       segment match {
         case _: Transition =>
         case c: Content =>
-          val track = timeline.findTrackOf(c)
-          if (track != null) {
+          timeline.findTrackOf(c).foreach { track =>
             raw += Entry(track.index, c, track.getRange(c), track.getOrigin(c), timeline.getGroup(c))
           }
       }
@@ -46,14 +45,10 @@ object PasteTemplate {
     val groupCopies: mutable.HashMap[SegmentGroup, SegmentGroup] = mutable.HashMap.empty
     for (entry <- entries) {
       val dup = entry.segment.duplicate().asInstanceOf[Content]
-      var groupCopy: SegmentGroup = null
-      if (entry.group != null) {
-        groupCopy = groupCopies.getOrElse(entry.group, null)
-        if (groupCopy == null) {
-          groupCopy = new SegmentGroup()
-          groupCopies.put(entry.group, groupCopy)
-        }
-        groupCopy.add(dup)
+      val groupCopy = entry.group.map { original =>
+        val copy = groupCopies.getOrElseUpdate(original, new SegmentGroup())
+        copy.add(dup)
+        copy
       }
       copied += Entry(entry.trackIndex, dup, entry.range, entry.origin, groupCopy)
     }

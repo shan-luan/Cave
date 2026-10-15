@@ -3,7 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.{assertNotNull, fail}
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 
 import java.util.Random
@@ -116,7 +116,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
 
     val track = tl.getTrackOrCreate(0)
     val transition = track.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])
-    assertNotNull(transition)
+      .getOrElse(fail("a 与 b 之间应有转场"))
     tl.remove(transition)
     assertConsistent(tl, Vector(p, a, b, rn), "iter=" + iter)
   }

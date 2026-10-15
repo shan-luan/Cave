@@ -95,11 +95,9 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
           val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 
           if (sourceRight > minX && sourceLeft < maxX) {
-            val group = timelineView.timeline.getGroup(s)
-            if (group != null) {
-              toSelect.addAll(group)
-            } else {
-              toSelect.add(s)
+            timelineView.timeline.getGroup(s) match {
+              case Some(group) => toSelect.addAll(group)
+              case None => toSelect.add(s)
             }
           }
         }

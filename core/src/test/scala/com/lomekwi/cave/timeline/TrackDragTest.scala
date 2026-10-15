@@ -3,7 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.project.UndoManager
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotNull, assertNotSame, assertSame, assertTrue}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotSame, assertSame, assertTrue, fail}
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -85,15 +85,14 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, 0L ~~ 1000_000L)
     place(t0, b, 800_000L ~~ 1800_000L)
 
-    val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])
-    assertNotNull(tr)
+    val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
 
     val group = timeline.newGroup()
     assertTrue(group.add(a))
     assertTrue(group.add(tr))
     assertTrue(group.add(b))
     assertEquals(3, group.size)
-    assertSame(group, timeline.getGroup(tr))
+    assertEquals(Some(group), timeline.getGroup(tr))
   }
 
   @Test
@@ -104,8 +103,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, 0L ~~ 1000_000L)
     place(t0, b, 800_000L ~~ 1800_000L)
 
-    val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])
-    assertNotNull(tr)
+    val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
     assertEquals(800_000L ~~ 1000_000L, t0.getRange(tr))
 
     // 两侧内容都在搬运范围内，转场随它们平移即可，不能再被单独平移一次
@@ -192,10 +190,8 @@ class TrackDragTest extends GdxTestBase {
     place(t0, b, TrackDragTest.rng(4000, 7000))
     place(t0, c, TrackDragTest.rng(6000, 9000))
     place(t0, e, TrackDragTest.rng(8000, 11000))
-    val ab = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])
-    val bc = t0.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content])
-    assertNotNull(ab)
-    assertNotNull(bc)
+    val ab = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
+    val bc = t0.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]).getOrElse(fail("b 与 c 之间应有转场"))
 
     assertEquals(500L, timeline.moveTime(Seq(a, b, c), 500L))
 
@@ -204,8 +200,8 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(TrackDragTest.rng(4500, 7500), after.getRange(b))
     assertEquals(TrackDragTest.rng(6500, 9500), after.getRange(c))
     // 组内相邻对的转场随两侧一起平移，应当仍是原来那两个对象
-    assertSame(ab, after.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]))
-    assertSame(bc, after.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]))
+    assertEquals(Some(ab), after.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]))
+    assertEquals(Some(bc), after.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]))
   }
 
   @Test
@@ -252,7 +248,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertSame(s, srcAt(t0, 50))
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
-    assertSame(t0, timeline.findTrackOf(s))
+    assertEquals(Some(t0), timeline.findTrackOf(s))
   }
 
   @Test
@@ -308,14 +304,14 @@ class TrackDragTest extends GdxTestBase {
     }
 
     // 删除必须同步移出组，否则组里残留的片段会被整组选中带出，在找不到轨道时崩溃
-    assertTrue(timeline.findTrackOf(a) == null)
+    assertTrue(timeline.findTrackOf(a).isEmpty)
     assertTrue(!group.contains(a))
     assertTrue(group.contains(b))
-    assertSame(group, timeline.getGroup(b))
+    assertEquals(Some(group), timeline.getGroup(b))
 
     project.undoManager.undo()
-    assertSame(group, timeline.getGroup(a))
-    assertSame(group, timeline.getGroup(b))
+    assertEquals(Some(group), timeline.getGroup(a))
+    assertEquals(Some(group), timeline.getGroup(b))
 
     project.undoManager.redo()
     assertTrue(!group.contains(a))
@@ -358,7 +354,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(200, applied)
     assertEquals(TrackDragTest.rng(200, 300), t0.getRange(s))
-    assertSame(t0, timeline.findTrackOf(s))
+    assertEquals(Some(t0), timeline.findTrackOf(s))
     assertEquals(1200, t0.getOrigin(s))
   }
 
@@ -372,7 +368,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Int = timeline.moveTrack(Seq(s), 1)
 
     assertEquals(1, applied)
-    assertSame(t1, timeline.findTrackOf(s))
+    assertEquals(Some(t1), timeline.findTrackOf(s))
     assertEquals(TrackDragTest.rng(0, 100), t1.getRange(s))
     assertTrue(t0.isEmpty)
     assertSame(s, srcAt(t1, 50))
@@ -392,8 +388,8 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(1000, applied)
     assertEquals(TrackDragTest.rng(1000, 1100), t0.getRange(a))
     assertEquals(TrackDragTest.rng(1500, 1600), t1.getRange(b))
-    assertSame(t0, timeline.findTrackOf(a))
-    assertSame(t1, timeline.findTrackOf(b))
+    assertEquals(Some(t0), timeline.findTrackOf(a))
+    assertEquals(Some(t1), timeline.findTrackOf(b))
   }
 
   @Test
@@ -471,7 +467,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Int = timeline.moveTrack(Seq(mover), 1)
 
     assertEquals(0, applied)
-    assertSame(t0, timeline.findTrackOf(mover))
+    assertEquals(Some(t0), timeline.findTrackOf(mover))
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(mover))
     assertSame(obstacle, srcAt(t1, 50))
   }
@@ -509,7 +505,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(30, applied)
     assertEquals(TrackDragTest.rng(30, 100), t0.getRange(s))
-    assertSame(t0, timeline.findTrackOf(s))
+    assertEquals(Some(t0), timeline.findTrackOf(s))
     assertEquals(0, t0.getOrigin(s))
   }
 
@@ -713,7 +709,7 @@ class TrackDragTest extends GdxTestBase {
     val right: Segment = srcAt(t0, 60)
     assertNotSame(s, right)
     assertEquals(TrackDragTest.rng(40, 100), t0.getRange(right))
-    assertSame(t0, timeline.findTrackOf(right))
+    assertEquals(Some(t0), timeline.findTrackOf(right))
     // 右半 origin 与左半一致，内容才接得上
     assertEquals(1000, t0.getOrigin(right))
     assertEquals(2, countOn(t0))
@@ -732,16 +728,16 @@ class TrackDragTest extends GdxTestBase {
     project.undoManager.execute(new UndoManager.MoveSegmentsCommand(timeline, entries))
 
     assertEquals(TrackDragTest.rng(50, 150), t1.getRange(s))
-    assertSame(t1, timeline.findTrackOf(s))
+    assertEquals(Some(t1), timeline.findTrackOf(s))
     assertEquals(1050, t1.getOrigin(s))
 
     project.undoManager.undo()
-    assertSame(t0, timeline.findTrackOf(s))
+    assertEquals(Some(t0), timeline.findTrackOf(s))
     assertEquals(TrackDragTest.rng(0, 100), t0.getRange(s))
     assertEquals(1000, t0.getOrigin(s))
 
     project.undoManager.redo()
-    assertSame(t1, timeline.findTrackOf(s))
+    assertEquals(Some(t1), timeline.findTrackOf(s))
     assertEquals(TrackDragTest.rng(50, 150), t1.getRange(s))
     assertEquals(1050, t1.getOrigin(s))
   }

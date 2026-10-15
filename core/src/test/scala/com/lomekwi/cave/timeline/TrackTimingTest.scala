@@ -127,8 +127,7 @@ class TrackTimingTest extends GdxTestBase {
       val content = contents(i).asInstanceOf[Content]
       out += content
       if (i + 1 < contents.size) {
-        val transition = track.transitionAfter(content)
-        if (transition != null) out += transition
+        track.transitionAfter(content).foreach(t => out += t)
       }
       i += 1
     }

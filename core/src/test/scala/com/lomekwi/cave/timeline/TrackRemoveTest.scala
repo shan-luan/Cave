@@ -81,7 +81,7 @@ class TrackRemoveTest extends GdxTestBase {
 
     // b 离开后 a 右侧的转场索引项仍在，但它已摘表，不得再被当作转场
     val after = timeline.getTrackOrCreate(0)
-    assertNull(after.transitionAfter(a))
+    assertTrue(after.transitionAfter(a).isEmpty)
     assertEquals(1000L, after.soloEndOf(a))
   }
 
@@ -96,14 +96,14 @@ class TrackRemoveTest extends GdxTestBase {
     assertNotNull(transition)
 
     timeline.remove(b)
-    assertNull(timeline.getTrackOrCreate(0).transitionAfter(a))
+    assertTrue(timeline.getTrackOrCreate(0).transitionAfter(a).isEmpty)
 
     val c = newContent(1000)
     place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
 
     // 邻居回来后复用同一个转场对象，身份因此保持稳定
     val after = timeline.getTrackOrCreate(0)
-    assertSame(transition, after.transitionAfter(a))
+    assertEquals(Some(transition), after.transitionAfter(a))
     TrackLayout.assertValid(after)
   }
 
@@ -140,7 +140,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(1000 ~~ 2000, after.getRange(c))
     assertSame(a, after.get(700))
     assertSame(c, after.get(1200))
-    assertNull(after.transitionBetween(a, c))
+    assertTrue(after.transitionBetween(a, c).isEmpty)
     TrackLayout.assertValid(after)
   }
 
@@ -229,7 +229,7 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertEquals(0 ~~ 995, after.getRange(a))
     assertEquals(995 ~~ 1500, after.getRange(b))
-    assertNull(after.transitionBetween(a, b))
+    assertTrue(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
 
@@ -249,7 +249,7 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertEquals(0 ~~ 1000, after.getRange(a))
     assertEquals(1000 ~~ 1500, after.getRange(b))
-    assertNull(after.transitionBetween(a, b))
+    assertTrue(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
 

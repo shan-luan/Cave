@@ -159,4 +159,4 @@ sealed trait Element extends Serializable
  * 区间用 [[Track.rangeAt]] 查。
  */
 @SerialVersionUID(1L)
-final class Gap extends Element
+final case class Gap(before: Option[Content], after: Option[Content]) extends Element

@@ -36,13 +36,13 @@ object TrackLayout {
     for (s <- track) {
       s match {
         case t: Transition =>
-          val sides = track.transitionSides(t)
-          assertNotNull(sides, "转场两侧缺失")
-          if (sides != null) {
-            val lo = track.getRange(sides._2).lo
-            val hi = track.getRange(sides._1).hi
-            assertTrue(lo < hi, "转场两侧没有重叠")
-            assertEquals(lo ~~ hi, track.getRange(t), "转场区间不是重叠区")
+          track.transitionSides(t) match {
+            case Some((left, right)) =>
+              val lo = track.getRange(right).lo
+              val hi = track.getRange(left).hi
+              assertTrue(lo < hi, "转场两侧没有重叠")
+              assertEquals(lo ~~ hi, track.getRange(t), "转场区间不是重叠区")
+            case None => fail("转场两侧缺失")
           }
         case _ =>
       }

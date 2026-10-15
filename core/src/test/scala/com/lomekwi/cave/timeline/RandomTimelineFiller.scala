@@ -136,8 +136,10 @@ class RandomTimelineFiller(final val timeline: Timeline,
 
   /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
   private def dragMembers(segment: Segment): mutable.ArrayBuffer[Segment] = {
-    val group = timeline.getGroup(segment)
-    if (group != null) mutable.ArrayBuffer.from(group) else mutable.ArrayBuffer(segment)
+    timeline.getGroup(segment) match {
+      case Some(group) => mutable.ArrayBuffer.from(group)
+      case None => mutable.ArrayBuffer(segment)
+    }
   }
 
   private def moveOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
@@ -145,7 +147,7 @@ class RandomTimelineFiller(final val timeline: Timeline,
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
     var minIdx = Integer.MAX_VALUE
     for (m <- members) {
-      minIdx = Math.min(minIdx, timeline.findTrackOf(m).index)
+      timeline.findTrackOf(m).foreach(t => minIdx = Math.min(minIdx, t.index))
     }
     var trackDelta = rnd.nextInt(3) - 1 // -1..1
     if (minIdx + trackDelta < 0) trackDelta = 0
@@ -178,14 +180,16 @@ class RandomTimelineFiller(final val timeline: Timeline,
   private def splitOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
     val segment = placed(rnd.nextInt(placed.size))
-    val track = timeline.findTrackOf(segment)
-    val r = track.getRange(segment)
-    val lo: Long = r.lo
-    val hi: Long = r.hi
-    if (hi - lo < 2) return
-    val time = lo + 1 + rnd.nextLong(hi - lo - 1)
-    Using.resource(timeline.record()) { _ =>
-      timeline.split(track, time)
+    timeline.findTrackOf(segment).foreach { track =>
+      val r = track.getRange(segment)
+      val lo: Long = r.lo
+      val hi: Long = r.hi
+      if (hi - lo > 1) {
+        val time = lo + 1 + rnd.nextLong(hi - lo - 1)
+        Using.resource(timeline.record()) { _ =>
+          timeline.split(track, time)
+        }
+      }
     }
   }
 

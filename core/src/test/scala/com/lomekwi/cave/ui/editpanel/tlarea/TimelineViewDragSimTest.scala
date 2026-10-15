@@ -9,7 +9,7 @@ import com.lomekwi.cave.timeline.TestCont
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.timeline.Track
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNotNull, assertNull, assertTrue}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -84,10 +84,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
   /** 模拟 [[TimelineView.act]] 重建，actor 纯粹按模型摆位，不得改动模型。 */
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
     val segment = actor.segment
-    val track = timeline.findTrackOf(segment)
-    val r = track.getRange(segment)
-    actor.setPosition(absX(r.lo), trackTopY(track.index))
-    actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
+    timeline.findTrackOf(segment).foreach { track =>
+      val r = track.getRange(segment)
+      actor.setPosition(absX(r.lo), trackTopY(track.index))
+      actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
+    }
   }
 
   // 中部整体移动，小幅拖拽不应被放大
@@ -147,13 +148,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.dragTo(mouseLocalX, mouseLocalY)
 
     // 应恰好落到轨道 2，而不是越跳越远
-    assertEquals(2, timeline.findTrackOf(s).index)
+    assertEquals(Some(2), timeline.findTrackOf(s).map(_.index))
 
     // 鼠标不动，多帧重建（纯投影），轨道必须稳定
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(2, timeline.findTrackOf(s).index)
+      assertEquals(Some(2), timeline.findTrackOf(s).map(_.index))
       i += 1
     }
   }
@@ -241,21 +242,21 @@ class TimelineViewDragSimTest extends GdxTestBase {
     aActor.dragTo(mouseLocalX, mouseLocalY)
 
     // 转场仍然在轨道上，没有被成员平移连带摘除
-    assertNotNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isDefined)
 
     // 鼠标不动，后续多帧重建与拖拽都不应崩溃
     var i = 0
     while (i < 5) {
       rebuildFromModel(aActor)
       aActor.dragTo(mouseLocalX, mouseLocalY)
-      assertNotNull(timeline.findTrackOf(a))
+      assertTrue(timeline.findTrackOf(a).isDefined)
       i += 1
     }
 
     aActor.finishDrag()
     project.undoManager.undo()
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
-    assertNotNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isDefined)
   }
 
   // 锚点是转场时，MIDDLE 拖拽把转场当作整体平移，多帧不得崩溃
@@ -292,7 +293,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragTo(mouseLocalX, mouseLocalY)
 
     // 转场作为锚点随组一起平移，仍然在轨道上
-    assertNotNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isDefined)
 
     // 后续多帧拖拽不得崩溃
     var i = 0
@@ -303,7 +304,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     tActor.finishDrag()
     project.undoManager.undo()
-    assertNotNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isDefined)
   }
 
   // 两个片段重叠出转场后，拖其中一个仍应吸附到对方的边缘
@@ -354,7 +355,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     // 越过转场左缘，转场消失，a 的可见终点跟手
     tActor.dragTo(absX(400_000L), view.trackHeight / 2)
-    assertNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isEmpty)
     assertEquals(0L ~~ 400_000L, t0.getRange(a))
 
     // 拖回右边重建转场
@@ -403,7 +404,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragTo(mouseLocalX, view.trackHeight / 2)
 
     // 转场消失，a 恢复完整，b 的起点越过转场终点继续跟手
-    assertNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isEmpty)
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
     val bRange = t0.getRange(b)
     assertEquals(1500_000L, bRange.hi)
@@ -413,7 +414,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     project.undoManager.undo()
     assertEquals(0L ~~ 1000_000L, t0.getRange(a))
     assertEquals(500_000L ~~ 1500_000L, t0.getRange(b))
-    assertNotNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isDefined)
   }
 
   // 越过消失点后再拖回，转场应重建
@@ -438,7 +439,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragSide = DragSide.FRONT
     tActor.initDrag(5f, view.trackHeight / 2)
     tActor.dragTo(absX(1200_000L), view.trackHeight / 2)
-    assertNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isEmpty)
 
     // 拖回 a 的终点之内，重叠重新成为转场
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
@@ -471,7 +472,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.initDrag(tActor.getWidth, view.trackHeight / 2)
     tActor.dragTo(absX(300_000L), view.trackHeight / 2)
 
-    assertNull(timeline.findTrackOf(transition))
+    assertTrue(timeline.findTrackOf(transition).isEmpty)
     assertEquals(0L ~~ 300_000L, t0.getRange(a))
     assertEquals(500_000L ~~ 1500_000L, t0.getRange(b))
   }

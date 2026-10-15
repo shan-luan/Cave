@@ -5,7 +5,7 @@ import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, Timeline}
 import com.lomekwi.cave.timeline.~~
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNotSame, assertNull, assertSame, assertTrue}
+import org.junit.jupiter.api.Assertions.{assertEquals, assertNotEquals, assertNotSame, assertTrue}
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -55,15 +55,15 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(2000, eb.origin)
 
     // 组结构在模板里保留，成员共享同一个模板组
-    assertTrue(ea.group != null)
-    assertSame(ea.group, eb.group)
-    assertEquals(2, ea.group.size)
+    assertTrue(ea.group.isDefined)
+    assertEquals(ea.group, eb.group)
+    assertEquals(Some(2), ea.group.map(_.size))
 
     // 模板持有的是拷贝，且这些拷贝不在时间线上，位置只能从模板本身读
     assertNotSame(a, ea.segment)
     assertNotSame(b, eb.segment)
-    assertNull(timeline.findTrackOf(ea.segment))
-    assertNull(timeline.findTrackOf(eb.segment))
+    assertTrue(timeline.findTrackOf(ea.segment).isEmpty)
+    assertTrue(timeline.findTrackOf(eb.segment).isEmpty)
   }
 
   @Test
@@ -92,9 +92,9 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(first.entries(1).range, second.entries(1).range)
     assertEquals(first.entries(1).origin, second.entries(1).origin)
 
-    assertNotSame(first.entries(0).group, second.entries(0).group)
-    assertSame(second.entries(0).group, second.entries(1).group)
-    assertEquals(2, second.entries(0).group.size)
+    assertNotEquals(first.entries(0).group, second.entries(0).group)
+    assertEquals(second.entries(0).group, second.entries(1).group)
+    assertEquals(Some(2), second.entries(0).group.map(_.size))
   }
 
   @Test

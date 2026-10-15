@@ -132,15 +132,15 @@ object UndoManager {
   }
 
   case class RemoveSegmentCommand(timeline: Timeline, index: Int, before: Track, after: Track,
-                                 segment: Segment, group: SegmentGroup) extends UndoableCommand {
+                                 segment: Segment, group: Option[SegmentGroup]) extends UndoableCommand {
     override def undo(): Unit = {
       timeline.setTrack(index, before)
-      if (group != null) group.add(segment)
+      group.foreach(_.add(segment))
     }
 
     override def redo(): Unit = {
       timeline.setTrack(index, after)
-      if (group != null) group.remove(segment)
+      group.foreach(_.remove(segment))
     }
   }
 
@@ -218,14 +218,14 @@ object UndoManager {
     override def undo(): Unit = {
       timeline.setTracks(UndoManager.foldBefore(entries.map(_.edit)))
       for (e <- entries.reverseIterator) {
-        if (e.group != null) e.group.add(e.segment)
+        e.group.foreach(_.add(e.segment))
       }
     }
 
     override def redo(): Unit = {
       timeline.setTracks(UndoManager.foldAfter(entries.map(_.edit)))
       for (e <- entries) {
-        if (e.group != null) e.group.remove(e.segment)
+        e.group.foreach(_.remove(e.segment))
       }
     }
 
@@ -243,12 +243,12 @@ object UndoManager {
   }
 
   object RemoveSegmentsCommand {
-    case class RemoveEntry(edit: TrackEdit, segment: Segment, group: SegmentGroup)
+    case class RemoveEntry(edit: TrackEdit, segment: Segment, group: Option[SegmentGroup])
   }
 
   /** 节点图被改动后通知界面重建，只在片段确实位于时间轴上时通知。 */
   private def postRefresh(project: Project, segment: Segment): Unit = {
-    if (segment != null && project.timeline.findTrackOf(segment) != null) {
+    if (segment != null && project.timeline.findTrackOf(segment).isDefined) {
       project.projEventBus.post(SegmentNodeChangedEvent(segment))
       project.projEventBus.post(RefreshRequestEvent)
     }

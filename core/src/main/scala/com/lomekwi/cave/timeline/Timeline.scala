@@ -68,12 +68,11 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
   }
 
   def remove(segment: Segment): Unit = {
-    val track = findTrackOf(segment)
-    if (track != null) {
+    findTrackOf(segment).foreach { track =>
       val group = getGroup(segment)
       val next = track.remove(segment)
       setTrack(track.index, next)
-      if (group != null) group.remove(segment)
+      group.foreach(_.remove(segment))
       push(RemoveSegmentCommand(this, track.index, track, next, segment, group))
     }
   }
@@ -83,13 +82,12 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
     def currentOf(i: Int): Track = working.getOrElse(i, tracks(i))
     val entries = mutable.ArrayBuffer.empty[RemoveSegmentsCommand.RemoveEntry]
     for (s <- segments) {
-      val track = findTrackOf(s)
-      if (track != null) {
+      findTrackOf(s).foreach { track =>
         val group = getGroup(s)
         val before = currentOf(track.index)
         val next = before.remove(s)
         working.put(track.index, next)
-        if (group != null) group.remove(s)
+        group.foreach(_.remove(s))
         entries += RemoveSegmentsCommand.RemoveEntry(TrackEdit(track.index, before, next), s, group)
       }
     }
@@ -187,9 +185,10 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
       for (s <- onTrack) {
         s match {
           case t: Transition =>
-            val sides = before.transitionSides(t)
-            if (sides != null && !segments.exists(_ eq sides._1) && !segments.exists(_ eq sides._2)) {
-              next = next.shiftTransition(t, applied)
+            before.transitionSides(t) match {
+              case Some((left, right)) if !segments.exists(_ eq left) && !segments.exists(_ eq right) =>
+                next = next.shiftTransition(t, applied)
+              case _ =>
             }
           case _ =>
         }
@@ -218,8 +217,7 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
 
     val moves = mutable.ArrayBuffer.empty[(Content, Int, Int, Interval, Long)]
     for (s <- segments) {
-      val from = findTrackOf(s)
-      if (from != null) {
+      findTrackOf(s).foreach { from =>
         // 入口已排除转场
         val c = s.asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
@@ -257,16 +255,19 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
   private def trackIndicesOf(segments: Iterable[Segment]): mutable.LinkedHashSet[Int] = {
     val indices = mutable.LinkedHashSet.empty[Int]
     for (s <- segments) {
-      val t = findTrackOf(s)
-      if (t != null) indices.add(t.index)
+      findTrackOf(s).foreach(t => indices.add(t.index))
     }
     indices
   }
 
+  /** 成员所在的轨道；要求成员在时间线上，否则抛 IllegalArgumentException。 */
+  private def requiredTrack(segment: Segment): Track =
+    findTrackOf(segment).getOrElse(throw new IllegalArgumentException("片段不在时间线上: " + segment))
+
   /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。 */
   private def findPlaceableTrack(segments: Iterable[Segment], deltaTrack: Int): Int = {
     if (deltaTrack == 0 || segments.isEmpty) return 0
-    val minIdx: Int = segments.iterator.map((s: Segment) => findTrackOf(s).index).min
+    val minIdx: Int = segments.iterator.map((s: Segment) => requiredTrack(s).index).min
     val step = if (deltaTrack > 0) 1 else -1
     val span = Math.abs(deltaTrack)
     var k = span
@@ -285,10 +286,10 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
       false
     } else {
       val moving = segments.toSet
-      var refIdx = findTrackOf(segments.iterator.next()).index
-      for (s <- segments) refIdx = Math.min(refIdx, findTrackOf(s).index)
+      var refIdx = requiredTrack(segments.iterator.next()).index
+      for (s <- segments) refIdx = Math.min(refIdx, requiredTrack(s).index)
       segments.forall { s =>
-        val from = findTrackOf(s)
+        val from = requiredTrack(s)
         val ti = from.index + (target - refIdx)
         // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
         // 落点与既有内容重叠只要合法就允许，重叠会成为转场，不必强行换到空轨道
@@ -331,9 +332,9 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
     best
   }
 
-  /** 持有该片段的轨道；未放置时返回 null。 */
-  def findTrackOf(segment: Segment): Track =
-    tracks.find(_.contains(segment)).orNull
+  /** 持有该片段的轨道；未放置时返回 None。 */
+  def findTrackOf(segment: Segment): Option[Track] =
+    tracks.find(_.contains(segment))
 
   /** 新建一个组并纳入注册表。 */
   def newGroup(): SegmentGroup = {
@@ -355,9 +356,9 @@ class Timeline(final val project: Project) extends Serializable with Iterable[Tr
     groups -= group
   }
 
-  /** 片段所属的组；不属于任何组时返回 null。 */
-  def getGroup(segment: Segment): SegmentGroup = {
-    groups.find(_.contains(segment)).orNull
+  /** 片段所属的组；不属于任何组时返回 None。 */
+  def getGroup(segment: Segment): Option[SegmentGroup] = {
+    groups.find(_.contains(segment))
   }
 
   /**

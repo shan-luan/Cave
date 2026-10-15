@@ -108,15 +108,15 @@ class Inspector extends VisTable {
     segments.sortInPlaceWith((a: Segment, b: Segment) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
-      val ia = if (ta == null) Integer.MAX_VALUE else ta.index
-      val ib = if (tb == null) Integer.MAX_VALUE else tb.index
+      val ia = ta.map(_.index).getOrElse(Integer.MAX_VALUE)
+      val ib = tb.map(_.index).getOrElse(Integer.MAX_VALUE)
       val c = Integer.compare(ia, ib)
       if (c != 0) {
         c < 0
       } else {
-        val ra = if (ta == null) null else ta.getRange(a)
-        val rb = if (tb == null) null else tb.getRange(b)
-        (if (ra == null) Long.MaxValue else ra.lo) < (if (rb == null) Long.MaxValue else rb.lo)
+        val ra = ta.map(_.getRange(a).lo).getOrElse(Long.MaxValue)
+        val rb = tb.map(_.getRange(b).lo).getOrElse(Long.MaxValue)
+        ra < rb
       }
     })
   }

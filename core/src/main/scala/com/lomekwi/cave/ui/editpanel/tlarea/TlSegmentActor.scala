@@ -33,7 +33,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
 
   /** 本片段当前所在的轨道；未在时间线上时为空。 */
   private[tlarea] def track: Track = {
-    if (tl == null) null else tl.timeline.findTrackOf(segment)
+    if (tl == null) null else tl.timeline.findTrackOf(segment).orNull
   }
 
   /** 本片段占用的时间区间；未在时间线上时为空。 */
@@ -50,7 +50,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
 
   /** 本片段所属的组；不属于任何组时为空。 */
   private[tlarea] def group: SegmentGroup = {
-    if (tl == null) null else tl.timeline.getGroup(segment)
+    if (tl == null) null else tl.timeline.getGroup(segment).orNull
   }
 
   addListener(new InputListener {
@@ -229,8 +229,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
           // 换轨会连带改变锚点的位置。以换轨后的状态重设按下点，
           // 否则下一帧会把这段位移当成新的一帧位移，内容整体平移过去
           val anchor = dragMembers.head
-          val anchorTrack = tl.timeline.findTrackOf(anchor)
-          if (anchorTrack != null) {
+          tl.timeline.findTrackOf(anchor).foreach { anchorTrack =>
             firstX = viewX - tl.absoluteTimeToX(anchorTrack.getRange(anchor).lo)
           }
         }
@@ -257,11 +256,8 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     } else {
       val ignore: mutable.HashSet[Segment] = mutable.HashSet.from(dragMembers)
       // actor 的片段可能已被替换或摘除（如转场拖到消失），轨道按锚点取
-      val t = if (dragMembers.isEmpty) null else tl.timeline.findTrackOf(dragMembers.head)
-      if (t != null) {
-        for (s <- t) {
-          ignore += s
-        }
+      if (dragMembers.nonEmpty) {
+        tl.timeline.findTrackOf(dragMembers.head).foreach(t => ignore ++= t)
       }
       val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
       if (snapped != rawTime) {
@@ -283,14 +279,11 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
       val ignore: mutable.HashSet[Segment] = mutable.HashSet.empty
       for (member <- dragMembers) {
         ignore += member
-        val memberTrack = tl.timeline.findTrackOf(member)
-        if (memberTrack != null) {
+        tl.timeline.findTrackOf(member).foreach { memberTrack =>
           member match {
             case c: Content =>
-              val before = memberTrack.transitionBefore(c)
-              if (before != null) ignore += before
-              val after = memberTrack.transitionAfter(c)
-              if (after != null) ignore += after
+              memberTrack.transitionBefore(c).foreach(t => ignore += t)
+              memberTrack.transitionAfter(c).foreach(t => ignore += t)
             case t: Transition =>
               ignoreTransition(ignore, memberTrack, t)
             case _ =>
@@ -328,10 +321,9 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     // 拖转场本体时两侧内容跟着平移（见 [[Track.shiftTransition]]），转场及其两侧内容的端点都在变，必须整体退出吸附
     if (t != null) {
       ignore += t
-      val sides = track.transitionSides(t)
-      if (sides != null) {
-        ignore += sides._1
-        ignore += sides._2
+      track.transitionSides(t).foreach { case (left, right) =>
+        ignore += left
+        ignore += right
       }
     }
   }
@@ -350,12 +342,13 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   /** 拖转场边缘就是拖某条内容边，左缘是右内容的起点，右缘是左内容的终点。 */
   private def resizeTarget(member: Segment): Segment = member match {
     case t: Transition =>
-      val memberTrack = tl.timeline.findTrackOf(t)
-      if (memberTrack == null) {
-        member
-      } else {
-        val sides = memberTrack.transitionSides(t)
-        if (sides == null) member else if (dragSide == DragSide.FRONT) sides._2 else sides._1
+      tl.timeline.findTrackOf(t) match {
+        case None => member
+        case Some(memberTrack) =>
+          memberTrack.transitionSides(t) match {
+            case Some((left, right)) => if (dragSide == DragSide.FRONT) right else left
+            case None => member
+          }
       }
     case _ => member
   }
@@ -378,7 +371,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     dragMembers = mutable.ArrayBuffer.empty
     for (m <- candidates) {
       val member = if (replaceEdge) resizeTarget(m) else m
-      if (tl.timeline.findTrackOf(member) != null && !dragMembers.contains(member)) {
+      if (tl.timeline.findTrackOf(member).isDefined && !dragMembers.contains(member)) {
         dragMembers += member
       }
     }
@@ -387,17 +380,18 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   /** 整体移动一步；返回实际应用的轨道偏移，0 表示未换轨。 */
   private def handleMiddleDrag(target: Long, newTrack: Track): Int = {
     // 成员里的转场可能被相邻内容的删除连带摘掉，只保留仍在轨道上的成员参与移动
-    val members: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.empty
+    val placed: mutable.ArrayBuffer[(Segment, Track)] = mutable.ArrayBuffer.empty
     for (m <- dragMembers) {
-      if (tl.timeline.findTrackOf(m) != null) members += m
+      tl.timeline.findTrackOf(m).foreach(t => placed += ((m, t)))
     }
-    if (members.isEmpty) return 0
+    if (placed.isEmpty) return 0
+    val members: mutable.ArrayBuffer[Segment] = placed.map(_._1)
 
-    val firstTrack: Track = tl.timeline.findTrackOf(members.head)
+    val firstTrack: Track = placed.head._2
     val trackDelta: Int = newTrack.index - firstTrack.index
 
     var appliedTracks: Int = 0
-    val minIdx: Int = members.iterator.map((m: Segment) => tl.timeline.findTrackOf(m).index).min
+    val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.getRange(members.head).lo
       tl.timeline.moveTime(members, target - currentStart0)
@@ -413,21 +407,21 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     if (dragMembers.isEmpty) return
     val members: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head
-    val firstTrack = tl.timeline.findTrackOf(first)
-    if (firstTrack == null) return
-    // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
-    val base = firstTrack.getRange(first).lo
-    tl.timeline.setStart(members, newStart - base)
+    tl.timeline.findTrackOf(first).foreach { firstTrack =>
+      // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
+      val base = firstTrack.getRange(first).lo
+      tl.timeline.setStart(members, newStart - base)
+    }
   }
 
   private def handleBehindResize(newEnd: Long): Unit = {
     if (dragMembers.isEmpty) return
     val members: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head
-    val firstTrack = tl.timeline.findTrackOf(first)
-    if (firstTrack == null) return
-    val r = firstTrack.getRange(first)
-    tl.timeline.setEnd(members, newEnd - r.hi)
+    tl.timeline.findTrackOf(first).foreach { firstTrack =>
+      val r = firstTrack.getRange(first)
+      tl.timeline.setEnd(members, newEnd - r.hi)
+    }
   }
 
   private def setCursor(cursor: Cursor.SystemCursor): Unit = {

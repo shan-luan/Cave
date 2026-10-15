@@ -44,9 +44,8 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
    */
   private def rawSides(segment: Segment, track: Track): (Content, Content, Boolean) = {
     val sides = track.transitionSides(segment.asInstanceOf[Transition])
-    require(sides != null, "转场源在轨道之外被求值: " + segment)
-    val left = sides._1
-    val right = sides._2
+    require(sides.isDefined, "转场源在轨道之外被求值: " + segment)
+    val (left, right) = sides.get
     if (left.source eq from) (left, right, false) else (right, left, true)
   }
 
