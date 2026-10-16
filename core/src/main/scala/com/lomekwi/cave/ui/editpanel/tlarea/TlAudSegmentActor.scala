@@ -4,9 +4,9 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
-import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.resource.media.AudRes
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
 
 class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
@@ -19,10 +19,10 @@ class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
     val waveTex: Texture = wf.waveTex
     if (waveTex == null) return
 
-    val contentRange = range
+    val contentInterval = interval
     val contentOrigin = origin
-    val srcLocalStart: Long = contentRange.lo - contentOrigin
-    val srcLocalEnd: Long = contentRange.hi - contentOrigin
+    val srcLocalStart: Long = contentInterval.lo - contentOrigin
+    val srcLocalEnd: Long = contentInterval.hi - contentOrigin
     val srcDuration: Long = srcLocalEnd - srcLocalStart
     if (srcDuration <= 0) return
 

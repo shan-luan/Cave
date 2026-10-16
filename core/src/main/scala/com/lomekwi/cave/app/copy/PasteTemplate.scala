@@ -1,7 +1,6 @@
 package com.lomekwi.cave.app.copy
 
-import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
-import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline}
+import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentGroup, Timeline, Transition}
 
 import scala.collection.mutable
 
@@ -19,7 +18,7 @@ class PasteTemplate private (val entries: mutable.ArrayBuffer[PasteTemplate.Entr
 }
 
 object PasteTemplate {
-  case class Entry(trackIndex: Int, segment: Content, range: Interval, origin: Long, group: Option[SegmentGroup])
+  case class Entry(trackIndex: Int, segment: Content, interval: Interval, origin: Long, group: Option[SegmentGroup])
 
   /** 把时间线上的一批片段抓成模板。转场不参与复制。 */
   def of(segments: Iterable[Segment], timeline: Timeline): PasteTemplate = {
@@ -30,7 +29,7 @@ object PasteTemplate {
         case _: Transition =>
         case c: Content =>
           timeline.findTrackOf(c).foreach { track =>
-            raw += Entry(track.index, c, track.getRange(c), track.getOrigin(c), timeline.getGroup(c))
+            raw += Entry(track.index, c, track.getInterval(c), track.getOrigin(c), timeline.getGroup(c))
           }
       }
     }
@@ -54,7 +53,7 @@ object PasteTemplate {
     for (i <- entries.indices) {
       val entry = entries(i)
       val groupCopy = entry.group.map(original => groupCopies(original))
-      copied += Entry(entry.trackIndex, dups(i), entry.range, entry.origin, groupCopy)
+      copied += Entry(entry.trackIndex, dups(i), entry.interval, entry.origin, groupCopy)
     }
     copied
   }

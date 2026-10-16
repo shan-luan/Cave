@@ -10,12 +10,12 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.FrameBuffer
 import com.badlogic.gdx.math.Matrix4
-import com.lomekwi.cave.pipeline.{Frame, Gap, Segment}
+import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
-import com.lomekwi.cave.project.{Project, Projects}
+import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.resource.decoder.AudDecRes
-import com.lomekwi.cave.timeline.{Timeline, Track}
+import com.lomekwi.cave.timeline.{Gap, Segment, Timeline, Track}
 
 import org.bytedeco.javacv.FFmpegFrameRecorder
 
@@ -188,7 +188,7 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
       fb.dispose()
       batch.dispose()
     })
-    Projects.closeResources(project)
+    Project.closeResources(project)
     cvFrame.close()
     recorder.close()
   }

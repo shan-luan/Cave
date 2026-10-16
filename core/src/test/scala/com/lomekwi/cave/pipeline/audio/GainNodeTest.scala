@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.audio
 
-import com.lomekwi.cave.pipeline.{Boundless, NodeRegistry, Segment, Source}
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.pipeline.{NodeRegistry, Source}
+import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
 import org.junit.jupiter.api.Test

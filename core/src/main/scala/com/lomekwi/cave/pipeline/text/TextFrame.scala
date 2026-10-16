@@ -8,10 +8,9 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
 import scala.compiletime.uninitialized

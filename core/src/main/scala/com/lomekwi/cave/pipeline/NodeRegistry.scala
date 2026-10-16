@@ -4,6 +4,7 @@ import com.lomekwi.cave.pipeline.audio.GainNode
 import com.lomekwi.cave.pipeline.image.{OpacityNode, TransNode}
 import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode, TimeNode}
 import com.lomekwi.cave.pipeline.text.TextFilter
+import com.lomekwi.cave.timeline.Segment
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}

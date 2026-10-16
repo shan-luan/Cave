@@ -12,7 +12,7 @@ import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.GapFrame
 import com.lomekwi.cave.pipeline.image.Renderable
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
 import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.app.App
@@ -28,9 +28,9 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class PreviewArea(context0: ProjectContext) extends Group with Focusable {
+class PreviewArea(context0: ProjectSession) extends Group with Focusable {
 
-  private final val context: ProjectContext = context0
+  private final val context: ProjectSession = context0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.canvas
   // 此列表仅应在主线程读取。

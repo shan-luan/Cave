@@ -5,9 +5,9 @@ import com.lomekwi.cave.util.Units.niceScale
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.ImgSource
 import com.lomekwi.cave.resource.media.ImgRes
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
@@ -15,10 +15,10 @@ class TlImgSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
 
   override def drawContent(batch: Batch, parentAlpha: Float, visibleStartX: Float, visibleEndX: Float): Unit = {
     val sd: ShapeDrawer = App.root.shapeDrawer
-    val contentRange = range
+    val contentInterval = interval
     val contentOrigin = origin
-    val srcLocalStart: Long = contentRange.lo - contentOrigin
-    val srcLocalEnd: Long = contentRange.hi - contentOrigin
+    val srcLocalStart: Long = contentInterval.lo - contentOrigin
+    val srcLocalEnd: Long = contentInterval.hi - contentOrigin
     val srcDuration: Long = srcLocalEnd - srcLocalStart
 
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)

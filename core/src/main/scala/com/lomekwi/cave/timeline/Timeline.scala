@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.util.Duplicatable
 
 import java.io.Serializable
@@ -34,17 +33,17 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     if (tracks.size > index) this else new Timeline(grownTo(tracks, index), groups)
   }
 
-  def tryAdd(track: Track, segment: Content, range: Interval, origin: Long): (Timeline, Long) = {
+  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long): (Timeline, Long) = {
     val grown = ensureTrack(track.index)
     val current = grown.tracks(track.index)
-    val (next, shift) = current.tryAdd(segment, range, origin)
+    val (next, shift) = current.tryAdd(segment, interval, origin)
     if (shift == 0) (grown.withTrack(track.index, next), 0L) else (this, shift)
   }
 
-  protected[timeline] def addOrThrow(track: Track, segment: Content, range: Interval, origin: Long): Timeline = {
+  protected[timeline] def addOrThrow(track: Track, segment: Content, interval: Interval, origin: Long): Timeline = {
     val grown = ensureTrack(track.index)
     val current = grown.tracks(track.index)
-    val next = current.addOrThrow(segment, range, origin)
+    val next = current.addOrThrow(segment, interval, origin)
     grown.withTrack(track.index, next)
   }
 
@@ -146,9 +145,9 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
           case _: Transition =>
         }
       }
-      refill.sortInPlaceWith((a: Content, b: Content) => before.getRange(a).lo > before.getRange(b).lo)
+      refill.sortInPlaceWith((a: Content, b: Content) => before.getInterval(a).lo > before.getInterval(b).lo)
       for (c <- refill) {
-        next = next.addOrThrow(c, before.getRange(c).shift(applied), before.getOrigin(c) + applied)
+        next = next.addOrThrow(c, before.getInterval(c).shift(applied), before.getOrigin(c) + applied)
       }
       for (s <- onTrack) {
         s match {
@@ -187,7 +186,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 入口已排除转场
         val c = s.asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
-        moves += ((c, from.index, to.index, from.getRange(c), from.getOrigin(c)))
+        moves += ((c, from.index, to.index, from.getInterval(c), from.getOrigin(c)))
       }
     }
     if (moves.isEmpty) return (this, 0)
@@ -207,9 +206,9 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     for ((s, fromIndex, _, _, _) <- moves) {
       working.put(fromIndex, currentOf(fromIndex).remove(s))
     }
-    for ((s, _, toIndex, range, origin) <- moves) {
+    for ((s, _, toIndex, interval, origin) <- moves) {
       val before = currentOf(toIndex)
-      working.put(toIndex, before.addOrThrow(s, range, origin))
+      working.put(toIndex, before.addOrThrow(s, interval, origin))
     }
 
     var out = base
@@ -262,7 +261,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
         // 落点与既有内容重叠只要合法就允许，重叠会成为转场，不必强行换到空轨道
         ti >= tracks.size || (s match {
-          case c: Content => tracks(ti).canPlaceAt(c, from.getRange(s), moving)
+          case c: Content => tracks(ti).canPlaceAt(c, from.getInterval(s), moving)
           case _ => false
         })
       }
@@ -276,11 +275,11 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     val searchStart: Long = Math.max(0, time - threshold)
     val searchEnd: Long = time + threshold
     if (searchEnd <= searchStart) return time
-    val searchRange: Interval = searchStart ~~ searchEnd
+    val searchInterval: Interval = searchStart ~~ searchEnd
     for (track <- tracks) {
-      for (s <- track.getIntersecting(searchRange)) {
+      for (s <- track.getIntersecting(searchInterval)) {
         if (!ignore.contains(s)) {
-          val r = track.getRange(s)
+          val r = track.getInterval(s)
           var dist = Math.abs(r.lo - time)
           if (dist < bestDist) {
             best = r.lo

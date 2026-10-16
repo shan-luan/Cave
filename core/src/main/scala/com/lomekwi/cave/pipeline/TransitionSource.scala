@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Content, Segment, Track, Transition}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTransitionActor}
 
 import scala.reflect.ClassTag
@@ -21,7 +21,7 @@ import scala.reflect.ClassTag
 abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I], val to: Source[? <: I])
   (using ClassTag[O]) extends Source[O] {
 
-  // 求值时用 [[Track.getRange]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查轨道布局
+  // 求值时用 [[Track.getInterval]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查轨道布局
   final override def canCreateTransitionWith(source: Source[?]): Boolean = false
 
   final override def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
@@ -57,7 +57,7 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     // 两侧都无帧才交出无帧，单侧无帧原样交给 [[mix]]，由效果决定表现
     if (a == null && b == null) null.asInstanceOf[O]
     else {
-      val progress = time.toFloat / (track.getRange(segment).hi - track.getRange(segment).lo)
+      val progress = time.toFloat / (track.getInterval(segment).hi - track.getInterval(segment).lo)
       // [[mix]] 的视角固定为起点侧在前，flipped 时参数对调、进度翻转
       if (flipped) mix(b, a, 1f - progress) else mix(a, b, progress)
     }

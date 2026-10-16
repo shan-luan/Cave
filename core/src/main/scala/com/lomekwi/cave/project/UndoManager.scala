@@ -4,7 +4,7 @@ import com.lomekwi.cave.timeline.Timeline
 
 import scala.collection.mutable
 
-final class UndoManager(@transient private val context: ProjectContext) {
+final class UndoManager(@transient private val context: ProjectSession) {
   private final val undoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
   private final val redoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
 
@@ -47,5 +47,6 @@ final class UndoManager(@transient private val context: ProjectContext) {
 object UndoManager {
   private final val MAX_UNDO = 100
 
+  @Deprecated //自模型不可变后，直接改为project快照即可。
   case class TimelineEdit(before: Timeline, after: Timeline)
 }

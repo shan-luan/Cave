@@ -1,8 +1,8 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.pipeline.{Source, Segment}
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 //TODO:WIP

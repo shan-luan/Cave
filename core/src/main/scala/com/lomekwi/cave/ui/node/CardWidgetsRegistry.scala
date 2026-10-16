@@ -3,7 +3,7 @@ package com.lomekwi.cave.ui.node
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.timeline.Segment
 
 import scala.collection.mutable
 

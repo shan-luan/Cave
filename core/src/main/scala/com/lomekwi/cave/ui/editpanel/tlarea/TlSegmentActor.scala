@@ -6,9 +6,8 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.{Rectangle, Vector2}
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
-import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
-import com.lomekwi.cave.project.ProjectContext
-import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Track}
+import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentGroup, Track, Transition}
+import com.lomekwi.cave.project.ProjectSession
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.Colors
@@ -25,7 +24,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
   private var dragMembers: mutable.ArrayBuffer[Segment] = uninitialized
-  private var dragRecording: ProjectContext.Recording = null
+  private var dragRecording: ProjectSession.Recording = null
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -39,9 +38,9 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   }
 
   /** 本片段占用的时间区间；未在时间线上时为空。 */
-  private[tlarea] def range: Interval = {
+  private[tlarea] def interval: Interval = {
     val t = track
-    if (t == null) null else t.getRange(segment)
+    if (t == null) null else t.getInterval(segment)
   }
 
   /** 片段的 0 秒在时间轴中的位置；未在时间线上时为 0。 */
@@ -140,7 +139,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   })
 
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
-    if (range == null) return
+    if (interval == null) return
     ScissorStack.calculateScissors(App.root.stage.getCamera, batch.getTransformMatrix, bounds, scissors)
     if (ScissorStack.pushScissors(scissors)) {
       var visibleStartX: Float = 0
@@ -214,7 +213,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
         handleBehindResize(snapResizeTime(rawUpper))
       case DragSide.MIDDLE =>
         // 锚点被连带摘除（如相邻内容删除时转场被删）后拖拽无从继续
-        val r = range
+        val r = interval
         if (r == null) return
         // firstX/firstY 是按下时鼠标在片段内的偏移，viewX 减去它即片段起点
         val targetX: Float = viewX - firstX
@@ -232,7 +231,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
           // 否则下一帧会把这段位移当成新的一帧位移，内容整体平移过去
           val anchor = dragMembers.head
           tl.timeline.findTrackOf(anchor).foreach { anchorTrack =>
-            firstX = viewX - tl.absoluteTimeToX(anchorTrack.getRange(anchor).lo)
+            firstX = viewX - tl.absoluteTimeToX(anchorTrack.getInterval(anchor).lo)
           }
         }
       case _ => ()
@@ -398,7 +397,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     var appliedTracks: Int = 0
     val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
-      val currentStart0: Long = firstTrack.getRange(members.head).lo
+      val currentStart0: Long = firstTrack.getInterval(members.head).lo
       tl.context.moveTime(members, target - currentStart0)
 
       if (trackDelta != 0) {
@@ -414,7 +413,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
-      val base = firstTrack.getRange(first).lo
+      val base = firstTrack.getInterval(first).lo
       tl.context.setStart(members, newStart - base)
     }
   }
@@ -424,7 +423,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     val members: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
-      val r = firstTrack.getRange(first)
+      val r = firstTrack.getInterval(first)
       tl.context.setEnd(members, newEnd - r.hi)
     }
   }

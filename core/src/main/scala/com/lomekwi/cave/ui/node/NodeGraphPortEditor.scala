@@ -9,7 +9,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.util.i18n.I18N.i18n
 

@@ -8,8 +8,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
 import java.nio.ByteBuffer

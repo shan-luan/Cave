@@ -2,7 +2,8 @@ package com.lomekwi.cave.ui.editpanel.inspector
 
 import com.badlogic.gdx.utils.Align
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.{Source, Segment}
+import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.widget.Card
 
 /**

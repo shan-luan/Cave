@@ -4,7 +4,7 @@ import com.lomekwi.cave.pipeline.audio.{AudSource, GainNode}
 import com.lomekwi.cave.pipeline.text.TextFilter
 import com.lomekwi.cave.pipeline.text.TextSource
 import com.lomekwi.cave.resource.media.{AudRes, VdoRes}
-import com.lomekwi.cave.timeline.GdxTestBase
+import com.lomekwi.cave.timeline.{Boundless, Clip, GdxTestBase}
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test

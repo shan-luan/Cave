@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.timeline.{Boundless, Segment}
+
 import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNull, assertSame}
 import org.junit.jupiter.api.Test
 

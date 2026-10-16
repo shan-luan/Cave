@@ -11,10 +11,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
-import com.lomekwi.cave.timeline.{Interval, SegmentGroup, Timeline, Track}
+import com.lomekwi.cave.timeline.{Gap, Interval, Segment, SegmentGroup, Timeline, Track, Transition}
 import com.lomekwi.cave.timeline.~~
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.playback.Playhead
 
 import com.lomekwi.cave.app.App
@@ -29,13 +28,13 @@ import scala.util.Using
 
 import com.badlogic.gdx.Input.Keys.*
 
-class TimelineView(context0: ProjectContext) extends Group with Focusable {
+class TimelineView(context0: ProjectSession) extends Group with Focusable {
 
   private final val renderer: TimelineRenderer = new TimelineRenderer()
   final val srcMenu: TlSegmentMenu = new TlSegmentMenu(this)
   final val viewMenu: TlMenu = new TlMenu(this)
 
-  private[tlarea] final val context: ProjectContext = context0
+  private[tlarea] final val context: ProjectSession = context0
   private[tlarea] def timeline: Timeline = context.timeline
   private[tlarea] def playhead: Playhead = context.playhead
 
@@ -174,19 +173,19 @@ class TimelineView(context0: ProjectContext) extends Group with Focusable {
     if (dirty) {
       clearChildren(false)
 
-      val visibleRange = view.visibleRange()
+      val visibleInterval = view.visibleInterval()
       for (i <- timeline.getTracks.indices.reverse) {
         val track = timeline.getTracks(i)
 
         // 转场排在最后添加，压在两侧内容之上，重叠区里鼠标命中的是转场
-        val entries = track.getIntersecting(visibleRange).sortBy {
+        val entries = track.getIntersecting(visibleInterval).sortBy {
           case _: Transition => 1
           case _ => 0
         }
         for (s <- entries) {
           val actor = s.getTlSegmentActor
           actor.tl = this
-          val r = track.getRange(s)
+          val r = track.getInterval(s)
           actor.setPosition(
             absoluteTimeToX(r.lo),
             getHeight + view.trackYShift - (i + 1) * view.trackHeight
@@ -330,9 +329,9 @@ class TimelineView(context0: ProjectContext) extends Group with Focusable {
     Using.resource(context.record()) { h =>
       for (member <- members) {
         context.timeline.findTrackOf(member).foreach { memberTrack =>
-          val range = memberTrack.getRange(member)
-          val start: Long = range.lo
-          val end: Long = range.hi
+          val interval = memberTrack.getInterval(member)
+          val start: Long = interval.lo
+          val end: Long = interval.hi
           if (time > start && time < end) {
             context.split(memberTrack, time)
             beforeSegments += member
@@ -448,7 +447,7 @@ class TimelineView(context0: ProjectContext) extends Group with Focusable {
     sorted.sortInPlaceBy(_.trackIndex)
 
     val minTrack = sorted.head.trackIndex
-    val minStart = if (sorted.isEmpty) baseTime else sorted.iterator.map(_.range.lo).min
+    val minStart = if (sorted.isEmpty) baseTime else sorted.iterator.map(_.interval.lo).min
     val timeOffset = baseTime - minStart
 
     Using.resource(context.record()) { h =>
@@ -457,18 +456,18 @@ class TimelineView(context0: ProjectContext) extends Group with Focusable {
         entry.group.foreach(g => context.applyTimeline(context.timeline.adoptGroup(g)))
       }
       for (entry <- sorted) {
-        val duration = entry.range.hi - entry.range.lo
+        val duration = entry.interval.hi - entry.interval.lo
         if (duration > 0) {
           val trackOffset = entry.trackIndex - minTrack
           var ti = baseTrack + trackOffset
-          val start = entry.range.lo + timeOffset
-          val range = start ~~ (start + duration)
+          val start = entry.interval.lo + timeOffset
+          val interval = start ~~ (start + duration)
           // 落点与既有内容重叠只要合法就接受，重叠会成为转场；
           // 只有确实放不下时才整条上移轨道重试，成员之间因此不会被拆散
           var placed = false
           while (!placed) {
             val track = context.timeline.getTrackOrCreate(ti)
-            if (context.tryAdd(track, entry.segment, range, entry.origin + timeOffset) == 0) {
+            if (context.tryAdd(track, entry.segment, interval, entry.origin + timeOffset) == 0) {
               placed = true
             } else {
               ti += 1
@@ -608,7 +607,7 @@ object TimelineView {
       startTime + ((x / width) * durationTime).toLong
     }
 
-    private[tlarea] def visibleRange(): Interval = {
+    private[tlarea] def visibleInterval(): Interval = {
       startTime ~~ (startTime + durationTime)
     }
 

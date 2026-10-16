@@ -3,9 +3,9 @@ package com.lomekwi.cave.pipeline.image
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.lomekwi.cave.pipeline.{Source, Node, Segment, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.VdoRes
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlVdoSegmentActor}
 
 import java.util.concurrent.CountDownLatch

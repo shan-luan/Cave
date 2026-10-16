@@ -16,7 +16,7 @@ class TestProject() {
     Timeline.empty,
     mutable.LinkedHashMap.empty[File, mutable.ArrayBuffer[Resource]],
     UUID.randomUUID())
-  val context: ProjectContext = new ProjectContext(project)
+  val context: ProjectSession = new ProjectSession(project)
   val timeline: TestTimeline = new TestTimeline(context)
 
   def playhead: Playhead = context.playhead

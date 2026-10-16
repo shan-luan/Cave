@@ -2,14 +2,14 @@ package com.lomekwi.cave.pipeline.audio
 
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.project.{ProjectBackgroundedEvent, ProjectContext, ProjectFrontedEvent}
+import com.lomekwi.cave.project.{ProjectBackgroundedEvent, ProjectSession, ProjectFrontedEvent}
 import com.lomekwi.cave.resource.decoder.AudDecRes
 
 import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
 import scala.compiletime.uninitialized
 
-class AudioFrameSink(private val context: ProjectContext) {
+class AudioFrameSink(private val context: ProjectSession) {
   @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(context)
   private var currentFuture: Future[?] = uninitialized
 
@@ -47,7 +47,7 @@ class AudioFrameSink(private val context: ProjectContext) {
 }
 
 object AudioFrameSink {
-  private[audio] class AudioFrameMixer(private val context: ProjectContext) extends Runnable {
+  private[audio] class AudioFrameMixer(private val context: ProjectSession) extends Runnable {
     private final val frames: LinkedBlockingQueue[AudFrame] = new LinkedBlockingQueue[AudFrame]()
     private final val output: Array[Float] = new Array[Float](AudDecRes.FRAME_SIZE)
     @volatile private var stopped: Boolean = false

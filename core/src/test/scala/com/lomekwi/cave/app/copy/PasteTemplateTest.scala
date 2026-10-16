@@ -46,12 +46,12 @@ class PasteTemplateTest extends GdxTestBase {
 
     val ea = entries(0)
     assertEquals(0, ea.trackIndex)
-    assertEquals(0 ~~ 100, ea.range)
+    assertEquals(0 ~~ 100, ea.interval)
     assertEquals(1000, ea.origin)
 
     val eb = entries(1)
     assertEquals(1, eb.trackIndex)
-    assertEquals(500 ~~ 600, eb.range)
+    assertEquals(500 ~~ 600, eb.interval)
     assertEquals(2000, eb.origin)
 
     // 组结构在模板里保留，成员共享同一个模板组
@@ -87,9 +87,9 @@ class PasteTemplateTest extends GdxTestBase {
     // 两次粘贴必须拿到不同的片段实例，否则第二次粘贴会复用已在时间线上的对象
     assertNotSame(first.entries(0).segment, second.entries(0).segment)
 
-    assertEquals(first.entries(0).range, second.entries(0).range)
+    assertEquals(first.entries(0).interval, second.entries(0).interval)
     assertEquals(first.entries(0).origin, second.entries(0).origin)
-    assertEquals(first.entries(1).range, second.entries(1).range)
+    assertEquals(first.entries(1).interval, second.entries(1).interval)
     assertEquals(first.entries(1).origin, second.entries(1).origin)
 
     assertNotEquals(first.entries(0).group, second.entries(0).group)
@@ -110,7 +110,7 @@ class PasteTemplateTest extends GdxTestBase {
     timeline.remove(a)
 
     assertEquals(1, template.entries.size)
-    assertEquals(0 ~~ 100, template.entries(0).range)
+    assertEquals(0 ~~ 100, template.entries(0).interval)
     assertEquals(5000, template.entries(0).origin)
   }
 }

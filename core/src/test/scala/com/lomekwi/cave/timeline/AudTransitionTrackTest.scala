@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.app.AppAudioOut
-import com.lomekwi.cave.pipeline.{Clip, Segment, Source, Transition, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, TransitionSource}
 import com.lomekwi.cave.pipeline.audio.{AudCrossfadeSource, AudFrame}
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.resource.decoder.AudDecRes

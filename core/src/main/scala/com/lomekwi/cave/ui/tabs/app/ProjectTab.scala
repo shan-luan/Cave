@@ -9,9 +9,8 @@ import com.google.common.eventbus.Subscribe
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.project.ProjectDirtyChangedEvent
-import com.lomekwi.cave.project.Projects
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.ui.editpanel.EditPanelFrame
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
@@ -21,7 +20,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 import java.io.IOException
 
 class ProjectTab(project0: Project) extends Tab(true, true) {
-  final val context: ProjectContext = new ProjectContext(project0)
+  final val context: ProjectSession = new ProjectSession(project0)
   final val editPanel: EditPanel = new EditPanel(context)
   context.bus.register(this)
 
@@ -41,7 +40,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
 
   //FIXME 当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
   override def save(): Boolean = {
-    if (context.savePath == null) {
+    if (context.savePath.isEmpty) {
       val conf = new NativeFileChooserConfiguration()
       conf.title = i18n("选择保存位置...")
       if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -51,7 +50,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       App.fileChooser.chooseFile(conf, new NativeFileChooserCallback {
         override def onFileChosen(file: com.badlogic.gdx.files.FileHandle): Unit = {
           try {
-            Projects.save(context, file)
+            Project.save(context, file)
             setDirty(false)
           } catch {
             case e: IOException =>
@@ -66,7 +65,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       true
     }
     try {
-      Projects.save(context)
+      Project.save(context)
       setDirty(false)
       true
     } catch {

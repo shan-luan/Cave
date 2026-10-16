@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.Clip
 import com.lomekwi.cave.pipeline.audio.{AudSource, GainNode}
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.resource.media.AudRes

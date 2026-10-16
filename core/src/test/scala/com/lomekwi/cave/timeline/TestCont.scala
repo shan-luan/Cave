@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Clip, Frame, Source, Segment, Transition, TransitionSource}
+import com.lomekwi.cave.pipeline.{Frame, Source, TransitionSource}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**

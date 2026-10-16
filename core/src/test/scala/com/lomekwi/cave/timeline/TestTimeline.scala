@@ -1,20 +1,19 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Segment}
-import com.lomekwi.cave.project.{Project, ProjectContext}
+import com.lomekwi.cave.project.{Project, ProjectSession}
 
 import scala.collection.Set
 
-final class TestTimeline(val context: ProjectContext) {
+final class TestTimeline(val context: ProjectSession) {
   def timeline: Timeline = context.timeline
 
   def project: Project = context.project
 
-  def tryAdd(track: Track, segment: Content, range: Interval, origin: Long): Long =
-    context.tryAdd(track, segment, range, origin)
+  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long): Long =
+    context.tryAdd(track, segment, interval, origin)
 
-  def addOrThrow(track: Track, segment: Content, range: Interval, origin: Long): Unit =
-    context.applyTimeline(timeline.addOrThrow(track, segment, range, origin))
+  def addOrThrow(track: Track, segment: Content, interval: Interval, origin: Long): Unit =
+    context.applyTimeline(timeline.addOrThrow(track, segment, interval, origin))
 
   def remove(segment: Segment): Unit = context.remove(segment)
 
@@ -46,7 +45,7 @@ final class TestTimeline(val context: ProjectContext) {
 
   def dropGroup(group: SegmentGroup): Unit = context.applyTimeline(timeline.dropGroup(group))
 
-  def record(): ProjectContext.Recording = context.record()
+  def record(): ProjectSession.Recording = context.record()
 
   def snapTime(time: Long, threshold: Long, ignore: Set[Segment]): Long = timeline.snapTime(time, threshold, ignore)
 

@@ -1,12 +1,10 @@
 package com.lomekwi.cave.timeline
 
-
-import com.lomekwi.cave.pipeline.{Boundless, Clip, Content}
 import com.lomekwi.cave.pipeline.audio.{AudSource}
 import com.lomekwi.cave.pipeline.image.{ImgSource, VdoSource}
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.resource.media.MediaCreatedEvent
 import com.lomekwi.cave.resource.media.ImgRes
@@ -17,7 +15,7 @@ import java.io.{File, IOException}
 
 import scala.collection.mutable
 
-class SegmentFactory(private val context: ProjectContext) {
+class SegmentFactory(private val context: ProjectSession) {
   import SegmentFactory.*
 
   private var constructors: mutable.HashMap[ResourceClass, SegmentCtor] = mutable.HashMap.empty[ResourceClass, SegmentCtor]

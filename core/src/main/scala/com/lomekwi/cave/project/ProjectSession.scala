@@ -4,25 +4,24 @@ import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.{EventBus, Subscribe}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
-import com.lomekwi.cave.pipeline.{Content, Segment}
 import com.lomekwi.cave.playback.{Playhead, TrackWorker}
-import com.lomekwi.cave.timeline.{Interval, SegmentFactory, Timeline, Track}
+import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentFactory, Timeline, Track}
 
 import java.nio.file.Path
 import scala.collection.mutable
 
-final class ProjectContext(initial: Project) {
+final class ProjectSession(initial: Project) {
   var project: Project = initial
-  final val bus: EventBus = new EventBus(initial.uuid.toString)
-  final val sourceFactory: SegmentFactory = new SegmentFactory(this)
-  final val undo: UndoManager = new UndoManager(this)
-  final val playhead: Playhead = new Playhead(bus)
+  val bus: EventBus = new EventBus(initial.uuid.toString)
+  val sourceFactory: SegmentFactory = new SegmentFactory(this)
+  val undo: UndoManager = new UndoManager(this)
+  val playhead: Playhead = new Playhead(bus)
   var active: Boolean = false
   var version: Long = 0L
-  var savedVersion: Long = 0L
-  var savePath: Path = null
+  private var savedVersion: Long = 0L
+  var savePath: Option[Path] = None
 
-  private final val workers: mutable.HashMap[Int, TrackWorker] = mutable.HashMap.empty
+  private val workers: mutable.HashMap[Int, TrackWorker] = mutable.HashMap.empty
 
   bus.register(new AudioFrameSink(this))
   bus.register(this)
@@ -55,7 +54,7 @@ final class ProjectContext(initial: Project) {
     }
   }
 
-  def record(): ProjectContext.Recording = {
+  def record(): ProjectSession.Recording = {
     val before = project.timeline
     () => endRecord(before)
   }
@@ -72,8 +71,8 @@ final class ProjectContext(initial: Project) {
     workers.getOrElseUpdate(index, new TrackWorker(this, index))
   }
 
-  def tryAdd(track: Track, segment: Content, range: Interval, origin: Long): Long = {
-    val (next, shift) = timeline.tryAdd(track, segment, range, origin)
+  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long): Long = {
+    val (next, shift) = timeline.tryAdd(track, segment, interval, origin)
     applyTimeline(next)
     shift
   }
@@ -164,7 +163,7 @@ final class ProjectContext(initial: Project) {
   }
 }
 
-object ProjectContext {
+object ProjectSession {
   trait Recording extends AutoCloseable {
     override def close(): Unit
   }

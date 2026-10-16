@@ -1,9 +1,9 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.app.AppAudioOut
-import com.lomekwi.cave.pipeline.{Source, Node, Segment, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSegmentActor, TlSegmentActor}
 
 @SerialVersionUID(1L)

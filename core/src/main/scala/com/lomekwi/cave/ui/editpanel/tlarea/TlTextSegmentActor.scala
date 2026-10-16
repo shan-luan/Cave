@@ -2,8 +2,8 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.kotcrab.vis.ui.VisUI
-import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.text.TextSource
+import com.lomekwi.cave.timeline.Segment
 
 class TlTextSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
 

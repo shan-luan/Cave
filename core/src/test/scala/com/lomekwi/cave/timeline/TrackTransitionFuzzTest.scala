@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.jupiter.api.Assertions.fail
@@ -134,8 +133,8 @@ class TrackTransitionFuzzTest extends GdxTestBase {
 
       val transitions = visible.collect { case t: Transition => t }
       for (c <- known if track.contains(c); t <- transitions) {
-        if (track.getRange(c) == track.getRange(t)) {
-          fail("内容与转场占据同一区间 " + label + " " + track.getRange(c))
+        if (track.getInterval(c) == track.getInterval(t)) {
+          fail("内容与转场占据同一区间 " + label + " " + track.getInterval(c))
         }
       }
     }

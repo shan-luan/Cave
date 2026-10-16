@@ -9,7 +9,7 @@ import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import java.util
 

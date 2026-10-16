@@ -1,6 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Segment, Transition}
 import com.lomekwi.cave.project.TestProject
 
 import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertTrue}
@@ -66,11 +65,11 @@ class TrackTimingTest extends GdxTestBase {
     assertEquals(-TrackTimingTest.DELTA, timeline.moveTime(grouped, -TrackTimingTest.DELTA), "含转场的成组拖拽应移回")
 
     val victim = segments(TrackTimingTest.VICTIM_AT).asInstanceOf[Content]
-    val victimRange = timeline.getTrackOrCreate(0).getRange(victim)
+    val victimInterval = timeline.getTrackOrCreate(0).getInterval(victim)
     val victimOrigin = timeline.getTrackOrCreate(0).getOrigin(victim)
     timeline.remove(victim)
     assertFalse(timeline.getTrackOrCreate(0).contains(victim), "删除后片段应离开轨道")
-    timeline.addOrThrow(track, victim, victimRange, victimOrigin)
+    timeline.addOrThrow(track, victim, victimInterval, victimOrigin)
     assertTrue(timeline.getTrackOrCreate(0).contains(victim), "放回后片段应回到轨道")
 
     // 拖拽正反各一次为一次往返，取一半作为单次耗时
@@ -92,7 +91,7 @@ class TrackTimingTest extends GdxTestBase {
     val (removeMin, removeAvg) = time({
       timeline.remove(victim)
     }, {
-      timeline.addOrThrow(track, victim, victimRange, victimOrigin)
+      timeline.addOrThrow(track, victim, victimInterval, victimOrigin)
     })
 
     // 拖拽路径里每个转场成员都要问一次它的两侧，这里把全轨道的转场问一遍，单独看这一步的代价

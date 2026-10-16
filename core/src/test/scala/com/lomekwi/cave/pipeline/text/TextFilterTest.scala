@@ -2,8 +2,8 @@ package com.lomekwi.cave.pipeline.text
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
-import com.lomekwi.cave.pipeline.{Boundless, Frame, NodeRegistry, Segment, Source}
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.pipeline.{Frame, NodeRegistry, Source}
+import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertTrue}
 import org.junit.jupiter.api.Test

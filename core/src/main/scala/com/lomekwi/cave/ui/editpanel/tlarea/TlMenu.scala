@@ -7,9 +7,8 @@ import com.kotcrab.vis.ui.widget.MenuItem
 import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
-import com.lomekwi.cave.pipeline.{Boundless, Content, Segment}
 import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
-import com.lomekwi.cave.timeline.Interval
+import com.lomekwi.cave.timeline.{Boundless, Content, Interval, Segment}
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
@@ -76,13 +75,13 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val duration: Long = segment.getDefaultDuration
 
     val context = timelineView.context
-    val range: Interval = time ~~ (time + duration)
+    val interval: Interval = time ~~ (time + duration)
     Using.resource(context.record()) { h =>
       // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
       var targetTrack: Int = 0
       var placed = false
       while (!placed) {
-        if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+        if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, interval, time) == 0) {
           placed = true
         } else {
           targetTrack += 1
@@ -107,10 +106,10 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
             val duration: Long = segment.getDefaultDuration
             if (duration > 0) {
               var targetTrack: Int = baseTrack + trackOffset
-              val range: Interval = time ~~ (time + duration)
+              val interval: Interval = time ~~ (time + duration)
               var placed = false
               while (!placed) {
-                if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, range, time) == 0) {
+                if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, interval, time) == 0) {
                   placed = true
                 } else {
                   targetTrack += 1

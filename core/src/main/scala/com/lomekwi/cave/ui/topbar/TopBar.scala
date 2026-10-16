@@ -21,9 +21,9 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisProgressBar
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.shortcut.ShortcutAction
+import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.project.ProjectLoadedEvent
-import com.lomekwi.cave.project.Projects
-import com.lomekwi.cave.project.Projects.hasProjectExtension
+import com.lomekwi.cave.project.Project.hasProjectExtension
 import com.lomekwi.cave.task.Task
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
@@ -202,7 +202,7 @@ class TopBar extends MenuBar {
 
   def performNew(): Unit = {
     try {
-      App.appEventBus.post(ProjectLoadedEvent(Projects.create()))
+      App.appEventBus.post(ProjectLoadedEvent(Project.create()))
       App.root.toastManager.show(i18n("项目已新建"), toastTimeOut)
     } catch {
       case e: Exception =>
@@ -226,7 +226,7 @@ class TopBar extends MenuBar {
             if (!hasProjectExtension(file.name())) {
               App.root.toastManager.show(i18n("请选择 .cave 项目文件"), toastTimeOut)
             } else {
-              App.appEventBus.post(ProjectLoadedEvent(Projects.open(file)))
+              App.appEventBus.post(ProjectLoadedEvent(Project.open(file)))
               App.root.toastManager.show(i18n("项目已打开"), toastTimeOut)
             }
           } catch {
@@ -247,7 +247,7 @@ class TopBar extends MenuBar {
     try {
       val context = App.root.getFrontendContext
       if (context != null) {
-        if (context.savePath == null) {
+        if (context.savePath.isEmpty) {
           val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
           conf.title = i18n("选择保存位置...")
           if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -259,7 +259,7 @@ class TopBar extends MenuBar {
               try {
                 val c = App.root.getFrontendContext
                 if (c != null) {
-                  Projects.save(c, file)
+                  Project.save(c, file)
                   App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
                 }
               } catch {
@@ -271,7 +271,7 @@ class TopBar extends MenuBar {
             override def onError(exception: Exception): Unit = {}
           })
         } else {
-          Projects.save(context)
+          Project.save(context)
           App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
         }
       }
@@ -295,7 +295,7 @@ class TopBar extends MenuBar {
             try {
               val c = App.root.getFrontendContext
               if (c != null) {
-                Projects.save(c, file)
+                Project.save(c, file)
                 App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
               }
             } catch {

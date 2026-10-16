@@ -11,7 +11,7 @@ import com.kotcrab.vis.ui.widget.VisImageButton
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.widget.Card
 

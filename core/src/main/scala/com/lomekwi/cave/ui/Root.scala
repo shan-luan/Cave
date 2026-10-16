@@ -42,7 +42,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisTextField
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPane
 import com.lomekwi.cave.project.Project
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.tabs.app.ProjectTab
@@ -85,7 +85,7 @@ class Root extends ApplicationListener {
 
     multiplexer.addProcessor(0, new InputProcessor {
       override def keyDown(keycode: Int): Boolean = {
-        val context: ProjectContext = getFrontendContext
+        val context: ProjectSession = getFrontendContext
         val ep: EditPanel = getFrontendEditPanel
         // 无需项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
@@ -296,7 +296,7 @@ class Root extends ApplicationListener {
     case _ => null
   }
 
-  def getFrontendContext: ProjectContext = tabbedPane.getActiveTab match {
+  def getFrontendContext: ProjectSession = tabbedPane.getActiveTab match {
     case tab: ProjectTab => tab.context
     case _ => null
   }

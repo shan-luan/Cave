@@ -4,10 +4,10 @@ import com.lomekwi.cave.util.Units.SECOND
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.lomekwi.cave.pipeline.{Source, Node, Segment}
+import com.lomekwi.cave.pipeline.{Source, Node}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
-import com.lomekwi.cave.timeline.Track
+import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTextSegmentActor}
 
 import java.util.concurrent.CountDownLatch

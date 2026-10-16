@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.Segment
-
 import java.io.Serializable
 
 @SerialVersionUID(1L)

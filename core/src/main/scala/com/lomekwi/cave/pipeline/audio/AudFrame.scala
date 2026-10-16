@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Segment
+import com.lomekwi.cave.timeline.Segment
 import scala.compiletime.uninitialized
 
 class AudFrame(sampleRate0: Int, trackIndex: Int, segment: Segment) extends Frame(trackIndex, segment) {

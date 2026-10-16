@@ -1,7 +1,7 @@
 package com.lomekwi.cave.ui.editpanel
 
 import com.badlogic.gdx.scenes.scene2d.ui.Container
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.ui.editpanel.previewarea.PreviewArea
 import com.lomekwi.cave.ui.editpanel.mediapool.MediaPool
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.tabs.edit.EditTabbedPane
 import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
-class EditPanel(private[editpanel] val context: ProjectContext) {
+class EditPanel(private[editpanel] val context: ProjectSession) {
   var previewArea: PreviewArea = uninitialized
   private[editpanel] var tl: VisTable = uninitialized
   private[editpanel] var tlMain: Container[TimelineView] = uninitialized

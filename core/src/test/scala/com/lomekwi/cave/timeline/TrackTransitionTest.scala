@@ -6,15 +6,13 @@ import org.junit.jupiter.api.Assertions.{assertEquals, assertNotNull, assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-import com.lomekwi.cave.pipeline.{Content, Gap, Segment, Transition}
-
 /**
  * 转场拓扑的模型级测试。内容保留覆盖完整的区间，转场是相邻两块内容的重叠区，
  * 三者共存于同一张按区间索引的表里。
  *
  * 覆盖如下。
  *  - 三条不变量：相邻内容交叉重叠、隔项不重叠、转场区间恒等于重叠区
- *  - 转场区的时间语义：[[Track.get]]/[[Track.rangeAt]] 返回转场而不是两侧内容
+ *  - 转场区的时间语义：[[Track.get]]/[[Track.intervalAt]] 返回转场而不是两侧内容
  *  - 转场对象复用：无关编辑不改变转场身份
  *  - 删除转场：两侧各让一半，交界点落在原转场中心
  *  - 构造走向：前段不能构造时由后段兜底，两侧都不能构造时不成为转场
@@ -32,8 +30,8 @@ class TrackTransitionTest extends GdxTestBase {
 
   private def newSegment(duration: Long): Content = new TestCont(duration)
 
-  private def place(track: Track, segment: Content, range: Interval, origin: Long = 0L): Unit = {
-    timeline.addOrThrow(track, segment, range, origin)
+  private def place(track: Track, segment: Content, interval: Interval, origin: Long = 0L): Unit = {
+    timeline.addOrThrow(track, segment, interval, origin)
   }
 
   private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
@@ -50,7 +48,7 @@ class TrackTransitionTest extends GdxTestBase {
   }
 
   @Test
-  def overlappingContentsKeepFullRangesAndShareTransition(): Unit = {
+  def overlappingContentsKeepFullIntervalsAndShareTransition(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newSegment(1000)
     val b = newSegment(1000)
@@ -58,9 +56,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
 
     // 两侧内容都保留自己的完整区间，转场单独占据交集
-    assertEquals(0 ~~ 1000, t0.getRange(a))
-    assertEquals(500 ~~ 1500, t0.getRange(b))
-    assertEquals(500 ~~ 1000, t0.getRange(transitionOf(t0, 600)))
+    assertEquals(0 ~~ 1000, t0.getInterval(a))
+    assertEquals(500 ~~ 1500, t0.getInterval(b))
+    assertEquals(500 ~~ 1000, t0.getInterval(transitionOf(t0, 600)))
   }
 
   @Test
@@ -82,16 +80,16 @@ class TrackTransitionTest extends GdxTestBase {
   }
 
   @Test
-  def rangeAtPrefersTransitionOverCoveringContents(): Unit = {
+  def intervalAtPrefersTransitionOverCoveringContents(): Unit = {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newSegment(1000)
     val b = newSegment(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    assertEquals(0 ~~ 1000, t0.rangeAt(100))
-    assertEquals(500 ~~ 1000, t0.rangeAt(600))
-    assertEquals(500 ~~ 1500, t0.rangeAt(1200))
+    assertEquals(0 ~~ 1000, t0.intervalAt(100))
+    assertEquals(500 ~~ 1000, t0.intervalAt(600))
+    assertEquals(500 ~~ 1500, t0.intervalAt(1200))
   }
 
   @Test
@@ -120,8 +118,8 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(499, applied)
-    assertEquals(0 ~~ 1499, t0.getRange(a))
-    assertEquals(500 ~~ 1500, t0.getRange(b))
+    assertEquals(0 ~~ 1499, t0.getInterval(a))
+    assertEquals(500 ~~ 1500, t0.getInterval(b))
   }
 
   @Test
@@ -138,7 +136,7 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(500, applied)
-    assertEquals(0 ~~ 1500, t0.getRange(a))
+    assertEquals(0 ~~ 1500, t0.getInterval(a))
   }
 
   @Test
@@ -157,7 +155,7 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.moveTime(Seq(c), 100)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(2100 ~~ 3100, after.getRange(c))
+    assertEquals(2100 ~~ 3100, after.getInterval(c))
     assertSame(transition, transitionOf(after, 600))
   }
 
@@ -174,8 +172,8 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 750, after.getRange(a))
-    assertEquals(750 ~~ 1500, after.getRange(b))
+    assertEquals(0 ~~ 750, after.getInterval(a))
+    assertEquals(750 ~~ 1500, after.getInterval(b))
     assertNull(transitionOf(after, 700))
   }
 
@@ -192,8 +190,8 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 1000, after.getRange(a))
-    assertEquals(2000 ~~ 3000, after.getRange(c))
+    assertEquals(0 ~~ 1000, after.getInterval(a))
+    assertEquals(2000 ~~ 3000, after.getInterval(c))
     assertNull(transitionOf(after, 600))
   }
 
@@ -211,8 +209,8 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(c), -100000)
 
     assertEquals(-999, applied)
-    assertEquals(500 ~~ 1001, t0.getRange(c))
-    assertEquals(0 ~~ 1000, t0.getRange(a))
+    assertEquals(500 ~~ 1001, t0.getInterval(c))
+    assertEquals(0 ~~ 1000, t0.getInterval(a))
   }
 
   @Test

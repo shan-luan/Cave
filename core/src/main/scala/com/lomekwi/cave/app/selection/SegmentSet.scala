@@ -1,9 +1,8 @@
 package com.lomekwi.cave.app.selection
 
 import com.lomekwi.cave.app.copy.{Copyable, PasteTemplate}
-import com.lomekwi.cave.pipeline.Segment
-import com.lomekwi.cave.project.ProjectContext
-import com.lomekwi.cave.timeline.Timeline
+import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.timeline.{Segment, Timeline}
 
 import scala.collection.mutable
 
@@ -11,7 +10,7 @@ import scala.collection.mutable
  * 当前选中的一组片段。选中态不写回模型，只存在于界面层，
  * 因此这里持有的片段与轨道上的条目是同一批对象，选中与否不改变模型。
  */
-class SegmentSet(@transient private val context: ProjectContext) extends mutable.LinkedHashSet[Segment] with Serializable with Copyable {
+class SegmentSet(@transient private val context: ProjectSession) extends mutable.LinkedHashSet[Segment] with Serializable with Copyable {
 
   def timeline: Timeline = context.timeline
 

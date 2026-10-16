@@ -1,9 +1,9 @@
 package com.lomekwi.cave.playback
 
 import com.badlogic.gdx.Gdx
-import com.lomekwi.cave.pipeline.{Gap, GapFrame, Segment}
-import com.lomekwi.cave.project.ProjectContext
-import com.lomekwi.cave.timeline.Timeline
+import com.lomekwi.cave.pipeline.GapFrame
+import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.timeline.{Gap, Segment, Timeline}
 import com.google.common.eventbus.Subscribe
 
 import java.util.concurrent.{Future, Phaser}
@@ -15,7 +15,7 @@ import scala.compiletime.uninitialized
  * 轨道线程，按时间独立推进播放头，把帧投到项目事件总线上，
  * 并用 Phaser 与消费方（预览、音频混音）做握手。
  */
-class TrackWorker(private val context: ProjectContext, private val index: Int) extends Runnable {
+class TrackWorker(private val context: ProjectSession, private val index: Int) extends Runnable {
   private final val gapFrame: GapFrame = new GapFrame(index)
   var sinkPhaser: Phaser = uninitialized
   var future: Future[?] = uninitialized
@@ -85,7 +85,7 @@ class TrackWorker(private val context: ProjectContext, private val index: Int) e
             }
           } else {
             context.bus.post(gapFrame)
-            val gapEnd: Long = track.rangeAt(t).hi
+            val gapEnd: Long = track.intervalAt(t).hi
             val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
             Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
             LockSupport.parkNanos(parkTime)

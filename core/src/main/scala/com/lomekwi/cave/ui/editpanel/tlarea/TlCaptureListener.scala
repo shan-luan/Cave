@@ -5,8 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.pipeline.{Gap, Segment, Transition}
-import com.lomekwi.cave.timeline.{Interval, Track}
+import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
 
@@ -71,26 +70,26 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val trackBottom: Float = trackTop - timelineView.view.trackHeight
 
       if (!(trackTop <= minY || trackBottom >= maxY)) {
-        var rangeStartTime: Long = timelineView.xToAbsoluteTime(minX)
-        var rangeEndTime: Long = timelineView.xToAbsoluteTime(maxX)
-        if (rangeStartTime > rangeEndTime) {
-          val t = rangeStartTime
-          rangeStartTime = rangeEndTime
-          rangeEndTime = t
+        var intervalStartTime: Long = timelineView.xToAbsoluteTime(minX)
+        var intervalEndTime: Long = timelineView.xToAbsoluteTime(maxX)
+        if (intervalStartTime > intervalEndTime) {
+          val t = intervalStartTime
+          intervalStartTime = intervalEndTime
+          intervalEndTime = t
         }
 
-        val timeRange: Interval = rangeStartTime ~~ rangeEndTime
+        val timeInterval: Interval = intervalStartTime ~~ intervalEndTime
         // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
-        val hits = track.getIntersecting(timeRange)
+        val hits = track.getIntersecting(timeInterval)
         val covering = hits.collectFirst {
-          case t: Transition if track.getRange(t).contains(timeRange.lo) => t
+          case t: Transition if track.getInterval(t).contains(timeInterval.lo) => t
         }
         val selected = covering match {
           case Some(t) => Seq(t)
           case None => hits.toSeq
         }
         for (s <- selected) {
-          val r = track.getRange(s)
+          val r = track.getInterval(s)
           val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
           val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 

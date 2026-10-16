@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
-import com.lomekwi.cave.pipeline.{BlockSource, Boundless, Clip, Content, Element, EvalClock, Frame, Gap, Segment, Transition}
+import com.lomekwi.cave.pipeline.{BlockSource, EvalClock, Frame}
 
 import java.io.Serializable
 import scala.annotation.tailrec
@@ -10,9 +10,7 @@ import scala.collection.immutable.TreeMap
 
 /**
  * 轨道。不可变，每次编辑返回新实例。
- *
- * 只存片段，空隙不存储，[[get]] 与 [[rangeAt]] 落进空隙时临时物化一个 [[Gap]] 返回。
- * 转场由相邻内容的重叠区派生，由轨道自行维护，不通过 setter 直接修改。
+ * 转场由相邻内容的重叠区派生，由轨道自行维护，不直接修改。
  */
 @SerialVersionUID(1L)
 final class Track private (val index: Int,
@@ -29,13 +27,13 @@ final class Track private (val index: Int,
   override def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(isBlock)
 
   /** 条目占用的区间。片段要求在本轨道，否则抛 IllegalArgumentException；空隙由两侧邻居推出。 */
-  def getRange(element: Element): Interval = element match {
+  def getInterval(element: Element): Interval = element match {
     case s: Segment =>
       require(layout.containsValue(s))
       layout.reverse(s)
     case Gap(before, after) =>
-      val lo = before.map(getRange(_).hi).getOrElse(0L)
-      val hi = after.map(getRange(_).lo).getOrElse(Long.MaxValue)
+      val lo = before.map(getInterval(_).hi).getOrElse(0L)
+      val hi = after.map(getInterval(_).lo).getOrElse(Long.MaxValue)
       lo ~~ hi
   }
 
@@ -45,7 +43,7 @@ final class Track private (val index: Int,
       require(segToOrigin.contains(c))
       segToOrigin(c)
     case _ =>
-      getRange(segment).lo
+      getInterval(segment).lo
   }
 
   def contains(segment: Segment): Boolean = layout.containsValue(segment)
@@ -53,10 +51,10 @@ final class Track private (val index: Int,
   def length: Long = intervalToSeg.last._1.hi
 
   /** 按起点顺序的下一个内容片段；没有时返回 None。 */
-  private[timeline] def nextContent(c: Content): Option[Content] = contentAtOrAfter(getRange(c).lo + 1, Set.empty)
+  private[timeline] def nextContent(c: Content): Option[Content] = contentAtOrAfter(getInterval(c).lo + 1, Set.empty)
 
   /** 按起点顺序的上一个内容片段；没有时返回 None。 */
-  private[timeline] def prevContent(c: Content): Option[Content] = contentBefore(getRange(c).lo, Set.empty)
+  private[timeline] def prevContent(c: Content): Option[Content] = contentBefore(getInterval(c).lo, Set.empty)
 
   /** left 与 right 之间的转场，仅在两者确实相邻时返回；否则 None。 */
   private[timeline] def transitionBetween(left: Content, right: Content): Option[Transition] =
@@ -73,12 +71,12 @@ final class Track private (val index: Int,
   /** 条目独占播放的终点。有右侧转场时内容只播到转场起点，转场则播满自己的区间。 */
   def soloEndOf(segment: Segment): Long = segment match {
     case c: Content =>
-      val r = getRange(c)
+      val r = getInterval(c)
       placedTransitionAfter(c) match {
-        case Some(t) => Math.min(r.hi, getRange(t).lo)
+        case Some(t) => Math.min(r.hi, getInterval(t).lo)
         case None => r.hi
       }
-    case _ => getRange(segment).hi
+    case _ => getInterval(segment).hi
   }
 
   /** 转场两侧的内容，左前右后；转场不在本轨道或右侧内容缺席时返回 None。 */
@@ -119,21 +117,21 @@ final class Track private (val index: Int,
     val right = contentAtOrAfter(r.lo, skip)
     // 与左邻居重叠时必须交叉，否则新条目会被左邻居包含
     val leftOk = left.forall { l =>
-      val lr = getRange(l)
+      val lr = getInterval(l)
       val crosses = lr.hi <= r.lo || (lr.lo < r.lo && lr.hi < r.hi && canTransition(l, c))
-      crosses && contentBefore(lr.lo, skip).forall(ll => getRange(ll).hi <= r.lo)
+      crosses && contentBefore(lr.lo, skip).forall(ll => getInterval(ll).hi <= r.lo)
     }
     if (!leftOk) return false
     // 与右邻居重叠时必须交叉
     val rightOk = right.forall { x =>
-      val rr = getRange(x)
+      val rr = getInterval(x)
       val crosses = r.hi <= rr.lo || (r.lo < rr.lo && r.hi < rr.hi && canTransition(c, x))
-      crosses && contentAtOrAfter(rr.lo + 1, skip).forall(rn => r.hi <= getRange(rn).lo)
+      crosses && contentAtOrAfter(rr.lo + 1, skip).forall(rn => r.hi <= getInterval(rn).lo)
     }
     if (!rightOk) return false
     // 新条目把原来的相邻对拆成了隔项，左右邻居之间从此不能再重叠
     (left, right) match {
-      case (Some(l), Some(x)) => getRange(l).hi <= getRange(x).lo
+      case (Some(l), Some(x)) => getInterval(l).hi <= getInterval(x).lo
       case _ => true
     }
   }
@@ -175,12 +173,12 @@ final class Track private (val index: Int,
         // 右邻居暂时缺席，索引项留着等它回来，表里的条目先摘掉
         unplaceTransition(left)
       case Some(right) =>
-        val lo = getRange(right).lo
-        val hi = getRange(left).hi
+        val lo = getInterval(right).lo
+        val hi = getInterval(left).hi
         if (lo < hi) {
           old.filter(contains) match {
             case Some(current) =>
-              val r = getRange(current)
+              val r = getInterval(current)
               // 已在对应区间时无需改动
               if (r.lo == lo && r.hi == hi) this else put(current, lo ~~ hi, lo)
             case None =>
@@ -222,8 +220,8 @@ final class Track private (val index: Int,
     var t = drop(c).unplaceTransition(c)
     (p, nextContent(c)) match {
       case (Some(left), Some(right)) =>
-        val pr = t.getRange(left)
-        val nr = t.getRange(right)
+        val pr = t.getInterval(left)
+        val nr = t.getInterval(right)
         if (nr.lo < pr.hi && !(pr.lo < nr.lo && pr.hi < nr.hi)) {
           val target = Math.max(nr.lo, pr.hi)
           if (target < nr.hi) {
@@ -242,15 +240,15 @@ final class Track private (val index: Int,
     val sides = transitionSides(t)
     if (sides.isEmpty) return this
     val (left, right) = sides.get
-    val tr = getRange(t)
-    val lr = getRange(left)
-    val rr = getRange(right)
+    val tr = getInterval(t)
+    val lr = getInterval(left)
+    val rr = getInterval(right)
     val half = (tr.hi - tr.lo) / 2
     val lower = Math.max(Math.max(lr.lo + 1, minStartOf(right)), endLower(left))
     var boundary = lr.hi - half
     boundary = Math.max(boundary, lower)
     boundary = Math.min(boundary, rr.hi - 1)
-    nextContent(right).foreach(rn => boundary = Math.min(boundary, getRange(rn).lo - 1))
+    nextContent(right).foreach(rn => boundary = Math.min(boundary, getInterval(rn).lo - 1))
     // 右后继的上限把交界点压回下界之下时两侧内容不再交叉，消除重叠无解，放弃本次删除
     if (boundary < lower || boundary <= lr.lo || boundary >= rr.hi) return this
     val next = drop(t)
@@ -315,7 +313,7 @@ final class Track private (val index: Int,
   }
 
   private def setContentStart(c: Content, deltaTime: Long): Track = {
-    val r = getRange(c)
+    val r = getInterval(c)
     val lower = startLower(c)
     val upper = startUpper(c)
     if (lower > upper) return this
@@ -325,7 +323,7 @@ final class Track private (val index: Int,
   }
 
   private def setContentEnd(c: Content, deltaTime: Long): Track = {
-    val r = getRange(c)
+    val r = getInterval(c)
     val lower = endLower(c)
     val upper = endUpper(c)
     if (lower > upper) return this
@@ -345,24 +343,24 @@ final class Track private (val index: Int,
   }
 
   private def startLower(c: Content): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     var lower = Math.max(0L, minStartOf(c))
     prevContent(c) match {
       case Some(p) =>
-        val pr = getRange(p)
+        val pr = getInterval(p)
         val cap = if (canTransition(p, c) && r.hi > pr.hi) pr.lo + 1 else pr.hi
         lower = Math.max(lower, cap)
-        prevContent(p).foreach(pp => lower = Math.max(lower, getRange(pp).hi))
+        prevContent(p).foreach(pp => lower = Math.max(lower, getInterval(pp).hi))
       case None =>
     }
     lower
   }
 
   private def startUpper(c: Content): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     var upper = r.hi - 1
     nextContent(c).foreach { n =>
-      val nr = getRange(n)
+      val nr = getInterval(n)
       if (nr.lo > r.lo && r.hi > nr.lo) {
         upper = Math.min(upper, nr.lo - 1)
       }
@@ -371,10 +369,10 @@ final class Track private (val index: Int,
   }
 
   private def endLower(c: Content): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     var lower = r.lo + 1
     prevContent(c).foreach { p =>
-      val pr = getRange(p)
+      val pr = getInterval(p)
       if (pr.hi > r.lo) {
         lower = Math.max(lower, pr.hi + 1)
       }
@@ -383,13 +381,13 @@ final class Track private (val index: Int,
   }
 
   private def endUpper(c: Content): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     var upper = maxEndOf(c)
     nextContent(c).foreach { n =>
-      val nr = getRange(n)
+      val nr = getInterval(n)
       val cap = if (canTransition(c, n)) nr.hi - 1 else nr.lo
       upper = Math.min(upper, cap)
-      nextContent(n).foreach(nn => upper = Math.min(upper, getRange(nn).lo))
+      nextContent(n).foreach(nn => upper = Math.min(upper, getInterval(nn).lo))
     }
     upper
   }
@@ -409,14 +407,14 @@ final class Track private (val index: Int,
     val sides = transitionSides(t)
     if (sides.isEmpty) return this
     val (left, right) = sides.get
-    val lr = getRange(left)
-    val rr = getRange(right)
+    val lr = getInterval(left)
+    val rr = getInterval(right)
     // 两侧同步移动，只需保证移动后仍交叉且不越过各自的素材与邻居约束
     val minShift = Math.max(
       Math.max(Math.max(minStartOf(right) - rr.lo, lr.lo + 1 - rr.lo), endLower(left) - lr.hi),
       lr.lo + 1 - lr.hi)
     var maxShift = Math.min(maxEndOf(left) - lr.hi, rr.hi - lr.hi - 1)
-    nextContent(right).foreach(rn => maxShift = Math.min(maxShift, getRange(rn).lo - 1 - rr.lo))
+    nextContent(right).foreach(rn => maxShift = Math.min(maxShift, getInterval(rn).lo - 1 - rr.lo))
     if (minShift > maxShift) return this
     val applied = Math.max(minShift, Math.min(maxShift, delta))
     if (applied == 0) return this
@@ -474,12 +472,12 @@ final class Track private (val index: Int,
     scan(0L, 0)
   }
 
-  private def noSegment(range: Interval): Boolean =
-    !intersectingEntries(intervalToSeg, range).hasNext
+  private def noSegment(interval: Interval): Boolean =
+    !intersectingEntries(intervalToSeg, interval).hasNext
 
-  /** range 内是否没有被 ignore 之外的片段占用。 */
-  def isFree(range: Interval, ignore: Set[Segment]): Boolean = {
-    intersectingEntries(intervalToSeg, range).forall { case (_, s) => ignore.contains(s) }
+  /** interval 内是否没有被 ignore 之外的片段占用。 */
+  def isFree(interval: Interval, ignore: Set[Segment]): Boolean = {
+    intersectingEntries(intervalToSeg, interval).forall { case (_, s) => ignore.contains(s) }
   }
 
   protected[timeline] def probeSetStart(segments: Iterable[Segment], forward: Boolean): Long = {
@@ -505,12 +503,12 @@ final class Track private (val index: Int,
   }
 
   private def probeContentStart(c: Content, forward: Boolean): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     if (forward) Math.max(startUpper(c) - r.lo, 0) else Math.min(startLower(c) - r.lo, 0)
   }
 
   private def probeContentEnd(c: Content, forward: Boolean): Long = {
-    val r = getRange(c)
+    val r = getInterval(c)
     if (forward) Math.max(endUpper(c) - r.hi, 0) else Math.min(endLower(c) - r.hi, 0)
   }
 
@@ -543,13 +541,13 @@ final class Track private (val index: Int,
         case t: Transition =>
           transitionSides(t) match {
             case Some((left, right)) if !moving.contains(left) && !moving.contains(right) =>
-              bare.probeShiftOf(left, right, getRange(left), getRange(right),
+              bare.probeShiftOf(left, right, getInterval(left), getInterval(right),
                 maxEndOf(left), minStartOf(right), forward)
             case _ =>
               // 至少一侧内容也在搬运范围内时，转场随内容重建，不构成独立限制
               noBlock
           }
-        case c: Content => probeMoveOf(c, getRange(c), moving, forward)
+        case c: Content => probeMoveOf(c, getInterval(c), moving, forward)
       }
     // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
@@ -559,25 +557,25 @@ final class Track private (val index: Int,
     if (forward) {
       var bound = Long.MaxValue
       nextContent(c).foreach { n =>
-        val nr = getRange(n)
+        val nr = getInterval(n)
         if (!moving.contains(n)) {
           bound = Math.min(bound,
             if (canTransition(c, n)) Math.min(nr.lo - 1 - r.lo, nr.hi - 1 - r.hi) else nr.lo - r.hi)
         }
-        nextContent(n).foreach(nn => if (!moving.contains(nn)) bound = Math.min(bound, getRange(nn).lo - r.hi))
+        nextContent(n).foreach(nn => if (!moving.contains(nn)) bound = Math.min(bound, getInterval(nn).lo - r.hi))
       }
       Math.max(bound, 0)
     } else {
       var bound = -r.lo
       prevContent(c).foreach { p =>
-        val pr = getRange(p)
+        val pr = getInterval(p)
         if (!moving.contains(p)) {
           val reach =
             if (canTransition(p, c)) Math.min(pr.hi - r.lo, Math.max(pr.lo + 1 - r.lo, pr.hi + 1 - r.hi))
             else pr.hi - r.lo
           bound = Math.max(bound, reach)
         }
-        prevContent(p).foreach(pp => if (!moving.contains(pp)) bound = Math.max(bound, getRange(pp).hi - r.lo))
+        prevContent(p).foreach(pp => if (!moving.contains(pp)) bound = Math.max(bound, getInterval(pp).hi - r.lo))
       }
       Math.min(bound, 0)
     }
@@ -590,14 +588,14 @@ final class Track private (val index: Int,
       var bound = hiCap - lr.hi
       val n = intervalToSeg.rangeFrom(Interval.at(rr.lo)).iterator.map(_._2)
         .collectFirst { case x: Content if !isBlock(x) && !skip(x) => x }
-      n.foreach(x => bound = Math.min(bound, getRange(x).lo - rr.hi))
+      n.foreach(x => bound = Math.min(bound, getInterval(x).lo - rr.hi))
       Math.max(bound, 0)
     } else {
       var bound = Math.max(loCap - rr.lo, lr.lo + 1 - lr.hi)
       val p = intervalToSeg.rangeUntil(Interval.at(lr.lo)).iterator.map(_._2)
         .collect { case x: Content if !isBlock(x) && !skip(x) => x }
         .toSeq.lastOption
-      p.foreach(x => bound = Math.max(bound, getRange(x).hi - lr.lo))
+      p.foreach(x => bound = Math.max(bound, getInterval(x).hi - lr.lo))
       Math.min(bound, 0)
     }
   }
@@ -607,7 +605,7 @@ final class Track private (val index: Int,
     Gap(contentBefore(time, Set.empty), contentAtOrAfter(time, Set.empty)))
 
   /** time 所在条目（片段、转场或空隙）的区间。重叠时取区间最短的条目。 */
-  def rangeAt(time: Long): Interval = getRange(get(time))
+  def intervalAt(time: Long): Interval = getInterval(get(time))
 
   /** time 是否落在某个内容片段的区间内部，即能否在此分割。 */
   def canSplit(time: Long): Boolean = segmentAt(time) match {
@@ -618,10 +616,10 @@ final class Track private (val index: Int,
   }
 
   /** 起点顺序上紧随其后的条目；没有时返回 None。要求片段在本轨道，否则抛 IllegalArgumentException。 */
-  def nextOf(segment: Segment): Option[Segment] = sourceAtOrAfter(getRange(segment).hi)
+  def nextOf(segment: Segment): Option[Segment] = sourceAtOrAfter(getInterval(segment).hi)
 
   /** 起点顺序上紧邻其前的条目；没有时返回 None。要求片段在本轨道，否则抛 IllegalArgumentException。 */
-  def prevOf(segment: Segment): Option[Segment] = sourceBefore(getRange(segment).lo)
+  def prevOf(segment: Segment): Option[Segment] = sourceBefore(getInterval(segment).lo)
 
   /** 起点不小于 time 的首个片段；没有时返回 None。 */
   private[timeline] def sourceAtOrAfter(time: Long): Option[Segment] =
@@ -631,9 +629,9 @@ final class Track private (val index: Int,
   private[timeline] def sourceBefore(time: Long): Option[Segment] =
     lastBefore(intervalToSeg, time).map(_._2)
 
-  /** 与 range 有公共点的用户片段，按区间升序；返回快照。 */
-  def getIntersecting(range: Interval): Seq[Segment] = {
-    intersectingEntries(intervalToSeg, range).map(_._2).filterNot(isBlock).toList
+  /** 与 interval 有公共点的用户片段，按区间升序；返回快照。 */
+  def getIntersecting(interval: Interval): Seq[Segment] = {
+    intersectingEntries(intervalToSeg, interval).map(_._2).filterNot(isBlock).toList
   }
 
   /** 生成片段在绝对时间 time 的帧，求值期间经 [[EvalClock]] 向节点提供时刻。 */
@@ -718,13 +716,13 @@ final class Track private (val index: Int,
     best
   }
 
-  /** 与 range 有公共点的条目，按区间升序。 */
-  private def intersectingEntries(bt: immutable.TreeMap[Interval, Segment], range: Interval): Iterator[(Interval, Segment)] = {
-    if (range.isEmpty) {
+  /** 与 interval 有公共点的条目，按区间升序。 */
+  private def intersectingEntries(bt: immutable.TreeMap[Interval, Segment], interval: Interval): Iterator[(Interval, Segment)] = {
+    if (interval.isEmpty) {
       Iterator.empty
     } else {
-      bt.rangeUntil(Interval.at(range.hi)).iterator
-        .dropWhile(_._1.hi <= range.lo)
+      bt.rangeUntil(Interval.at(interval.hi)).iterator
+        .dropWhile(_._1.hi <= interval.lo)
     }
   }
 

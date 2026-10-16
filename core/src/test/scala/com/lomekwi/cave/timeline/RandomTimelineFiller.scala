@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Segment}
-
 import java.util.Random
 
 import scala.collection.mutable
@@ -45,12 +43,12 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     while (i < count) {
       val duration = randomDuration()
       val trackIndex = rnd.nextInt(trackCount)
-      val range = pickFreeRange(occupied(trackIndex), duration)
-      if (range == null) {
+      val interval = pickFreeInterval(occupied(trackIndex), duration)
+      if (interval == null) {
         // 该轨道放不下就跳过
       } else {
         val segment = segmentFactory(duration)
-        timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), segment, range, rnd.nextLong(span * 2))
+        timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), segment, interval, rnd.nextLong(span * 2))
       }
       i += 1
     }
@@ -63,11 +61,11 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     var attempt = 0
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, span - duration))
-      val range: Interval = start ~~ (start + duration)
-      if (track.isFree(range, Set.empty)) {
+      val interval: Interval = start ~~ (start + duration)
+      if (track.isFree(interval, Set.empty)) {
         val segment = segmentFactory(duration)
         Using.resource(timeline.record()) { _ =>
-          timeline.tryAdd(track, segment, range, rnd.nextLong(span))
+          timeline.tryAdd(track, segment, interval, rnd.nextLong(span))
         }
         return true
       }
@@ -182,7 +180,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     if (placed.isEmpty) return
     val segment = placed(rnd.nextInt(placed.size))
     timeline.findTrackOf(segment).foreach { track =>
-      val r = track.getRange(segment)
+      val r = track.getInterval(segment)
       val lo: Long = r.lo
       val hi: Long = r.hi
       if (hi - lo > 1) {
@@ -216,21 +214,21 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   }
 
   /** 在 [0, span] 内试探一个不与 occupied 相连的区间，50 次内找不到返回 null。 */
-  private def pickFreeRange(occupied: mutable.ArrayBuffer[Interval], duration: Long): Interval = {
+  private def pickFreeInterval(occupied: mutable.ArrayBuffer[Interval], duration: Long): Interval = {
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(span - duration + 1)
-      val range: Interval = start ~~ (start + duration)
+      val interval: Interval = start ~~ (start + duration)
       var free = true
       val it = occupied.iterator
       while (it.hasNext && free) {
-        if (it.next().isConnected(range)) {
+        if (it.next().isConnected(interval)) {
           free = false
         }
       }
       if (free) {
-        occupied += range
-        return range
+        occupied += interval
+        return interval
       }
       attempt += 1
     }

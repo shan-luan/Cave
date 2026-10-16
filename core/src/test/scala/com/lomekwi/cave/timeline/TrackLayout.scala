@@ -1,7 +1,5 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Content, Transition}
-
 import org.junit.jupiter.api.Assertions.*
 
 
@@ -20,15 +18,15 @@ object TrackLayout {
     val contents = contentsOf(track)
     var i = 0
     while (i < contents.size) {
-      val cr = track.getRange(contents(i))
+      val cr = track.getInterval(contents(i))
       if (i + 1 < contents.size) {
-        val nr = track.getRange(contents(i + 1))
+        val nr = track.getInterval(contents(i + 1))
         if (cr.hi > nr.lo) {
           assertTrue(cr.lo < nr.lo && cr.hi < nr.hi, "相邻内容未交叉: " + cr + " " + nr)
         }
       }
       if (i + 2 < contents.size) {
-        val nn = track.getRange(contents(i + 2))
+        val nn = track.getInterval(contents(i + 2))
         assertFalse(cr.hi > nn.lo, "隔项重叠: " + cr + " " + nn)
       }
       i += 1
@@ -38,10 +36,10 @@ object TrackLayout {
         case t: Transition =>
           track.transitionSides(t) match {
             case Some((left, right)) =>
-              val lo = track.getRange(right).lo
-              val hi = track.getRange(left).hi
+              val lo = track.getInterval(right).lo
+              val hi = track.getInterval(left).hi
               assertTrue(lo < hi, "转场两侧没有重叠")
-              assertEquals(lo ~~ hi, track.getRange(t), "转场区间不是重叠区")
+              assertEquals(lo ~~ hi, track.getInterval(t), "转场区间不是重叠区")
             case None => fail("转场两侧缺失")
           }
         case _ =>

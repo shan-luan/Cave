@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline
 import com.lomekwi.cave.pipeline.audio.{AudSource, GainNode}
 import com.lomekwi.cave.pipeline.num.{AddNode, RandomNode, TimeNode}
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.GdxTestBase
+import com.lomekwi.cave.timeline.{Boundless, Clip, GdxTestBase}
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 

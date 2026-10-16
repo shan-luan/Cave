@@ -14,7 +14,7 @@ import com.kotcrab.vis.ui.widget.VisDialog
 import com.kotcrab.vis.ui.widget.spinner.IntSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.SimpleFloatSpinnerModel
 import com.kotcrab.vis.ui.widget.spinner.Spinner
-import com.lomekwi.cave.project.{Project, ProjectContext, Projects}
+import com.lomekwi.cave.project.{Project, ProjectSession}
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.task.ExportOptions
 import com.lomekwi.cave.task.ExportOptionsSet
@@ -27,7 +27,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import scala.compiletime.uninitialized
 
-class ExportDialog(private val context: ProjectContext) extends VisDialog(i18n("导出视频")) {
+class ExportDialog(private val context: ProjectSession) extends VisDialog(i18n("导出视频")) {
   private var fileChooserField: FileChooserField = uninitialized
   private var widthModel: IntSpinnerModel = uninitialized
   private var heightModel: IntSpinnerModel = uninitialized
@@ -204,7 +204,7 @@ class ExportDialog(private val context: ProjectContext) extends VisDialog(i18n("
       val fps: Double = fpsModel.getValue.toDouble
       val bitrate: Int = (bitrateModel.getValue * MEGA).toInt
 
-      val snapshot: Project = Projects.snapshot(context.project)
+      val snapshot: Project = Project.snapshot(context.project)
       val task = new VideoExportTask(
         snapshot.timeline,
         snapshot,

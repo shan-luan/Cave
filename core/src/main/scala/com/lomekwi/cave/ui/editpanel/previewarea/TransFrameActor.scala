@@ -17,11 +17,11 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.task.ExportOptionsSet
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.Segment
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
 import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.project.ProjectContext
+import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
@@ -130,7 +130,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return
       }
       if (dragModifier != null && dragging) {
-        val c: ProjectContext = App.root.getFrontendContext
+        val c: ProjectSession = App.root.getFrontendContext
         if (c != null) {
           c.touch()
           c.bus.post(RefreshRequestEvent)
@@ -491,7 +491,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def finishGizmoDrag(): Unit = {
     if (dragModifier != null) {
-      val c: ProjectContext = App.root.getFrontendContext
+      val c: ProjectSession = App.root.getFrontendContext
       if (c != null) {
         c.touch()
         c.bus.post(RefreshRequestEvent)
@@ -522,7 +522,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   /** 拖拽改值后请求轨道线程重新求值，画面统一由管线滤镜链刷新，UI 不做本地重放 */
   private def requestRefresh(): Unit = {
-    val c: ProjectContext = App.root.getFrontendContext
+    val c: ProjectSession = App.root.getFrontendContext
     if (c != null) c.bus.post(RefreshRequestEvent)
   }
 
