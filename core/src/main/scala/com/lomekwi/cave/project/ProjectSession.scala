@@ -53,12 +53,12 @@ final class ProjectSession(initial: Project) {
       }
     }
   }
-
+  @Deprecated//过时的设计。改为一个copy()方法就行了。
   def record(): ProjectSession.Recording = {
     val before = project.timeline
     () => endRecord(before)
   }
-
+  @Deprecated
   private def endRecord(before: Timeline): Unit = {
     val after = project.timeline
     if (after ne before) {

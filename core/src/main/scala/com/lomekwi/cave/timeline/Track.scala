@@ -50,20 +50,20 @@ final class Track private (val index: Int,
 
   def length: Long = intervalToSeg.last._1.hi
 
-  /** 按起点顺序的下一个内容片段；没有时返回 None。 */
+  /** 按起点顺序的下一个内容片段。 */
   private[timeline] def nextContent(c: Content): Option[Content] = contentAtOrAfter(getInterval(c).lo + 1, Set.empty)
 
-  /** 按起点顺序的上一个内容片段；没有时返回 None。 */
+  /** 按起点顺序的上一个内容片段。 */
   private[timeline] def prevContent(c: Content): Option[Content] = contentBefore(getInterval(c).lo, Set.empty)
 
-  /** left 与 right 之间的转场，仅在两者确实相邻时返回；否则 None。 */
+  /** left 与 right 之间的转场，仅在两者确实相邻时返回。 */
   private[timeline] def transitionBetween(left: Content, right: Content): Option[Transition] =
     transitions.get(left).filter(_ => nextContent(left).exists(_ eq right))
 
-  /** c 右侧紧邻的转场；没有时返回 None。 */
+  /** c 右侧紧邻的转场。 */
   def transitionAfter(c: Content): Option[Transition] = placedTransitionAfter(c)
 
-  /** c 左侧紧邻的转场；没有时返回 None。 */
+  /** c 左侧紧邻的转场。 */
   def transitionBefore(c: Content): Option[Transition] = prevContent(c).flatMap(placedTransitionAfter)
 
   private def placedTransitionAfter(c: Content): Option[Transition] = transitions.get(c).filter(contains)
@@ -79,7 +79,7 @@ final class Track private (val index: Int,
     case _ => getInterval(segment).hi
   }
 
-  /** 转场两侧的内容，左前右后；转场不在本轨道或右侧内容缺席时返回 None。 */
+  /** 转场两侧的内容，左前右后。 */
   def transitionSides(t: Transition): Option[(Content, Content)] =
     transitions.getKey(t).filter(contains).flatMap(left => nextContent(left).map(right => (left, right)))
 
@@ -137,7 +137,7 @@ final class Track private (val index: Int,
   }
 
   /**
-   * 起点小于 time 的最后一个内容片段，跳过 skip 里的条目；没有时返回 None。
+   * 起点小于 time 的最后一个内容片段，跳过 skip 里的条目。
    */
   private def contentBefore(time: Long, skip: Set[Segment]): Option[Content] = {
     var bound = Interval.at(time)
@@ -154,7 +154,7 @@ final class Track private (val index: Int,
     None
   }
 
-  /** 起点不小于 time 的第一个内容片段，跳过 skip 里的条目；没有时返回 None。 */
+  /** 起点不小于 time 的第一个内容片段，跳过 skip 里的条目。 */
   private def contentAtOrAfter(time: Long, skip: Set[Segment]): Option[Content] = {
     intervalToSeg.rangeFrom(Interval.at(time)).iterator
       .map(_._2)
@@ -615,17 +615,17 @@ final class Track private (val index: Int,
     case _ => false
   }
 
-  /** 起点顺序上紧随其后的条目；没有时返回 None。要求片段在本轨道，否则抛 IllegalArgumentException。 */
+  /** 起点顺序上紧随其后的条目。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def nextOf(segment: Segment): Option[Segment] = sourceAtOrAfter(getInterval(segment).hi)
 
-  /** 起点顺序上紧邻其前的条目；没有时返回 None。要求片段在本轨道，否则抛 IllegalArgumentException。 */
+  /** 起点顺序上紧邻其前的条目。要求片段在本轨道，否则抛 IllegalArgumentException。 */
   def prevOf(segment: Segment): Option[Segment] = sourceBefore(getInterval(segment).lo)
 
-  /** 起点不小于 time 的首个片段；没有时返回 None。 */
+  /** 起点不小于 time 的首个片段。 */
   private[timeline] def sourceAtOrAfter(time: Long): Option[Segment] =
     intervalToSeg.rangeFrom(Interval.at(time)).iterator.map(_._2).nextOption()
 
-  /** 起点小于 time 的最后一个片段；没有时返回 None。 */
+  /** 起点小于 time 的最后一个片段。 */
   private[timeline] def sourceBefore(time: Long): Option[Segment] =
     lastBefore(intervalToSeg, time).map(_._2)
 
@@ -696,7 +696,7 @@ final class Track private (val index: Int,
     Integer.hashCode(index)
   }
 
-  /** 包含 time 的片段，落在空隙中时返回 None。重叠时取区间最短的那个，它一定是转场。 */
+  /** 包含 time 的片段。重叠时取区间最短的那个，它一定是转场。 */
   private def segmentAt(time: Long): Option[Segment] = {
     // 布局不变量（放置约束见 [[canPlaceAt]]，平移与裁切的上下界计算与之配套）使条目按 (lo, hi)
     // 排序后 hi 不减，覆盖 time 的条目因而是 lo ≤ time 的条目末尾的连续几个，反向扫描

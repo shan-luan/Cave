@@ -2,7 +2,7 @@ package com.lomekwi.cave.util
 
 import java.io.*
 import scala.util.Using
-
+@Deprecated//先等model完全不可变重构完
 trait Duplicatable[T <: Duplicatable[T]] extends Serializable {
 
   def duplicate(): T = {

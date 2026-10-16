@@ -14,9 +14,10 @@ import java.io.Serializable
 sealed trait Element extends Serializable
 
 /**
- * 片段
+ * 片段。
  */
 @SerialVersionUID(1L)
+//TODO：让其（及字段）不可变。
 sealed abstract class Segment(val source: Source[? <: Frame])
   extends Element with Serializable with Duplicatable[Segment] {
   final val filters: FilterList = new FilterList(source)
