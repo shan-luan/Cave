@@ -124,7 +124,6 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     for (track <- timeline.getTracks) {
       val visible = track.toVector
 
-      // 反查还在却从迭代里消失，说明它被同键的转场顶掉了，这正是内容与转场同区间的表现形式
       for (s <- known) {
         if (track.contains(s) != visible.exists(_ eq s)) {
           fail("内容在轨道反查里存在却从迭代中消失 " + label + " track=" + track.index + " " + s)

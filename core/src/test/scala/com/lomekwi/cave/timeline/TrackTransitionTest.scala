@@ -9,13 +9,6 @@ import org.junit.jupiter.api.Test
 /**
  * 转场拓扑的模型级测试。内容保留覆盖完整的区间，转场是相邻两块内容的重叠区，
  * 三者共存于同一张按区间索引的表里。
- *
- * 覆盖如下。
- *  - 三条不变量：相邻内容交叉重叠、隔项不重叠、转场区间恒等于重叠区
- *  - 转场区的时间语义：[[Track.get]]/[[Track.intervalAt]] 返回转场而不是两侧内容
- *  - 转场对象复用：无关编辑不改变转场身份
- *  - 删除转场：两侧各让一半，交界点落在原转场中心
- *  - 构造走向：前段不能构造时由后段兜底，两侧都不能构造时不成为转场
  */
 class TrackTransitionTest extends GdxTestBase {
 
@@ -114,7 +107,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    // a 伸尾吃穿 b 会把 b 变成 a 的真子集，最多吃到 b 只剩一微秒
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(499, applied)
@@ -132,7 +124,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 2000)
     place(t0, c, 1500 ~~ 2500)
 
-    // 与 b 交叉时本可吃到 1999，但 a 与 c 会被挤成隔项重叠，上限收到 c 的起点
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(500, applied)

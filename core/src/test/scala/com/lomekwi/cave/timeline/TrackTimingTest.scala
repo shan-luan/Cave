@@ -41,7 +41,6 @@ class TrackTimingTest extends GdxTestBase {
     }
 
     val filled = timeline.getTrackOrCreate(0)
-    // 夹具自检：COUNT 条内容两两相邻重叠，正好 COUNT-1 个转场
     assertEquals(TrackTimingTest.COUNT, filled.count(_.isInstanceOf[Content]))
     assertEquals(TrackTimingTest.COUNT - 1, filled.count(_.isInstanceOf[Transition]))
     println("[timing] 轨道条目 " + filled.size + "，内容 " + TrackTimingTest.COUNT +
@@ -56,7 +55,6 @@ class TrackTimingTest extends GdxTestBase {
     val grouped: mutable.ArrayBuffer[Segment] = withInternalTransitions(timeline.getTrackOrCreate(0), members)
     assertEquals(2 * TrackTimingTest.GROUP - 1, grouped.size, "组成员应含组内转场")
 
-    // 先确认三种拖拽真的会移动，否则量到的是空转
     assertEquals(TrackTimingTest.DELTA, timeline.moveTime(single, TrackTimingTest.DELTA), "单片段拖拽应移动")
     assertEquals(-TrackTimingTest.DELTA, timeline.moveTime(single, -TrackTimingTest.DELTA), "单片段拖拽应移回")
     assertEquals(TrackTimingTest.DELTA, timeline.moveTime(members, TrackTimingTest.DELTA), "成组拖拽应移动")
@@ -72,7 +70,6 @@ class TrackTimingTest extends GdxTestBase {
     timeline.addOrThrow(track, victim, victimInterval, victimOrigin)
     assertTrue(timeline.getTrackOrCreate(0).contains(victim), "放回后片段应回到轨道")
 
-    // 拖拽正反各一次为一次往返，取一半作为单次耗时
     val (singleMin, singleAvg) = time {
       timeline.moveTime(single, TrackTimingTest.DELTA)
       timeline.moveTime(single, -TrackTimingTest.DELTA)

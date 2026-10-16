@@ -78,7 +78,6 @@ class TrackRemoveTest extends GdxTestBase {
 
     timeline.remove(b)
 
-    // b 离开后 a 右侧的转场索引项仍在，但它已摘表，不得再被当作转场
     val after = timeline.getTrackOrCreate(0)
     assertTrue(after.transitionAfter(a).isEmpty)
     assertEquals(1000L, after.soloEndOf(a))
@@ -266,7 +265,6 @@ class TrackRemoveTest extends GdxTestBase {
 
     timeline.remove(transition)
 
-    // a 的终点不能退到 p 的终点之前，否则 p 会把它包含；交界点停在 a 的原终点上，a 不让路
     val after = timeline.getTrackOrCreate(0)
     assertEquals(100 ~~ 1000, after.getInterval(a))
     assertEquals(1000 ~~ 1100, after.getInterval(b))
@@ -288,7 +286,6 @@ class TrackRemoveTest extends GdxTestBase {
 
     timeline.remove(transition)
 
-    // 交界点不能越过 b 的右邻起点，a 退到它的终点就停
     val after = timeline.getTrackOrCreate(0)
     assertEquals(1000 ~~ 1100, after.getInterval(a))
     assertEquals(1100 ~~ 1500, after.getInterval(b))
@@ -313,7 +310,6 @@ class TrackRemoveTest extends GdxTestBase {
 
     timeline.remove(transition)
 
-    // 交界点被 b 的右邻压回下界之下，两侧内容无法再交叉，消除重叠无解，删除放弃，布局原样保留
     val after = timeline.getTrackOrCreate(0)
     assertEquals(1000 ~~ 1101, after.getInterval(a))
     assertEquals(800 ~~ 1100, after.getInterval(p))
@@ -325,9 +321,6 @@ class TrackRemoveTest extends GdxTestBase {
 
   @Test
   def removingTransitionKeepsEveryContentVisible(): Unit = {
-    // a 的交界点被第二后继压回下界附近时，内容与转场的区间键会争同一个位置。
-    // 扫过压回与否的位置，任何内容都不得出现 contains 为真却从迭代里消失的状态，
-    // 否则它就成了 placements 里留着、byTime 里缺席的幽灵。
     for (rnLo <- 1101L to 1104L) {
       val tl = new TestProject().timeline
       val p = newContent(1000)

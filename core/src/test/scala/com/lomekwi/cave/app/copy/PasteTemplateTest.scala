@@ -10,8 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
- * 剪贴板模板。关键在于模板必须自带位置与组结构，
- * 选中集只描述"当前时间线里的哪些对象"，而模板要能脱离原对象、在时间轴任意位置重放。
+ * 剪贴板模板。模板必须自带位置与组结构，才能脱离原对象、在时间轴任意位置重放。
  */
 class PasteTemplateTest extends GdxTestBase {
 
@@ -84,7 +83,6 @@ class PasteTemplateTest extends GdxTestBase {
     val first = selection.copy().asInstanceOf[PasteTemplate]
     val second = first.copy().asInstanceOf[PasteTemplate]
 
-    // 两次粘贴必须拿到不同的片段实例，否则第二次粘贴会复用已在时间线上的对象
     assertNotSame(first.entries(0).segment, second.entries(0).segment)
 
     assertEquals(first.entries(0).interval, second.entries(0).interval)

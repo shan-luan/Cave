@@ -9,10 +9,7 @@ import org.junit.jupiter.api.{BeforeEach, Test}
 
 /**
  * 转场源框架的模型级测试。框架在 [[TransitionSource.produce]] 里反查轨道布局，
- * 驱动两侧子源并把换算结果交给 [[TransitionSource.mix]]，覆盖如下。
- *  - 时间换算：两侧子源各自收到正确的片段内时间，progress 为转场内局部进度
- *  - 方向还原：后段兜底构造的转场源 mix 仍先起点侧后终点侧，progress 相应翻转
- *  - 无帧退化：一侧子源暂时无帧时退化为另一侧，两侧都无帧才交出无帧
+ * 驱动两侧子源并把换算结果交给 [[TransitionSource.mix]]。
  */
 class TransitionSourceTest extends GdxTestBase {
 

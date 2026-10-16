@@ -16,7 +16,6 @@ class CrossfadeSourceTest {
     assertTrue(result.isInstanceOf[BiRenderFrame])
     assertSame(a, result.a)
     assertSame(b, result.b)
-    // 前帧保持全显，只有后帧渐显，over 合成才是线性叠化
     assertEquals(1f, a.opacity, 1e-6f)
     assertEquals(0.25f, b.opacity, 1e-6f)
     assertEquals(0, result.trackIndex)
@@ -72,7 +71,6 @@ class CrossfadeSourceTest {
     val b = new ImgFrame(0)
 
     val first = source.mix(a, b, 0.25f)
-    // 模拟滤镜链在两次产出之间对自身 opacity 的累乘
     first.opacity = 0.3f
 
     val second = source.mix(a, b, 0.5f)

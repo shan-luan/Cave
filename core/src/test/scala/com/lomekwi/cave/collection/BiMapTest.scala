@@ -102,7 +102,6 @@ class BiMapTest {
 
   @Test
   def updated_evictsBothSidesWhenBothConflict(): Unit = {
-    // 1 -> one 与 2 -> two，把 2 重绑到 one：1 与 two 都被驱逐
     val bimap = sample().updated(2, "one")
     assertEquals(immutable.Map(2 -> "one"), bimap.forward)
     assertEquals(immutable.Map("one" -> 2), bimap.reverse)

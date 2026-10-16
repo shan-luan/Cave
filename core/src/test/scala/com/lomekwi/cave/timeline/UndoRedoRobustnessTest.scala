@@ -10,11 +10,8 @@ import java.util.Random
 import UndoRedoRobustnessTest.SOURCE_COUNT
 
 /**
- * 时间线撤销/重做系统的鲁棒性测试。
- * 新建时间线，用 [[RandomTimelineFiller]] 随机生成大量模拟片段、随机组合为组，再随机执行
- * 各种“拖拽”（整体移动、头/尾裁切、分割、删除、新增）。在随机时刻对时间线做序列化快照，
- * 继续随机操作后把快照之后产生的全部命令撤销掉，断言撤销回来的时间线与快照相等
- * （再重做一遍，断言与操作后的状态相等）。
+ * 时间线撤销/重做系统的鲁棒性测试：随机生成片段、随机组合并随机“拖拽”，
+ * 校验撤销后回到序列化快照、重做后回到操作后的状态。
  *
  * 依赖 [[Timeline.equals]] / [[Track.equals]] 做结构化比较，按轨道、按区间
  * 逐项比对片段（类型/时长、origin、区间），不依赖对象身份，因此能直接和深拷贝的
@@ -50,9 +47,6 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       i += 1
     }
 
-    // 清空命令历史，快照之后每执行一步就压入一条命令，
-    // 之后"撤销同样的步数"即等价于撤销快照之后的全部操作，
-    // 避免跨快照边界时同类型命令在撤销栈顶合并而污染步数统计。
     val snapshot = timeline.timeline.duplicate()
     project.undo.clear()
 

@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test
 
 /**
  * 内嵌单例守卫。类内的 object 会被 Scala 编码为宿主实例的非 transient 惰性字段，
- * 一旦宿主实例访问过该单例（如播放视频生成缩略图），字段随实例进入序列化流，
- * 其中的锁对象（裸 java.lang.Object）不可序列化，曾导致片段复制崩溃。
  * 因此这些常量单例必须保持在文件顶层，不得移回类内。
  */
 class InnerObjectGuardTest {

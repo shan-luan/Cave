@@ -13,15 +13,6 @@ import FilterListTest.*
 
 /**
  * 验证 [[FilterList]]，双向链表行为 + 端口连接自动维护。
- *
- * 覆盖如下。
- * 1) 空列表，[[Segment.get]] 无 filter 时返回源自身帧；
- * 2) add 后端口链 segment.out → f.in → f.out → …；
- * 3) 按索引 add/remove 后连接保持；
- * 4) set 替换后连接更新；
- * 5) clear 后回到空链状态；
- * 6) 按索引 insert/remove 维护连接；
- * 7) 求值，[[Segment.get]] 沿链传播。
  */
 class FilterListTest {
 
@@ -105,7 +96,6 @@ class FilterListTest {
     c.delta.defaultData = 2
     assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
 
-    // 链表顺序正确
     assertEquals(a, segment.filters(0))
     assertEquals(c, segment.filters(1))
   }

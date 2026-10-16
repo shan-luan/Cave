@@ -10,12 +10,6 @@ import scala.util.Using
 /**
  * 验证 [[NodeGraphFilter]] 的图边界，入口节点把图外连入的帧送给图内节点，
  * 总输出节点把图内的结果送出图外。
- *
- * 覆盖如下。
- * 1) 新建即含入口节点与总输出节点，且两者位置不重叠；
- * 2) 入口节点向上游未连接时类型未知（null），连接后为上游实际类型；
- * 3) 端到端求值，图外源 → 图入口 → 图内 filter → 总输出 → 图外；
- * 4) 序列化往返后上述行为不变（入口节点反向引用宿主 filter）。
  */
 class NodeGraphFilterTest {
 
@@ -79,14 +73,12 @@ class NodeGraphFilterTest {
 
     val copyNgf = copy.filters(0).asInstanceOf[NodeGraphFilter]
     assertNotNull(graphIn(copyNgf))
-    // 入口节点反向引用宿主 filter，往返后仍能取到图外连入的帧
     assertEquals(15.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
   }
 
   @Test
   def serialization_repairsMissingGraphInput(): Unit = {
     val ngf = new NodeGraphFilter()
-    // 模拟旧存档，入口节点字段与图内节点都不存在
     val field = classOf[NodeGraphFilter].getDeclaredField("innerIn")
     field.setAccessible(true)
     field.set(ngf, null)
@@ -97,7 +89,6 @@ class NodeGraphFilterTest {
     assertNotNull(graphIn(copy))
     assertEquals(2, copy.innerNodes.size)
     assertNotEquals(copy.innerNodes.getPosition(graphIn(copy)), copy.innerNodes.getPosition(sink(copy)))
-    // 补建不自动连线，旧存档里用户已有的连接不被覆盖
     assertFalse(graphIn(copy).out.isLinked)
   }
 
