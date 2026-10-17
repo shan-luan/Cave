@@ -243,7 +243,7 @@ final class Track private (val index: Int,
     val tr = getInterval(t)
     val lr = getInterval(left)
     val rr = getInterval(right)
-    val half = (tr.hi - tr.lo) / 2
+    val half = tr.len / 2
     val lower = Math.max(Math.max(lr.lo + 1, minStartOf(right)), endLower(left))
     var boundary = lr.hi - half
     boundary = Math.max(boundary, lower)
@@ -707,9 +707,9 @@ final class Track private (val index: Int,
     while (current.isDefined) {
       val (r, s) = current.get
       if (r.hi <= time) return best
-      if (r.hi - r.lo < bestLen) {
+      if (r.len < bestLen) {
         best = Some(s)
-        bestLen = r.hi - r.lo
+        bestLen = r.len
       }
       current = intervalToSeg.maxBefore(r)
     }

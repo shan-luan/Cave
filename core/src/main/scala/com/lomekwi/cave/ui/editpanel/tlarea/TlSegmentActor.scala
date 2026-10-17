@@ -219,7 +219,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
         val targetX: Float = viewX - firstX
         val targetY: Float = viewY - firstY
 
-        val duration: Long = r.hi - r.lo
+        val duration: Long = r.len
         var target: Long = tl.xToAbsoluteTime(targetX)
         if (target < 0) target = 0
         target = snapMoveTarget(target, duration)

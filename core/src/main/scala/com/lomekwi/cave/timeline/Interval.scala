@@ -9,15 +9,20 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
 
   def isEmpty: Boolean = lo == hi
 
+  def len: Long = hi-lo
+
   def contains(time: Long): Boolean = lo <= time && time < hi
 
   def intersects(other: Interval): Boolean = lo < other.hi && other.lo < hi
 
-  /** 与另一区间的交集；不相交或仅相邻时是空区间。 */
-  def &(other: Interval): Interval = {
+  /** 与另一区间的交集；不相交或仅相邻时为 None。 */
+  def &(other: Interval): Option[Interval] = {
     val later = Math.max(lo, other.lo)
-    Interval(later, Math.max(later, Math.min(hi, other.hi)))
+    val earlier = Math.min(hi, other.hi)
+    Option.when(later < earlier)(Interval(later, earlier))
   }
+
+  def span(other: Interval): Interval = Interval(Math.min(lo, other.lo), Math.max(hi, other.hi))
 
   /** 相邻（如 [0,10) 与 [10,20)）也算相连。 */
   def isConnected(other: Interval): Boolean = lo <= other.hi && other.lo <= hi
@@ -28,7 +33,10 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
 object Interval {
   given Ordering[Interval] = Ordering.by(i => (i.lo, i.hi))
 
-  def at(time: Long): Interval = Interval(time, time)
+  /**
+   * 实参为MaxValue时会溢出然后抛异常。
+   */
+  def at(time: Long): Interval = Interval(time, time+1)
 
   def upTo(time: Long): Interval = Interval(time, Long.MaxValue)
 }

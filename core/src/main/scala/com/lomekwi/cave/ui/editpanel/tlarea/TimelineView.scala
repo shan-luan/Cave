@@ -456,7 +456,7 @@ class TimelineView(context0: ProjectSession) extends Group with Focusable {
         entry.group.foreach(g => context.applyTimeline(context.timeline.adoptGroup(g)))
       }
       for (entry <- sorted) {
-        val duration = entry.interval.hi - entry.interval.lo
+        val duration = entry.interval.len
         if (duration > 0) {
           val trackOffset = entry.trackIndex - minTrack
           var ti = baseTrack + trackOffset

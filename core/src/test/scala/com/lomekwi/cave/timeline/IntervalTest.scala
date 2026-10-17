@@ -29,26 +29,26 @@ class IntervalTest {
 
   @Test
   def and_returnsCommonPart(): Unit = {
-    assertEquals(5 ~~ 10, (0 ~~ 10) & (5 ~~ 15))
-    assertEquals(0 ~~ 10, (0 ~~ 10) & (-5 ~~ 10))
-    assertEquals(2 ~~ 8, (0 ~~ 10) & (2 ~~ 8))
+    assertEquals(Some(5 ~~ 10), (0 ~~ 10) & (5 ~~ 15))
+    assertEquals(Some(0 ~~ 10), (0 ~~ 10) & (-5 ~~ 10))
+    assertEquals(Some(2 ~~ 8), (0 ~~ 10) & (2 ~~ 8))
     assertEquals((0 ~~ 10) & (2 ~~ 8), (2 ~~ 8) & (0 ~~ 10))
   }
 
   @Test
   def and_isEmptyWhenDisjointOrTouching(): Unit = {
-    assertEquals(10 ~~ 10, (0 ~~ 10) & (10 ~~ 20))
-    assertEquals(20 ~~ 20, (0 ~~ 10) & (20 ~~ 30))
-    assertEquals(20 ~~ 20, (20 ~~ 30) & (0 ~~ 10))
+    assertEquals(None, (0 ~~ 10) & (10 ~~ 20))
+    assertEquals(None, (0 ~~ 10) & (20 ~~ 30))
+    assertEquals(None, (20 ~~ 30) & (0 ~~ 10))
     assertTrue(((0 ~~ 10) & (20 ~~ 30)).isEmpty)
     assertFalse(((0 ~~ 10) & (9 ~~ 30)).isEmpty)
   }
 
   @Test
   def and_withEmptyIntervalIsEmpty(): Unit = {
-    assertTrue(((0 ~~ 10) & (5 ~~ 5)).isEmpty)
-    assertTrue(((5 ~~ 5) & (0 ~~ 10)).isEmpty)
-    assertTrue(((0 ~~ 0) & (0 ~~ 0)).isEmpty)
+    assertEquals(None, (0 ~~ 10) & (5 ~~ 5))
+    assertEquals(None, (5 ~~ 5) & (0 ~~ 10))
+    assertEquals(None, (0 ~~ 0) & (0 ~~ 0))
   }
 
   @Test
