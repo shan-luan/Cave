@@ -32,7 +32,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
       // SEEKING 期间 [[anchor]] 失效，从 SEEKING 进入 Paused 保留 [[frozenTime]] 的 seek 目标
 
       playState = state
-      projEventBus.post(PlayStateChangedEvent)
+      projEventBus.post(RefreshRequestEvent)
     }
   }
 
@@ -47,10 +47,9 @@ class Playhead(@transient private val projEventBus: EventBus) {
     if (playState != PlayState.Seeking) {
       seekTargetState = playState
       playState = PlayState.Seeking
-      projEventBus.post(PlayStateChangedEvent)
     }
 
-    projEventBus.post(SeekEvent)
+    projEventBus.post(RefreshRequestEvent)
   }
 
   /**

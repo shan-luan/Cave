@@ -106,15 +106,7 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
     }
   }
   @Subscribe
-  def onPlayStateChanged(event: PlayStateChangedEvent): Unit = {
-    update()
-  }
-  @Subscribe
   def onRefreshRequested(event: RefreshRequestEvent): Unit = {
-    update()
-  }
-  @Subscribe
-  def onSeek(event: SeekEvent): Unit = {
     update()
   }
   private[cave] def onTrackChanged(): Unit = {
