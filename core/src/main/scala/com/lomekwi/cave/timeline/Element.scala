@@ -4,6 +4,7 @@ import com.lomekwi.cave.pipeline.{Filter, FilterList, Frame, Source}
 import com.lomekwi.cave.ui.editpanel.inspector.SourceActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import com.lomekwi.cave.util.Duplicatable
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.Serializable
 
@@ -53,7 +54,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   /** 挂载滤镜。滤镜处理的帧类型必须接受本片段源的产出类型，否则抛 [[IllegalArgumentException]]。 */
   def attach(filter: Filter[?]): Segment = {
     require(filter.getType.isAssignableFrom(source.getType),
-      "滤镜的帧类型与本片段源的产出类型不兼容: " + filter.name)
+      i18n("滤镜的帧类型与本片段源的产出类型不兼容: ") + filter.name)
     filters += filter
     this
   }
@@ -75,7 +76,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
    * 插入时间轴时片段使用的默认时长。源未声明默认时长时在此抛 [[IllegalStateException]]。
    */
   final def getDefaultDuration: Long = {
-    source.getDefaultDuration.getOrElse(throw new IllegalStateException("该源没有可放置的默认时长: " + displayName))
+    source.getDefaultDuration.getOrElse(throw new IllegalStateException(i18n("该源没有可放置的默认时长: ") + displayName))
   }
 
   def displayName: String = {
@@ -127,7 +128,7 @@ abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
 @SerialVersionUID(1L)
 class Clip(source: Source[? <: Frame]) extends Content(source) {
   require(source.getDuration != Long.MaxValue,
-    "有界片段的源时长必须有限: " + source.displayName)
+    i18n("有界片段的源时长必须有限: ") + source.displayName)
 }
 
 /**
@@ -136,7 +137,7 @@ class Clip(source: Source[? <: Frame]) extends Content(source) {
 @SerialVersionUID(1L)
 class Boundless(source: Source[? <: Frame]) extends Content(source) {
   require(source.getDuration == Long.MaxValue,
-    "无界片段的源时长必须无界: " + source.displayName)
+    i18n("无界片段的源时长必须无界: ") + source.displayName)
 }
 
 /**

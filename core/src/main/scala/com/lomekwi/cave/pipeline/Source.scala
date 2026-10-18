@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.Serializable
 import scala.reflect.ClassTag
@@ -84,7 +85,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * 要求 [[canCreateTransitionWith]] 为 true，否则抛 [[UnsupportedOperationException]]。
    */
   def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
-    throw new UnsupportedOperationException("本源不支持构造转场: " + displayName)
+    throw new UnsupportedOperationException(i18n("本源不支持构造转场: ") + displayName)
   }
 
   def onDuplicate(original: Source[?]): Unit = {}

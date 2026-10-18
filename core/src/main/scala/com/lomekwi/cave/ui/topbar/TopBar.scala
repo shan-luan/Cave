@@ -3,7 +3,7 @@ package com.lomekwi.cave.ui.topbar
 import TopBar.*
 
 import com.lomekwi.cave.app.App.fileChooser
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
@@ -325,11 +325,11 @@ class TopBar extends MenuBar {
 
 object TopBar {
   enum TopActions(displayName0: String, defaultKeys0: Int*) extends ShortcutAction {
-    case NEW extends TopActions("新建文件", CONTROL_LEFT, N)
-    case OPEN extends TopActions("打开文件", CONTROL_LEFT, O)
-    case SAVE extends TopActions("保存", CONTROL_LEFT, S)
-    case SAVE_AS extends TopActions("另存为", CONTROL_LEFT, SHIFT_LEFT, S)
-    case CLOSE extends TopActions("关闭窗口", CONTROL_LEFT, W)
+    case NEW extends TopActions(i18n("新建文件"), CONTROL_LEFT, N)
+    case OPEN extends TopActions(i18n("打开文件"), CONTROL_LEFT, O)
+    case SAVE extends TopActions(i18n("保存"), CONTROL_LEFT, S)
+    case SAVE_AS extends TopActions(i18n("另存为"), CONTROL_LEFT, SHIFT_LEFT, S)
+    case CLOSE extends TopActions(i18n("关闭窗口"), CONTROL_LEFT, W)
 
     override def displayName(): String = displayName0
 

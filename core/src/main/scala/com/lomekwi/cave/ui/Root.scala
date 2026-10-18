@@ -50,7 +50,7 @@ import com.lomekwi.cave.ui.tabs.app.TopTabbedPane
 import com.lomekwi.cave.ui.topbar.TopBar
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.util.MimeType
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.compiletime.uninitialized

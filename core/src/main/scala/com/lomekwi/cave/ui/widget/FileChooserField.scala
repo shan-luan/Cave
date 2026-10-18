@@ -8,6 +8,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisValidatableTextField
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration
@@ -19,7 +20,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
  */
 class FileChooserField(private val chooserTitle: String, private val intent: NativeFileChooserIntent) extends VisTable {
   final val pathField: VisValidatableTextField = new VisValidatableTextField("")
-  private final val browseBtn: VisTextButton = new VisTextButton("浏览")
+  private final val browseBtn: VisTextButton = new VisTextButton(i18n("浏览"))
 
   {
     browseBtn.addListener(new ChangeListener {
@@ -45,7 +46,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
       override def onCancellation(): Unit = {}
 
       override def onError(exception: Exception): Unit = {
-        Gdx.app.error("FileChooserField", "选择文件失败", exception)
+        Gdx.app.error("FileChooserField", i18n("选择文件失败"), exception)
       }
     })
   }

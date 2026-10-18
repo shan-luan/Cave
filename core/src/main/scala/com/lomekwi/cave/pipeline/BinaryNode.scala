@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+
 import java.io.Serializable
 
 import scala.compiletime.uninitialized
@@ -27,7 +29,7 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
         } else if (inB == null) {
           inB = in
         } else {
-          throw new IllegalStateException("只能有两个输入端口.")
+          throw new IllegalStateException(i18n("只能有两个输入端口."))
         }
       case _ =>
     }
@@ -39,7 +41,7 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
     p match {
       case o: Out =>
         if (out != null) {
-          throw new IllegalStateException("只能有一个输出端口.")
+          throw new IllegalStateException(i18n("只能有一个输出端口."))
         }
         out = o
       case _ =>
@@ -65,7 +67,7 @@ abstract class BinaryNode[T](using protected val classTag: ClassTag[T]) extends 
 
   abstract class Out(name: String) extends Node.OutPort[T](name, BinaryNode.this.getType) {
     protected def this() = {
-      this("输出")
+      this(i18n("输出"))
     }
 
     /**

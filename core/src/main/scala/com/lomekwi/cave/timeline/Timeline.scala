@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.util.Duplicatable
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.Serializable
 
@@ -229,7 +230,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
 
   /** 成员所在的轨道；要求成员在时间线上，否则抛 IllegalArgumentException。 */
   private def requiredTrack(segment: Segment): Track =
-    findTrackOf(segment).getOrElse(throw new IllegalArgumentException("片段不在时间线上: " + segment))
+    findTrackOf(segment).getOrElse(throw new IllegalArgumentException(i18n("片段不在时间线上: ") + segment))
 
   /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。 */
   private def findPlaceableTrack(segments: Iterable[Segment], deltaTrack: Int): Int = {

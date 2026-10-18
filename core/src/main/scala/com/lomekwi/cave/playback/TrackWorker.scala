@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.pipeline.GapFrame
 import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.timeline.{Gap, Segment, Timeline}
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 import com.google.common.eventbus.Subscribe
 
 import java.util.concurrent.{Future, Phaser}
@@ -29,7 +30,7 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
   override def run(): Unit = {
     workerThread = Thread.currentThread()
     sinkPhaser = new Phaser(1)
-    Gdx.app.log("Track" + index, "轨道线程启动: " + timeline.getTrackOrCreate(index))
+    Gdx.app.log("Track" + index, i18n("轨道线程启动: ") + timeline.getTrackOrCreate(index))
     try {
       val p = context.playhead
       while (!Thread.currentThread().isInterrupted) {
@@ -41,7 +42,7 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
           case _: Gap => null
         }
         if (p.state != PlayState.Playing) {
-          Gdx.app.debug("Track" + index, "因为播放头而尝试park...")
+          Gdx.app.debug("Track" + index, i18n("因为播放头而尝试park..."))
 
           var f: com.lomekwi.cave.pipeline.Frame = null
           if (current != null) {
@@ -58,7 +59,7 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
           updateNeeded = false
           if (current != null) {
             val s = current
-            Gdx.app.debug("Track" + index, "找到源: " + s)
+            Gdx.app.debug("Track" + index, i18n("找到源: ") + s)
             track.syncAt(s, t)
             // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
             val end: Long = track.soloEndOf(s)
@@ -87,7 +88,7 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
             context.bus.post(gapFrame)
             val gapEnd: Long = track.intervalAt(t).hi
             val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
-            Gdx.app.debug("Track" + index, "轨道线程等待: " + parkTime / 1e9 + "秒")
+            Gdx.app.debug("Track" + index, i18n("轨道线程等待: ") + parkTime / 1e9 + i18n("秒"))
             LockSupport.parkNanos(parkTime)
           }
         }
@@ -95,14 +96,14 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
     } catch {
       case e: Exception =>
         if (!e.isInstanceOf[InterruptedException]) {
-          Gdx.app.error("Track" + index, "在更新轨道时发生错误", e)
+          Gdx.app.error("Track" + index, i18n("在更新轨道时发生错误"), e)
           Gdx.app.postRunnable(() => {
             throw new RuntimeException(e)
           })
         }
     } finally {
       workerThread = null
-      Gdx.app.log("Track" + index, "轨道线程结束: " + timeline.getTrackOrCreate(index))
+      Gdx.app.log("Track" + index, i18n("轨道线程结束: ") + timeline.getTrackOrCreate(index))
     }
   }
   @Subscribe

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.ui.settings
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.kotcrab.vis.ui.widget.VisDialog
 import com.lomekwi.cave.app.App

@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline
 
 import java.io.Serializable
 import com.badlogic.gdx.math.Vector2
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import scala.collection.mutable
 
@@ -44,7 +45,7 @@ class NodeGraph extends Iterable[Node] with Serializable {
 
   def setPosition(node: Node, x: Float, y: Float): Unit = {
     val position = node2pos.getOrElse(node, null)
-    require(position != null, "节点不在节点图中")
+    require(position != null, i18n("节点不在节点图中"))
     position.set(x, y)
   }
 }

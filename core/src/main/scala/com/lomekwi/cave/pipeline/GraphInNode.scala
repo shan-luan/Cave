@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+
 /**
  * 节点图的入口节点，把图外连入上游的帧提供给图内节点。
  *
@@ -7,7 +9,7 @@ package com.lomekwi.cave.pipeline
  */
 @SerialVersionUID(1L)
 final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
-  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
+  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object](i18n("输出"), classOf[Object]) {
     override def getData: Object = {
       upstream.getData
     }
@@ -21,7 +23,7 @@ final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
     }
   })
 
-  override val name: String = "输入"
+  override val name: String = i18n("输入")
 
   override def canRemove: Boolean = false
 }

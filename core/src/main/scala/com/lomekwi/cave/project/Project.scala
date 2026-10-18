@@ -4,7 +4,7 @@ import com.badlogic.gdx.files.FileHandle
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.util.FileNameUtil
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

@@ -6,6 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.timeline.{Content, Interval, Segment}
 import com.lomekwi.cave.util.MimeType
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 import com.lomekwi.cave.timeline.~~
 
 import java.io.File
@@ -62,7 +63,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
       timelineView.dirty = true
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlDropTarget", "拖拽文件失败: " + e.getMessage)
+        Gdx.app.error("TlDropTarget", i18n("拖拽文件失败: ") + e.getMessage)
     }
   }
 }

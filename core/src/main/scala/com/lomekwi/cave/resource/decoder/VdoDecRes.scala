@@ -1,7 +1,7 @@
 package com.lomekwi.cave.resource.decoder
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 
 import com.badlogic.gdx.Gdx
@@ -91,7 +91,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
       seek(validTime)
       bufferedPixels = null
     }
-    Gdx.app.debug(i18n("视频解码"), hashCode().toString + "同步到" + (validTime / SECOND).toString + i18n("秒"))
+    Gdx.app.debug(i18n("视频解码"), hashCode().toString + i18n("同步到") + (validTime / SECOND).toString + i18n("秒"))
   }
 
   /**

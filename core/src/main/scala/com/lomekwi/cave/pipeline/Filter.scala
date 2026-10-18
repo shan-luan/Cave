@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+
 import java.io.Serializable
 
 import scala.compiletime.uninitialized
@@ -19,7 +21,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
     p match {
       case in: FilterIn =>
         if (filterIn != null) {
-          throw new IllegalStateException("只能有一个过滤输入端口.")
+          throw new IllegalStateException(i18n("只能有一个过滤输入端口."))
         }
         filterIn = in
       case _ =>
@@ -32,7 +34,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
     p match {
       case out: FilterOut =>
         if (filterOut != null) {
-          throw new IllegalStateException("只能有一个过滤输出端口.")
+          throw new IllegalStateException(i18n("只能有一个过滤输出端口."))
         }
         filterOut = out
       case _ =>
@@ -43,7 +45,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
 
   class FilterIn(name: String) extends Node.InPort[T](name, Filter.this.getType) {
     def this() = {
-      this("输入")
+      this(i18n("输入"))
     }
 
     override def constraint: Set[Class[?]] = {
@@ -56,7 +58,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
   }
   abstract class FilterOut(name: String) extends Node.OutPort[T](name, Filter.this.getType) {
     protected def this() = {
-      this("输出")
+      this(i18n("输出"))
     }
 
     /**

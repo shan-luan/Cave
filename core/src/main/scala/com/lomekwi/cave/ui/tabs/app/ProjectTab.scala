@@ -1,6 +1,6 @@
 package com.lomekwi.cave.ui.tabs.app
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
@@ -54,12 +54,12 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
             setDirty(false)
           } catch {
             case e: IOException =>
-              Gdx.app.error("ProjectTab", "保存项目失败", e)
+              Gdx.app.error("ProjectTab", i18n("保存项目失败"), e)
           }
         }
         override def onCancellation(): Unit = {}
         override def onError(exception: Exception): Unit = {
-          Gdx.app.error("ProjectTab", "保存项目失败", exception)
+          Gdx.app.error("ProjectTab", i18n("保存项目失败"), exception)
         }
       })
       true
@@ -70,7 +70,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       true
     } catch {
       case e: IOException =>
-        Gdx.app.error("ProjectTab", "保存项目失败", e)
+        Gdx.app.error("ProjectTab", i18n("保存项目失败"), e)
         false
     }
   }

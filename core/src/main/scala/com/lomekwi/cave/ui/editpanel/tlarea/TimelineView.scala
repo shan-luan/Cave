@@ -1,6 +1,7 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
 import com.lomekwi.cave.util.Units.{SECOND, niceScale}
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.{Gdx, Input}
 import com.badlogic.gdx.graphics.{Color, Cursor}
@@ -572,21 +573,21 @@ object TimelineView {
   private final val KEY_VERTICAL_SPEED: Float = 1200f
 
   enum Actions(displayName0: String, defaultKeys0: Int*) extends ShortcutAction {
-    case SCROLL_LEFT extends Actions("向左滚动", A)
-    case SCROLL_RIGHT extends Actions("向右滚动", D)
-    case SCROLL_UP extends Actions("向上滚动", W)
-    case SCROLL_DOWN extends Actions("向下滚动", S)
-    case SPLIT extends Actions("分割", Q)
-    case DELETE extends Actions("删除", X)
-    case UNDO extends Actions("撤销", CONTROL_LEFT, Z)
-    case REDO extends Actions("重做", CONTROL_LEFT, Y)
-    case PLAY_PAUSE extends Actions("播放/暂停", SPACE)
-    case GROUP extends Actions("分组", F)
-    case MARQUEE_SELECT extends Actions("框选", CONTROL_LEFT)
-    case SEEK extends Actions("定位播放头", ALT_LEFT)
-    case SNAP_IGNORE extends Actions("忽略吸附", CONTROL_LEFT)
-    case COPY extends Actions("复制", CONTROL_LEFT, C)
-    case PASTE extends Actions("粘贴", CONTROL_LEFT, V)
+    case SCROLL_LEFT extends Actions(i18n("向左滚动"), A)
+    case SCROLL_RIGHT extends Actions(i18n("向右滚动"), D)
+    case SCROLL_UP extends Actions(i18n("向上滚动"), W)
+    case SCROLL_DOWN extends Actions(i18n("向下滚动"), S)
+    case SPLIT extends Actions(i18n("分割"), Q)
+    case DELETE extends Actions(i18n("删除"), X)
+    case UNDO extends Actions(i18n("撤销"), CONTROL_LEFT, Z)
+    case REDO extends Actions(i18n("重做"), CONTROL_LEFT, Y)
+    case PLAY_PAUSE extends Actions(i18n("播放/暂停"), SPACE)
+    case GROUP extends Actions(i18n("分组"), F)
+    case MARQUEE_SELECT extends Actions(i18n("框选"), CONTROL_LEFT)
+    case SEEK extends Actions(i18n("定位播放头"), ALT_LEFT)
+    case SNAP_IGNORE extends Actions(i18n("忽略吸附"), CONTROL_LEFT)
+    case COPY extends Actions(i18n("复制"), CONTROL_LEFT, C)
+    case PASTE extends Actions(i18n("粘贴"), CONTROL_LEFT, V)
 
     override def displayName(): String = displayName0
 

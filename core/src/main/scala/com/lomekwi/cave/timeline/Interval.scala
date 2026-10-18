@@ -2,10 +2,12 @@ package com.lomekwi.cave.timeline
 
 import java.io.Serializable
 
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+
 /** 左闭右开区间 [lo, hi)，lo == hi 时为空区间。 */
 @SerialVersionUID(1L)
 case class Interval(lo: Long, hi: Long) extends Serializable {
-  require(lo <= hi, s"区间下界不得大于上界: [$lo, $hi)")
+  require(lo <= hi, s"${i18n("区间下界不得大于上界: ")}[$lo, $hi)")
 
   def isEmpty: Boolean = lo == hi
 

@@ -1,7 +1,7 @@
 package com.lomekwi.cave.task
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_AAC
 
 import com.badlogic.gdx.Gdx

@@ -5,10 +5,11 @@ import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSegmentActor, TlSegmentActor}
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 @SerialVersionUID(1L)
 class AudSource(var audRes: AudRes) extends Source[AudFrame] {
-  addOutPort(new Node.OutPort[Double]("时长", classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](i18n("时长"), classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
 
@@ -44,7 +45,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
   }
 
   override def displayName: String = {
-    "音频源"
+    i18n("音频源")
   }
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

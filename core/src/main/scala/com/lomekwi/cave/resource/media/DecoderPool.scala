@@ -1,6 +1,7 @@
 package com.lomekwi.cave.resource.media
 
 import com.lomekwi.cave.resource.decoder.DecRes
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -44,7 +45,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
           pd.refcount = 1
           Some(new DecoderLease(pd))
         } else {
-          throw new IllegalStateException("解码器被同键消费者并发借出: " + consumer)
+          throw new IllegalStateException(i18n("解码器被同键消费者并发借出: ") + consumer)
         }
       }
       lent match {

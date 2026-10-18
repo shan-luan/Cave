@@ -6,6 +6,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.playback.{Playhead, TrackWorker}
 import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentFactory, Timeline, Track}
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.nio.file.Path
 import scala.collection.mutable
@@ -111,7 +112,7 @@ final class ProjectSession(initial: Project) {
   def onProjectFronted(event: ProjectFrontedEvent): Unit = {
     if (!active) {
       active = true
-      Gdx.app.log("Project", "项目 [" + project.name + "] 激活，开始轨道循环")
+      Gdx.app.log("Project", i18n("项目 [") + project.name + i18n("] 激活，开始轨道循环"))
       update()
     }
   }
@@ -120,7 +121,7 @@ final class ProjectSession(initial: Project) {
   def onProjectBackgrounded(event: ProjectBackgroundedEvent): Unit = {
     if (active) {
       active = false
-      Gdx.app.log("Project", "项目 [" + project.name + "] 后台化，停止轨道循环")
+      Gdx.app.log("Project", i18n("项目 [") + project.name + i18n("] 后台化，停止轨道循环"))
       stopTrackLoops()
     }
   }

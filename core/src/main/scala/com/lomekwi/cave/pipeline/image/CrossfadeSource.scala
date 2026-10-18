@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline.image
 
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.TransitionSource
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 /**
  * 叠化转场。后帧经 [[BiRenderFrame]] 以渐显的透明度叠在前帧之上。
@@ -26,6 +27,6 @@ class CrossfadeSource(from: Source[? <: ImgFrame], to: Source[? <: ImgFrame])
   }
 
   override def displayName: String = {
-    "叠化"
+    i18n("叠化")
   }
 }

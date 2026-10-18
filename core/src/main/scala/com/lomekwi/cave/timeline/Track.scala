@@ -2,6 +2,7 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.collection.BiMap
 import com.lomekwi.cave.pipeline.{BlockSource, EvalClock, Frame}
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.Serializable
 import scala.annotation.tailrec
@@ -93,7 +94,7 @@ final class Track private (val index: Int,
 
   /** 把内容片段放到指定区间。放不下时抛 IllegalArgumentException。要求片段不在本轨道上。 */
   protected[timeline] def addOrThrow(c: Content, r: Interval, origin: Long): Track = {
-    if (!canPlaceAt(c, r)) throw new IllegalArgumentException("目标区间无法放置内容: " + r)
+    if (!canPlaceAt(c, r)) throw new IllegalArgumentException(i18n("目标区间无法放置内容: ") + r)
     put(c, r, origin).syncAround(c)
   }
 

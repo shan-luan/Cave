@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.audio.{AudSource}
+import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.pipeline.image.{ImgSource, VdoSource}
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.app.App
@@ -10,6 +10,7 @@ import com.lomekwi.cave.resource.media.MediaCreatedEvent
 import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.util.MimeType
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.{File, IOException}
 
@@ -49,7 +50,7 @@ class SegmentFactory(private val context: ProjectSession) {
   private def createResources(file: File): mutable.ArrayBuffer[Resource] = {
     val mimeType = MimeType.detectMimeType(file)
     if (mimeType == null) {
-      throw new IOException("无法检测文件MIME类型: " + file.getName)
+      throw new IOException(i18n("无法检测文件MIME类型: ") + file.getName)
     }
     val created = mutable.ArrayBuffer.empty[Resource]
     for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {

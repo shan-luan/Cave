@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline.image
 
 import com.lomekwi.cave.util.Units.SECOND
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
@@ -17,10 +18,10 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   @transient private lazy val texture: Texture = new Texture(imgRes.width, imgRes.height, Pixmap.Format.RGBA8888)
   @volatile @transient private var initialized: Boolean = false
 
-  addOutPort(new Node.OutPort[Double]("宽度", classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](i18n("宽度"), classOf[Double]) {
     override def getData: Double = imgRes.width.toDouble
   })
-  addOutPort(new Node.OutPort[Double]("高度", classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](i18n("高度"), classOf[Double]) {
     override def getData: Double = imgRes.height.toDouble
   })
 
@@ -74,7 +75,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   }
 
   override def displayName: String = {
-    "图片源"
+    i18n("图片源")
   }
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

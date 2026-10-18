@@ -11,7 +11,7 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.editpanel.EditPanel
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 /**
  * [[NodeGraph]] 输入端口编辑 widget，端口名标签加一个按钮，按下后在项目的内部标签栏打开绑定到该端口当前默认值节点图的编辑器。

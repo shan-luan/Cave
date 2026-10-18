@@ -13,6 +13,7 @@ import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.editpanel.inspector.Inspector
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 import scala.compiletime.uninitialized
 
 class EditPanelFrame private extends VisTable {
@@ -28,7 +29,7 @@ class EditPanelFrame private extends VisTable {
     val addDirBtn = new VisTextButton("+")
     addDirBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
-        val chooser = new FileChooser("选择要添加到文件树的目录", FileChooser.Mode.OPEN)
+        val chooser = new FileChooser(i18n("选择要添加到文件树的目录"), FileChooser.Mode.OPEN)
         chooser.setSelectionMode(FileChooser.SelectionMode.DIRECTORIES)
         chooser.setListener(new SingleFileChooserListener {
           override protected def selected(file: FileHandle): Unit = {

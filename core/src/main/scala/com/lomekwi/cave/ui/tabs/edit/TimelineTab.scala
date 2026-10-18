@@ -6,7 +6,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.editpanel.tlarea.TlRuler
-import com.lomekwi.cave.util.i18n.I18N
+import com.lomekwi.cave.util.legacy_i18n.I18N
 
 class TimelineTab(tlMain: Container[TimelineView]) extends Tab(false, false) {
   private final val content: Table = new VisTable()

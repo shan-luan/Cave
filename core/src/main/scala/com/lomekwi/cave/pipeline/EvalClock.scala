@@ -1,5 +1,7 @@
 package com.lomekwi.cave.pipeline
 
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+
 /**
  * 当前求值时刻的线程内上下文。求值入口在求值前写入时刻，节点求值期间读取；
  * 按线程隔离，各轨道线程的求值互不可见。
@@ -30,7 +32,7 @@ object EvalClock {
 
   private def current(): Context = {
     val c: Context = context.get()
-    if (c == null) throw new IllegalStateException("当前线程不在求值上下文中，无法获取时间")
+    if (c == null) throw new IllegalStateException(i18n("当前线程不在求值上下文中，无法获取时间"))
     c
   }
 }

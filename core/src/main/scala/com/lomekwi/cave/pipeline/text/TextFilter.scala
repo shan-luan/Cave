@@ -2,6 +2,7 @@ package com.lomekwi.cave.pipeline.text
 
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.util.regex.{Pattern, PatternSyntaxException}
 
@@ -14,16 +15,16 @@ import scala.compiletime.uninitialized
 @SerialVersionUID(1L)
 class TextFilter extends Filter[TextFrame] {
   private final val regexIn: Node.InPort[String] = addInPort(
-    new Node.InPort[String]("正则", "", classOf[String]))
+    new Node.InPort[String](i18n("正则"), "", classOf[String]))
   private final val replaceIn: Node.InPort[String] = addInPort(
-    new Node.InPort[String]("替换", "", classOf[String]))
+    new Node.InPort[String](i18n("替换"), "", classOf[String]))
 
   @transient private var compiled: Pattern = uninitialized
   @transient private var compiledFrom: String = uninitialized
 
-  private final val in: FilterIn = addInPort(new FilterIn("输入"))
+  private final val in: FilterIn = addInPort(new FilterIn(i18n("输入")))
 
-  private final val out: FilterOut = addOutPort(new FilterOut("输出") {
+  private final val out: FilterOut = addOutPort(new FilterOut(i18n("输出")) {
     override def getData: TextFrame = {
       val frame: TextFrame = filterIn.getData
       if (frame != null) {
@@ -65,5 +66,5 @@ class TextFilter extends Filter[TextFrame] {
     replaceIn.defaultData = v
   }
 
-  override val name: String = "文本替换"
+  override val name: String = i18n("文本替换")
 }

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.task
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.app.App

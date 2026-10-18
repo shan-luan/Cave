@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import com.badlogic.gdx.math.Vector2
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.ObjectInputStream
 
@@ -13,7 +14,7 @@ class NodeGraphFilter extends Filter[Object] {
   innerNodes.add(innerSink)
 
   addInPort(new FilterIn())
-  addInPort(new Node.InPort[NodeGraph]("节点图", innerNodes, classOf[NodeGraph]))
+  addInPort(new Node.InPort[NodeGraph](i18n("节点图"), innerNodes, classOf[NodeGraph]))
 
   ensureInnerIn()
 
@@ -50,7 +51,7 @@ class NodeGraphFilter extends Filter[Object] {
     }
   }
 
-  override val name: String = "节点图"
+  override val name: String = i18n("节点图")
 }
 
 object NodeGraphFilter {

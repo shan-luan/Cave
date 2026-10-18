@@ -1,6 +1,6 @@
 package com.lomekwi.cave.ui.editpanel.inspector
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.google.common.eventbus.Subscribe

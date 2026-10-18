@@ -1,7 +1,7 @@
 package com.lomekwi.cave.ui.topbar
 
 import com.lomekwi.cave.util.Units.MEGA
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.ui.Table

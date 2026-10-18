@@ -2,27 +2,28 @@ package com.lomekwi.cave.pipeline.image
 
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 class TransNode extends Filter[Transformable] {
 
   private final val dx: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double]("位移 X", 0.0, classOf[Double]))
+    new Node.InPort[Double](i18n("位移 X"), 0.0, classOf[Double]))
   private final val dy: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double]("位移 Y", 0.0, classOf[Double]))
+    new Node.InPort[Double](i18n("位移 Y"), 0.0, classOf[Double]))
   private final val scaleX: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double]("缩放 X", 1.0, classOf[Double]))
+    new Node.InPort[Double](i18n("缩放 X"), 1.0, classOf[Double]))
   private final val scaleY: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double]("缩放 Y", 1.0, classOf[Double]))
+    new Node.InPort[Double](i18n("缩放 Y"), 1.0, classOf[Double]))
   private final val dRotation: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double]("旋转", 0.0, classOf[Double]))
+    new Node.InPort[Double](i18n("旋转"), 0.0, classOf[Double]))
 
   private var flipXState: Boolean = false
   private var flipYState: Boolean = false
 
-  private final val in: FilterIn = addInPort(new FilterIn("输入") {
+  private final val in: FilterIn = addInPort(new FilterIn(i18n("输入")) {
   })
 
-  private final val out: FilterOut = addOutPort(new FilterOut("输出") {
+  private final val out: FilterOut = addOutPort(new FilterOut(i18n("输出")) {
     override def getData: Transformable = {
       val frame: Transformable = filterIn.getData
       if (frame != null) {
@@ -103,7 +104,7 @@ class TransNode extends Filter[Transformable] {
     flipYState = v
   }
 
-  override val name: String = "变换"
+  override val name: String = i18n("变换")
 }
 
 object TransNode {

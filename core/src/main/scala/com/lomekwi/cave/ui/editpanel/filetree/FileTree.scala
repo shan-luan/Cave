@@ -6,7 +6,7 @@ import com.kotcrab.vis.ui.widget.VisTree
 
 import java.io.File
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 class FileTree private extends VisTree[FileTreeNode, File]() {
   {

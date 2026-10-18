@@ -1,6 +1,6 @@
 package com.lomekwi.cave.util
 
-import com.lomekwi.cave.util.i18n.I18N.i18n
+import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
 
 import java.io.File
 import java.nio.file.Files
