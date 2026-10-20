@@ -1,31 +1,20 @@
 package com.lomekwi.cave.ui.editpanel.previewarea
 
-import com.badlogic.gdx.Application
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Cursor
+import com.badlogic.gdx.{Application, Gdx, Input}
+import com.badlogic.gdx.graphics.{Color, Cursor}
 import com.badlogic.gdx.graphics.g2d.Batch
-import com.badlogic.gdx.math.Matrix4
-import com.badlogic.gdx.math.Rectangle
-import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
-import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.InputListener
-import com.lomekwi.cave.app.selection.Selectable
+import com.badlogic.gdx.math.{Matrix4, Rectangle, Vector2}
+import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.task.ExportOptionsSet
-import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.image.Transform
-import com.lomekwi.cave.pipeline.image.Transformable
-import com.lomekwi.cave.pipeline.image.TransNode
-import com.lomekwi.cave.timeline.Segment
-import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.app.selection.Selectable
+import com.lomekwi.cave.pipeline.{Filter, Frame}
+import com.lomekwi.cave.pipeline.image.{TransNode, Transform, Transformable}
 import com.lomekwi.cave.playback.RefreshRequestEvent
+import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.task.ExportOptionsSet
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
-
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
@@ -708,7 +697,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
-  protected class Gizmo {
+  private class Gizmo {
     private[TransFrameActor] var hoveredHandle: Gizmo.Handle = uninitialized
 
     private[TransFrameActor] def hitHandle(stageX: Float, stageY: Float): Gizmo.Handle = {

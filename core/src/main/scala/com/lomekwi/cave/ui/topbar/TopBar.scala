@@ -3,7 +3,9 @@ package com.lomekwi.cave.ui.topbar
 import TopBar.*
 
 import com.lomekwi.cave.app.App.fileChooser
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
@@ -46,33 +48,33 @@ class TopBar extends MenuBar {
   private final val actionItems: mutable.LinkedHashMap[TopActions, MenuItem] = mutable.LinkedHashMap.empty[TopActions, MenuItem]
 
   {
-    val fileMenu: Menu = new MenuX(i18n("文件"))
+    val fileMenu: Menu = new MenuX(("文件".in(Zh) | "File".in(En)).str())
 
-    val newItem: MenuItem = new MenuItem(i18n("新建"), new ChangeListenerX(() => performNew()))
+    val newItem: MenuItem = new MenuItem(("新建".in(Zh) | "New".in(En)).str(), new ChangeListenerX(() => performNew()))
     newItem.setShortcut(TopActions.NEW.defaultKeys()*)
     actionItems.put(TopActions.NEW, newItem)
     fileMenu.addItem(newItem)
 
-    val openItem: MenuItem = new MenuItem(i18n("打开"), new ChangeListenerX(() => performOpen()))
+    val openItem: MenuItem = new MenuItem(("打开".in(Zh) | "Open".in(En)).str(), new ChangeListenerX(() => performOpen()))
     openItem.setShortcut(TopActions.OPEN.defaultKeys()*)
     actionItems.put(TopActions.OPEN, openItem)
     fileMenu.addItem(openItem)
 
     fileMenu.addSeparator()
 
-    val saveItem: MenuItem = new MenuItemP(i18n("保存"), new ChangeListenerX(() => performSave()))
+    val saveItem: MenuItem = new MenuItemP(("保存".in(Zh) | "Save".in(En)).str(), new ChangeListenerX(() => performSave()))
     saveItem.setShortcut(TopActions.SAVE.defaultKeys()*)
     actionItems.put(TopActions.SAVE, saveItem)
     fileMenu.addItem(saveItem)
 
-    val saveAsItem: MenuItem = new MenuItemP(i18n("另存为"), new ChangeListenerX(() => performSaveAs()))
+    val saveAsItem: MenuItem = new MenuItemP(("另存为".in(Zh) | "Save As".in(En)).str(), new ChangeListenerX(() => performSaveAs()))
     saveAsItem.setShortcut(TopActions.SAVE_AS.defaultKeys()*)
     actionItems.put(TopActions.SAVE_AS, saveAsItem)
     fileMenu.addItem(saveAsItem)
 
     fileMenu.addSeparator()
 
-    fileMenu.addItem(new MenuItemP(i18n("导出"), new ChangeListenerX(() => {
+    fileMenu.addItem(new MenuItemP(("导出".in(Zh) | "Export".in(En)).str(), new ChangeListenerX(() => {
       val context = App.root.getFrontendContext
       if (context != null) {
         App.root.showDialog(new ExportDialog(context))
@@ -81,16 +83,16 @@ class TopBar extends MenuBar {
 
     fileMenu.addSeparator()
 
-    val closeItem: MenuItem = new MenuItem(i18n("关闭"), new ChangeListenerX(() => performClose()))
+    val closeItem: MenuItem = new MenuItem(("关闭".in(Zh) | "Close".in(En)).str(), new ChangeListenerX(() => performClose()))
     closeItem.setShortcut(TopActions.CLOSE.defaultKeys()*)
     actionItems.put(TopActions.CLOSE, closeItem)
     fileMenu.addItem(closeItem)
 
     addMenu(fileMenu)
 
-    val editMenu: Menu = new MenuX(i18n("编辑"))
+    val editMenu: Menu = new MenuX(("编辑".in(Zh) | "Edit".in(En)).str())
 
-    val undoItem: MenuItem = new MenuItemP(i18n("撤销"), new ChangeListenerX(() => {
+    val undoItem: MenuItem = new MenuItemP(("撤销".in(Zh) | "Undo".in(En)).str(), new ChangeListenerX(() => {
       val context = App.root.getFrontendContext
       if (context != null) {
         context.undo.undo()
@@ -101,7 +103,7 @@ class TopBar extends MenuBar {
     undoItem.setShortcut(TimelineView.Actions.UNDO.defaultKeys()*)
     editMenu.addItem(undoItem)
 
-    val redoItem: MenuItem = new MenuItemP(i18n("重做"), new ChangeListenerX(() => {
+    val redoItem: MenuItem = new MenuItemP(("重做".in(Zh) | "Redo".in(En)).str(), new ChangeListenerX(() => {
       val context = App.root.getFrontendContext
       if (context != null) {
         context.undo.redo()
@@ -114,13 +116,13 @@ class TopBar extends MenuBar {
 
     addMenu(editMenu)
 
-    addMenu(new MenuX(i18n("工具"))
-      .withItem(new MenuItem(i18n("设置"), new ChangeListenerX(() => {
+    addMenu(new MenuX(("工具".in(Zh) | "Tools".in(En)).str())
+      .withItem(new MenuItem(("设置".in(Zh) | "Settings".in(En)).str(), new ChangeListenerX(() => {
         new SettingsDialog()
       })))
-      .withItem(new MenuItem(i18n("后台任务"), new ChangeListenerX(() => {
+      .withItem(new MenuItem(("后台任务".in(Zh) | "Background Tasks".in(En)).str(), new ChangeListenerX(() => {
 
-        val taskWin: VisDialog = new VisDialog(i18n("后台任务")) {
+        val taskWin: VisDialog = new VisDialog(("后台任务".in(Zh) | "Background Tasks".in(En)).str()) {
           final val rows: mutable.HashMap[Task, VisTable] = mutable.HashMap.empty[Task, VisTable]
           final val current: mutable.HashSet[Task] = mutable.HashSet.empty[Task]
           var dirty: Boolean = false
@@ -164,8 +166,8 @@ class TopBar extends MenuBar {
       })))
     )
 
-    addMenu(new MenuX(i18n("视图"))
-      .withItem(new MenuItemP(i18n("复位"), new ChangeListenerX(() => {
+    addMenu(new MenuX(("视图".in(Zh) | "View".in(En)).str())
+      .withItem(new MenuItemP(("复位".in(Zh) | "Reset View".in(En)).str(), new ChangeListenerX(() => {
         val editPanel = App.root.getFrontendEditPanel
         if (editPanel != null) {
           editPanel.previewArea.resetView()
@@ -173,18 +175,18 @@ class TopBar extends MenuBar {
       })))
     )
 
-    addMenu(new MenuX(i18n("帮助"))
-      .withItem(new MenuItem(i18n("关于"), new ChangeListenerX(() => {
-        val about: VisDialog = new VisDialog(i18n("关于"))
+    addMenu(new MenuX(("帮助".in(Zh) | "Help".in(En)).str())
+      .withItem(new MenuItem(("关于".in(Zh) | "About".in(En)).str(), new ChangeListenerX(() => {
+        val about: VisDialog = new VisDialog(("关于".in(Zh) | "About".in(En)).str())
         about.addCloseButton()
         val ct = about.getContentTable
-        ct.add(new Label(i18n("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件"), about.getSkin)).left()
+        ct.add(new Label(("CAVE:Cave is Another Video Editor是自由的多媒体编辑软件".in(Zh) | "CAVE: Cave is Another Video Editor is free multimedia editing software".in(En)).str(), about.getSkin)).left()
         ct.row()
-        ct.add(new Label(i18n("由shan_luan_开发.此软件以AGPLv3分发并不提供任何保修."), about.getSkin)).left()
+        ct.add(new Label(("由shan_luan_开发.此软件以AGPLv3分发并不提供任何保修.".in(Zh) | "Developed by shan_luan_. This software is distributed under AGPLv3 without any warranty.".in(En)).str(), about.getSkin)).left()
         ct.row()
         ct.add(new LinkLabel("Github", "https://github.com/shan-luan/Cave")).left()
         ct.row()
-        ct.add(new LinkLabel(i18n("B站"), "https://space.bilibili.com/1655518235")).left()
+        ct.add(new LinkLabel(("B站".in(Zh) | "Bilibili".in(En)).str(), "https://space.bilibili.com/1655518235")).left()
         ct.row()
         App.root.showDialog(about)
       }))
@@ -203,7 +205,7 @@ class TopBar extends MenuBar {
   def performNew(): Unit = {
     try {
       App.appEventBus.post(ProjectLoadedEvent(Project.create()))
-      App.root.toastManager.show(i18n("项目已新建"), toastTimeOut)
+      App.root.toastManager.show(("项目已新建".in(Zh) | "Project created".in(En)).str(), toastTimeOut)
     } catch {
       case e: Exception =>
         e.printStackTrace()
@@ -213,7 +215,7 @@ class TopBar extends MenuBar {
   def performOpen(): Unit = {
     try {
       val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
-      conf.title = i18n("选择项目...")
+      conf.title = ("选择项目...".in(Zh) | "Choose Project...".in(En)).str()
       if (Gdx.app.getType == Application.ApplicationType.Android) {
         conf.mimeFilter = "*/*"
       } else {
@@ -224,10 +226,10 @@ class TopBar extends MenuBar {
         override def onFileChosen(file: FileHandle): Unit = {
           try {
             if (!hasProjectExtension(file.name())) {
-              App.root.toastManager.show(i18n("请选择 .cave 项目文件"), toastTimeOut)
+              App.root.toastManager.show(("请选择 .cave 项目文件".in(Zh) | "Please choose a .cave project file".in(En)).str(), toastTimeOut)
             } else {
               App.appEventBus.post(ProjectLoadedEvent(Project.open(file)))
-              App.root.toastManager.show(i18n("项目已打开"), toastTimeOut)
+              App.root.toastManager.show(("项目已打开".in(Zh) | "Project opened".in(En)).str(), toastTimeOut)
             }
           } catch {
             case e @ (_: IOException | _: ClassNotFoundException) =>
@@ -249,7 +251,7 @@ class TopBar extends MenuBar {
       if (context != null) {
         if (context.savePath.isEmpty) {
           val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
-          conf.title = i18n("选择保存位置...")
+          conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
           if (Gdx.app.getType == Application.ApplicationType.Android) {
             conf.mimeFilter = "*/*"
           }
@@ -260,7 +262,7 @@ class TopBar extends MenuBar {
                 val c = App.root.getFrontendContext
                 if (c != null) {
                   Project.save(c, file)
-                  App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
+                  App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)
                 }
               } catch {
                 case e: IOException =>
@@ -272,7 +274,7 @@ class TopBar extends MenuBar {
           })
         } else {
           Project.save(context)
-          App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
+          App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)
         }
       }
     } catch {
@@ -285,7 +287,7 @@ class TopBar extends MenuBar {
     try {
       if (App.root.getFrontendContext != null) {
         val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
-        conf.title = i18n("选择保存位置...")
+        conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
         if (Gdx.app.getType == Application.ApplicationType.Android) {
           conf.mimeFilter = "*/*"
         }
@@ -296,7 +298,7 @@ class TopBar extends MenuBar {
               val c = App.root.getFrontendContext
               if (c != null) {
                 Project.save(c, file)
-                App.root.toastManager.show(i18n("项目已保存"), toastTimeOut)
+                App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)
               }
             } catch {
               case e: IOException =>
@@ -325,11 +327,11 @@ class TopBar extends MenuBar {
 
 object TopBar {
   enum TopActions(displayName0: String, defaultKeys0: Int*) extends ShortcutAction {
-    case NEW extends TopActions(i18n("新建文件"), CONTROL_LEFT, N)
-    case OPEN extends TopActions(i18n("打开文件"), CONTROL_LEFT, O)
-    case SAVE extends TopActions(i18n("保存"), CONTROL_LEFT, S)
-    case SAVE_AS extends TopActions(i18n("另存为"), CONTROL_LEFT, SHIFT_LEFT, S)
-    case CLOSE extends TopActions(i18n("关闭窗口"), CONTROL_LEFT, W)
+    case NEW extends TopActions(("新建文件".in(Zh) | "New File".in(En)).str(), CONTROL_LEFT, N)
+    case OPEN extends TopActions(("打开文件".in(Zh) | "Open File".in(En)).str(), CONTROL_LEFT, O)
+    case SAVE extends TopActions(("保存".in(Zh) | "Save".in(En)).str(), CONTROL_LEFT, S)
+    case SAVE_AS extends TopActions(("另存为".in(Zh) | "Save As".in(En)).str(), CONTROL_LEFT, SHIFT_LEFT, S)
+    case CLOSE extends TopActions(("关闭窗口".in(Zh) | "Close Window".in(En)).str(), CONTROL_LEFT, W)
 
     override def displayName(): String = displayName0
 

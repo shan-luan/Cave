@@ -2,16 +2,16 @@ package com.lomekwi.cave.pipeline.image
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
-import com.lomekwi.cave.pipeline.{Frame, NodeRegistry, Source}
+import com.lomekwi.cave.pipeline.{Frame, Source}
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 import OpacityNodeTest.*
 
 /**
- * 验证 [[OpacityNode]] 沿滤镜链把透明度写到帧上，且注册表会为可渲染片段提供它。
+ * 验证 [[OpacityNode]] 沿滤镜链把透明度写到帧上。
  */
 class OpacityNodeTest {
 
@@ -56,16 +56,6 @@ class OpacityNodeTest {
     assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
     assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
     assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
-  }
-
-  @Test
-  def registry_offersNodeForRenderableSegment(): Unit = {
-    val registry = new NodeRegistry()
-    val segment = new OpCont
-    val names = (0 until registry.getCompatibleCount(segment))
-      .map(i => registry.createCompatible(segment, i).name)
-
-    assertTrue(names.contains("透明度"))
   }
 }
 

@@ -1,14 +1,9 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
-/**
- * 当前求值时刻的线程内上下文。求值入口在求值前写入时刻，节点求值期间读取；
- * 按线程隔离，各轨道线程的求值互不可见。
- *
- * 未处于求值上下文时读取抛 IllegalStateException。转场源在求值中拉取子片段时，
- * 子片段读到的是转场自身的时刻。
- */
 object EvalClock {
   private final case class Context(timeline: Long, segment: Long)
 
@@ -32,7 +27,7 @@ object EvalClock {
 
   private def current(): Context = {
     val c: Context = context.get()
-    if (c == null) throw new IllegalStateException(i18n("当前线程不在求值上下文中，无法获取时间"))
+    if (c == null) throw new IllegalStateException(("当前线程不在求值上下文中，无法获取时间".in(Zh) | "The current thread is not in an evaluation context and cannot obtain the time".in(En)).str())
     c
   }
 }

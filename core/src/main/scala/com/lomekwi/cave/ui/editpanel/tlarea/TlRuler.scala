@@ -1,18 +1,14 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
-import com.lomekwi.cave.util.Units.{SECOND, niceScale}
-
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
+import com.badlogic.gdx.{Gdx, Input}
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.g2d.Batch
-import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.{Batch, BitmapFont}
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.InputListener
+import com.badlogic.gdx.scenes.scene2d.{InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.ui.Widget
 import com.kotcrab.vis.ui.VisUI
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.util.Units.{SECOND, niceScale}
 
 class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val font: BitmapFont = VisUI.getSkin.getFont("default-font")

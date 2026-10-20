@@ -1,6 +1,8 @@
 package com.lomekwi.cave.ui.editpanel.inspector
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.google.common.eventbus.Subscribe
@@ -58,7 +60,7 @@ class Inspector extends VisTable {
     currentSet = null
     content.clear()
     content.setFillParent(true)
-    content.add(new VisLabel(i18n("未选择源"))).expand().center()
+    content.add(new VisLabel(("未选择源".in(Zh) | "No source selected".in(En)).str())).expand().center()
   }
 
   private def showMultiInfo(set: SegmentSet): Unit = {
@@ -118,7 +120,7 @@ class Inspector extends VisTable {
       actor.setRebuildCallback(() => rebuildContent())
       content.add(actor).growX().pad(4).row()
     }
-    val addBtn = new VisTextButton(i18n("+添加滤镜"))
+    val addBtn = new VisTextButton(("+添加滤镜".in(Zh) | "+ Add Filter".in(En)).str())
     val filterMenu = new PopupMenu()
     val compatibleCount = App.nodeRegistry.getCompatibleCount(segment)
     for (fi <- 0 until compatibleCount) {

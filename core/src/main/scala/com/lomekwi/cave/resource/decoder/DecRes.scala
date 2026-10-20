@@ -4,7 +4,9 @@ import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.media.MedRes
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import org.bytedeco.javacv.FFmpegFrameGrabber
 
@@ -24,7 +26,7 @@ abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) exte
       configure()
       grabber.start()
       initialized = true
-      Gdx.app.debug("DecRes", this.toString + i18n("初始化"))
+      Gdx.app.debug("DecRes", this.toString + ("初始化".in(Zh) | "Initialize".in(En)).str())
     }
   }
   private def tryGetDecoder(): String = {

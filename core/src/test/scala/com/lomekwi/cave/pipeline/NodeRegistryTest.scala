@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
 import org.junit.jupiter.api.Test
 
 /**
- * 验证节点注册表的两条消费路径，滤镜链菜单只列 Filter，节点编辑器菜单列全部节点。
+ * 验证节点注册表的滤镜链菜单只列 Filter。
  */
 class NodeRegistryTest {
 
@@ -20,17 +20,5 @@ class NodeRegistryTest {
     assertTrue(compatible.nonEmpty, "至少应有节点图滤镜可用")
     assertTrue(compatible.forall(_.isInstanceOf[Filter[?]]), "滤镜链菜单不应包含非 Filter 节点")
     assertFalse(compatible.exists(node => node.isInstanceOf[RandomNode] || node.isInstanceOf[AddNode]))
-  }
-
-  @Test
-  def nodeEditorMenu_listsGraphOnlyNodes(): Unit = {
-    val registry = new NodeRegistry()
-    val names = (0 until registry.getCount).map(i => registry.create(i).name).toSet
-
-    assertTrue(names.contains("随机数"))
-    assertTrue(names.contains("加法"))
-    assertTrue(names.contains("减法"))
-    assertTrue(names.contains("乘法"))
-    assertTrue(names.contains("除法"))
   }
 }

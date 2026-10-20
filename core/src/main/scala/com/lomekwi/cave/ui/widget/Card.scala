@@ -15,7 +15,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
 class Card(title: String) extends VisTable {
-  var titleLabel: Label = uninitialized
+  private var titleLabel: Label = uninitialized
   var titleTable: Table = uninitialized
   private var drawTitleTable: Boolean = false
 

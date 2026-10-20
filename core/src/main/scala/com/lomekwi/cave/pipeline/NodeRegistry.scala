@@ -5,7 +5,9 @@ import com.lomekwi.cave.pipeline.image.{OpacityNode, TransNode}
 import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode, TimeNode}
 import com.lomekwi.cave.pipeline.text.TextFilter
 import com.lomekwi.cave.timeline.Segment
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}
@@ -79,9 +81,9 @@ object NodeRegistry {
       node
     } catch {
       case e: NoSuchMethodException =>
-        throw new IllegalArgumentException(nodeClass.getName + i18n(" 缺少无参构造器"), e)
+        throw new IllegalArgumentException(nodeClass.getName + (" 缺少无参构造器".in(Zh) | " is missing a no-arg constructor".in(En)).str(), e)
       case e @ (_: InvocationTargetException | _: InstantiationException | _: IllegalAccessException) =>
-        throw new RuntimeException(i18n("创建节点 ") + nodeClass.getName + i18n(" 失败"), e)
+        throw new RuntimeException(("创建节点 ".in(Zh) | "Failed to create node ".in(En)).str() + nodeClass.getName + (" 失败".in(Zh) | "".in(En)).str(), e)
     }
   }
 
@@ -100,6 +102,6 @@ object NodeRegistry {
       case _ => None
     }
     arg.collect { case clazz: Class[?] => clazz }
-      .getOrElse(throw new IllegalArgumentException(i18n("无法从 ") + filterClass.getName + i18n(" 推断目标类型")))
+      .getOrElse(throw new IllegalArgumentException(("无法从 ".in(Zh) | "Cannot infer the target type from ".in(En)).str() + filterClass.getName + (" 推断目标类型".in(Zh) | "".in(En)).str()))
   }
 }

@@ -4,7 +4,9 @@ import com.lomekwi.cave.pipeline.{Filter, FilterList, Frame, Source}
 import com.lomekwi.cave.ui.editpanel.inspector.SourceActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import com.lomekwi.cave.util.Duplicatable
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.Serializable
 
@@ -54,7 +56,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   /** 挂载滤镜。滤镜处理的帧类型必须接受本片段源的产出类型，否则抛 [[IllegalArgumentException]]。 */
   def attach(filter: Filter[?]): Segment = {
     require(filter.getType.isAssignableFrom(source.getType),
-      i18n("滤镜的帧类型与本片段源的产出类型不兼容: ") + filter.name)
+      ("滤镜的帧类型与本片段源的产出类型不兼容: ".in(Zh) | "The filter's frame type is incompatible with the output type of this segment's source: ".in(En)).str() + filter.name)
     filters += filter
     this
   }
@@ -76,7 +78,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
    * 插入时间轴时片段使用的默认时长。源未声明默认时长时在此抛 [[IllegalStateException]]。
    */
   final def getDefaultDuration: Long = {
-    source.getDefaultDuration.getOrElse(throw new IllegalStateException(i18n("该源没有可放置的默认时长: ") + displayName))
+    source.getDefaultDuration.getOrElse(throw new IllegalStateException(("该源没有可放置的默认时长: ".in(Zh) | "This source has no default duration to place: ".in(En)).str() + displayName))
   }
 
   def displayName: String = {
@@ -128,7 +130,7 @@ abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
 @SerialVersionUID(1L)
 class Clip(source: Source[? <: Frame]) extends Content(source) {
   require(source.getDuration != Long.MaxValue,
-    i18n("有界片段的源时长必须有限: ") + source.displayName)
+    ("有界片段的源时长必须有限: ".in(Zh) | "The source duration of a bounded segment must be finite: ".in(En)).str() + source.displayName)
 }
 
 /**
@@ -137,7 +139,7 @@ class Clip(source: Source[? <: Frame]) extends Content(source) {
 @SerialVersionUID(1L)
 class Boundless(source: Source[? <: Frame]) extends Content(source) {
   require(source.getDuration == Long.MaxValue,
-    i18n("无界片段的源时长必须无界: ") + source.displayName)
+    ("无界片段的源时长必须无界: ".in(Zh) | "The source duration of an unbounded segment must be unbounded: ".in(En)).str() + source.displayName)
 }
 
 /**

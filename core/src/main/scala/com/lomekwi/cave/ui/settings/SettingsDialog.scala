@@ -1,11 +1,13 @@
 package com.lomekwi.cave.ui.settings
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.kotcrab.vis.ui.widget.VisDialog
 import com.lomekwi.cave.app.App
 
-class SettingsDialog extends VisDialog(i18n("设置")) {
+class SettingsDialog extends VisDialog(("设置".in(Zh) | "Settings".in(En)).str()) {
 
   {
     addCloseButton()

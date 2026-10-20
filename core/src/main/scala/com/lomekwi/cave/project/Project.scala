@@ -4,7 +4,9 @@ import com.badlogic.gdx.files.FileHandle
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.util.FileNameUtil
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -33,7 +35,7 @@ object Project {
   private final val PROJECT_EXTENSION = ".cave"
 
   def create(): Project = new Project(
-    i18n("未命名"),
+    ("未命名".in(Zh) | "Untitled".in(En)).str(),
     Timeline.empty,
     mutable.LinkedHashMap.empty[File, mutable.ArrayBuffer[Resource]],
     UUID.randomUUID())

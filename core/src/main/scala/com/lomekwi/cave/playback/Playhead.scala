@@ -18,7 +18,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
   @volatile private var scrubSessions: Int = 0
   // SEEKING 聚合会话的运行时状态
   private var seekSessionVersion: Long = -1L
-  private var seekDoneIndexes: mutable.HashSet[Int] = mutable.HashSet.empty[Int]
+  private val seekDoneIndexes: mutable.HashSet[Int] = mutable.HashSet.empty[Int]
 
   def state: PlayState = playState
 

@@ -13,14 +13,16 @@ import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.editpanel.inspector.Inspector
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 import scala.compiletime.uninitialized
 
 class EditPanelFrame private extends VisTable {
   private var mediaPoolAndFileTreeSplitPane: VisSplitPane = uninitialized
   private var previewAndTimelineSplitPane: VisSplitPane = uninitialized
   private var previewAndDetailSplitPane: VisSplitPane = uninitialized
-  var detailPanel: Inspector = uninitialized
+  private var detailPanel: Inspector = uninitialized
   private var editPanel: EditPanel = uninitialized
 
   {
@@ -29,7 +31,7 @@ class EditPanelFrame private extends VisTable {
     val addDirBtn = new VisTextButton("+")
     addDirBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
-        val chooser = new FileChooser(i18n("选择要添加到文件树的目录"), FileChooser.Mode.OPEN)
+        val chooser = new FileChooser(("选择要添加到文件树的目录".in(Zh) | "Choose a directory to add to the file tree".in(En)).str(), FileChooser.Mode.OPEN)
         chooser.setSelectionMode(FileChooser.SelectionMode.DIRECTORIES)
         chooser.setListener(new SingleFileChooserListener {
           override protected def selected(file: FileHandle): Unit = {

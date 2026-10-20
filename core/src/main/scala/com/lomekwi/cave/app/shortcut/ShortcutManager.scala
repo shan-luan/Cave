@@ -37,7 +37,7 @@ class ShortcutManager {
     val prefs: Preferences = Gdx.app.getPreferences(ShortcutManager.PREFS_NAME)
     for (action <- registeredActions) {
       val v: String = prefs.getString(action.toString, null)
-      if (v != null && !v.isEmpty) {
+      if (v != null && v.nonEmpty) {
         val keys: Array[Int] = v.split(",").map((s: String) => Integer.parseInt(s))
         register(action, keys*)
       }

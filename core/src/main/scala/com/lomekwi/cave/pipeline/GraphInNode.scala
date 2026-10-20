@@ -1,6 +1,8 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * 节点图的入口节点，把图外连入上游的帧提供给图内节点。
@@ -9,7 +11,7 @@ import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
  */
 @SerialVersionUID(1L)
 final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
-  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object](i18n("输出"), classOf[Object]) {
+  val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object](("输出".in(Zh) | "Output".in(En)).str(), classOf[Object]) {
     override def getData: Object = {
       upstream.getData
     }
@@ -23,7 +25,7 @@ final class GraphInNode(upstream: Node.InPort[Object]) extends Node {
     }
   })
 
-  override val name: String = i18n("输入")
+  override val name: String = ("输入".in(Zh) | "Input".in(En)).str()
 
   override def canRemove: Boolean = false
 }

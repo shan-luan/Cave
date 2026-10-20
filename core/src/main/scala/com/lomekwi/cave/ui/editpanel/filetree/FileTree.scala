@@ -6,12 +6,14 @@ import com.kotcrab.vis.ui.widget.VisTree
 
 import java.io.File
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 class FileTree private extends VisTree[FileTreeNode, File]() {
   {
     val rootFile = new File(System.getProperty("user.home"))
-    Gdx.app.debug("FileTree", i18n("创建文件树，根目录: ") + rootFile.getAbsolutePath)
+    Gdx.app.debug("FileTree", ("创建文件树，根目录: ".in(Zh) | "Creating file tree, root: ".in(En)).str() + rootFile.getAbsolutePath)
     val rootNode = new FileTreeNode(rootFile)
 
     add(rootNode)

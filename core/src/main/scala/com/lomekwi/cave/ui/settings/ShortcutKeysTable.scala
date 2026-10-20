@@ -1,6 +1,8 @@
 package com.lomekwi.cave.ui.settings
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
@@ -68,11 +70,11 @@ class ShortcutKeysTable extends EntryTable {
     clear()
     top().left()
 
-    add(new VisLabel(i18n("快捷键设置"))).pad(10).row()
+    add(new VisLabel(("快捷键设置".in(Zh) | "Shortcut Settings".in(En)).str())).pad(10).row()
 
     val header = new VisTable()
-    header.add(new VisLabel(i18n("动作"))).pad(5).width(200)
-    header.add(new VisLabel(i18n("快捷键"))).pad(5).width(280)
+    header.add(new VisLabel(("动作".in(Zh) | "Action".in(En)).str())).pad(5).width(200)
+    header.add(new VisLabel(("快捷键".in(Zh) | "Shortcut".in(En)).str())).pad(5).width(280)
     listTable.clear()
     listTable.top().left()
     listTable.add(header).fillX().row()
@@ -89,7 +91,7 @@ class ShortcutKeysTable extends EntryTable {
       })
       row.add(keyBtn).pad(5).width(280)
 
-      val resetBtn = new VisTextButton(i18n("重置"))
+      val resetBtn = new VisTextButton(("重置".in(Zh) | "Reset".in(En)).str())
       resetBtn.setDisabled(!ShortcutKeysTable.hasCustomKeys(action))
       resetBtn.addListener(new ChangeListener {
         override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {
@@ -117,7 +119,7 @@ class ShortcutKeysTable extends EntryTable {
     }
     recordingAction = action
     recordingButton = btn
-    btn.setText(i18n("按下新快捷键..."))
+    btn.setText(("按下新快捷键...".in(Zh) | "Press the new shortcut...".in(En)).str())
     Gdx.input.getInputProcessor match {
       case m: InputMultiplexer => m.addProcessor(0, recordingProcessor)
       case _ =>
@@ -141,7 +143,7 @@ class ShortcutKeysTable extends EntryTable {
   private def keyDisplay(action: ShortcutAction): String = {
     val keys: mutable.ArrayBuffer[Int] = App.shortcutManager.getKeys(action)
     if (keys.isEmpty) {
-      i18n("未设置")
+      ("未设置".in(Zh) | "Not Set".in(En)).str()
     } else {
       val list: mutable.ArrayBuffer[Int] = mutable.ArrayBuffer.from(keys)
       list.sortInPlaceWith((a: Int, b: Int) => {
@@ -151,7 +153,7 @@ class ShortcutKeysTable extends EntryTable {
       })
       val sb = new StringBuilder()
       for (k <- list) {
-        if (sb.length() > 0) sb.append(" + ")
+        if (sb.nonEmpty) sb.append(" + ")
         sb.append(ShortcutKeysTable.keyName(k))
       }
       sb.toString
@@ -159,7 +161,7 @@ class ShortcutKeysTable extends EntryTable {
   }
 
   override def getName: String = {
-    i18n("快捷键")
+    ("快捷键".in(Zh) | "Shortcut".in(En)).str()
   }
 }
 
@@ -193,15 +195,15 @@ object ShortcutKeysTable {
       case Input.Keys.CONTROL_LEFT | Input.Keys.CONTROL_RIGHT => "Ctrl"
       case Input.Keys.SHIFT_LEFT | Input.Keys.SHIFT_RIGHT => "Shift"
       case Input.Keys.ALT_LEFT | Input.Keys.ALT_RIGHT => "Alt"
-      case Input.Keys.SPACE => i18n("空格")
+      case Input.Keys.SPACE => ("空格".in(Zh) | "Space".in(En)).str()
       case Input.Keys.DEL | Input.Keys.FORWARD_DEL => "Del"
       case Input.Keys.ESCAPE => "Esc"
       case Input.Keys.TAB => "Tab"
       case Input.Keys.ENTER => "Enter"
-      case Input.Keys.UP => i18n("上")
-      case Input.Keys.DOWN => i18n("下")
-      case Input.Keys.LEFT => i18n("左")
-      case Input.Keys.RIGHT => i18n("右")
+      case Input.Keys.UP => ("上".in(Zh) | "Up".in(En)).str()
+      case Input.Keys.DOWN => ("下".in(Zh) | "Down".in(En)).str()
+      case Input.Keys.LEFT => ("左".in(Zh) | "Left".in(En)).str()
+      case Input.Keys.RIGHT => ("右".in(Zh) | "Right".in(En)).str()
       case Input.Keys.F1 => "F1"
       case Input.Keys.F2 => "F2"
       case Input.Keys.F3 => "F3"

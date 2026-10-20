@@ -5,8 +5,8 @@ import com.lomekwi.cave.timeline.Timeline
 import scala.collection.mutable
 
 final class UndoManager(@transient private val context: ProjectSession) {
-  private final val undoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
-  private final val redoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
+  private val undoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
+  private val redoStack: mutable.ArrayDeque[UndoManager.TimelineEdit] = mutable.ArrayDeque.empty
 
   def push(edit: UndoManager.TimelineEdit): Unit = {
     undoStack.prepend(edit)

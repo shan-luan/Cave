@@ -1,6 +1,8 @@
 package com.lomekwi.cave.util
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.File
 import java.nio.file.Files
@@ -55,7 +57,7 @@ object MimeType {
         case _: Exception => null
       }
 
-      if (systemMimeType != null && !systemMimeType.isEmpty) {
+      if (systemMimeType != null && systemMimeType.nonEmpty) {
         systemMimeType
       } else {
         val fileName = file.getName.toLowerCase()
@@ -98,11 +100,11 @@ object MimeType {
 
   private def slashIndex(mimeType: String): Int = {
     if (mimeType == null || mimeType.isEmpty) {
-      throw new IllegalArgumentException(i18n("MIME类型不能为空"))
+      throw new IllegalArgumentException(("MIME类型不能为空".in(Zh) | "MIME type must not be empty".in(En)).str())
     }
     val index = mimeType.indexOf('/')
     if (index == -1) {
-      throw new IllegalArgumentException(i18n("无效的MIME类型格式: ") + mimeType)
+      throw new IllegalArgumentException(("无效的MIME类型格式: ".in(Zh) | "Invalid MIME type format: ".in(En)).str() + mimeType)
     }
     index
   }

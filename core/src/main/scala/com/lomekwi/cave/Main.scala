@@ -18,14 +18,10 @@
 
 package com.lomekwi.cave
 
-import com.badlogic.gdx.Application
-import com.badlogic.gdx.ApplicationAdapter
-import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.{Application, ApplicationAdapter, Gdx}
+import com.lomekwi.cave.app.{App, AppAudioOut}
 import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.ui.Root
-import com.lomekwi.cave.app.App
-import com.lomekwi.cave.app.AppAudioOut
-
 import games.spooky.gdx.nativefilechooser.NativeFileChooser
 
 

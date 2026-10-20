@@ -8,7 +8,9 @@ import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlVdoSegmentActor}
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.util.concurrent.CountDownLatch
 
@@ -17,13 +19,13 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
   @transient private lazy val texture: Texture = new Texture(vdoRes.width, vdoRes.height, Pixmap.Format.RGBA8888)
   @volatile @transient private var initialized: Boolean = false
 
-  addOutPort(new Node.OutPort[Double](i18n("宽度"), classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](("宽度".in(Zh) | "Width".in(En)).str(), classOf[Double]) {
     override def getData: Double = vdoRes.width.toDouble
   })
-  addOutPort(new Node.OutPort[Double](i18n("高度"), classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](("高度".in(Zh) | "Height".in(En)).str(), classOf[Double]) {
     override def getData: Double = vdoRes.height.toDouble
   })
-  addOutPort(new Node.OutPort[Double](i18n("时长"), classOf[Double]) {
+  addOutPort(new Node.OutPort[Double](("时长".in(Zh) | "Duration".in(En)).str(), classOf[Double]) {
     override def getData: Double = getDuration.toDouble
   })
 
@@ -77,7 +79,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
   }
 
   override def displayName: String = {
-    i18n("视频源")
+    ("视频源".in(Zh) | "Video Source".in(En)).str()
   }
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

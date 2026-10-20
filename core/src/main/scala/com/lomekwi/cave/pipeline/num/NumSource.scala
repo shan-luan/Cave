@@ -1,7 +1,9 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
@@ -29,7 +31,7 @@ class NumSource extends Source[NumFrame] {
   }
 
   override def displayName: String = {
-    i18n("数值源")
+    ("数值源".in(Zh) | "Number Source".in(En)).str()
   }
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

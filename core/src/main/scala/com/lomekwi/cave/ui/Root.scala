@@ -50,7 +50,9 @@ import com.lomekwi.cave.ui.tabs.app.TopTabbedPane
 import com.lomekwi.cave.ui.topbar.TopBar
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.util.MimeType
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import space.earlygrey.shapedrawer.ShapeDrawer
 import scala.compiletime.uninitialized
@@ -63,12 +65,12 @@ class Root extends ApplicationListener {
 
   var toastManager: ToastManager = uninitialized
 
-  var mainLayout: VisTable = uninitialized
+  private var mainLayout: VisTable = uninitialized
   var majorArea: Container[Table] = uninitialized
   var dialogLayer: Group = uninitialized
 
   private var topBar: TopBar = uninitialized
-  var tabbedPane: TopTabbedPane = uninitialized
+  private var tabbedPane: TopTabbedPane = uninitialized
 
   var dragAndDrop: DragAndDrop = uninitialized
 
@@ -310,7 +312,7 @@ class Root extends ApplicationListener {
   def importDroppedFiles(paths: Array[String]): Unit = {
     val context = getFrontendContext
     if (context == null) {
-      toastManager.show(i18n("请先打开或新建项目"), 2f)
+      toastManager.show(("请先打开或新建项目".in(Zh) | "Please open or create a project first".in(En)).str(), 2f)
       return
     }
     var imported = 0
@@ -326,16 +328,16 @@ class Root extends ApplicationListener {
           imported += 1
         } catch {
           case e: Exception =>
-            Gdx.app.error("Root", i18n("创建媒体资源失败: ") + file.getName, e)
+            Gdx.app.error("Root", ("创建媒体资源失败: ".in(Zh) | "Failed to create media resource: ".in(En)).str() + file.getName, e)
             failed += file.getName
         }
       }
     }
     if (imported > 0) {
-      toastManager.show(i18n("已导入 ") + imported + i18n(" 个媒体文件"), 2f)
+      toastManager.show(("已导入 ".in(Zh) | "Imported ".in(En)).str() + imported + (" 个媒体文件".in(Zh) | " media files".in(En)).str(), 2f)
     }
     if (failed.nonEmpty) {
-      toastManager.show(i18n("无法导入: ") + failed.mkString(", "), 3f)
+      toastManager.show(("无法导入: ".in(Zh) | "Failed to import: ".in(En)).str() + failed.mkString(", "), 3f)
     }
   }
 

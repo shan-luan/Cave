@@ -41,7 +41,7 @@ class ImgFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, segm
     pixelsDirty = true
   }
 
-  def upload(): Unit = {
+  private def upload(): Unit = {
     if (pixelsDirty) {
       pixelsDirty = false
       if (pixels != null) {

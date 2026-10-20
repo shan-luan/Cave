@@ -1,7 +1,9 @@
 package com.lomekwi.cave.resource.decoder
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 
 import com.badlogic.gdx.Gdx
@@ -14,7 +16,7 @@ import java.nio.ByteBuffer
 import scala.compiletime.uninitialized
 
 class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
-  var bufferedPixels: ByteBuffer = uninitialized
+  private var bufferedPixels: ByteBuffer = uninitialized
   private var unpackRowLength: Int = 0
 
   protected def setPixelFormat(pixelFormat: Int): Unit = {
@@ -91,7 +93,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
       seek(validTime)
       bufferedPixels = null
     }
-    Gdx.app.debug(i18n("视频解码"), hashCode().toString + i18n("同步到") + (validTime / SECOND).toString + i18n("秒"))
+    Gdx.app.debug(("视频解码".in(Zh) | "Video Decode".in(En)).str(), hashCode().toString + ("同步到".in(Zh) | "Synchronized to ".in(En)).str() + (validTime / SECOND).toString + ("秒".in(Zh) | "s".in(En)).str())
   }
 
   /**

@@ -1,33 +1,29 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
-import com.lomekwi.cave.util.Units.{SECOND, niceScale}
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
-
-import com.badlogic.gdx.{Gdx, Input}
-import com.badlogic.gdx.graphics.{Color, Cursor}
+import com.badlogic.gdx.Input.Keys.*
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.graphics.{Color, Cursor}
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener
+import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
+import com.badlogic.gdx.{Gdx, Input}
+import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
-import com.lomekwi.cave.timeline.{Gap, Interval, Segment, SegmentGroup, Timeline, Track, Transition}
-import com.lomekwi.cave.timeline.~~
-import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.playback.Playhead
-
-import com.lomekwi.cave.app.App
+import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.timeline.*
 import com.lomekwi.cave.ui.{Colors, Focusable}
-
-
+import com.lomekwi.cave.util.Units.{SECOND, niceScale}
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 import space.earlygrey.shapedrawer.ShapeDrawer
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.util.Using
-
-import com.badlogic.gdx.Input.Keys.*
 
 class TimelineView(context0: ProjectSession) extends Group with Focusable {
 
@@ -573,21 +569,21 @@ object TimelineView {
   private final val KEY_VERTICAL_SPEED: Float = 1200f
 
   enum Actions(displayName0: String, defaultKeys0: Int*) extends ShortcutAction {
-    case SCROLL_LEFT extends Actions(i18n("向左滚动"), A)
-    case SCROLL_RIGHT extends Actions(i18n("向右滚动"), D)
-    case SCROLL_UP extends Actions(i18n("向上滚动"), W)
-    case SCROLL_DOWN extends Actions(i18n("向下滚动"), S)
-    case SPLIT extends Actions(i18n("分割"), Q)
-    case DELETE extends Actions(i18n("删除"), X)
-    case UNDO extends Actions(i18n("撤销"), CONTROL_LEFT, Z)
-    case REDO extends Actions(i18n("重做"), CONTROL_LEFT, Y)
-    case PLAY_PAUSE extends Actions(i18n("播放/暂停"), SPACE)
-    case GROUP extends Actions(i18n("分组"), F)
-    case MARQUEE_SELECT extends Actions(i18n("框选"), CONTROL_LEFT)
-    case SEEK extends Actions(i18n("定位播放头"), ALT_LEFT)
-    case SNAP_IGNORE extends Actions(i18n("忽略吸附"), CONTROL_LEFT)
-    case COPY extends Actions(i18n("复制"), CONTROL_LEFT, C)
-    case PASTE extends Actions(i18n("粘贴"), CONTROL_LEFT, V)
+    case SCROLL_LEFT extends Actions(("向左滚动".in(Zh) | "Scroll Left".in(En)).str(), A)
+    case SCROLL_RIGHT extends Actions(("向右滚动".in(Zh) | "Scroll Right".in(En)).str(), D)
+    case SCROLL_UP extends Actions(("向上滚动".in(Zh) | "Scroll Up".in(En)).str(), W)
+    case SCROLL_DOWN extends Actions(("向下滚动".in(Zh) | "Scroll Down".in(En)).str(), S)
+    case SPLIT extends Actions(("分割".in(Zh) | "Split".in(En)).str(), Q)
+    case DELETE extends Actions(("删除".in(Zh) | "Delete".in(En)).str(), X)
+    case UNDO extends Actions(("撤销".in(Zh) | "Undo".in(En)).str(), CONTROL_LEFT, Z)
+    case REDO extends Actions(("重做".in(Zh) | "Redo".in(En)).str(), CONTROL_LEFT, Y)
+    case PLAY_PAUSE extends Actions(("播放/暂停".in(Zh) | "Play/Pause".in(En)).str(), SPACE)
+    case GROUP extends Actions(("分组".in(Zh) | "Group".in(En)).str(), F)
+    case MARQUEE_SELECT extends Actions(("框选".in(Zh) | "Marquee Select".in(En)).str(), CONTROL_LEFT)
+    case SEEK extends Actions(("定位播放头".in(Zh) | "Position Playhead".in(En)).str(), ALT_LEFT)
+    case SNAP_IGNORE extends Actions(("忽略吸附".in(Zh) | "Ignore Snapping".in(En)).str(), CONTROL_LEFT)
+    case COPY extends Actions(("复制".in(Zh) | "Copy".in(En)).str(), CONTROL_LEFT, C)
+    case PASTE extends Actions(("粘贴".in(Zh) | "Paste".in(En)).str(), CONTROL_LEFT, V)
 
     override def displayName(): String = displayName0
 

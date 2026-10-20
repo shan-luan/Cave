@@ -1,7 +1,9 @@
 package com.lomekwi.cave.task
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 import org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_AAC
 
 import com.badlogic.gdx.Gdx
@@ -193,7 +195,7 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
     recorder.close()
   }
   override def getName: String = {
-    i18n("视频导出：") + project.name
+    ("视频导出：".in(Zh) | "Video Export: ".in(En)).str() + project.name
   }
 }
 

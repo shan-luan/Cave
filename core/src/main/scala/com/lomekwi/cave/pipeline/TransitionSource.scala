@@ -2,7 +2,9 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.timeline.{Content, Segment, Track, Transition}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTransitionActor}
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import scala.reflect.ClassTag
 
@@ -26,7 +28,7 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
   final override def canCreateTransitionWith(source: Source[?]): Boolean = false
 
   final override def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
-    throw new UnsupportedOperationException(i18n("转场不能嵌套"))
+    throw new UnsupportedOperationException(("转场不能嵌套".in(Zh) | "Transitions cannot be nested".in(En)).str())
   }
 
   /**
@@ -45,7 +47,7 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
    */
   private def rawSides(segment: Segment, track: Track): (Content, Content, Boolean) = {
     val sides = track.transitionSides(segment.asInstanceOf[Transition])
-    require(sides.isDefined, i18n("转场源在轨道之外被求值: ") + segment)
+    require(sides.isDefined, ("转场源在轨道之外被求值: ".in(Zh) | "Transition source evaluated outside a track: ".in(En)).str() + segment)
     val (left, right) = sides.get
     if (left.source eq from) (left, right, false) else (right, left, true)
   }

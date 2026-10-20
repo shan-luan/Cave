@@ -71,7 +71,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
   override def sync(consumer: AnyRef, time: Long): Unit = {
   }
 
-  def getTexture: Texture = {
+  private def getTexture: Texture = {
     if (texture != null) {
       texture
     } else if (cachedPixels == null) {

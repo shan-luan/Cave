@@ -1,20 +1,15 @@
 package com.lomekwi.cave.ui.editpanel.inspector
 
-import com.badlogic.gdx.scenes.scene2d.Actor
-import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.InputListener
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
+import com.badlogic.gdx.scenes.scene2d.utils.{ChangeListener, ClickListener}
 import com.badlogic.gdx.utils.Align
 import com.kotcrab.vis.ui.VisUI
-import com.kotcrab.vis.ui.widget.VisImageButton
-import com.kotcrab.vis.ui.widget.VisTable
+import com.kotcrab.vis.ui.widget.{VisImageButton, VisTable}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.playback.RefreshRequestEvent
+import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.widget.Card
-
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*

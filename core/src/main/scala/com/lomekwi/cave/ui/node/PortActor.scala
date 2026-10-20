@@ -1,19 +1,14 @@
 package com.lomekwi.cave.ui.node
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
+import com.badlogic.gdx.{Gdx, Input}
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
-import com.badlogic.gdx.scenes.scene2d.Group
-import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.InputListener
-import com.badlogic.gdx.scenes.scene2d.Touchable
-import com.lomekwi.cave.app.App
+import com.badlogic.gdx.scenes.scene2d.*
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -26,7 +21,7 @@ trait PortActor extends Actor with PortHolder {
   private final val dragPos: Vector2 = new Vector2()
   private var dragging: Boolean = false
   private var detached: Boolean = false
-  private var pendingPeer: PortActor = null
+  private var pendingPeer: PortActor = uninitialized
 
   /**
    * 圆点在绘制坐标系中的位置。

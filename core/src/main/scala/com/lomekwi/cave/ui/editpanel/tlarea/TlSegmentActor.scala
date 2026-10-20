@@ -1,17 +1,15 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
-import com.badlogic.gdx.{Application, Gdx, Input}
-import com.badlogic.gdx.graphics.{Color, Cursor}
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.graphics.{Color, Cursor}
 import com.badlogic.gdx.math.{Rectangle, Vector2}
-import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
-import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentGroup, Track, Transition}
-import com.lomekwi.cave.project.ProjectSession
-
+import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
+import com.badlogic.gdx.{Application, Gdx, Input}
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.project.ProjectSession
+import com.lomekwi.cave.timeline.*
 import com.lomekwi.cave.ui.Colors
-
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
@@ -24,7 +22,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
   private var dragMembers: mutable.ArrayBuffer[Segment] = uninitialized
-  private var dragRecording: ProjectSession.Recording = null
+  private var dragRecording: ProjectSession.Recording = uninitialized
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -226,7 +224,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
 
         val newTrack: Track = tl.timeline.getTrackOrCreate(Math.max(0, tl.yToTrackIndex(targetY + tl.view.trackHeight / 2)))
 
-        if (handleMiddleDrag(target, newTrack) != 0 && !dragMembers.isEmpty) {
+        if (handleMiddleDrag(target, newTrack) != 0 && dragMembers.nonEmpty) {
           // 换轨会连带改变锚点的位置。以换轨后的状态重设按下点，
           // 否则下一帧会把这段位移当成新的一帧位移，内容整体平移过去
           val anchor = dragMembers.head
@@ -386,7 +384,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     // 成员里的转场可能被相邻内容的删除连带摘掉，只保留仍在轨道上的成员参与移动
     val placed: mutable.ArrayBuffer[(Segment, Track)] = mutable.ArrayBuffer.empty
     for (m <- dragMembers) {
-      tl.timeline.findTrackOf(m).foreach(t => placed += ((m, t)))
+      tl.timeline.findTrackOf(m).foreach(t => placed += (m, t))
     }
     if (placed.isEmpty) return 0
     val members: mutable.ArrayBuffer[Segment] = placed.map(_._1)

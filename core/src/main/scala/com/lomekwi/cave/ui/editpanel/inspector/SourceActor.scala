@@ -12,7 +12,7 @@ import com.lomekwi.cave.ui.widget.Card
  * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
 final class SourceActor(private val segment: Segment) extends Card(segment.displayName) {
-  private final val source: Source[?] = segment.source
+  private val source: Source[?] = segment.source
 
   align(Align.top | Align.left)
   defaults().left()

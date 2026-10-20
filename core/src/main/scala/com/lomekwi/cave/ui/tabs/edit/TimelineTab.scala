@@ -6,7 +6,9 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.editpanel.tlarea.TlRuler
-import com.lomekwi.cave.util.legacy_i18n.I18N
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 class TimelineTab(tlMain: Container[TimelineView]) extends Tab(false, false) {
   private final val content: Table = new VisTable()
@@ -17,7 +19,7 @@ class TimelineTab(tlMain: Container[TimelineView]) extends Tab(false, false) {
   }
 
   override def getTabTitle: String = {
-    I18N.i18n("时间线")
+    ("时间线".in(Zh) | "Timeline".in(En)).str()
   }
 
   override def getContentTable: Table = {

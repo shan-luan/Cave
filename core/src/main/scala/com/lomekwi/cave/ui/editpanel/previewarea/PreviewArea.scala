@@ -4,25 +4,18 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.scenes.scene2d.Actor
-import com.badlogic.gdx.scenes.scene2d.Group
-import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.google.common.eventbus.Subscribe
-import com.lomekwi.cave.pipeline.Frame
-import com.lomekwi.cave.pipeline.GapFrame
+import com.lomekwi.cave.app.App
+import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
+import com.lomekwi.cave.pipeline.{Frame, GapFrame}
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.project.ProjectSession
-import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
-import com.lomekwi.cave.timeline.Track
-import com.lomekwi.cave.app.App
-import com.lomekwi.cave.task.ExportOptionsSet
-import com.lomekwi.cave.task.ExportPresetsChangedEvent
-import com.lomekwi.cave.ui.Colors
-import com.lomekwi.cave.ui.Focusable
+import com.lomekwi.cave.task.{ExportOptionsSet, ExportPresetsChangedEvent}
+import com.lomekwi.cave.ui.{Colors, Focusable}
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
 import com.lomekwi.cave.util.Units
-
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized

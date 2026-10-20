@@ -10,7 +10,9 @@ import com.lomekwi.cave.resource.media.MediaCreatedEvent
 import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.util.MimeType
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.{File, IOException}
 
@@ -19,7 +21,7 @@ import scala.collection.mutable
 class SegmentFactory(private val context: ProjectSession) {
   import SegmentFactory.*
 
-  private var constructors: mutable.HashMap[ResourceClass, SegmentCtor] = mutable.HashMap.empty[ResourceClass, SegmentCtor]
+  private val constructors: mutable.HashMap[ResourceClass, SegmentCtor] = mutable.HashMap.empty[ResourceClass, SegmentCtor]
 
   initDefaultConstructors()
 
@@ -50,7 +52,7 @@ class SegmentFactory(private val context: ProjectSession) {
   private def createResources(file: File): mutable.ArrayBuffer[Resource] = {
     val mimeType = MimeType.detectMimeType(file)
     if (mimeType == null) {
-      throw new IOException(i18n("无法检测文件MIME类型: ") + file.getName)
+      throw new IOException(("无法检测文件MIME类型: ".in(Zh) | "Cannot detect the MIME type of file: ".in(En)).str() + file.getName)
     }
     val created = mutable.ArrayBuffer.empty[Resource]
     for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {

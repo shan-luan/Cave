@@ -12,7 +12,9 @@ import com.lomekwi.cave.timeline.{Boundless, Content, Interval, Segment}
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.File
 import java.io.IOException
@@ -31,13 +33,13 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   {
     val addMenu: PopupMenu = new PopupMenu()
-    addMenu.addItem(new MenuItem(i18n("媒体源"), new ChangeListenerX(() => onAddMedia())))
-    addMenu.addItem(new MenuItem(i18n("文本源"), new ChangeListenerX(() => onAddText())))
-    val addItem: MenuItem = new MenuItem(i18n("新增..."))
+    addMenu.addItem(new MenuItem(("媒体源".in(Zh) | "Media Source".in(En)).str(), new ChangeListenerX(() => onAddMedia())))
+    addMenu.addItem(new MenuItem(("文本源".in(Zh) | "Text Source".in(En)).str(), new ChangeListenerX(() => onAddText())))
+    val addItem: MenuItem = new MenuItem(("新增...".in(Zh) | "Add...".in(En)).str())
     addItem.setSubMenu(addMenu)
     this.addItem(addItem)
 
-    pasteItem = new MenuItem(i18n("粘贴"), new ChangeListenerX(() => timelineView.performPaste()))
+    pasteItem = new MenuItem(("粘贴".in(Zh) | "Paste".in(En)).str(), new ChangeListenerX(() => timelineView.performPaste()))
     this.addItem(pasteItem)
   }
 
@@ -48,7 +50,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   private def onAddMedia(): Unit = {
     val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
-    conf.title = i18n("选择媒体文件")
+    conf.title = ("选择媒体文件".in(Zh) | "Choose Media File".in(En)).str()
     conf.intent = NativeFileChooserIntent.OPEN
     if (Gdx.app.getType == Application.ApplicationType.Android) {
       conf.mimeFilter = "*/*"
@@ -66,7 +68,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
       override def onCancellation(): Unit = {}
 
       override def onError(exception: Exception): Unit = {
-        Gdx.app.error("TlMenu", i18n("选择文件失败"), exception)
+        Gdx.app.error("TlMenu", ("选择文件失败".in(Zh) | "Failed to choose file".in(En)).str(), exception)
       }
     })
   }
@@ -132,7 +134,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
       }
     } catch {
       case e: IOException =>
-        Gdx.app.error("TlMenu", i18n("添加媒体源失败: ") + e.getMessage)
+        Gdx.app.error("TlMenu", ("添加媒体源失败: ".in(Zh) | "Failed to add media source: ".in(En)).str() + e.getMessage)
     }
   }
 }

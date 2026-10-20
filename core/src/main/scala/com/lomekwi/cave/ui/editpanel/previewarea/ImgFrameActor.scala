@@ -7,7 +7,6 @@ import com.lomekwi.cave.pipeline.image.BiRenderFrame
 
 /**
  * 转场帧的预览壳。draw 时把帧原样画到画布上。
- * 与 [[TransFrameActor]] 不同，帧没有变换与操控点，actor 也不参与命中。
  */
 class ImgFrameActor(frame: BiRenderFrame) extends Actor {
 

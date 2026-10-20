@@ -11,16 +11,18 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.editpanel.EditPanel
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * [[NodeGraph]] 输入端口编辑 widget，端口名标签加一个按钮，按下后在项目的内部标签栏打开绑定到该端口当前默认值节点图的编辑器。
  * 外层表格占满卡片宽度，标签与按钮保持自身尺寸左对齐，避免被卡片的 growX 拉伸。
  */
 final class NodeGraphPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
-  override final val port: Node.InPort[?] = port0
-  override final val label: VisLabel = new VisLabel(port.name)
-  private final val button: VisTextButton = new VisTextButton(i18n("编辑"))
+  override val port: Node.InPort[?] = port0
+  override val label: VisLabel = new VisLabel(port.name)
+  private val button: VisTextButton = new VisTextButton(("编辑".in(Zh) | "Edit".in(En)).str())
 
   button.addListener(new ChangeListener {
     override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {

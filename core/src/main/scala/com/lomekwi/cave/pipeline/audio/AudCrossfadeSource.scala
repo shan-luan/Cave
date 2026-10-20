@@ -4,7 +4,9 @@ import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.pipeline.TransitionSource
 import com.lomekwi.cave.resource.decoder.AudDecRes
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * 声音叠化转场。两侧采样按等功率曲线交叉混合，转场中点对不相关素材保持响度平稳。
@@ -44,6 +46,6 @@ class AudCrossfadeSource(from: Source[? <: AudFrame], to: Source[? <: AudFrame])
   }
 
   override def displayName: String = {
-    i18n("声音叠化")
+    ("声音叠化".in(Zh) | "Audio Crossfade".in(En)).str()
   }
 }

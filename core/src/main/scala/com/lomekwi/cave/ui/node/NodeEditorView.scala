@@ -48,7 +48,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
     }
   }
 
-  def markDirty(): Unit = {
+  private def markDirty(): Unit = {
     dirty = true
   }
 

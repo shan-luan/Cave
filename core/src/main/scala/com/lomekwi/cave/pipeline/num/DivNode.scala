@@ -1,18 +1,20 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.pipeline.BinaryNode
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 @SerialVersionUID(1L)
 final class DivNode extends BinaryNode[Double] {
   addInPort(new In("A"))
   addInPort(new In("B"))
-  addOutPort(new Out(i18n("输出")) {
+  addOutPort(new Out(("输出".in(Zh) | "Output".in(En)).str()) {
     override def getData: Double = inA.getData / inB.getData
   })
 
   inA.defaultData = 1.0
   inB.defaultData = 1.0
 
-  override val name: String = i18n("除法")
+  override val name: String = ("除法".in(Zh) | "Division".in(En)).str()
 }

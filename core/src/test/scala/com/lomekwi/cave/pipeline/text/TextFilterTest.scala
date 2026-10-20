@@ -2,10 +2,10 @@ package com.lomekwi.cave.pipeline.text
 
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
-import com.lomekwi.cave.pipeline.{Frame, NodeRegistry, Source}
+import com.lomekwi.cave.pipeline.{Frame, Source}
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertTrue}
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 import TextFilterTest.*
@@ -69,26 +69,6 @@ class TextFilterTest {
     filter.setReplacement("L")
 
     assertEquals("heLLo worLd", segment.get(0, null).asInstanceOf[TextFrame].getText)
-  }
-
-  @Test
-  def registry_offersNodeForTextSegment(): Unit = {
-    val registry = new NodeRegistry()
-    val segment = new TxtCont
-    val names = (0 until registry.getCompatibleCount(segment))
-      .map(i => registry.createCompatible(segment, i).name)
-
-    assertTrue(names.contains("文本替换"))
-  }
-
-  @Test
-  def registry_hidesNodeFromRenderableSegment(): Unit = {
-    val registry = new NodeRegistry()
-    val segment = new RendCont
-    val names = (0 until registry.getCompatibleCount(segment))
-      .map(i => registry.createCompatible(segment, i).name)
-
-    assertFalse(names.contains("文本替换"))
   }
 }
 

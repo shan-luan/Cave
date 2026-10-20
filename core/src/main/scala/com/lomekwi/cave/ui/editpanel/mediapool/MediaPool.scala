@@ -1,22 +1,17 @@
 package com.lomekwi.cave.ui.editpanel.mediapool
 
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
-import com.badlogic.gdx.graphics.Texture
-import com.google.common.eventbus.EventBus
-import com.google.common.eventbus.Subscribe
+import com.google.common.eventbus.{EventBus, Subscribe}
 import com.kotcrab.vis.ui.layout.FlowGroup
-import com.kotcrab.vis.ui.widget.VisImage
-import com.kotcrab.vis.ui.widget.VisTable
+import com.kotcrab.vis.ui.widget.{VisImage, VisTable}
+import com.lomekwi.cave.app.App
 import com.lomekwi.cave.resource.Resource
-import com.lomekwi.cave.resource.media.MediaCreatedEvent
-import com.lomekwi.cave.resource.media.Showable
+import com.lomekwi.cave.resource.media.{MediaCreatedEvent, Showable}
 import com.lomekwi.cave.ui.widget.EllipsisLabel
 
-import com.lomekwi.cave.app.App
-
 import java.io.File
-
 import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*

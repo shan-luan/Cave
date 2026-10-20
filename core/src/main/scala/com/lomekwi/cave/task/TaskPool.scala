@@ -1,6 +1,8 @@
 package com.lomekwi.cave.task
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.app.App
@@ -24,7 +26,7 @@ class TaskPool extends Iterable[Task] {
           // FIXME:ignore
       }
       tasks -= task
-      Gdx.app.postRunnable(() => App.root.toastManager.show(i18n("任务") + task.getName + i18n("已完成")))
+      Gdx.app.postRunnable(() => App.root.toastManager.show(("任务".in(Zh) | "Task ".in(En)).str() + task.getName + ("已完成".in(Zh) | " completed".in(En)).str()))
     })
   }
 

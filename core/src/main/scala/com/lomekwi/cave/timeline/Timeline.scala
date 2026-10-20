@@ -1,7 +1,9 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.util.Duplicatable
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.Serializable
 
@@ -187,7 +189,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 入口已排除转场
         val c = s.asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
-        moves += ((c, from.index, to.index, from.getInterval(c), from.getOrigin(c)))
+        moves += (c, from.index, to.index, from.getInterval(c), from.getOrigin(c))
       }
     }
     if (moves.isEmpty) return (this, 0)
@@ -230,7 +232,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
 
   /** 成员所在的轨道；要求成员在时间线上，否则抛 IllegalArgumentException。 */
   private def requiredTrack(segment: Segment): Track =
-    findTrackOf(segment).getOrElse(throw new IllegalArgumentException(i18n("片段不在时间线上: ") + segment))
+    findTrackOf(segment).getOrElse(throw new IllegalArgumentException(("片段不在时间线上: ".in(Zh) | "Segment is not on the timeline: ".in(En)).str() + segment))
 
   /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。 */
   private def findPlaceableTrack(segments: Iterable[Segment], deltaTrack: Int): Int = {

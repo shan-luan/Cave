@@ -1,7 +1,9 @@
 package com.lomekwi.cave.pipeline.text
 
 import com.lomekwi.cave.util.Units.SECOND
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -17,9 +19,9 @@ import scala.compiletime.uninitialized
 @SerialVersionUID(1L)
 class TextSource(text: String) extends Source[TextFrame] {
   private final val textIn: Node.InPort[String] = addInPort(
-    new Node.InPort[String](i18n("文本"), i18n("请输入文本"), classOf[String]) {})
+    new Node.InPort[String](("文本".in(Zh) | "Text".in(En)).str(), ("请输入文本".in(Zh) | "Enter text".in(En)).str(), classOf[String]) {})
   private final val fontSizeIn: Node.InPort[Double] = addInPort(
-    new Node.InPort[Double](i18n("字号"), 48.0, classOf[Double]) {})
+    new Node.InPort[Double](("字号".in(Zh) | "Font Size".in(En)).str(), 48.0, classOf[Double]) {})
   @transient private var fontRes: FontRes = uninitialized
   @transient private var font: BitmapFont = uninitialized
   // 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体
@@ -30,7 +32,7 @@ class TextSource(text: String) extends Source[TextFrame] {
   fontRes = new FontRes("font/noto.otf")
 
   def this() = {
-    this(i18n("请输入文本"))
+    this(("请输入文本".in(Zh) | "Enter text".in(En)).str())
   }
 
   def getText: String = {
@@ -127,7 +129,7 @@ class TextSource(text: String) extends Source[TextFrame] {
   }
 
   override def displayName: String = {
-    i18n("文本源")
+    ("文本源".in(Zh) | "Text Source".in(En)).str()
   }
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

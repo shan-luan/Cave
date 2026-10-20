@@ -21,8 +21,8 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
  */
 class PanZoomCanvas(private val minZoom: Float, private val maxZoom: Float, private val moveSpeed: Float) extends WidgetGroup {
   final val canvas: Group = new Group()
-  var xOffset: Float = 0
-  var yOffset: Float = 0
+  private var xOffset: Float = 0
+  private var yOffset: Float = 0
   var zoom: Float = 1f
   private var baseScale: Float = 1f
   private final val screenPos: Vector2 = new Vector2()

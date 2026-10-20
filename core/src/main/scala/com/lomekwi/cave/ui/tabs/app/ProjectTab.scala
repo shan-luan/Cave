@@ -1,6 +1,8 @@
 package com.lomekwi.cave.ui.tabs.app
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
@@ -42,7 +44,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
   override def save(): Boolean = {
     if (context.savePath.isEmpty) {
       val conf = new NativeFileChooserConfiguration()
-      conf.title = i18n("选择保存位置...")
+      conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
       if (Gdx.app.getType == Application.ApplicationType.Android) {
         conf.mimeFilter = "*/*"
       }
@@ -54,15 +56,14 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
             setDirty(false)
           } catch {
             case e: IOException =>
-              Gdx.app.error("ProjectTab", i18n("保存项目失败"), e)
+              Gdx.app.error("ProjectTab", ("保存项目失败".in(Zh) | "Failed to save the project".in(En)).str(), e)
           }
         }
         override def onCancellation(): Unit = {}
         override def onError(exception: Exception): Unit = {
-          Gdx.app.error("ProjectTab", i18n("保存项目失败"), exception)
+          Gdx.app.error("ProjectTab", ("保存项目失败".in(Zh) | "Failed to save the project".in(En)).str(), exception)
         }
       })
-      true
     }
     try {
       Project.save(context)
@@ -70,7 +71,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       true
     } catch {
       case e: IOException =>
-        Gdx.app.error("ProjectTab", i18n("保存项目失败"), e)
+        Gdx.app.error("ProjectTab", ("保存项目失败".in(Zh) | "Failed to save the project".in(En)).str(), e)
         false
     }
   }

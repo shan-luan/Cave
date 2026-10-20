@@ -8,7 +8,9 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.kotcrab.vis.ui.widget.VisValidatableTextField
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback
 import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration
@@ -19,8 +21,8 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
  * 点击浏览按钮会弹出系统原生文件选择对话框，选中后路径自动填入文本框。
  */
 class FileChooserField(private val chooserTitle: String, private val intent: NativeFileChooserIntent) extends VisTable {
-  final val pathField: VisValidatableTextField = new VisValidatableTextField("")
-  private final val browseBtn: VisTextButton = new VisTextButton(i18n("浏览"))
+  private final val pathField: VisValidatableTextField = new VisValidatableTextField("")
+  private final val browseBtn: VisTextButton = new VisTextButton(("浏览".in(Zh) | "Browse".in(En)).str())
 
   {
     browseBtn.addListener(new ChangeListener {
@@ -46,7 +48,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
       override def onCancellation(): Unit = {}
 
       override def onError(exception: Exception): Unit = {
-        Gdx.app.error("FileChooserField", i18n("选择文件失败"), exception)
+        Gdx.app.error("FileChooserField", ("选择文件失败".in(Zh) | "Failed to choose file".in(En)).str(), exception)
       }
     })
   }

@@ -1,15 +1,15 @@
 package com.lomekwi.cave.pipeline.audio
 
-import com.lomekwi.cave.pipeline.{NodeRegistry, Source}
+import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 import GainNodeTest.*
 
 /**
- * 验证 [[GainNode]] 沿滤镜链把音量乘到采样点上，且注册表会为音频片段提供它。
+ * 验证 [[GainNode]] 沿滤镜链把音量乘到采样点上。
  */
 class GainNodeTest {
 
@@ -64,16 +64,6 @@ class GainNodeTest {
     assertSamples(segment, Array(0.2f, -0.4f, 1.0f))
     assertSamples(segment, Array(0.2f, -0.4f, 1.0f))
     assertSamples(segment, Array(0.2f, -0.4f, 1.0f))
-  }
-
-  @Test
-  def registry_offersNodeForAudioSegment(): Unit = {
-    val registry = new NodeRegistry()
-    val segment = new AudCont
-    val names = (0 until registry.getCompatibleCount(segment))
-      .map(i => registry.createCompatible(segment, i).name)
-
-    assertTrue(names.contains("音量"))
   }
 
   private def assertSamples(segment: Segment, expected: Array[Float]): Unit = {

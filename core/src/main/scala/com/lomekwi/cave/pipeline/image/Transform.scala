@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image
 import com.badlogic.gdx.math.Matrix4
 
 class Transform(x: Float, y: Float, rotation: Float) {
-  final val matrix: Matrix4 = new Matrix4()
+  private final val matrix: Matrix4 = new Matrix4()
   var flipX: Boolean = false
   var flipY: Boolean = false
 

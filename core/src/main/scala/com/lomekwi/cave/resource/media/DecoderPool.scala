@@ -1,7 +1,9 @@
 package com.lomekwi.cave.resource.media
 
 import com.lomekwi.cave.resource.decoder.DecRes
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -45,7 +47,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
           pd.refcount = 1
           Some(new DecoderLease(pd))
         } else {
-          throw new IllegalStateException(i18n("解码器被同键消费者并发借出: ") + consumer)
+          throw new IllegalStateException(("解码器被同键消费者并发借出: ".in(Zh) | "Decoder concurrently borrowed by a consumer with the same key: ".in(En)).str() + consumer)
         }
       }
       lent match {
@@ -126,8 +128,8 @@ final class DecoderLease private[media] (private val pooled: PooledDec) extends 
 }
 
 private[media] object DecoderPool {
-  final val idleNanos: Long = TimeUnit.SECONDS.toNanos(30)
-  final val weightBudget: Double = 8.0
+  private final val idleNanos: Long = TimeUnit.SECONDS.toNanos(30)
+  private final val weightBudget: Double = 8.0
 
   private final val pools: java.util.Set[DecoderPool] = ConcurrentHashMap.newKeySet[DecoderPool]()
   private final val totalWeight: DoubleAdder = new DoubleAdder()

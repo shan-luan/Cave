@@ -1,6 +1,8 @@
 package com.lomekwi.cave.ui.settings
 
-import com.lomekwi.cave.util.legacy_i18n.I18N.i18n
+import com.lomekwi.cave.util.i18n.*
+import com.lomekwi.cave.util.i18n.BasicLang.*
+import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisSplitPane
@@ -11,9 +13,9 @@ class SettingsTable extends VisTable {
   private var sp: VisSplitPane = uninitialized
 
   {
-    val l = new VisLabel(i18n("选择一个条目"))
+    val l = new VisLabel(("选择一个条目".in(Zh) | "Select an entry".in(En)).str())
     val tree = new EntryTree(this)
-    tree.add(new EntryNode(i18n("快捷键"), () => new ShortcutKeysTable()))
+    tree.add(new EntryNode(("快捷键".in(Zh) | "Shortcut".in(En)).str(), () => new ShortcutKeysTable()))
     sp = new VisSplitPane(tree, l, false)
     l.setAlignment(1)
     add(sp).grow()
