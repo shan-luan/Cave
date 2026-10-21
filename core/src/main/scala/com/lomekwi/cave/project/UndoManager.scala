@@ -47,6 +47,6 @@ final class UndoManager(@transient private val context: ProjectSession) {
 object UndoManager {
   private final val MAX_UNDO = 100
 
-  @Deprecated //自模型不可变后，直接改为project快照即可。
+  @deprecated("自模型不可变后，直接改为project快照即可。")
   case class TimelineEdit(before: Timeline, after: Timeline)
 }

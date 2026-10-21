@@ -7,7 +7,7 @@ import scala.collection.mutable
 /**
  * 剪贴板模板，一批「轨道 + 片段 + 区间 + origin」的快照，粘贴时按相对位置落回时间轴。
  */
-@Deprecated //在(如果)Segment不可变之后。
+@deprecated("在(如果)Segment不可变之后。")
 class PasteTemplate private (val entries: mutable.ArrayBuffer[PasteTemplate.Entry]) extends Copyable {
 
 
