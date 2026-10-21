@@ -5,36 +5,31 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.{Frame, Source}
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 
 import OpacityNodeTest.*
 
 /**
  * 验证 [[OpacityNode]] 沿滤镜链把透明度写到帧上。
  */
-class OpacityNodeTest {
+class OpacityNodeTest extends munit.FunSuite {
 
-  @Test
-  def default_keepsFrameOpaque(): Unit = {
+  test("默认保持帧不透明") {
     val segment = new OpCont
     segment.attach(new OpacityNode())
 
-    assertEquals(1f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 1f, 0f)
   }
 
-  @Test
-  def chain_appliesFrameOpacity(): Unit = {
+  test("滤镜链应用帧透明度") {
     val segment = new OpCont
     val node = new OpacityNode()
     node.setOpacity(0.25)
     segment.attach(node)
 
-    assertEquals(0.25f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 0.25f, 0f)
   }
 
-  @Test
-  def chainedNodes_composeOpacity(): Unit = {
+  test("串联节点叠加透明度") {
     val segment = new OpCont
     val a = new OpacityNode()
     a.setOpacity(0.5)
@@ -43,19 +38,18 @@ class OpacityNodeTest {
     segment.attach(a)
     segment.attach(b)
 
-    assertEquals(0.25f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 0.25f, 0f)
   }
 
-  @Test
-  def repeatedEvaluation_staysStable(): Unit = {
+  test("重复求值结果稳定") {
     val segment = new OpCont
     val node = new OpacityNode()
     node.setOpacity(0.5)
     segment.attach(node)
 
-    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
-    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
-    assertEquals(0.5f, segment.get(0, null).asInstanceOf[OpFrame].opacity, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 0.5f, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 0.5f, 0f)
+    assertEqualsFloat(segment.get(0, null).asInstanceOf[OpFrame].opacity, 0.5f, 0f)
   }
 }
 

@@ -5,10 +5,6 @@ import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.{Content, GdxTestBase, Segment, TestCont, TestTimeline, Timeline, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
-
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.objenesis.ObjenesisStd
 
 import java.lang.reflect.Field
@@ -30,8 +26,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   private var tl: TimelineView = null
   private var view: TimelineView.ViewState = null
 
-  @BeforeEach
-  def setUp(): Unit = {
+  override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()
     timeline = project.timeline
 
@@ -82,8 +77,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
   }
 
-  @Test
-  def middleDragMovesBySameDeltaAndIsStableAndUndoable(): Unit = {
+  test("中部拖拽按相同增量移动且稳定可撤销") {
     def t0 = timeline.getTrackOrCreate(0)
     val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
@@ -97,25 +91,24 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalY = actor.getY + firstY
 
     actor.dragTo(mouseLocalX, mouseLocalY)
-    assertEquals(100_000L ~~ (1000_000L + 100_000L), t0.getInterval(s))
+    assertEquals(t0.getInterval(s), 100_000L ~~ (1000_000L + 100_000L))
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(100_000L ~~ (1000_000L + 100_000L), t0.getInterval(s))
-      assertEquals(5_000_000L + 100_000L, t0.getOrigin(s))
+      assertEquals(t0.getInterval(s), 100_000L ~~ (1000_000L + 100_000L))
+      assertEquals(t0.getOrigin(s), 5_000_000L + 100_000L)
       i += 1
     }
 
     actor.finishDrag()
 
     project.undo.undo()
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(s))
-    assertEquals(5_000_000L, t0.getOrigin(s))
+    assertEquals(t0.getInterval(s), 0L ~~ 1000_000L)
+    assertEquals(t0.getOrigin(s), 5_000_000L)
   }
 
-  @Test
-  def middleDragVerticalLandsOnMouseTrackAndIsStable(): Unit = {
+  test("中部拖拽竖直落到鼠标所在轨道且稳定") {
     // 用 yToTrackIndex 反推，鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
     def t0 = timeline.getTrackOrCreate(0)
     timeline.getTrackOrCreate(3)
@@ -131,18 +124,17 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalX = actor.getX + firstX
     actor.dragTo(mouseLocalX, mouseLocalY)
 
-    assertEquals(Some(2), timeline.findTrackOf(s).map(_.index))
+    assertEquals(timeline.findTrackOf(s).map(_.index), Some(2))
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(Some(2), timeline.findTrackOf(s).map(_.index))
+      assertEquals(timeline.findTrackOf(s).map(_.index), Some(2))
       i += 1
     }
   }
 
-  @Test
-  def frontResizeMovesStartBySameDeltaKeepsOriginAndIsStable(): Unit = {
+  test("前缘缩放按相同增量移动起点、保持 origin 且稳定") {
     def t0 = timeline.getTrackOrCreate(0)
     val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 0L)
@@ -152,20 +144,19 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newFrontLocalX = 50f
     actor.dragTo(newFrontLocalX, view.trackHeight / 2)
-    assertEquals(50_000L ~~ 1000_000L, t0.getInterval(s))
-    assertEquals(0, t0.getOrigin(s))
+    assertEquals(t0.getInterval(s), 50_000L ~~ 1000_000L)
+    assertEquals(t0.getOrigin(s), 0L)
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(50_000L ~~ 1000_000L, t0.getInterval(s))
-      assertEquals(0, t0.getOrigin(s))
+      assertEquals(t0.getInterval(s), 50_000L ~~ 1000_000L)
+      assertEquals(t0.getOrigin(s), 0L)
       i += 1
     }
   }
 
-  @Test
-  def behindResizeMovesEndBySameDeltaKeepsOriginAndIsStable(): Unit = {
+  test("后缘缩放按相同增量移动终点、保持 origin 且稳定") {
     def t0 = timeline.getTrackOrCreate(0)
     val s = newSegment(1000_000L)
     val actor = place(t0, s, 0, 1000_000L, 5_000_000L)
@@ -175,20 +166,19 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newWidth = actor.getWidth + 60f
     actor.dragTo(newWidth, view.trackHeight / 2)
-    assertEquals(0L ~~ (1000_000L + 60_000L), t0.getInterval(s))
-    assertEquals(5_000_000L, t0.getOrigin(s))
+    assertEquals(t0.getInterval(s), 0L ~~ (1000_000L + 60_000L))
+    assertEquals(t0.getOrigin(s), 5_000_000L)
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(0L ~~ (1000_000L + 60_000L), t0.getInterval(s))
-      assertEquals(5_000_000L, t0.getOrigin(s))
+      assertEquals(t0.getInterval(s), 0L ~~ (1000_000L + 60_000L))
+      assertEquals(t0.getOrigin(s), 5_000_000L)
       i += 1
     }
   }
 
-  @Test
-  def middleDragWithTransitionMemberStaysStable(): Unit = {
+  test("含转场成员的中部拖拽保持稳定") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(2000_000L)
     val b = newSegment(2000_000L)
@@ -201,7 +191,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
       case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition])
+    assert(transition.isInstanceOf[Transition])
 
     tl.selectedSegments.add(a)
     tl.selectedSegments.add(transition)
@@ -215,24 +205,23 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalY = aActor.getY + firstY
     aActor.dragTo(mouseLocalX, mouseLocalY)
 
-    assertTrue(timeline.findTrackOf(transition).isDefined)
+    assert(timeline.findTrackOf(transition).isDefined)
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(aActor)
       aActor.dragTo(mouseLocalX, mouseLocalY)
-      assertTrue(timeline.findTrackOf(a).isDefined)
+      assert(timeline.findTrackOf(a).isDefined)
       i += 1
     }
 
     aActor.finishDrag()
     project.undo.undo()
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(a))
-    assertTrue(timeline.findTrackOf(transition).isDefined)
+    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
+    assert(timeline.findTrackOf(transition).isDefined)
   }
 
-  @Test
-  def middleDragWithTransitionAnchorStaysStable(): Unit = {
+  test("以转场为锚点的中部拖拽保持稳定") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(2000_000L)
     val b = newSegment(2000_000L)
@@ -243,7 +232,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
       case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition])
+    assert(transition.isInstanceOf[Transition])
 
     tl.selectedSegments.add(transition)
     tl.selectedSegments.add(b)
@@ -261,7 +250,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalY = tActor.getY + firstY
     tActor.dragTo(mouseLocalX, mouseLocalY)
 
-    assertTrue(timeline.findTrackOf(transition).isDefined)
+    assert(timeline.findTrackOf(transition).isDefined)
 
     var i = 0
     while (i < 5) {
@@ -271,11 +260,10 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     tActor.finishDrag()
     project.undo.undo()
-    assertTrue(timeline.findTrackOf(transition).isDefined)
+    assert(timeline.findTrackOf(transition).isDefined)
   }
 
-  @Test
-  def middleDragSnapsToOverlappingNeighbourEdge(): Unit = {
+  test("中部拖拽吸附到重叠邻居边缘") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
@@ -292,12 +280,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
     // 目标起点落在 b 起点内侧 5px（阈值 10px），应吸到 b 的起点
     aActor.dragTo(absX(495_000L) + firstX, aActor.getY + firstY)
 
-    assertEquals(500_000L, tl.snapIndicatorTime)
-    assertEquals(500_000L, t0.getInterval(a).lo, 1L)
+    assertEquals(tl.snapIndicatorTime, 500_000L)
+    assert(math.abs((t0.getInterval(a).lo) - (500_000L)) <= (1L))
   }
 
-  @Test
-  def behindDragPastTransitionRemovalKeepsFollowing(): Unit = {
+  test("后缘拖拽越过转场删除后仍继续跟随") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
@@ -308,7 +295,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
       case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition])
+    assert(transition.isInstanceOf[Transition])
 
     val tActor = transition.getTlSegmentActor
     tActor.tl = tl
@@ -317,40 +304,39 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.initDrag(tActor.getWidth - 5f, view.trackHeight / 2)
 
     tActor.dragTo(absX(400_000L), view.trackHeight / 2)
-    assertTrue(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(0L ~~ 400_000L, t0.getInterval(a))
+    assert(timeline.findTrackOf(transition).isEmpty)
+    assertEquals(t0.getInterval(a), 0L ~~ 400_000L)
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
     val rebuilt: Segment = t0.get(600_000L) match {
       case s: Segment => s
       case _ => null
     }
-    assertTrue(rebuilt.isInstanceOf[Transition])
-    assertEquals(500_000L ~~ 900_000L, t0.getInterval(rebuilt))
+    assert(rebuilt.isInstanceOf[Transition])
+    assertEquals(t0.getInterval(rebuilt), 500_000L ~~ 900_000L)
 
     // 小幅左移（在吸附阈值内），目标不得被吸回转场右缘
     tActor.dragTo(absX(896_000L), view.trackHeight / 2)
-    assertEquals(896_000L, t0.getInterval(a).hi)
-    assertEquals(500_000L ~~ 896_000L, t0.getInterval(rebuilt))
+    assertEquals(t0.getInterval(a).hi, 896_000L)
+    assertEquals(t0.getInterval(rebuilt), 500_000L ~~ 896_000L)
   }
 
-  @Test
-  def frontDragOverTransitionRemovesItAndKeepsFollowing(): Unit = {
+  test("前缘拖拽越过转场会删除转场并继续跟随") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
     val aActor = place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     // 重叠建转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(a))
-    assertEquals(500_000L ~~ 1500_000L, t0.getInterval(b))
+    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
     rebuildFromModel(aActor)
 
     val transition: Segment = t0.get(500_000L) match {
       case s: Segment => s
       case _ => null
     }
-    assertTrue(transition.isInstanceOf[Transition])
+    assert(transition.isInstanceOf[Transition])
 
     val tActor = transition.getTlSegmentActor
     tActor.tl = tl
@@ -361,21 +347,20 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalX = absX(1200_000L)
     tActor.dragTo(mouseLocalX, view.trackHeight / 2)
 
-    assertTrue(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(a))
+    assert(timeline.findTrackOf(transition).isEmpty)
+    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
     val bInterval = t0.getInterval(b)
-    assertEquals(1500_000L, bInterval.hi)
-    assertTrue(Math.abs(bInterval.lo - 1200_000L) <= 1000L, "b 起点应跟手到约 1200000，实际 " + bInterval.lo)
+    assertEquals(bInterval.hi, 1500_000L)
+    assert(Math.abs(bInterval.lo - 1200_000L) <= 1000L, "b 起点应跟手到约 1200000，实际 " + bInterval.lo)
 
     tActor.finishDrag()
     project.undo.undo()
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(a))
-    assertEquals(500_000L ~~ 1500_000L, t0.getInterval(b))
-    assertTrue(timeline.findTrackOf(transition).isDefined)
+    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
+    assert(timeline.findTrackOf(transition).isDefined)
   }
 
-  @Test
-  def frontDragBackOverGapRebuildsTransition(): Unit = {
+  test("前缘拖拽越过空隙后重建转场") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
@@ -394,16 +379,15 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragSide = DragSide.FRONT
     tActor.initDrag(5f, view.trackHeight / 2)
     tActor.dragTo(absX(1200_000L), view.trackHeight / 2)
-    assertTrue(timeline.findTrackOf(transition).isEmpty)
+    assert(timeline.findTrackOf(transition).isEmpty)
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
-    assertTrue(t0.get(900_000L).isInstanceOf[Transition])
-    assertEquals(0L ~~ 1000_000L, t0.getInterval(a))
-    assertEquals(900_000L ~~ 1500_000L, t0.getInterval(b))
+    assert(t0.get(900_000L).isInstanceOf[Transition])
+    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.getInterval(b), 900_000L ~~ 1500_000L)
   }
 
-  @Test
-  def behindDragOverTransitionRemovesItAndKeepsFollowing(): Unit = {
+  test("后缘拖拽越过转场会删除转场并继续跟随") {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
@@ -423,9 +407,9 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.initDrag(tActor.getWidth, view.trackHeight / 2)
     tActor.dragTo(absX(300_000L), view.trackHeight / 2)
 
-    assertTrue(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(0L ~~ 300_000L, t0.getInterval(a))
-    assertEquals(500_000L ~~ 1500_000L, t0.getInterval(b))
+    assert(timeline.findTrackOf(transition).isEmpty)
+    assertEquals(t0.getInterval(a), 0L ~~ 300_000L)
+    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
   }
 }
 

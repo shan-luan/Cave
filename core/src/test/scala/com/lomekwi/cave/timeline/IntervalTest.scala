@@ -1,72 +1,60 @@
 package com.lomekwi.cave.timeline
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertTrue}
-import org.junit.jupiter.api.Test
+class IntervalTest extends munit.FunSuite {
 
-class IntervalTest {
-
-  @Test
-  def contains_excludesUpperEndpoint(): Unit = {
+  test("contains 不包含上端点") {
     val r = 100 ~~ 200
-    assertTrue(r.contains(100))
-    assertTrue(r.contains(199))
-    assertFalse(r.contains(200))
-    assertFalse(r.contains(99))
+    assert(r.contains(100))
+    assert(r.contains(199))
+    assert(!(r.contains(200)))
+    assert(!(r.contains(99)))
   }
 
-  @Test
-  def emptyInterval_containsNothing(): Unit = {
+  test("空区间不包含任何时间点") {
     val r = 100 ~~ 100
-    assertTrue(r.isEmpty)
-    assertFalse(r.contains(100))
+    assert(r.isEmpty)
+    assert(!(r.contains(100)))
   }
 
-  @Test
-  def intersects_requiresCommonPoint(): Unit = {
-    assertTrue((0 ~~ 10).intersects(5 ~~ 15))
-    assertFalse((0 ~~ 10).intersects(10 ~~ 20))
+  test("intersects 要求存在公共点") {
+    assert((0 ~~ 10).intersects(5 ~~ 15))
+    assert(!((0 ~~ 10).intersects(10 ~~ 20)))
   }
 
-  @Test
-  def and_returnsCommonPart(): Unit = {
-    assertEquals(Some(5 ~~ 10), (0 ~~ 10) & (5 ~~ 15))
-    assertEquals(Some(0 ~~ 10), (0 ~~ 10) & (-5 ~~ 10))
-    assertEquals(Some(2 ~~ 8), (0 ~~ 10) & (2 ~~ 8))
-    assertEquals((0 ~~ 10) & (2 ~~ 8), (2 ~~ 8) & (0 ~~ 10))
+  test("交集返回公共部分") {
+    assertEquals((0 ~~ 10) & (5 ~~ 15), Some(5 ~~ 10))
+    assertEquals((0 ~~ 10) & (-5 ~~ 10), Some(0 ~~ 10))
+    assertEquals((0 ~~ 10) & (2 ~~ 8), Some(2 ~~ 8))
+    assertEquals((2 ~~ 8) & (0 ~~ 10), (0 ~~ 10) & (2 ~~ 8))
   }
 
-  @Test
-  def and_isEmptyWhenDisjointOrTouching(): Unit = {
-    assertEquals(None, (0 ~~ 10) & (10 ~~ 20))
-    assertEquals(None, (0 ~~ 10) & (20 ~~ 30))
-    assertEquals(None, (20 ~~ 30) & (0 ~~ 10))
-    assertTrue(((0 ~~ 10) & (20 ~~ 30)).isEmpty)
-    assertFalse(((0 ~~ 10) & (9 ~~ 30)).isEmpty)
+  test("不相交或仅相接时交集为空") {
+    assertEquals((0 ~~ 10) & (10 ~~ 20), None)
+    assertEquals((0 ~~ 10) & (20 ~~ 30), None)
+    assertEquals((20 ~~ 30) & (0 ~~ 10), None)
+    assert(((0 ~~ 10) & (20 ~~ 30)).isEmpty)
+    assert(!(((0 ~~ 10) & (9 ~~ 30)).isEmpty))
   }
 
-  @Test
-  def and_withEmptyIntervalIsEmpty(): Unit = {
-    assertEquals(None, (0 ~~ 10) & (5 ~~ 5))
-    assertEquals(None, (5 ~~ 5) & (0 ~~ 10))
-    assertEquals(None, (0 ~~ 0) & (0 ~~ 0))
+  test("与空区间求交为空") {
+    assertEquals((0 ~~ 10) & (5 ~~ 5), None)
+    assertEquals((5 ~~ 5) & (0 ~~ 10), None)
+    assertEquals((0 ~~ 0) & (0 ~~ 0), None)
   }
 
-  @Test
-  def isConnected_countsAdjacent(): Unit = {
-    assertTrue((0 ~~ 10).isConnected(5 ~~ 15))
-    assertTrue((0 ~~ 10).isConnected(10 ~~ 20))
-    assertFalse((0 ~~ 10).isConnected(11 ~~ 20))
+  test("isConnected 把相邻也算作连通") {
+    assert((0 ~~ 10).isConnected(5 ~~ 15))
+    assert((0 ~~ 10).isConnected(10 ~~ 20))
+    assert(!((0 ~~ 10).isConnected(11 ~~ 20)))
   }
 
-  @Test
-  def shift_movesBothEndpoints(): Unit = {
-    assertEquals(110 ~~ 210, (100 ~~ 200).shift(10))
-    assertEquals(90 ~~ 190, (100 ~~ 200).shift(-10))
+  test("shift 同时移动两个端点") {
+    assertEquals((100 ~~ 200).shift(10), 110 ~~ 210)
+    assertEquals((100 ~~ 200).shift(-10), 90 ~~ 190)
   }
 
-  @Test
-  def ordering_isLexicographic(): Unit = {
+  test("排序按字典序") {
     val sorted = List(10 ~~ 20, 0 ~~ 5, 0 ~~ 3).sorted
-    assertEquals(List(0 ~~ 3, 0 ~~ 5, 10 ~~ 20), sorted)
+    assertEquals(sorted, List(0 ~~ 3, 0 ~~ 5, 10 ~~ 20))
   }
 }

@@ -1,8 +1,6 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, FpCont}
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNotEquals, assertNotNull, assertNull, assertSame, assertTrue}
-import org.junit.jupiter.api.Test
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import scala.util.Using
@@ -11,41 +9,37 @@ import scala.util.Using
  * 验证 [[NodeGraphFilter]] 的图边界，入口节点把图外连入的帧送给图内节点，
  * 总输出节点把图内的结果送出图外。
  */
-class NodeGraphFilterTest {
+class NodeGraphFilterTest extends munit.FunSuite {
 
-  @Test
-  def newGraph_hasBoundaryNodes(): Unit = {
+  test("新节点图包含边界节点") {
     val ngf = new NodeGraphFilter()
     val nodes = ngf.innerNodes.toSeq
 
-    assertEquals(2, nodes.size)
-    assertEquals(1, nodes.count(_.isInstanceOf[GraphInNode]))
-    assertEquals(1, nodes.count(_.isInstanceOf[Sink]))
+    assertEquals(nodes.size, 2)
+    assertEquals(nodes.count(_.isInstanceOf[GraphInNode]), 1)
+    assertEquals(nodes.count(_.isInstanceOf[Sink]), 1)
 
     val in = graphIn(ngf)
     val sink = nodes.collectFirst { case s: Sink => s }.get
     assertNotEquals(ngf.innerNodes.getPosition(in), ngf.innerNodes.getPosition(sink))
   }
 
-  @Test
-  def newGraph_connectsInputToSink(): Unit = {
+  test("新节点图连接输入到汇点") {
     val ngf = new NodeGraphFilter()
-    assertTrue(graphIn(ngf).out.isLinked)
-    assertTrue(sink(ngf).in.isLinked)
+    assert(graphIn(ngf).out.isLinked)
+    assert(sink(ngf).in.isLinked)
   }
 
-  @Test
-  def graphInput_typeFollowsUpstream(): Unit = {
+  test("图输入类型跟随上游") {
     val ngf = new NodeGraphFilter()
-    assertNull(graphIn(ngf).out.getType)
+    assert((graphIn(ngf).out.getType) == null)
 
     val segment = new FpCont(10)
     segment.filters += ngf
-    assertSame(classOf[FilterListTest.Fpable], graphIn(ngf).out.getType)
+    assert((classOf[FilterListTest.Fpable]) eq (graphIn(ngf).out.getType))
   }
 
-  @Test
-  def graphInput_forwardsFrameToInnerFilter(): Unit = {
+  test("图输入把帧转发给内部滤镜") {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
     segment.filters += ngf
@@ -56,11 +50,10 @@ class NodeGraphFilterTest {
     val sinkIn = sink(ngf).inPorts(0).asInstanceOf[Node.InPort[Object]]
     sinkIn.linkFrom(add.filterOut)
 
-    assertEquals(15.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
   }
 
-  @Test
-  def serialization_roundTrip_keepsGraphInput(): Unit = {
+  test("序列化往返保留图输入") {
     val segment = new FpCont(10)
     val ngf = new NodeGraphFilter()
     segment.filters += ngf
@@ -72,12 +65,11 @@ class NodeGraphFilterTest {
     val copy: FpCont = roundTrip(segment)
 
     val copyNgf = copy.filters(0).asInstanceOf[NodeGraphFilter]
-    assertNotNull(graphIn(copyNgf))
-    assertEquals(15.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assert((graphIn(copyNgf)) != null)
+    assertEqualsDouble(copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
   }
 
-  @Test
-  def serialization_repairsMissingGraphInput(): Unit = {
+  test("序列化修复缺失的图输入") {
     val ngf = new NodeGraphFilter()
     val field = classOf[NodeGraphFilter].getDeclaredField("innerIn")
     field.setAccessible(true)
@@ -86,10 +78,10 @@ class NodeGraphFilterTest {
 
     val copy: NodeGraphFilter = roundTrip(ngf)
 
-    assertNotNull(graphIn(copy))
-    assertEquals(2, copy.innerNodes.size)
+    assert((graphIn(copy)) != null)
+    assertEquals(copy.innerNodes.size, 2)
     assertNotEquals(copy.innerNodes.getPosition(graphIn(copy)), copy.innerNodes.getPosition(sink(copy)))
-    assertFalse(graphIn(copy).out.isLinked)
+    assert(!(graphIn(copy).out.isLinked))
   }
 
   private def graphIn(ngf: NodeGraphFilter): GraphInNode = {

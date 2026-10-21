@@ -5,59 +5,52 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.{Frame, Source}
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 
 import TextFilterTest.*
 
 /**
  * 验证 [[TextFilter]] 对帧文本的正则替换行为，且注册表只为文本片段提供它。
  */
-class TextFilterTest {
+class TextFilterTest extends munit.FunSuite {
 
-  @Test
-  def defaultRegex_keepsText(): Unit = {
+  test("默认正则保留原文") {
     val segment = new TxtCont
     segment.attach(new TextFilter())
 
-    assertEquals(ORIGIN, segment.get(0, null).asInstanceOf[TextFrame].getText)
+    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
-  @Test
-  def replaceAll_rewritesMatches(): Unit = {
+  test("全部替换时重写所有匹配") {
     val segment = new TxtCont
     val filter = new TextFilter()
     filter.setRegex("o")
     filter.setReplacement("0")
     segment.attach(filter)
 
-    assertEquals("hell0 w0rld", segment.get(0, null).asInstanceOf[TextFrame].getText)
+    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, "hell0 w0rld")
   }
 
-  @Test
-  def unmatchedRegex_keepsText(): Unit = {
+  test("无匹配时保留原文") {
     val segment = new TxtCont
     val filter = new TextFilter()
     filter.setRegex("z")
     filter.setReplacement("!")
     segment.attach(filter)
 
-    assertEquals(ORIGIN, segment.get(0, null).asInstanceOf[TextFrame].getText)
+    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
-  @Test
-  def invalidRegex_keepsText(): Unit = {
+  test("正则非法时保留原文") {
     val segment = new TxtCont
     val filter = new TextFilter()
     filter.setRegex("[")
     filter.setReplacement("!")
     segment.attach(filter)
 
-    assertEquals(ORIGIN, segment.get(0, null).asInstanceOf[TextFrame].getText)
+    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
-  @Test
-  def regexChange_invalidatesCompiledPattern(): Unit = {
+  test("正则变化使已编译模式失效") {
     val segment = new TxtCont
     val filter = new TextFilter()
     filter.setRegex("o")
@@ -68,7 +61,7 @@ class TextFilterTest {
     filter.setRegex("l")
     filter.setReplacement("L")
 
-    assertEquals("heLLo worLd", segment.get(0, null).asInstanceOf[TextFrame].getText)
+    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, "heLLo worLd")
   }
 }
 

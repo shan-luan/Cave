@@ -1,47 +1,39 @@
 package com.lomekwi.cave.pipeline
 
-import org.junit.jupiter.api.Assertions.{assertFalse, assertTrue}
-import org.junit.jupiter.api.Test
-
-
 /**
  * 验证 [[NodeGraph]] 的增删语义，移除节点时同时断开它在图内的全部连接。
  */
-class NodeGraphTest {
+class NodeGraphTest extends munit.FunSuite {
 
-  @Test
-  def remove_disconnectsBothSides(): Unit = {
+  test("删除节点断开两侧连接") {
     val graph = new NodeGraph()
     val out = new TestOutNode()
     val in = new TestInNode()
     graph.add(out)
     graph.add(in)
-    assertTrue(in.in.linkFrom(out.out))
+    assert(in.in.linkFrom(out.out))
 
-    assertTrue(graph.remove(out))
+    assert(graph.remove(out))
 
-    assertFalse(in.in.isLinked)
-    assertFalse(out.out.isLinked)
-    assertTrue(graph.contains(in))
+    assert(!(in.in.isLinked))
+    assert(!(out.out.isLinked))
+    assert(graph.contains(in))
   }
 
-  @Test
-  def remove_absentNodeReturnsFalse(): Unit = {
+  test("删除不存在的节点返回 false") {
     val graph = new NodeGraph()
-    assertFalse(graph.remove(new TestInNode()))
+    assert(!(graph.remove(new TestInNode())))
   }
 
-  @Test
-  def canRemove_defaultsToTrue(): Unit = {
-    assertTrue(new TestInNode().canRemove)
+  test("canRemove 默认为 true") {
+    assert(new TestInNode().canRemove)
   }
 
-  @Test
-  def boundaryNodesAreNotRemovable(): Unit = {
+  test("边界节点不可删除") {
     val ngf = new NodeGraphFilter()
     val nodes = ngf.innerNodes.toSeq
-    assertFalse(nodes.collectFirst { case n: GraphInNode => n }.get.canRemove)
-    assertFalse(nodes.collectFirst { case n: Sink => n }.get.canRemove)
+    assert(!(nodes.collectFirst { case n: GraphInNode => n }.get.canRemove))
+    assert(!(nodes.collectFirst { case n: Sink => n }.get.canRemove))
   }
 }
 

@@ -7,9 +7,6 @@ import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue, fail}
-import org.junit.jupiter.api.{BeforeEach, Test}
-
 /**
  * 音频转场在轨道上的派生测试。两个音频片段重叠时应自动生成声音叠化，并产出正确混合的帧。
  */
@@ -17,8 +14,7 @@ class AudTransitionTrackTest extends GdxTestBase {
 
   private var timeline: TestTimeline = null
 
-  @BeforeEach
-  def setUp(): Unit = {
+  override def beforeEach(context: BeforeEach): Unit = {
     timeline = new TestProject().timeline
   }
 
@@ -54,8 +50,7 @@ class AudTransitionTrackTest extends GdxTestBase {
     }
   }
 
-  @Test
-  def overlappingAudSegmentsDeriveCrossfade(): Unit = {
+  test("重叠的音频片段推导出交叉淡化转场") {
     val track = timeline.getTrackOrCreate(0)
     timeline.addOrThrow(track, new Clip(new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
     timeline.addOrThrow(track, new Clip(new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
@@ -65,11 +60,11 @@ class AudTransitionTrackTest extends GdxTestBase {
       case t: Transition => t
       case other => fail("重叠处应是转场，实际: " + other)
     }
-    assertTrue(transition.source.isInstanceOf[AudCrossfadeSource])
+    assert(transition.source.isInstanceOf[AudCrossfadeSource])
 
     // 转场区间 [500, 1000)，t=600 的局部进度为 0.2
     val mixed = current.frameAt(transition, 600L).asInstanceOf[AudFrame]
     val expected = 0.5f * math.cos(0.2f * math.Pi / 2).toFloat - 0.25f * math.sin(0.2f * math.Pi / 2).toFloat
-    assertEquals(expected, mixed.samples(0), 1e-5f)
+    assertEqualsFloat(mixed.samples(0), expected, 1e-5f)
   }
 }

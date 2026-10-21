@@ -2,9 +2,6 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
-import org.junit.jupiter.api.Test
-
 import java.util.Random
 
 import UndoRedoRobustnessTest.SOURCE_COUNT
@@ -22,8 +19,7 @@ class UndoRedoRobustnessTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: TestTimeline = null
 
-  @Test
-  def undoAfterRandomDragsRestoresSnapshot(): Unit = {
+  test("随机拖拽后撤销恢复到快照") {
     // 多个种子多轮运行，覆盖不同的随机布局与操作序列
     for (seed <- Array(20240101, 20240202, 20240303, 12345678, 9876554, 999999, 888888888, (0xcafebabe).toInt, 0xabcdef)) {
       runScenario(seed)
@@ -65,16 +61,16 @@ class UndoRedoRobustnessTest extends GdxTestBase {
       project.undo.undo()
       undoCalls += 1
     }
-    assertTrue(undoCalls > 0, "快照后至少应产生一条可撤销的命令")
-    assertEquals(snapshot, timeline.timeline, "撤销后应恢复到序列化快照的状态")
+    assert(undoCalls > 0, "快照后至少应产生一条可撤销的命令")
+    assertEquals(timeline.timeline, snapshot, "撤销后应恢复到序列化快照的状态")
 
     var redoCalls = 0
     while (project.undo.canRedo) {
       project.undo.redo()
       redoCalls += 1
     }
-    assertEquals(afterOps, timeline.timeline, "重做后应恢复到操作后的状态")
-    assertEquals(undoCalls, redoCalls, "撤销与重做的步数应一致")
+    assertEquals(timeline.timeline, afterOps, "重做后应恢复到操作后的状态")
+    assertEquals(redoCalls, undoCalls, "撤销与重做的步数应一致")
   }
 }
 

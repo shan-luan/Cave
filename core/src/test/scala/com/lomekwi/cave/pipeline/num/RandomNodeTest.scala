@@ -1,29 +1,25 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.pipeline.NodeRegistry
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
-import org.junit.jupiter.api.Test
 
 /**
  * 验证随机数节点的取值语义，输出 [0,1) 的 Double，且每次求值都重新随机。
  */
-class RandomNodeTest {
+class RandomNodeTest extends munit.FunSuite {
 
-  @Test
-  def output_isInUnitInterval(): Unit = {
+  test("输出位于单位区间") {
     val out = new RandomNode().out
-    assertEquals(classOf[Double], out.getType)
+    assertEquals(out.getType, classOf[Double])
 
     var i = 0
     while (i < 1000) {
       val v = out.getData
-      assertTrue(v >= 0.0 && v < 1.0, "越界: " + v)
+      assert(v >= 0.0 && v < 1.0, "越界: " + v)
       i += 1
     }
   }
 
-  @Test
-  def output_reRandomizesEachEvaluation(): Unit = {
+  test("每次求值重新随机") {
     val out = new RandomNode().out
     val first = out.getData
 
@@ -33,13 +29,12 @@ class RandomNodeTest {
       if (out.getData != first) changed = true
       i += 1
     }
-    assertTrue(changed, "每次求值应返回新的随机数")
+    assert(changed, "每次求值应返回新的随机数")
   }
 
-  @Test
-  def registered_inNodeRegistry(): Unit = {
+  test("已注册到节点注册表") {
     val registry = new NodeRegistry()
     val registered = (0 until registry.getCount).exists(i => registry.create(i).isInstanceOf[RandomNode])
-    assertTrue(registered, "随机数节点应已注册")
+    assert(registered, "随机数节点应已注册")
   }
 }

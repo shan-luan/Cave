@@ -1,43 +1,37 @@
 package com.lomekwi.cave.pipeline.num
 
 import com.lomekwi.cave.pipeline.BinaryNode
-import org.junit.jupiter.api.Assertions.{assertEquals, assertTrue}
-import org.junit.jupiter.api.Test
 
 /**
  * 验证四个基本运算节点作为 [[BinaryNode]] 实现的行为，包括默认值、各运算符语义、与随机数节点连线。
  */
-class NumOpsTest {
+class NumOpsTest extends munit.FunSuite {
 
-  @Test
-  def unconnectedInputs_useNeutralDefaults(): Unit = {
-    assertEquals(0.0, new AddNode().out.getData, 0)
-    assertEquals(0.0, new SubNode().out.getData, 0)
-    assertEquals(1.0, new MulNode().out.getData, 0)
-    assertEquals(1.0, new DivNode().out.getData, 0)
+  test("未连接的输入使用中性默认值") {
+    assertEqualsDouble(new AddNode().out.getData, 0.0, 0)
+    assertEqualsDouble(new SubNode().out.getData, 0.0, 0)
+    assertEqualsDouble(new MulNode().out.getData, 1.0, 0)
+    assertEqualsDouble(new DivNode().out.getData, 1.0, 0)
   }
 
-  @Test
-  def computesEachOperation(): Unit = {
-    assertEquals(5.0, eval(new AddNode(), 2, 3), 0)
-    assertEquals(-1.0, eval(new SubNode(), 2, 3), 0)
-    assertEquals(6.0, eval(new MulNode(), 2, 3), 0)
-    assertEquals(0.5, eval(new DivNode(), 1, 2), 0)
+  test("各运算求值正确") {
+    assertEqualsDouble(eval(new AddNode(), 2, 3), 5.0, 0)
+    assertEqualsDouble(eval(new SubNode(), 2, 3), -1.0, 0)
+    assertEqualsDouble(eval(new MulNode(), 2, 3), 6.0, 0)
+    assertEqualsDouble(eval(new DivNode(), 1, 2), 0.5, 0)
   }
 
-  @Test
-  def acceptsRandomNodeOutput(): Unit = {
+  test("接受随机节点输出") {
     val add = new AddNode()
     add.inA.defaultData = 1.0
-    assertTrue(add.inB.linkFrom(new RandomNode().out))
+    assert(add.inB.linkFrom(new RandomNode().out))
 
     val v = add.out.getData
-    assertTrue(v >= 1.0 && v < 2.0, "越界: " + v)
+    assert(v >= 1.0 && v < 2.0, "越界: " + v)
   }
 
-  @Test
-  def divideByZero_followsIeee(): Unit = {
-    assertEquals(Double.PositiveInfinity, eval(new DivNode(), 1, 0), 0)
+  test("除零行为遵循 IEEE") {
+    assertEqualsDouble(eval(new DivNode(), 1, 0), Double.PositiveInfinity, 0)
   }
 
   private def eval(node: BinaryNode[Double], a: Double, b: Double): Double = {

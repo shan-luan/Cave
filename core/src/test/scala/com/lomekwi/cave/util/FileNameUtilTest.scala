@@ -1,77 +1,62 @@
 package com.lomekwi.cave.util
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertSame}
-import org.junit.jupiter.api.Test
-
 import java.io.File
 
-class FileNameUtilTest {
+class FileNameUtilTest extends munit.FunSuite {
 
-  @Test
-  def getExtension_returnsTextAfterLastDot(): Unit = {
-    assertEquals("txt", FileNameUtil.getExtension(new File("a.txt")))
-    assertEquals("gz", FileNameUtil.getExtension(new File("archive.tar.gz")))
-    assertEquals("txt", FileNameUtil.getExtension(new File("dir/a.txt")))
+  test("getExtension 返回最后一个点之后的文本") {
+    assertEquals(FileNameUtil.getExtension(new File("a.txt")), "txt")
+    assertEquals(FileNameUtil.getExtension(new File("archive.tar.gz")), "gz")
+    assertEquals(FileNameUtil.getExtension(new File("dir/a.txt")), "txt")
   }
 
-  @Test
-  def getExtension_withoutDotReturnsEmpty(): Unit = {
-    assertEquals("", FileNameUtil.getExtension(new File("noext")))
+  test("无扩展名时 getExtension 返回空串") {
+    assertEquals(FileNameUtil.getExtension(new File("noext")), "")
   }
 
-  @Test
-  def getExtension_trailingDotReturnsEmpty(): Unit = {
-    assertEquals("", FileNameUtil.getExtension(new File("trailing.")))
+  test("结尾是点时 getExtension 返回空串") {
+    assertEquals(FileNameUtil.getExtension(new File("trailing.")), "")
   }
 
-  @Test
-  def getExtension_nullReturnsEmpty(): Unit = {
-    assertEquals("", FileNameUtil.getExtension(null))
+  test("输入为 null 时 getExtension 返回空串") {
+    assertEquals(FileNameUtil.getExtension(null), "")
   }
 
-  @Test
-  def getExtension_dotfileIsTreatedAsExtension(): Unit = {
-    assertEquals("gitignore", FileNameUtil.getExtension(new File(".gitignore")))
+  test("getExtension 把点文件视为扩展名") {
+    assertEquals(FileNameUtil.getExtension(new File(".gitignore")), "gitignore")
   }
 
-  @Test
-  def ensureExtension_appendsMissingDot(): Unit = {
-    assertEquals("a.txt", FileNameUtil.ensureExtension("a", "txt"))
-    assertEquals("a.txt", FileNameUtil.ensureExtension("a", ".txt"))
+  test("ensureExtension 补上缺失的点") {
+    assertEquals(FileNameUtil.ensureExtension("a", "txt"), "a.txt")
+    assertEquals(FileNameUtil.ensureExtension("a", ".txt"), "a.txt")
   }
 
-  @Test
-  def ensureExtension_keepsExistingExtension(): Unit = {
-    assertEquals("a.txt", FileNameUtil.ensureExtension("a.txt", "txt"))
-    assertEquals("a.tar.gz", FileNameUtil.ensureExtension("a.tar", "gz"))
+  test("ensureExtension 保留已有扩展名") {
+    assertEquals(FileNameUtil.ensureExtension("a.txt", "txt"), "a.txt")
+    assertEquals(FileNameUtil.ensureExtension("a.tar", "gz"), "a.tar.gz")
   }
 
-  @Test
-  def ensureExtension_matchesCaseInsensitively(): Unit = {
-    assertEquals("a.TXT", FileNameUtil.ensureExtension("a.TXT", "txt"))
+  test("ensureExtension 匹配时忽略大小写") {
+    assertEquals(FileNameUtil.ensureExtension("a.TXT", "txt"), "a.TXT")
   }
 
-  @Test
-  def ensureExtension_nullArgumentsPassThrough(): Unit = {
-    assertNull(FileNameUtil.ensureExtension(null: String, "txt"))
-    assertEquals("a", FileNameUtil.ensureExtension("a", null: String))
+  test("ensureExtension 对 null 参数原样返回") {
+    assert((FileNameUtil.ensureExtension(null: String, "txt")) == null)
+    assertEquals(FileNameUtil.ensureExtension("a", null: String), "a")
   }
 
-  @Test
-  def ensureExtension_fileVersionKeepsSameInstance(): Unit = {
+  test("File 重载的 ensureExtension 返回同一实例") {
     val file = new File("dir/a.txt")
-    assertSame(file, FileNameUtil.ensureExtension(file, "txt"))
+    assert((file) eq (FileNameUtil.ensureExtension(file, "txt")))
   }
 
-  @Test
-  def ensureExtension_fileVersionRebuildsPath(): Unit = {
+  test("File 重载的 ensureExtension 重建路径") {
     val result = FileNameUtil.ensureExtension(new File("dir/a"), "txt")
-    assertEquals("a.txt", result.getName)
-    assertEquals(new File("dir").getPath, result.getParent)
+    assertEquals(result.getName, "a.txt")
+    assertEquals(result.getParent, new File("dir").getPath)
   }
 
-  @Test
-  def ensureExtension_nullFileReturnsNull(): Unit = {
-    assertNull(FileNameUtil.ensureExtension(null: File, "txt"))
+  test("文件为 null 时 ensureExtension 返回 null") {
+    assert((FileNameUtil.ensureExtension(null: File, "txt")) == null)
   }
 }

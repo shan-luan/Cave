@@ -17,6 +17,7 @@ import scala.compiletime.uninitialized
  * [[Filter.filterOut]]。链的末端就是最后一个元素自身的 [[Filter.filterOut]]（不额外连接端口），
  * [[Segment.get]] 直接从它取数据。添加/移除/重排时自动维护连接。
  */
+@deprecated("这破玩意也太难维护了。而且还是可变的。")
 @SerialVersionUID(1L)
 class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer[Filter[?]] with Serializable {
   private final val headEntry: FilterList.Entry = new FilterList.Entry(null)

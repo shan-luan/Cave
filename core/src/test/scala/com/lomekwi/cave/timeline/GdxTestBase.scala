@@ -4,19 +4,17 @@ import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.backends.headless.HeadlessApplication
 import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration
 
-import org.junit.jupiter.api.BeforeAll
-
 /**
  * 为纯模型测试提供 headless 的 libGDX 环境（Gdx.app 等），
  * 避免在构建 Timeline/Track/Segment 时因未初始化 Gdx 而崩溃。
  */
-abstract class GdxTestBase {
+abstract class GdxTestBase extends munit.FunSuite {
+  override def beforeAll(): Unit = GdxTestBase.initGdx()
 }
 
 object GdxTestBase {
   private var initialized: Boolean = false
 
-  @BeforeAll
   def initGdx(): Unit = this.synchronized {
     if (initialized) return
     initialized = true

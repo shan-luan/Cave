@@ -2,9 +2,6 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.timeline.{Boundless, Segment}
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertFalse, assertNull, assertSame}
-import org.junit.jupiter.api.Test
-
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import scala.util.Using
@@ -14,33 +11,30 @@ import FilterListTest.*
 /**
  * 验证 [[FilterList]]，双向链表行为 + 端口连接自动维护。
  */
-class FilterListTest {
+class FilterListTest extends munit.FunSuite {
 
-  @Test
-  def empty_chain_returnsSegmentFrame(): Unit = {
+  test("空滤镜链直接返回片段帧") {
     val segment = new FpCont(10)
-    assertEquals(10.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
   }
 
-  @Test
-  def add_linksPortsInOrder(): Unit = {
+  test("添加滤镜按顺序连接端口") {
     val segment = new FpCont(10)
     val f1 = new AddFilter()
     val f2 = new AddFilter()
     segment.filters += f1
     segment.filters += f2
 
-    assertSame(segment.source.headOut, f1.filterIn.prev)
-    assertSame(f1.filterOut, f2.filterIn.prev)
-    assertFalse(f2.filterOut.isLinked)
+    assert((segment.source.headOut) eq (f1.filterIn.prev))
+    assert((f1.filterOut) eq (f2.filterIn.prev))
+    assert(!(f2.filterOut.isLinked))
 
     f1.delta.defaultData = 1
     f2.delta.defaultData = 2
-    assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
   }
 
-  @Test
-  def addAtIndex_keepsChain(): Unit = {
+  test("指定下标插入后链保持完整") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
@@ -49,33 +43,31 @@ class FilterListTest {
     segment.filters += c
     segment.filters.insert(1, b)
 
-    assertSame(segment.source.headOut, a.filterIn.prev)
-    assertSame(a.filterOut, b.filterIn.prev)
-    assertSame(b.filterOut, c.filterIn.prev)
-    assertFalse(c.filterOut.isLinked)
+    assert((segment.source.headOut) eq (a.filterIn.prev))
+    assert((a.filterOut) eq (b.filterIn.prev))
+    assert((b.filterOut) eq (c.filterIn.prev))
+    assert(!(c.filterOut.isLinked))
 
     a.delta.defaultData = 1
     b.delta.defaultData = 2
     c.delta.defaultData = 3
-    assertEquals(16.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
   }
 
-  @Test
-  def add_atSize_appendsToTail(): Unit = {
+  test("在下标等于长度时追加到链尾") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
     segment.filters += a
     segment.filters.insert(1, b)
 
-    assertEquals(2, segment.filters.size)
-    assertEquals(a, segment.filters(0))
-    assertEquals(b, segment.filters(1))
-    assertSame(a.filterOut, b.filterIn.prev)
+    assertEquals(segment.filters.size, 2)
+    assertEquals(segment.filters(0), a)
+    assertEquals(segment.filters(1), b)
+    assert((a.filterOut) eq (b.filterIn.prev))
   }
 
-  @Test
-  def remove_rewiresNeighbors(): Unit = {
+  test("删除滤镜后重连邻居") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
@@ -85,23 +77,22 @@ class FilterListTest {
     segment.filters += c
     segment.filters -= b
 
-    assertEquals(2, segment.filters.size)
-    assertSame(segment.source.headOut, a.filterIn.prev)
-    assertSame(a.filterOut, c.filterIn.prev)
-    assertFalse(c.filterOut.isLinked)
-    assertNull(b.filterIn.prev)
-    assertFalse(b.filterOut.isLinked)
+    assertEquals(segment.filters.size, 2)
+    assert((segment.source.headOut) eq (a.filterIn.prev))
+    assert((a.filterOut) eq (c.filterIn.prev))
+    assert(!(c.filterOut.isLinked))
+    assert((b.filterIn.prev) == null)
+    assert(!(b.filterOut.isLinked))
 
     a.delta.defaultData = 1
     c.delta.defaultData = 2
-    assertEquals(13.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
 
-    assertEquals(a, segment.filters(0))
-    assertEquals(c, segment.filters(1))
+    assertEquals(segment.filters(0), a)
+    assertEquals(segment.filters(1), c)
   }
 
-  @Test
-  def set_replacesAndUnlinksOld(): Unit = {
+  test("set 替换并断开旧滤镜") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
@@ -111,19 +102,18 @@ class FilterListTest {
     val c = new AddFilter()
     segment.filters.update(0, c)
 
-    assertSame(segment.source.headOut, c.filterIn.prev)
-    assertSame(c.filterOut, b.filterIn.prev)
-    assertFalse(b.filterOut.isLinked)
-    assertNull(a.filterIn.prev)
-    assertFalse(a.filterOut.isLinked)
+    assert((segment.source.headOut) eq (c.filterIn.prev))
+    assert((c.filterOut) eq (b.filterIn.prev))
+    assert(!(b.filterOut.isLinked))
+    assert((a.filterIn.prev) == null)
+    assert(!(a.filterOut.isLinked))
 
     c.delta.defaultData = 5
     b.delta.defaultData = 1
-    assertEquals(16.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
   }
 
-  @Test
-  def clear_returnsToEmptyChain(): Unit = {
+  test("clear 恢复为空链") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
@@ -131,13 +121,12 @@ class FilterListTest {
     segment.filters += b
     segment.filters.clear()
 
-    assertEquals(0, segment.filters.size)
-    assertFalse(segment.source.headOut.isLinked)
-    assertEquals(10.0, segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEquals(segment.filters.size, 0)
+    assert(!(segment.source.headOut.isLinked))
+    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
   }
 
-  @Test
-  def insert_removeAtIndex_keepsChain(): Unit = {
+  test("按下标插入与删除后链保持完整") {
     val segment = new FpCont(10)
     val a = new AddFilter()
     val b = new AddFilter()
@@ -149,22 +138,21 @@ class FilterListTest {
     val mid = new AddFilter()
     filters.insert(1, mid)
 
-    assertEquals(3, filters.size)
-    assertSame(segment.source.headOut, a.filterIn.prev)
-    assertSame(a.filterOut, mid.filterIn.prev)
-    assertSame(mid.filterOut, b.filterIn.prev)
-    assertFalse(b.filterOut.isLinked)
+    assertEquals(filters.size, 3)
+    assert((segment.source.headOut) eq (a.filterIn.prev))
+    assert((a.filterOut) eq (mid.filterIn.prev))
+    assert((mid.filterOut) eq (b.filterIn.prev))
+    assert(!(b.filterOut.isLinked))
 
-    assertEquals(mid, filters(1))
+    assertEquals(filters(1), mid)
     filters.remove(1)
-    assertEquals(2, filters.size)
-    assertSame(a.filterOut, b.filterIn.prev)
-    assertNull(mid.filterIn.prev)
-    assertFalse(mid.filterOut.isLinked)
+    assertEquals(filters.size, 2)
+    assert((a.filterOut) eq (b.filterIn.prev))
+    assert((mid.filterIn.prev) == null)
+    assert(!(mid.filterOut.isLinked))
   }
 
-  @Test
-  def serialization_roundTrip_restoresChain(): Unit = {
+  test("序列化往返恢复滤镜链") {
     val segment = new FpCont(10)
     val f1 = new AddFilter()
     f1.delta.defaultData = 3
@@ -178,10 +166,10 @@ class FilterListTest {
       ois.readObject().asInstanceOf[FpCont]
     }
 
-    assertEquals(1, copy.filters.size)
-    assertSame(copy.source.headOut, copy.filters(0).filterIn.prev)
-    assertFalse(copy.filters(0).filterOut.isLinked)
-    assertEquals(13.0, copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 0)
+    assertEquals(copy.filters.size, 1)
+    assert((copy.source.headOut) eq (copy.filters(0).filterIn.prev))
+    assert(!(copy.filters(0).filterOut.isLinked))
+    assertEqualsDouble(copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
   }
 }
 

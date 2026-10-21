@@ -5,10 +5,6 @@ import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline, Timeline}
 import com.lomekwi.cave.timeline.~~
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNotEquals, assertNotSame, assertTrue}
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
 /**
  * 剪贴板模板。模板必须自带位置与组结构，才能脱离原对象、在时间轴任意位置重放。
  */
@@ -17,14 +13,12 @@ class PasteTemplateTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: TestTimeline = null
 
-  @BeforeEach
-  def setUp(): Unit = {
+  override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()
     timeline = project.timeline
   }
 
-  @Test
-  def templateSnapshotsPlacementAndGroup(): Unit = {
+  test("模板快照记录位置与组结构") {
     val t0 = timeline.getTrackOrCreate(0)
     val t1 = timeline.getTrackOrCreate(1)
     val a = new TestCont(100)
@@ -41,32 +35,31 @@ class PasteTemplateTest extends GdxTestBase {
     val template = selection.copy().asInstanceOf[PasteTemplate]
 
     val entries = template.entries
-    assertEquals(2, entries.size)
+    assertEquals(entries.size, 2)
 
     val ea = entries(0)
-    assertEquals(0, ea.trackIndex)
-    assertEquals(0 ~~ 100, ea.interval)
-    assertEquals(1000, ea.origin)
+    assertEquals(ea.trackIndex, 0)
+    assertEquals(ea.interval, 0 ~~ 100)
+    assertEquals(ea.origin, 1000L)
 
     val eb = entries(1)
-    assertEquals(1, eb.trackIndex)
-    assertEquals(500 ~~ 600, eb.interval)
-    assertEquals(2000, eb.origin)
+    assertEquals(eb.trackIndex, 1)
+    assertEquals(eb.interval, 500 ~~ 600)
+    assertEquals(eb.origin, 2000L)
 
     // 组结构在模板里保留，成员共享同一个模板组
-    assertTrue(ea.group.isDefined)
-    assertEquals(ea.group, eb.group)
-    assertEquals(Some(2), ea.group.map(_.size))
+    assert(ea.group.isDefined)
+    assertEquals(eb.group, ea.group)
+    assertEquals(ea.group.map(_.size), Some(2))
 
     // 模板持有的是拷贝，且这些拷贝不在时间线上，位置只能从模板本身读
-    assertNotSame(a, ea.segment)
-    assertNotSame(b, eb.segment)
-    assertTrue(timeline.findTrackOf(ea.segment).isEmpty)
-    assertTrue(timeline.findTrackOf(eb.segment).isEmpty)
+    assert(!((a) eq (ea.segment)))
+    assert(!((b) eq (eb.segment)))
+    assert(timeline.findTrackOf(ea.segment).isEmpty)
+    assert(timeline.findTrackOf(eb.segment).isEmpty)
   }
 
-  @Test
-  def templateCopyRefreshesSegmentsButKeepsPlacementAndGroupShape(): Unit = {
+  test("模板副本刷新片段但保留位置与组形状") {
     val t0 = timeline.getTrackOrCreate(0)
     val t1 = timeline.getTrackOrCreate(1)
     val a = new TestCont(100)
@@ -83,20 +76,19 @@ class PasteTemplateTest extends GdxTestBase {
     val first = selection.copy().asInstanceOf[PasteTemplate]
     val second = first.copy().asInstanceOf[PasteTemplate]
 
-    assertNotSame(first.entries(0).segment, second.entries(0).segment)
+    assert(!((first.entries(0).segment) eq (second.entries(0).segment)))
 
-    assertEquals(first.entries(0).interval, second.entries(0).interval)
-    assertEquals(first.entries(0).origin, second.entries(0).origin)
-    assertEquals(first.entries(1).interval, second.entries(1).interval)
-    assertEquals(first.entries(1).origin, second.entries(1).origin)
+    assertEquals(second.entries(0).interval, first.entries(0).interval)
+    assertEquals(second.entries(0).origin, first.entries(0).origin)
+    assertEquals(second.entries(1).interval, first.entries(1).interval)
+    assertEquals(second.entries(1).origin, first.entries(1).origin)
 
     assertNotEquals(first.entries(0).group, second.entries(0).group)
-    assertEquals(second.entries(0).group, second.entries(1).group)
-    assertEquals(Some(2), second.entries(0).group.map(_.size))
+    assertEquals(second.entries(1).group, second.entries(0).group)
+    assertEquals(second.entries(0).group.map(_.size), Some(2))
   }
 
-  @Test
-  def templateSurvivesDeletionOfOriginals(): Unit = {
+  test("原片段删除后模板仍然可用") {
     val t0 = timeline.getTrackOrCreate(0)
     val a = new TestCont(100)
     timeline.tryAdd(t0, a, 0 ~~ 100, 5000)
@@ -107,8 +99,8 @@ class PasteTemplateTest extends GdxTestBase {
 
     timeline.remove(a)
 
-    assertEquals(1, template.entries.size)
-    assertEquals(0 ~~ 100, template.entries(0).interval)
-    assertEquals(5000, template.entries(0).origin)
+    assertEquals(template.entries.size, 1)
+    assertEquals(template.entries(0).interval, 0 ~~ 100)
+    assertEquals(template.entries(0).origin, 5000L)
   }
 }

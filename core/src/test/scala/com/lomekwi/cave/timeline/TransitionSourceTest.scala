@@ -4,9 +4,6 @@ import com.lomekwi.cave.pipeline.{Filter, Frame, Source, TransitionSource}
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertSame, assertTrue, fail}
-import org.junit.jupiter.api.{BeforeEach, Test}
-
 /**
  * 转场源框架的模型级测试。框架在 [[TransitionSource.produce]] 里反查轨道布局，
  * 驱动两侧子源并把换算结果交给 [[TransitionSource.mix]]。
@@ -15,8 +12,7 @@ class TransitionSourceTest extends GdxTestBase {
 
   private var timeline: TestTimeline = null
 
-  @BeforeEach
-  def setUp(): Unit = {
+  override def beforeEach(context: BeforeEach): Unit = {
     timeline = new TestProject().timeline
   }
 
@@ -115,23 +111,21 @@ class TransitionSourceTest extends GdxTestBase {
     (current, transition, transition.source.asInstanceOf[ProbeTransitionSource])
   }
 
-  @Test
-  def mixReceivesPerSideTimesAndProgress(): Unit = {
+  test("mix 收到两侧各自的时间与进度") {
     val (track, transition, source) = placedTrack(leftLead = true, _ => false, _ => false)
 
     track.frameAt(transition, 600L)
-    assertEquals(600L, source.lastFrom.producedAt)
-    assertEquals(100L, source.lastTo.producedAt)
-    assertEquals(0.2f, source.lastProgress, 1e-6f)
+    assertEquals(source.lastFrom.producedAt, 600L)
+    assertEquals(source.lastTo.producedAt, 100L)
+    assertEqualsFloat(source.lastProgress, 0.2f, 1e-6f)
 
     track.frameAt(transition, 999L)
-    assertEquals(999L, source.lastFrom.producedAt)
-    assertEquals(499L, source.lastTo.producedAt)
-    assertEquals(499f / 500f, source.lastProgress, 1e-6f)
+    assertEquals(source.lastFrom.producedAt, 999L)
+    assertEquals(source.lastTo.producedAt, 499L)
+    assertEqualsFloat(source.lastProgress, 499f / 500f, 1e-6f)
   }
 
-  @Test
-  def produceConsumesSideFilterChains(): Unit = {
+  test("产出时使用两侧的滤镜链") {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, canLead = true)
     val right = new ProbeContent(1000, canLead = true)
@@ -148,67 +142,62 @@ class TransitionSourceTest extends GdxTestBase {
     left.attach(filter)
     current.frameAt(transition, 600L)
 
-    assertEquals(1, filter.count)
+    assertEquals(filter.count, 1)
     // mix 收到的是滤镜链输出的同一帧
-    assertSame(filter.lastFrame, source.lastFrom)
+    assert((filter.lastFrame) eq (source.lastFrom))
   }
 
-  @Test
-  def flippedTransitionRestoresSidesAndReversesProgress(): Unit = {
+  test("翻转转场恢复两侧并反转进度") {
     val (track, transition, source) = placedTrack(leftLead = false, _ => false, _ => false)
     // 兜底构造：转场源由右侧内容造出，[[TransitionSource.from]] 指向右内容
     val right = track.get(1200L) match {
       case c: Content => c
       case _ => fail("转场终点之外应是右内容")
     }
-    assertTrue(source.from eq right.source)
+    assert(source.from eq right.source)
 
     track.frameAt(transition, 600L)
     // [[mix]] 的视角仍是起点侧在前，`progress` 翻转
-    assertEquals(600L, source.lastFrom.producedAt)
-    assertEquals(100L, source.lastTo.producedAt)
-    assertEquals(0.8f, source.lastProgress, 1e-6f)
+    assertEquals(source.lastFrom.producedAt, 600L)
+    assertEquals(source.lastTo.producedAt, 100L)
+    assertEqualsFloat(source.lastProgress, 0.8f, 1e-6f)
   }
 
-  @Test
-  def passesNullSideToMixWhenOneSideHasNoFrame(): Unit = {
+  test("一侧无帧时向 mix 传入空侧") {
     val (track, transition, source) = placedTrack(leftLead = true, _ == 600L, _ => false)
 
     track.frameAt(transition, 600L)
     // 单侧无帧原样交给 mix，由效果决定表现
-    assertNull(source.lastFrom)
-    assertEquals(100L, source.lastTo.producedAt)
-    assertEquals(0.2f, source.lastProgress, 1e-6f)
+    assert((source.lastFrom) == null)
+    assertEquals(source.lastTo.producedAt, 100L)
+    assertEqualsFloat(source.lastProgress, 0.2f, 1e-6f)
   }
 
-  @Test
-  def syncReachesBothSidesWithConvertedTimes(): Unit = {
+  test("sync 用换算后的时间到达两侧") {
     val (track, transition, _) = placedTrack(leftLead = true, _ => false, _ => false)
     val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
     val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
 
     track.syncAt(transition, 600L)
-    assertEquals(600L, leftSource.lastSync)
-    assertEquals(100L, rightSource.lastSync)
+    assertEquals(leftSource.lastSync, 600L)
+    assertEquals(rightSource.lastSync, 100L)
   }
 
-  @Test
-  def syncForwardsCorrectlyWhenFlipped(): Unit = {
+  test("翻转后 sync 正确转发") {
     val (track, transition, _) = placedTrack(leftLead = false, _ => false, _ => false)
     val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
     val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
 
     track.syncAt(transition, 600L)
     // [[TransitionSource.from]] 指向右内容，转发仍按各自的原始配对换算
-    assertEquals(600L, leftSource.lastSync)
-    assertEquals(100L, rightSource.lastSync)
+    assertEquals(leftSource.lastSync, 600L)
+    assertEquals(rightSource.lastSync, 100L)
   }
 
-  @Test
-  def yieldsNoFrameWhenBothSidesHaveNoFrame(): Unit = {
+  test("两侧都无帧时不产出帧") {
     // 两侧子源收到的片段内时间不同：左 600、右 100
     val (track, transition, _) = placedTrack(leftLead = true, _ == 600L, _ == 100L)
 
-    assertNull(track.frameAt(transition, 600L))
+    assert((track.frameAt(transition, 600L)) == null)
   }
 }

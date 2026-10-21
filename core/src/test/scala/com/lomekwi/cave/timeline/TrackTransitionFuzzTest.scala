@@ -2,9 +2,6 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.fail
-import org.junit.jupiter.api.Test
-
 import java.util.Random
 
 import scala.collection.mutable
@@ -18,15 +15,13 @@ import scala.collection.mutable
  */
 class TrackTransitionFuzzTest extends GdxTestBase {
 
-  @Test
-  def removingTransitionsOnRandomLayouts(): Unit = {
+  test("在随机布局上删除转场") {
     for (seed <- 1 to 16) {
       runRandomLayout(seed)
     }
   }
 
-  @Test
-  def removingTransitionRandomNeighbourShapes(): Unit = {
+  test("在随机邻居形态下删除转场") {
     var i = 0
     while (i < 1200) {
       runNeighbourShape(i)

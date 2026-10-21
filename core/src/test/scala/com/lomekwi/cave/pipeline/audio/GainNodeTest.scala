@@ -3,26 +3,22 @@ package com.lomekwi.cave.pipeline.audio
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 
 import GainNodeTest.*
 
 /**
  * 验证 [[GainNode]] 沿滤镜链把音量乘到采样点上。
  */
-class GainNodeTest {
+class GainNodeTest extends munit.FunSuite {
 
-  @Test
-  def default_keepsSamplesUnchanged(): Unit = {
+  test("默认增益不改变采样") {
     val segment = new AudCont
     segment.attach(new GainNode())
 
     assertSamples(segment, BASELINE)
   }
 
-  @Test
-  def gain_scalesSamples(): Unit = {
+  test("增益按比例缩放采样") {
     val segment = new AudCont
     val node = new GainNode()
     node.setGain(0.5)
@@ -31,8 +27,7 @@ class GainNodeTest {
     assertSamples(segment, Array(0.05f, -0.1f, 0.25f))
   }
 
-  @Test
-  def gain_notClamped(): Unit = {
+  test("增益不做钳制") {
     val segment = new AudCont
     val node = new GainNode()
     node.setGain(3.0)
@@ -41,8 +36,7 @@ class GainNodeTest {
     assertSamples(segment, Array(0.3f, -0.6f, 1.5f))
   }
 
-  @Test
-  def chainedNodes_composeGain(): Unit = {
+  test("串联节点叠加增益") {
     val segment = new AudCont
     val a = new GainNode()
     a.setGain(2.0)
@@ -54,8 +48,7 @@ class GainNodeTest {
     assertSamples(segment, Array(0.05f, -0.1f, 0.25f))
   }
 
-  @Test
-  def repeatedEvaluation_staysStable(): Unit = {
+  test("重复求值结果稳定") {
     val segment = new AudCont
     val node = new GainNode()
     node.setGain(2.0)
@@ -68,9 +61,9 @@ class GainNodeTest {
 
   private def assertSamples(segment: Segment, expected: Array[Float]): Unit = {
     val frame = segment.get(0, null).asInstanceOf[AudFrame]
-    assertEquals(expected.length, frame.samples.length)
+    assertEquals(frame.samples.length, expected.length)
     for (i <- expected.indices) {
-      assertEquals(expected(i), frame.samples(i), 1e-6f)
+      assertEqualsFloat(frame.samples(i), expected(i), 1e-6f)
     }
   }
 }

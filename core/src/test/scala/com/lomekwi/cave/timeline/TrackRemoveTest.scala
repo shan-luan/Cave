@@ -2,10 +2,6 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
 /**
  * 删除路径的场景测试。内容与转场的删除在各种邻居与边界形态下的行为；
  * 移除后 [[TrackLayout]] 校验的布局不变量由本测试守护。
@@ -15,8 +11,7 @@ class TrackRemoveTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: TestTimeline = null
 
-  @BeforeEach
-  def setUp(): Unit = {
+  override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()
     timeline = project.timeline
   }
@@ -32,26 +27,24 @@ class TrackRemoveTest extends GdxTestBase {
     case _ => null
   }
 
-  @Test
-  def removingFirstContentDetachesEverythingAfterIt(): Unit = {
+  test("删除首个内容会分离其后的全部内容") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
-    assertNotNull(transitionOf(t0, 700))
+    assert((transitionOf(t0, 700)) != null)
 
     timeline.remove(a)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(500 ~~ 1500, after.getInterval(b))
-    assertNull(transitionOf(after, 700))
-    assertTrue(after.get(300).isInstanceOf[Gap])
+    assertEquals(after.getInterval(b), 500 ~~ 1500)
+    assert((transitionOf(after, 700)) == null)
+    assert(after.get(300).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingLastContentShortensTrackLength(): Unit = {
+  test("删除最后一个内容会缩短轨道长度") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -61,15 +54,14 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 1000, after.getInterval(a))
-    assertEquals(1000L, after.length)
-    assertNull(transitionOf(after, 700))
-    assertTrue(after.get(1200).isInstanceOf[Gap])
+    assertEquals(after.getInterval(a), 0 ~~ 1000)
+    assertEquals(after.length, 1000L)
+    assert((transitionOf(after, 700)) == null)
+    assert(after.get(1200).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def soloEndOfUnaffectedByRemovedLastContent(): Unit = {
+  test("删除最后内容不影响独奏终点") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -79,34 +71,32 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertTrue(after.transitionAfter(a).isEmpty)
-    assertEquals(1000L, after.soloEndOf(a))
+    assert(after.transitionAfter(a).isEmpty)
+    assertEquals(after.soloEndOf(a), 1000L)
   }
 
-  @Test
-  def removedLastContentLeavesTransitionReusableOnReturn(): Unit = {
+  test("最后内容删除后转场在回归时可复用") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
     val transition = transitionOf(t0, 700)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(b)
-    assertTrue(timeline.getTrackOrCreate(0).transitionAfter(a).isEmpty)
+    assert(timeline.getTrackOrCreate(0).transitionAfter(a).isEmpty)
 
     val c = newContent(1000)
     place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
 
     // 邻居回来后复用同一个转场对象，身份因此保持稳定
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(Some(transition), after.transitionAfter(a))
+    assertEquals(after.transitionAfter(a), Some(transition))
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingOnlyContentLeavesEmptyTrack(): Unit = {
+  test("删除唯一内容后轨道为空") {
     val t0 = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     place(t0, a, 0 ~~ 1000)
@@ -114,13 +104,12 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(a)
 
     val after = timeline.getTrackOrCreate(0)
-    assertTrue(after.isEmpty)
-    assertEquals(0L, after.length)
-    assertTrue(after.isEmpty)
+    assert(after.isEmpty)
+    assertEquals(after.length, 0L)
+    assert(after.isEmpty)
   }
 
-  @Test
-  def removingMiddleContentDetachesBothNeighbours(): Unit = {
+  test("删除中间内容会分离两侧邻居") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -128,33 +117,31 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
     place(t0, c, 1000 ~~ 2000)
-    assertNotNull(transitionOf(t0, 700))
-    assertNotNull(transitionOf(t0, 1200))
+    assert((transitionOf(t0, 700)) != null)
+    assert((transitionOf(t0, 1200)) != null)
 
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 1000, after.getInterval(a))
-    assertEquals(1000 ~~ 2000, after.getInterval(c))
-    assertSame(a, after.get(700))
-    assertSame(c, after.get(1200))
-    assertTrue(after.transitionBetween(a, c).isEmpty)
+    assertEquals(after.getInterval(a), 0 ~~ 1000)
+    assertEquals(after.getInterval(c), 1000 ~~ 2000)
+    assert((a) eq (after.get(700)))
+    assert((c) eq (after.get(1200)))
+    assert(after.transitionBetween(a, c).isEmpty)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingForeignSegmentIsNoOp(): Unit = {
+  test("删除不属于该轨道的片段是空操作") {
     val t0 = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val foreign = newContent(1000)
     place(t0, a, 0 ~~ 1000)
 
     val current = timeline.getTrackOrCreate(0)
-    assertSame(current, current.remove(foreign))
+    assert((current) eq (current.remove(foreign)))
   }
 
-  @Test
-  def removingContentKeepsUnrelatedTransitionIdentity(): Unit = {
+  test("删除内容不影响无关转场的对象身份") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -163,17 +150,16 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
     place(t0, c, 2000 ~~ 3000)
     val transition = transitionOf(t0, 700)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(c)
 
     val after = timeline.getTrackOrCreate(0)
-    assertSame(transition, transitionOf(after, 700))
+    assert((transition) eq (transitionOf(after, 700)))
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingContentLeavesGapReusable(): Unit = {
+  test("删除内容后空隙可复用") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -185,13 +171,12 @@ class TrackRemoveTest extends GdxTestBase {
     place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(500 ~~ 1500, after.getInterval(c))
-    assertTrue(after.get(100).isInstanceOf[Gap])
+    assertEquals(after.getInterval(c), 500 ~~ 1500)
+    assert(after.get(100).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingContentsInBatchDetachesEachFromTrack(): Unit = {
+  test("批量删除内容时逐个从轨道分离") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -204,55 +189,52 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     val remaining = TrackLayout.contentsOf(after)
-    assertEquals(1, remaining.size)
-    assertSame(b, remaining.head)
-    assertEquals(500 ~~ 1500, after.getInterval(b))
-    assertTrue(after.get(2500).isInstanceOf[Gap])
+    assertEquals(remaining.size, 1)
+    assert((b) eq (remaining.head))
+    assertEquals(after.getInterval(b), 500 ~~ 1500)
+    assert(after.get(2500).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingTransitionWithOddOverlapSplitsAtFloorHalf(): Unit = {
+  test("删除奇数重叠的转场时按下取整对半分割") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 989 ~~ 1500)
     val transition = transitionOf(t0, 995)
-    assertNotNull(transition)
-    assertEquals(989 ~~ 1000, t0.getInterval(transition))
+    assert((transition) != null)
+    assertEquals(t0.getInterval(transition), 989 ~~ 1000)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 995, after.getInterval(a))
-    assertEquals(995 ~~ 1500, after.getInterval(b))
-    assertTrue(after.transitionBetween(a, b).isEmpty)
+    assertEquals(after.getInterval(a), 0 ~~ 995)
+    assertEquals(after.getInterval(b), 995 ~~ 1500)
+    assert(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingMinimalOverlapTransitionMovesRightToLeftEnd(): Unit = {
+  test("删除最小重叠转场时把右侧内容移到左端") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 999 ~~ 1500)
     val transition = transitionOf(t0, 999)
-    assertNotNull(transition)
-    assertEquals(999 ~~ 1000, t0.getInterval(transition))
+    assert((transition) != null)
+    assertEquals(t0.getInterval(transition), 999 ~~ 1000)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 1000, after.getInterval(a))
-    assertEquals(1000 ~~ 1500, after.getInterval(b))
-    assertTrue(after.transitionBetween(a, b).isEmpty)
+    assertEquals(after.getInterval(a), 0 ~~ 1000)
+    assertEquals(after.getInterval(b), 1000 ~~ 1500)
+    assert(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingTransitionLeavesLeftNeighbourTransitionIntact(): Unit = {
+  test("删除转场不影响左侧邻居的转场") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val p = newContent(1000)
     val a = newContent(1000)
@@ -261,19 +243,18 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, a, 100 ~~ 1000)
     place(t0, b, 999 ~~ 1100)
     val transition = transitionOf(t0, 999)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(100 ~~ 1000, after.getInterval(a))
-    assertEquals(1000 ~~ 1100, after.getInterval(b))
-    assertNotNull(transitionOf(after, 500))
+    assertEquals(after.getInterval(a), 100 ~~ 1000)
+    assertEquals(after.getInterval(b), 1000 ~~ 1100)
+    assert((transitionOf(after, 500)) != null)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingTransitionStopsBeforeSecondSuccessor(): Unit = {
+  test("删除转场时在第二个后继前停止") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -282,20 +263,19 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 1100 ~~ 1500)
     place(t0, rn, 1101 ~~ 2000)
     val transition = transitionOf(t0, 1100)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(1000 ~~ 1100, after.getInterval(a))
-    assertEquals(1100 ~~ 1500, after.getInterval(b))
-    assertEquals(1101 ~~ 2000, after.getInterval(rn))
-    assertNotNull(transitionOf(after, 1200))
+    assertEquals(after.getInterval(a), 1000 ~~ 1100)
+    assertEquals(after.getInterval(b), 1100 ~~ 1500)
+    assertEquals(after.getInterval(rn), 1101 ~~ 2000)
+    assert((transitionOf(after, 1200)) != null)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingTransitionRollsBackWhenSqueezedBySecondSuccessor(): Unit = {
+  test("被第二个后继挤压时删除转场会回滚") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val p = newContent(1000)
     val a = newContent(1000)
@@ -306,21 +286,20 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 1100 ~~ 1500)
     place(t0, rn, 1101 ~~ 2000)
     val transition = transitionOf(t0, 1100)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(1000 ~~ 1101, after.getInterval(a))
-    assertEquals(800 ~~ 1100, after.getInterval(p))
-    assertEquals(1100 ~~ 1500, after.getInterval(b))
-    assertEquals(1101 ~~ 2000, after.getInterval(rn))
-    assertSame(transition, transitionOf(after, 1100))
+    assertEquals(after.getInterval(a), 1000 ~~ 1101)
+    assertEquals(after.getInterval(p), 800 ~~ 1100)
+    assertEquals(after.getInterval(b), 1100 ~~ 1500)
+    assertEquals(after.getInterval(rn), 1101 ~~ 2000)
+    assert((transition) eq (transitionOf(after, 1100)))
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingTransitionKeepsEveryContentVisible(): Unit = {
+  test("删除转场后所有内容仍然可见") {
     for (rnLo <- 1101L to 1104L) {
       val tl = new TestProject().timeline
       val p = newContent(1000)
@@ -335,7 +314,7 @@ class TrackRemoveTest extends GdxTestBase {
         case t: Transition => t
         case _ => null
       }
-      assertNotNull(transition)
+      assert((transition) != null)
 
       tl.remove(transition)
 
@@ -349,8 +328,7 @@ class TrackRemoveTest extends GdxTestBase {
     }
   }
 
-  @Test
-  def removingTransitionsInBatchSplitsBothOverlaps(): Unit = {
+  test("批量删除转场时分割两处重叠") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
@@ -360,31 +338,30 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, c, 1000 ~~ 2000)
     val ab = transitionOf(t0, 700)
     val bc = transitionOf(t0, 1200)
-    assertNotNull(ab)
-    assertNotNull(bc)
+    assert((ab) != null)
+    assert((bc) != null)
 
     timeline.remove(Seq(ab, bc))
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(0 ~~ 750, after.getInterval(a))
-    assertEquals(750 ~~ 1250, after.getInterval(b))
-    assertEquals(1250 ~~ 2000, after.getInterval(c))
+    assertEquals(after.getInterval(a), 0 ~~ 750)
+    assertEquals(after.getInterval(b), 750 ~~ 1250)
+    assertEquals(after.getInterval(c), 1250 ~~ 2000)
     TrackLayout.assertValid(after)
   }
 
-  @Test
-  def removingAlreadyRemovedTransitionIsNoOp(): Unit = {
+  test("删除已删除的转场是空操作") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newContent(1000)
     val b = newContent(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
     val transition = transitionOf(t0, 700)
-    assertNotNull(transition)
+    assert((transition) != null)
 
     timeline.remove(transition)
 
     val current = timeline.getTrackOrCreate(0)
-    assertSame(current, current.remove(transition))
+    assert((current) eq (current.remove(transition)))
   }
 }

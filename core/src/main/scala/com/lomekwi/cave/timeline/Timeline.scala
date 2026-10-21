@@ -189,7 +189,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 入口已排除转场
         val c = s.asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
-        moves += (c, from.index, to.index, from.getInterval(c), from.getOrigin(c))
+        moves += ((c, from.index, to.index, from.getInterval(c), from.getOrigin(c)))
       }
     }
     if (moves.isEmpty) return (this, 0)

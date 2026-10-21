@@ -384,7 +384,7 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
     // 成员里的转场可能被相邻内容的删除连带摘掉，只保留仍在轨道上的成员参与移动
     val placed: mutable.ArrayBuffer[(Segment, Track)] = mutable.ArrayBuffer.empty
     for (m <- dragMembers) {
-      tl.timeline.findTrackOf(m).foreach(t => placed += (m, t))
+      tl.timeline.findTrackOf(m).foreach(t => placed += ((m, t)))
     }
     if (placed.isEmpty) return 0
     val members: mutable.ArrayBuffer[Segment] = placed.map(_._1)

@@ -3,53 +3,47 @@ package com.lomekwi.cave.pipeline.num
 import com.lomekwi.cave.pipeline.EvalClock
 import com.lomekwi.cave.pipeline.NodeRegistry
 import com.lomekwi.cave.util.Units
-import org.junit.jupiter.api.Assertions.{assertEquals, assertThrows, assertTrue}
-import org.junit.jupiter.api.Test
 
 /**
  * 验证时间节点的取值语义，输出当前求值时刻的秒值，区分片段内与时间轴两个端口。
  */
-class TimeNodeTest {
+class TimeNodeTest extends munit.FunSuite {
 
-  @Test
-  def output_followsEvalContext(): Unit = {
+  test("输出跟随求值上下文") {
     val node = new TimeNode()
-    assertEquals(classOf[Double], node.segmentOut.getType)
-    assertEquals(classOf[Double], node.timelineOut.getType)
+    assertEquals(node.segmentOut.getType, classOf[Double])
+    assertEquals(node.timelineOut.getType, classOf[Double])
 
     EvalClock.withTime(5 * Units.SECOND, 2 * Units.SECOND) {
-      assertEquals(5.0, node.timelineOut.getData)
-      assertEquals(2.0, node.segmentOut.getData)
+      assertEquals(node.timelineOut.getData, 5.0)
+      assertEquals(node.segmentOut.getData, 2.0)
     }
 
     EvalClock.withTime(7 * Units.SECOND, 3 * Units.SECOND) {
-      assertEquals(7.0, node.timelineOut.getData)
-      assertEquals(3.0, node.segmentOut.getData)
+      assertEquals(node.timelineOut.getData, 7.0)
+      assertEquals(node.segmentOut.getData, 3.0)
     }
   }
 
-  @Test
-  def context_restoredAfterNestedEvaluation(): Unit = {
+  test("嵌套求值后上下文恢复") {
     EvalClock.withTime(10 * Units.SECOND, 4 * Units.SECOND) {
       EvalClock.withTime(20 * Units.SECOND, 8 * Units.SECOND) {
-        assertEquals(20.0, new TimeNode().timelineOut.getData)
+        assertEquals(new TimeNode().timelineOut.getData, 20.0)
       }
-      assertEquals(10.0, new TimeNode().timelineOut.getData)
-      assertEquals(4.0, new TimeNode().segmentOut.getData)
+      assertEquals(new TimeNode().timelineOut.getData, 10.0)
+      assertEquals(new TimeNode().segmentOut.getData, 4.0)
     }
   }
 
-  @Test
-  def output_throwsOutsideEvalContext(): Unit = {
+  test("求值上下文之外访问输出抛出异常") {
     val node = new TimeNode()
-    assertThrows(classOf[IllegalStateException], () => node.segmentOut.getData)
-    assertThrows(classOf[IllegalStateException], () => node.timelineOut.getData)
+    intercept[IllegalStateException] { node.segmentOut.getData }
+    intercept[IllegalStateException] { node.timelineOut.getData }
   }
 
-  @Test
-  def registered_inNodeRegistry(): Unit = {
+  test("已注册到节点注册表") {
     val registry = new NodeRegistry()
     val registered = (0 until registry.getCount).exists(i => registry.create(i).isInstanceOf[TimeNode])
-    assertTrue(registered, "时间节点应已注册")
+    assert(registered, "时间节点应已注册")
   }
 }

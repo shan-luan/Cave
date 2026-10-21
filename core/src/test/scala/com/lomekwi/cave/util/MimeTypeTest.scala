@@ -1,67 +1,55 @@
 package com.lomekwi.cave.util
 
-import org.junit.jupiter.api.Assertions.{assertEquals, assertNull, assertThrows}
-import org.junit.jupiter.api.Test
-
 import java.io.File
 import java.nio.file.Files
 
-class MimeTypeTest {
+class MimeTypeTest extends munit.FunSuite {
 
-  @Test
-  def detectMimeType_nullReturnsNull(): Unit = {
-    assertNull(MimeType.detectMimeType(null))
+  test("输入为 null 时 MIME 类型检测返回 null") {
+    assert((MimeType.detectMimeType(null)) == null)
   }
 
-  @Test
-  def detectMimeType_missingFileReturnsNull(): Unit = {
-    assertNull(MimeType.detectMimeType(new File("/nonexistent/nowhere.mp4")))
+  test("文件不存在时 MIME 类型检测返回 null") {
+    assert((MimeType.detectMimeType(new File("/nonexistent/nowhere.mp4"))) == null)
   }
 
-  @Test
-  def detectMimeType_fallsBackToExtension(): Unit = {
+  test("MIME 类型检测回退到扩展名") {
     val path = Files.createTempFile("cave-mimetype", ".cave")
     try {
-      assertEquals("application/x-cave-project", MimeType.detectMimeType(path.toFile))
+      assertEquals(MimeType.detectMimeType(path.toFile), "application/x-cave-project")
     } finally {
       Files.deleteIfExists(path)
     }
   }
 
-  @Test
-  def detectMimeType_unmappedExtensionReturnsNull(): Unit = {
+  test("扩展名未映射时 MIME 类型检测返回 null") {
     val path = Files.createTempFile("cave-mimetype", ".zzz")
     try {
-      assertNull(MimeType.detectMimeType(path.toFile))
+      assert((MimeType.detectMimeType(path.toFile)) == null)
     } finally {
       Files.deleteIfExists(path)
     }
   }
 
-  @Test
-  def wildcards_splitAtSlash(): Unit = {
-    assertEquals("video/*", MimeType.getTypeWildcard("video/mp4"))
-    assertEquals("*/mp4", MimeType.getSubtypeWildcard("video/mp4"))
-    assertEquals("*/*", MimeType.getAllWildcard)
+  test("通配符按斜杠切分") {
+    assertEquals(MimeType.getTypeWildcard("video/mp4"), "video/*")
+    assertEquals(MimeType.getSubtypeWildcard("video/mp4"), "*/mp4")
+    assertEquals(MimeType.getAllWildcard, "*/*")
   }
 
-  @Test
-  def typeWildcard_rejectsNull(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => MimeType.getTypeWildcard(null))
+  test("类型通配符拒绝 null") {
+    intercept[IllegalArgumentException] { MimeType.getTypeWildcard(null) }
   }
 
-  @Test
-  def typeWildcard_rejectsEmpty(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => MimeType.getTypeWildcard(""))
+  test("类型通配符拒绝空串") {
+    intercept[IllegalArgumentException] { MimeType.getTypeWildcard("") }
   }
 
-  @Test
-  def typeWildcard_rejectsMissingSlash(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => MimeType.getTypeWildcard("video"))
+  test("类型通配符拒绝缺少斜杠") {
+    intercept[IllegalArgumentException] { MimeType.getTypeWildcard("video") }
   }
 
-  @Test
-  def subtypeWildcard_rejectsMissingSlash(): Unit = {
-    assertThrows(classOf[IllegalArgumentException], () => MimeType.getSubtypeWildcard("video"))
+  test("子类型通配符拒绝缺少斜杠") {
+    intercept[IllegalArgumentException] { MimeType.getSubtypeWildcard("video") }
   }
 }
