@@ -195,7 +195,7 @@ class ExportDialog(private val context: ProjectSession) extends VisDialog(("å¯¼å
       val fps: Double = fpsModel.getValue.toDouble
       val bitrate: Int = (bitrateModel.getValue * MEGA).toInt
 
-      val snapshot: Project = Project.snapshot(context.project)
+      val snapshot: Project = Project.dump(context.project)
       val task = new VideoExportTask(
         snapshot.timeline,
         snapshot,

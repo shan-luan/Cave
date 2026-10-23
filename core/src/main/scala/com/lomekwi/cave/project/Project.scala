@@ -45,7 +45,7 @@ object Project {
     ois.readObject().asInstanceOf[Project]
   }
 
-  def snapshot(project: Project): Project = {
+  def dump(project: Project): Project = {
     val baos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(baos)) { oos =>
       oos.writeObject(project)
