@@ -8,13 +8,11 @@ import com.lomekwi.cave.timeline.{TestTimeline, Timeline}
 import java.io.File
 import java.util.UUID
 
-import scala.collection.mutable
-
 class TestProject() {
   val project: Project = new Project(
     "test",
     Timeline.empty,
-    mutable.LinkedHashMap.empty[File, mutable.ArrayBuffer[Resource]],
+    Map.empty[File, Vector[Resource]],
     UUID.randomUUID())
   val context: ProjectSession = new ProjectSession(project)
   val timeline: TestTimeline = new TestTimeline(context)

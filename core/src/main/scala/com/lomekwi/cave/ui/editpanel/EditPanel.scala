@@ -26,7 +26,7 @@ class EditPanel(private[editpanel] val context: ProjectSession) {
     tl.add(tlTabs.getTable).fillX().top().row()
     tl.add(tlTabs.contentHost).grow()
     tlTabs.refreshVisibility()
-    res = new Container[MediaPool](new MediaPool(context.project.resources, context.bus))
+    res = new Container[MediaPool](new MediaPool(context, context.bus))
   }
 
   def getTimelineView: TimelineView = {

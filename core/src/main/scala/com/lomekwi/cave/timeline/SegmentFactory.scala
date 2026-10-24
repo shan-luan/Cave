@@ -37,29 +37,30 @@ class SegmentFactory(private val context: ProjectSession) {
     constructors.remove(clazz)
   }
 
-  def getAll(file: File): mutable.ArrayBuffer[Content] = {
-    val segments = mutable.ArrayBuffer.empty[Content]
-    for (resource <- ensureResources(file)) {
-      segments += applyUnchecked(constructors.getOrElse(resource.getClass, null), resource)
+  def getAll(file: File): Vector[Content] = {
+    ensureResources(file).map { resource =>
+      applyUnchecked(constructors.getOrElse(resource.getClass, null), resource)
     }
-    segments
   }
 
-  def ensureResources(file: File): mutable.ArrayBuffer[Resource] = {
-    context.project.resources.getOrElseUpdate(file, createResources(file))
+  def ensureResources(file: File): Vector[Resource] = {
+    context.project.resources.getOrElse(file, {
+      val created = createResources(file)
+      context.applyResources(context.project.resources.updated(file, created))
+      created
+    })
   }
 
-  private def createResources(file: File): mutable.ArrayBuffer[Resource] = {
+  private def createResources(file: File): Vector[Resource] = {
     val mimeType = MimeType.detectMimeType(file)
     if (mimeType == null) {
       throw new IOException(("无法检测文件MIME类型: ".in(Zh) | "Cannot detect the MIME type of file: ".in(En)).str() + file.getName)
     }
-    val created = mutable.ArrayBuffer.empty[Resource]
-    for (medRes <- App.mediaFactory.createAll(mimeType, file.getPath)) {
-      created += medRes
+    val created = App.mediaFactory.createAll(mimeType, file.getPath)
+    for (medRes <- created) {
       context.bus.post(MediaCreatedEvent(file, medRes))
     }
-    created
+    created.toVector
   }
 
   def get(file: File): Content = {

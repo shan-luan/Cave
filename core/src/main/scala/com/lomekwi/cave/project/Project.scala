@@ -17,18 +17,19 @@ import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.UUID
 
-import scala.collection.mutable
 import scala.util.Using
 
 @SerialVersionUID(3L)
 final class Project(val name: String,
                     val timeline: Timeline,
-                    val resources: mutable.LinkedHashMap[File, mutable.ArrayBuffer[Resource]],
+                    val resources: Map[File, Vector[Resource]],
                     val uuid: UUID) extends Serializable {
 
   def withName(name: String): Project = new Project(name, timeline, resources, uuid)
 
   def withTimeline(timeline: Timeline): Project = new Project(name, timeline, resources, uuid)
+
+  def withResources(resources: Map[File, Vector[Resource]]): Project = new Project(name, timeline, resources, uuid)
 }
 
 object Project {
@@ -37,7 +38,7 @@ object Project {
   def create(): Project = new Project(
     ("未命名".in(Zh) | "Untitled".in(En)).str(),
     Timeline.empty,
-    mutable.LinkedHashMap.empty[File, mutable.ArrayBuffer[Resource]],
+    Map.empty[File, Vector[Resource]],
     UUID.randomUUID())
 
   def open(fileHandle: FileHandle): Project = {

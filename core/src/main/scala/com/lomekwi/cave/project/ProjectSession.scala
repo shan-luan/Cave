@@ -5,11 +5,13 @@ import com.google.common.eventbus.{EventBus, Subscribe}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.playback.{Playhead, TrackWorker}
+import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentFactory, Timeline, Track}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
 
+import java.io.File
 import java.nio.file.Path
 import scala.collection.mutable
 
@@ -50,23 +52,47 @@ final class ProjectSession(initial: Project) {
 
   def applyTimeline(next: Timeline): Unit = {
     if (next ne project.timeline) {
-      project = project.withTimeline(next)
-      for (i <- project.timeline.tracks.indices) {
-        worker(i).onTrackChanged()
+      applyProject(project.withTimeline(next))
+    }
+  }
+
+  def applyProject(next: Project): Unit = {
+    val previousResources = project.resources
+    project = next
+    for (i <- project.timeline.tracks.indices) {
+      worker(i).onTrackChanged()
+    }
+    postResourcesChanged(previousResources, project.resources)
+  }
+
+  def applyResources(next: Map[File, Vector[Resource]]): Unit = {
+    undo.push(project)
+    val previousResources = project.resources
+    project = project.withResources(next)
+    touch()
+    postResourcesChanged(previousResources, next)
+  }
+
+  private def postResourcesChanged(before: Map[File, Vector[Resource]], after: Map[File, Vector[Resource]]): Unit = {
+    if (after ne before) {
+      val added = after.keySet.diff(before.keySet)
+      val removed = before.keySet.diff(after.keySet)
+      if (added.nonEmpty || removed.nonEmpty) {
+        bus.post(ProjectResourcesChangedEvent(added, removed))
       }
     }
   }
+
   @deprecated("过时的设计。改为一个copy()方法就行了。")
   def record(): ProjectSession.Recording = {
-    val before = project.timeline
+    val before = project
     () => endRecord(before)
   }
   @deprecated
-  private def endRecord(before: Timeline): Unit = {
-    val after = project.timeline
-    if (after ne before) {
+  private def endRecord(before: Project): Unit = {
+    if (project ne before) {
       touch()
-      undo.push(UndoManager.TimelineEdit(before, after))
+      undo.push(before)
     }
   }
 
