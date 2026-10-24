@@ -45,7 +45,7 @@ object Project {
     val ois = new ObjectInputStream(fileHandle.read())
     ois.readObject().asInstanceOf[Project]
   }
-
+@deprecated
   def dump(project: Project): Project = {
     val baos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(baos)) { oos =>
