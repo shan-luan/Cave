@@ -24,7 +24,7 @@ import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.ui.Root
 import games.spooky.gdx.nativefilechooser.NativeFileChooser
 
-
+//TODO:把model不可变化，然后把项目序列化格式改成TOML
 /** 各平台共用的 [[com.badlogic.gdx.ApplicationListener]] 实现。 */
 class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   private lazy val ui: Root = new Root()

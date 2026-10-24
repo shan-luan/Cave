@@ -7,7 +7,9 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
+  @deprecated("连接关系应该被移到Node外部")
   final val inPorts: mutable.ArrayBuffer[Node.InPort[?]] = mutable.ArrayBuffer.empty
+  @deprecated("连接关系应该被移到Node外部")
   final val outPorts: mutable.ArrayBuffer[Node.OutPort[?]] = mutable.ArrayBuffer.empty
 
   protected[pipeline] def remove(): Unit = {
