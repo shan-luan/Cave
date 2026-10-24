@@ -46,7 +46,7 @@ object PasteTemplate {
     val groupCopies: mutable.HashMap[SegmentGroup, SegmentGroup] = mutable.HashMap.empty
     for (i <- entries.indices) {
       entries(i).group.foreach { original =>
-        groupCopies.put(original, groupCopies.getOrElse(original, new SegmentGroup(Set.empty)).add(dups(i)))
+        groupCopies.put(original, groupCopies.getOrElse(original, SegmentGroup(Set.empty)).add(dups(i)))
       }
     }
     val copied = mutable.ArrayBuffer.empty[Entry]

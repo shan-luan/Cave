@@ -307,7 +307,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     tracks.find(_.contains(segment))
 
   def newGroup(): (Timeline, SegmentGroup) = {
-    val group = new SegmentGroup(Set.empty)
+    val group = SegmentGroup(Set.empty)
     (new Timeline(tracks, groups :+ group), group)
   }
 
