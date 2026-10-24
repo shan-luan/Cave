@@ -27,6 +27,7 @@ object App {
   final val taskPool = new TaskPool()
   var root: Root = uninitialized
   final val shortcutManager = new ShortcutManager()
+  final val languageManager = new LanguageManager()
   final val copyManager = new CopyManager()
   final val mediaFactory = new MediaFactory()
   final val nodeRegistry = new NodeRegistry()

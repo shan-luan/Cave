@@ -15,6 +15,7 @@ class SettingsTable extends VisTable {
   {
     val l = new VisLabel(("选择一个条目".in(Zh) | "Select an entry".in(En)).str())
     val tree = new EntryTree(this)
+    tree.add(new EntryNode(("语言".in(Zh) | "Language".in(En)).str(), () => new LanguageSettingsTable()))
     tree.add(new EntryNode(("快捷键".in(Zh) | "Shortcut".in(En)).str(), () => new ShortcutKeysTable()))
     sp = new VisSplitPane(tree, l, false)
     l.setAlignment(1)

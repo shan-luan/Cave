@@ -81,6 +81,8 @@ class Root extends ApplicationListener {
   App.root = this
 
   override def create(): Unit = {
+    App.languageManager.load()
+
     dragAndDrop = new DragAndDrop()
 
     val multiplexer: InputMultiplexer = new InputMultiplexer()
