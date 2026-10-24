@@ -96,7 +96,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     if (indices.isEmpty) return (this, 0L)
 
     val bounds = indices
-      .map((i: Int) => { val t = tracks(i); if (end) t.probeSetEnd(segments, forward) else t.probeSetStart(segments, forward) })
+      .map((i: Int) => { val t = tracks(i); if (end) t.endLimit(segments, forward) else t.startLimit(segments, forward) })
     val bound: Long = if (forward) bounds.min else bounds.max
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))
@@ -117,7 +117,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     val indices = trackIndicesOf(segments)
     if (indices.isEmpty) return (this, 0L)
 
-    val bounds = indices.map((i: Int) => tracks(i).probeMove(segments, forward))
+    val bounds = indices.map((i: Int) => tracks(i).moveLimit(segments, forward))
     val bound: Long = if (forward) bounds.min else bounds.max
     val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
                   else Math.max(deltaTime, Math.min(bound, 0))

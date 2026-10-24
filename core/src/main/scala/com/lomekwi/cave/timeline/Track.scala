@@ -19,7 +19,7 @@ import scala.collection.immutable.TreeMap
 final class Track private (val index: Int,
                            private val blockSegment: Segment,
                            private val layout: Track.Layout,
-                           private val segToOrigin: Map[Clip, Long],
+                           private val segToOrigin: Map[Clip, Long],//TODO:很多人似乎没法理解这是啥，也许应该改成更常见的入点概念。顺便，可以并入Segment?
                            private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Segment] {
 
   private def isBlock(segment: Segment): Boolean = segment.eq(blockSegment)
@@ -29,7 +29,7 @@ final class Track private (val index: Int,
   /** 是否没有用户内容。 */
   override def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(isBlock)
 
-  /** 条目占用的区间。片段要求在本轨道，否则抛 IllegalArgumentException；空隙由两侧邻居推出。 */
+  /** 元素占用的区间。片段要求在本轨道，否则抛 IllegalArgumentException */
   def getInterval(element: Element): Interval = element match {
     case s: Segment =>
       require(layout.containsValue(s))
@@ -483,43 +483,43 @@ final class Track private (val index: Int,
     intersectingEntries(intervalToSeg, interval).forall { case (_, s) => ignore.contains(s) }
   }
 
-  protected[timeline] def probeSetStart(segments: Iterable[Segment], forward: Boolean): Long = {
+  protected[timeline] def startLimit(segments: Iterable[Segment], forward: Boolean): Long = {
     val offsets = segments.iterator
       .filter((s: Segment) => contains(s))
       .map {
-        case t: Transition => probeTransitionStart(t, forward)
-        case c: Content => probeContentStart(c, forward)
+        case t: Transition => startLimit(t, forward)
+        case c: Content => startLimit(c, forward)
       }
     // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
-  protected[timeline] def probeSetEnd(segments: Iterable[Segment], forward: Boolean): Long = {
+  protected[timeline] def endLimit(segments: Iterable[Segment], forward: Boolean): Long = {
     val offsets = segments.iterator
       .filter((s: Segment) => contains(s))
       .map {
-        case t: Transition => probeTransitionEnd(t, forward)
-        case c: Content => probeContentEnd(c, forward)
+        case t: Transition => endLimit(t, forward)
+        case c: Content => endLimit(c, forward)
       }
     // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
-  private def probeContentStart(c: Content, forward: Boolean): Long = {
+  private def startLimit(c: Content, forward: Boolean): Long = {
     val r = getInterval(c)
     if (forward) Math.max(startUpper(c) - r.lo, 0) else Math.min(startLower(c) - r.lo, 0)
   }
 
-  private def probeContentEnd(c: Content, forward: Boolean): Long = {
+  private def endLimit(c: Content, forward: Boolean): Long = {
     val r = getInterval(c)
     if (forward) Math.max(endUpper(c) - r.hi, 0) else Math.min(endLower(c) - r.hi, 0)
   }
 
-  private def probeTransitionStart(t: Transition, forward: Boolean): Long =
-    transitionSides(t).map(s => probeContentStart(s._2, forward)).getOrElse(0L)
+  private def startLimit(t: Transition, forward: Boolean): Long =
+    transitionSides(t).map(s => startLimit(s._2, forward)).getOrElse(0L)
 
-  private def probeTransitionEnd(t: Transition, forward: Boolean): Long =
-    transitionSides(t).map(s => probeContentEnd(s._1, forward)).getOrElse(0L)
+  private def endLimit(t: Transition, forward: Boolean): Long =
+    transitionSides(t).map(s => endLimit(s._1, forward)).getOrElse(0L)
 
   /** 素材起点。有界素材是 origin，无界内容没有素材起点，视作时间轴 0。 */
   private def minStartOf(segment: Segment): Long = segment match {
@@ -533,7 +533,7 @@ final class Track private (val index: Int,
     case _ => Long.MaxValue
   }
 
-  protected[timeline] def probeMove(segments: Iterable[Segment], forward: Boolean): Long = {
+  protected[timeline] def moveLimit(segments: Iterable[Segment], forward: Boolean): Long = {
     val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍，视作无界
     val moving = segments.toSet
     // 两侧内容都不动的转场要带着它们一起平移，得在摘掉整组后的布局上单独探测，按需构造
@@ -544,19 +544,19 @@ final class Track private (val index: Int,
         case t: Transition =>
           transitionSides(t) match {
             case Some((left, right)) if !moving.contains(left) && !moving.contains(right) =>
-              bare.probeShiftOf(left, right, getInterval(left), getInterval(right),
+              bare.moveLimit(left, right, getInterval(left), getInterval(right),
                 maxEndOf(left), minStartOf(right), forward)
             case _ =>
               // 至少一侧内容也在搬运范围内时，转场随内容重建，不构成独立限制
               noBlock
           }
-        case c: Content => probeMoveOf(c, getInterval(c), moving, forward)
+        case c: Content => moveLimit(c, getInterval(c), moving, forward)
       }
     // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
   }
 
-  private def probeMoveOf(c: Content, r: Interval, moving: Set[Segment], forward: Boolean): Long = {
+  private def moveLimit(c: Content, r: Interval, moving: Set[Segment], forward: Boolean): Long = {
     if (forward) {
       var bound = Long.MaxValue
       nextContent(c).foreach { n =>
@@ -584,7 +584,7 @@ final class Track private (val index: Int,
     }
   }
 
-  private def probeShiftOf(left: Content, right: Content, lr: Interval, rr: Interval,
+  private def moveLimit(left: Content, right: Content, lr: Interval, rr: Interval,
                            hiCap: Long, loCap: Long, forward: Boolean): Long = {
     def skip(x: Content): Boolean = x.eq(left) || x.eq(right)
     if (forward) {
@@ -603,7 +603,7 @@ final class Track private (val index: Int,
     }
   }
 
-  /** 包含 time 的条目；落在空隙中时返回临时物化的 [[Gap]]。 */
+  /** 包含 time 的条目；。 */
   def get(time: Long): Element = segmentAt(time).getOrElse(
     Gap(contentBefore(time, Set.empty), contentAtOrAfter(time, Set.empty)))
 
@@ -618,12 +618,6 @@ final class Track private (val index: Int,
     case _ => false
   }
 
-  /** 起点顺序上紧随其后的条目。要求片段在本轨道，否则抛 IllegalArgumentException。 */
-  def nextOf(segment: Segment): Option[Segment] = sourceAtOrAfter(getInterval(segment).hi)
-
-  /** 起点顺序上紧邻其前的条目。要求片段在本轨道，否则抛 IllegalArgumentException。 */
-  def prevOf(segment: Segment): Option[Segment] = sourceBefore(getInterval(segment).lo)
-
   /** 起点不小于 time 的首个片段。 */
   private[timeline] def sourceAtOrAfter(time: Long): Option[Segment] =
     intervalToSeg.rangeFrom(Interval.at(time)).iterator.map(_._2).nextOption()
@@ -637,7 +631,7 @@ final class Track private (val index: Int,
     intersectingEntries(intervalToSeg, interval).map(_._2).filterNot(isBlock).toList
   }
 
-  /** 生成片段在绝对时间 time 的帧，求值期间经 [[EvalClock]] 向节点提供时刻。 */
+  /** 生成片段在绝对时间 time 的帧 */
   def frameAt(segment: Segment, time: Long): Frame = {
     val relative = time - getOrigin(segment)
     val f = EvalClock.withTime(time, relative) {
