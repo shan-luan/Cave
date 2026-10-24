@@ -19,7 +19,7 @@ import scala.compiletime.uninitialized
  */
 class TrackWorker(private val context: ProjectSession, private val index: Int) extends Runnable {
   private final val gapFrame: GapFrame = new GapFrame(index)
-  var sinkPhaser: Phaser = uninitialized
+  lazy val sinkPhaser: Phaser = new Phaser(1)
   var future: Future[?] = uninitialized
   @volatile private var workerThread: Thread = uninitialized
   @volatile private var updateNeeded: Boolean = false
@@ -27,10 +27,9 @@ class TrackWorker(private val context: ProjectSession, private val index: Int) e
   private def timeline: Timeline = context.timeline
 
   context.bus.register(this)
-
+//TODO：重构。这玩意太混乱了。搞个状态机也许不错。
   override def run(): Unit = {
     workerThread = Thread.currentThread()
-    sinkPhaser = new Phaser(1)
     Gdx.app.log("Track" + index, ("轨道线程启动: ".in(Zh) | "Track thread started: ".in(En)).str() + timeline.getTrackOrCreate(index))
     try {
       val p = context.playhead
