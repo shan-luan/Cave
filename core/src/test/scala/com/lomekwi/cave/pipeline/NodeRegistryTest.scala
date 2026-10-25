@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.FilterListTest.FpCont
-import com.lomekwi.cave.pipeline.num.{AddNode, RandomNode}
+import com.lomekwi.cave.pipeline.num.RandomNode
 
 /**
  * 验证节点注册表的滤镜链菜单只列 Filter。
@@ -16,6 +16,6 @@ class NodeRegistryTest extends munit.FunSuite {
 
     assert(compatible.nonEmpty, "至少应有节点图滤镜可用")
     assert(compatible.forall(_.isInstanceOf[Filter[?]]), "滤镜链菜单不应包含非 Filter 节点")
-    assert(!(compatible.exists(node => node.isInstanceOf[RandomNode] || node.isInstanceOf[AddNode])))
+    assert(!(compatible.exists(_.isInstanceOf[RandomNode])))
   }
 }
