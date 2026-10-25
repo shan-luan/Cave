@@ -27,13 +27,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   @transient private lazy val segmentActor: TlSegmentActor = createTlSegmentActor()
 
   /**
-   * 获取指定时间的产品。生成帧后沿 filter 链（端口连接）求值，
-   * 返回链上最后一个 filter 的输出；无 filter 时返回原生帧。
-   *
-   * 求值全程持有本片段的锁，源、解码器与帧槽因此同一时刻只被一个线程使用。
-   * 跨轨搬运后旧轨道线程尚未退出时在此排队，不会与新轨道线程并发借用同一解码器。
-   * @param time 片段内时间
-   * @return 产品
+   * 获取指定时间的产品。
    */
   final def get(time: Long, track: Track): Frame = this.synchronized {
     val generated = source.generate(time, track, this)
@@ -93,7 +87,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
     source.createTlSegmentActor(this)
   }
 
-  /** 本片段在时间线上的可视化 actor，随取随建。 */
+  /** 本片段在时间线上的可视化 actor */
   def getTlSegmentActor: TlSegmentActor = segmentActor
 
   override def duplicate(): Segment = {

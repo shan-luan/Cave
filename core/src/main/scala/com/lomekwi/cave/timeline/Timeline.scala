@@ -349,35 +349,6 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     tracks
   }
 
-  /**
-   * 两个时间线相等，当且仅当每个轨道按索引逐位对应相等。
-   * 缺失的轨道与空轨道视为相等（只允许尾部为空的差异）。
-   */
-  override def equals(o: Any): Boolean = {
-    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
-      true
-    } else o match {
-      case other: Timeline =>
-        val max = Math.max(tracks.size, other.tracks.size)
-        (0 until max).forall { i =>
-          val a = if (i < tracks.size) tracks(i) else null
-          val b = if (i < other.tracks.size) other.tracks(i) else null
-          Timeline.trackEquals(a, b)
-        }
-      case _ => false
-    }
-  }
-
-  override def hashCode(): Int = {
-    var h = 1
-    for (track <- tracks) {
-      if (!track.isEmpty) {
-        h = 31 * h + track.hashCode()
-      }
-    }
-    h
-  }
-
   /** 迭代有元素的轨道。 */
   override def iterator: Iterator[Track] = tracks.iterator.filterNot(_.isEmpty)
 
@@ -385,10 +356,4 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
 
 object Timeline {
   def empty: Timeline = new Timeline(Vector.empty[Track], Vector.empty[SegmentGroup])
-
-  private def trackEquals(a: Track, b: Track): Boolean = {
-    if (a == null) b == null || b.isEmpty
-    else if (b == null) a.isEmpty
-    else a.equals(b)
-  }
 }

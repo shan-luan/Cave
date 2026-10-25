@@ -16,11 +16,11 @@ import scala.collection.immutable.TreeMap
  * 转场由相邻内容的重叠区派生，由轨道自行维护，不直接修改。
  */
 @SerialVersionUID(1L)
-final class Track private (val index: Int,
-                           private val blockSegment: Segment,
-                           private val layout: Track.Layout,
-                           private val segToOrigin: Map[Clip, Long],//TODO:很多人似乎没法理解这是啥，也许应该改成更常见的入点概念。顺便，可以并入Segment?
-                           private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Segment] {
+case class Track private (index: Int,
+                          private val blockSegment: Segment,
+                          private val layout: Track.Layout,
+                          private val segToOrigin: Map[Clip, Long],//TODO:很多人似乎没法理解这是啥，也许应该改成更常见的入点概念。顺便，可以并入Segment?
+                          private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Segment] {
 
   private def isBlock(segment: Segment): Boolean = segment.eq(blockSegment)
 
@@ -663,36 +663,6 @@ final class Track private (val index: Int,
     parts.mkString(", ")
   }
 
-  /** 索引相同且条目逐项相同。条目都按起点升序迭代，两侧可以逐项对齐比较。 */
-  override def equals(o: Any): Boolean = {
-    if (this.asInstanceOf[AnyRef] eq o.asInstanceOf[AnyRef]) {
-      true
-    } else o match {
-      case other: Track =>
-        if (index != other.index) {
-          false
-        } else {
-          val a = intervalToSeg.iterator.toIndexedSeq
-          val b = other.intervalToSeg.iterator.toIndexedSeq
-          a.size == b.size && a.zip(b).forall { case ((ia, ea), (ib, eb)) =>
-            ia == ib && entryEquals(ea, eb, other)
-          }
-        }
-      case _ => false
-    }
-  }
-
-  /**
-   * 比较两个条目，比较类型、时长与 origin；区间作为键已经比过。
-   */
-  private def entryEquals(a: Segment, b: Segment, other: Track): Boolean = {
-    Track.sourceEquals(a, b) && getOrigin(a) == other.getOrigin(b)
-  }
-
-  override def hashCode(): Int = {
-    Integer.hashCode(index)
-  }
-
   /** 包含 time 的片段。重叠时取区间最短的那个，它一定是转场。 */
   private def segmentAt(time: Long): Option[Segment] = {
     // 布局不变量（放置约束见 [[canPlaceAt]]，平移与裁切的上下界计算与之配套）使条目按 (lo, hi)
@@ -755,11 +725,4 @@ object Track {
     if (time == Long.MaxValue) "∞" else time.toString
   }
 
-  private def sourceEquals(a: Segment, b: Segment): Boolean = {
-    if (a.eq(b)) {
-      true
-    } else {
-      a.getClass == b.getClass && a.getDuration == b.getDuration
-    }
-  }
 }
