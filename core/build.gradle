@@ -18,6 +18,10 @@ dependencies {
   testImplementation "org.objenesis:objenesis:3.4"
 }
 
+tasks.named('compileTestScala', ScalaCompile) {
+  scalaCompileOptions.additionalParameters = ['-deprecation', '-feature', '-Wunused:all']
+}
+
 test {
   useJUnit()
   minHeapSize = '1g'
