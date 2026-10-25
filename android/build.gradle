@@ -19,7 +19,7 @@ android {
   sourceSets {
     main {
       manifest.srcFile 'AndroidManifest.xml'
-      java.setSrcDirs(['src/main/java'])
+      java.setSrcDirs(['src/main/java', 'src/main/scala'])
       aidl.setSrcDirs(['src/main/java'])
       renderscript.setSrcDirs(['src/main/java'])
       res.setSrcDirs(['res'])
