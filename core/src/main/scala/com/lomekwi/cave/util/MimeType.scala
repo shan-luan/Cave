@@ -10,7 +10,7 @@ import java.nio.file.Path
 
 object MimeType {
 
-  private final val extensionToMimeType: Map[String, String] = Map(
+  private val extensionToMimeType: Map[String, String] = Map(
     "mkv" -> "video/x-matroska",
     "mp4" -> "video/mp4",
     "avi" -> "video/x-msvideo",

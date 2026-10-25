@@ -43,7 +43,7 @@ import org.lwjgl.system.macosx.ObjCRuntime.sel_getUid
  */
 object StartupHelper {
 
-    private final val JVM_RESTARTED_ARG = "jvmIsRestarted"
+    private val JVM_RESTARTED_ARG = "jvmIsRestarted"
 
     /**
      * Starts a new JVM if the application was started on macOS without the

@@ -91,5 +91,5 @@ class AutoHideTabbedPane extends TabbedPane {
 }
 
 object AutoHideTabbedPane {
-  private final val ANIMATION_DURATION: Float = 0.25f
+  private val ANIMATION_DURATION: Float = 0.25f
 }

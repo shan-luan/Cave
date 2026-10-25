@@ -102,5 +102,5 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
 }
 
 object TlRuler {
-  private final val PIXELS_PER_TICK: Float = 200f
+  private val PIXELS_PER_TICK: Float = 200f
 }

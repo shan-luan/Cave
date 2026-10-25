@@ -929,7 +929,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   }
 
   protected object Gizmo {
-    private[TransFrameActor] final val HANDLE_HIT_RADIUS: Float = 18f
+    private[TransFrameActor] val HANDLE_HIT_RADIUS: Float = 18f
 
     enum Handle {
       case NW, N, NE, E, SE, S, SW, W, ROTATE
@@ -938,26 +938,26 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 }
 
 object TransFrameActor {
-  private final val MIN_SCALE: Float = 0.01f
-  private final val MIN_SIZE: Float = 4f
-  final val ROTATE_OFFSET_LOCAL: Float = 70f
-  private final val tmpMatrix: Matrix4 = new Matrix4()
-  private final val IDENTITY: Matrix4 = new Matrix4().idt()
+  private val MIN_SCALE: Float = 0.01f
+  private val MIN_SIZE: Float = 4f
+  val ROTATE_OFFSET_LOCAL: Float = 70f
+  private val tmpMatrix: Matrix4 = new Matrix4()
+  private val IDENTITY: Matrix4 = new Matrix4().idt()
 
-  private final val dragStagePos: Vector2 = new Vector2()
-  private final val tmp1: Vector2 = new Vector2()
-  private final val tmp2: Vector2 = new Vector2()
-  private final val tmp3: Vector2 = new Vector2()
-  private final val hitCorner1: Vector2 = new Vector2()
-  private final val hitCorner2: Vector2 = new Vector2()
-  private final val hitCorner3: Vector2 = new Vector2()
-  private final val hitCorner4: Vector2 = new Vector2()
-  private final val actorBounds: Rectangle = new Rectangle()
-  private final val previewBounds: Rectangle = new Rectangle()
-  private final val intersectBounds: Rectangle = new Rectangle()
+  private val dragStagePos: Vector2 = new Vector2()
+  private val tmp1: Vector2 = new Vector2()
+  private val tmp2: Vector2 = new Vector2()
+  private val tmp3: Vector2 = new Vector2()
+  private val hitCorner1: Vector2 = new Vector2()
+  private val hitCorner2: Vector2 = new Vector2()
+  private val hitCorner3: Vector2 = new Vector2()
+  private val hitCorner4: Vector2 = new Vector2()
+  private val actorBounds: Rectangle = new Rectangle()
+  private val previewBounds: Rectangle = new Rectangle()
+  private val intersectBounds: Rectangle = new Rectangle()
 
-  private final val SNAP_THRESHOLD_SCREEN: Float = 10f
-  private final val snapAdjust: Vector2 = new Vector2()
+  private val SNAP_THRESHOLD_SCREEN: Float = 10f
+  private val snapAdjust: Vector2 = new Vector2()
 
   private def findTransNode(segment: Segment): TransNode = {
     segment.filters.reverseIterator.collectFirst { case tf: TransNode => tf }.orNull

@@ -67,5 +67,5 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
 }
 
 object InPortActor {
-  private final val FADE_TIME: Float = 0.15f
+  private val FADE_TIME: Float = 0.15f
 }

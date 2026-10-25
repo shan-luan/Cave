@@ -86,5 +86,5 @@ class FileTreeNode(file: File) extends Tree.Node[FileTreeNode, File, VisLabel]()
 }
 
 object FileTreeNode {
-  private final val PLACEHOLDER_NODE: FileTreeNode = new FileTreeNode(null)
+  private val PLACEHOLDER_NODE: FileTreeNode = new FileTreeNode(null)
 }

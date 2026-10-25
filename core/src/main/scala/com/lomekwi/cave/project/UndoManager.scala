@@ -42,5 +42,5 @@ final class UndoManager(@transient private val session: ProjectSession) {
 }
 
 object UndoManager {
-  private final val MAX_UNDO = 100
+  private val MAX_UNDO = 100
 }

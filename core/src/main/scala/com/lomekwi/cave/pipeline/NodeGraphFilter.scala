@@ -59,5 +59,5 @@ class NodeGraphFilter extends Filter[Object] {
 
 object NodeGraphFilter {
   /** 新建节点图中总输出节点相对入口节点的水平偏移 */
-  private final val SINK_OFFSET_X: Float = 240f
+  private val SINK_OFFSET_X: Float = 240f
 }

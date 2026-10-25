@@ -235,10 +235,10 @@ trait PortActor extends Actor with PortHolder {
 }
 
 object PortActor {
-  private final val DOT_RADIUS: Float = 5f
+  private val DOT_RADIUS: Float = 5f
   /** 圆点的可抓取半径，比圆点本身大，便于命中。 */
-  private final val GRAB_RADIUS: Float = 9f
-  private final val MIN_CTRL_OFFSET: Float = 30f
-  private final val CURVE_SEGMENTS: Int = 24
-  private final val LINE_THICKNESS: Float = 2f
+  private val GRAB_RADIUS: Float = 9f
+  private val MIN_CTRL_OFFSET: Float = 30f
+  private val CURVE_SEGMENTS: Int = 24
+  private val LINE_THICKNESS: Float = 2f
 }

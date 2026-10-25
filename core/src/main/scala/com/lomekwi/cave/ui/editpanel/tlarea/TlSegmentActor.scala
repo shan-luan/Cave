@@ -459,5 +459,5 @@ abstract class TlSegmentActor(val segment: Segment) extends Actor {
 }
 
 object TlSegmentActor {
-  private final val SNAP_THRESHOLD_PX: Float = 10f
+  private val SNAP_THRESHOLD_PX: Float = 10f
 }

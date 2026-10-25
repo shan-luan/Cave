@@ -254,6 +254,6 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
 }
 
 object PreviewArea {
-  private final val TICK_PIXEL_TARGET: Int = 80
-  private final val guidePos: Vector2 = new Vector2()
+  private val TICK_PIXEL_TARGET: Int = 80
+  private val guidePos: Vector2 = new Vector2()
 }

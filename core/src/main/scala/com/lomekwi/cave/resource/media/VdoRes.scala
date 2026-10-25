@@ -192,8 +192,8 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
 }
 
 private[media] object Thumbnailer {
-  private[media] final val THUMB_HEIGHT = 80
-  private[media] final val BATCH_SIZE = 16
+  private[media] val THUMB_HEIGHT = 80
+  private[media] val BATCH_SIZE = 16
 
-  private[media] final val Consumer: AnyRef = new Object
+  private[media] val Consumer: AnyRef = new Object
 }

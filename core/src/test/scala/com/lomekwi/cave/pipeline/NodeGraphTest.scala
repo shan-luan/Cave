@@ -38,7 +38,7 @@ class NodeGraphTest extends munit.FunSuite {
 }
 
 private[pipeline] final class TestOutNode extends Node {
-  final val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
+  val out: Node.OutPort[Object] = addOutPort(new Node.OutPort[Object]("输出", classOf[Object]) {
     override def getData: Object = null
   })
 
@@ -46,7 +46,7 @@ private[pipeline] final class TestOutNode extends Node {
 }
 
 private[pipeline] final class TestInNode extends Node {
-  final val in: Node.InPort[Object] = addInPort(new Node.InPort[Object]("输入"))
+  val in: Node.InPort[Object] = addInPort(new Node.InPort[Object]("输入"))
 
   override val name: String = "测试输入"
 }

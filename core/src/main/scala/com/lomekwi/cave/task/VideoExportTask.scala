@@ -200,8 +200,8 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
 }
 
 object VideoExportTask {
-  private final val AUDIO_FRAME_SIZE = AudDecRes.FRAME_SIZE
-  private final val AUDIO_SAMPLE_RATE = 44100
-  private final val AUDIO_CHANNELS = 2
-  private final val AUDIO_FRAME_DURATION = AUDIO_FRAME_SIZE * SECOND / AUDIO_SAMPLE_RATE / AUDIO_CHANNELS
+  private val AUDIO_FRAME_SIZE = AudDecRes.FRAME_SIZE
+  private val AUDIO_SAMPLE_RATE = 44100
+  private val AUDIO_CHANNELS = 2
+  private val AUDIO_FRAME_DURATION = AUDIO_FRAME_SIZE * SECOND / AUDIO_SAMPLE_RATE / AUDIO_CHANNELS
 }

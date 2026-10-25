@@ -177,11 +177,11 @@ object FilterListTest {
 
   /** 最小可测 [[Filter]]，把传入帧的 val 加 [[delta]]。 */
   private[pipeline] final class AddFilter extends Filter[Fpable] {
-    private[FilterListTest] final val delta: Node.InPort[Double] = addInPort(
+    private[FilterListTest] val delta: Node.InPort[Double] = addInPort(
       new Node.InPort[Double]("delta", 0.0, classOf[Double]) {})
-    private final val in: FilterIn = addInPort(new FilterIn("in") {
+    private val in: FilterIn = addInPort(new FilterIn("in") {
     })
-    private final val out: FilterOut = addOutPort(new FilterOut("out") {
+    private val out: FilterOut = addOutPort(new FilterOut("out") {
       override def getData: Fpable = {
         val f = filterIn.getData
         if (f != null) {

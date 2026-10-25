@@ -560,13 +560,13 @@ class TimelineView(context0: ProjectSession) extends Group with Focusable {
   }
 
   private[tlarea] object TimelineRenderer {
-    private[tlarea] final val PIXELS_PER_TICK: Float = 200f
+    private[tlarea] val PIXELS_PER_TICK: Float = 200f
   }
 }
 
 object TimelineView {
-  private final val KEY_HORIZONTAL_SPEED: Float = 1200f
-  private final val KEY_VERTICAL_SPEED: Float = 1200f
+  private val KEY_HORIZONTAL_SPEED: Float = 1200f
+  private val KEY_VERTICAL_SPEED: Float = 1200f
 
   enum Actions(displayName0: String, defaultKeys0: Int*) extends ShortcutAction {
     case SCROLL_LEFT extends Actions(("向左滚动".in(Zh) | "Scroll Left".in(En)).str(), A)

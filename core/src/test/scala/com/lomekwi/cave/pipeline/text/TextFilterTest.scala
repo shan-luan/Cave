@@ -66,7 +66,7 @@ class TextFilterTest extends munit.FunSuite {
 }
 
 object TextFilterTest {
-  private final val ORIGIN = "hello world"
+  private val ORIGIN = "hello world"
 
   private final class TxtCont extends Boundless(new TxtSource)
 

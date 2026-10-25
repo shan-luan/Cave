@@ -136,7 +136,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
 }
 
 object TrackTransitionFuzzTest {
-  private final val SPAN = 20_000L
-  private final val DURATION_MIN = 100L
-  private final val DURATION_MAX = 3_000L
+  private val SPAN = 20_000L
+  private val DURATION_MIN = 100L
+  private val DURATION_MAX = 3_000L
 }

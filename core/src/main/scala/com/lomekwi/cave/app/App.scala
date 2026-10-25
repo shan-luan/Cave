@@ -18,19 +18,19 @@ import scala.compiletime.uninitialized
 object App {
   var fileChooser: NativeFileChooser = uninitialized
   var audioOut: AppAudioOut = uninitialized
-  final val appEventBus = new EventBus()
-  final val workerExecutor: ExecutorService = Executors.newCachedThreadPool((r: Runnable) => {
+  val appEventBus = new EventBus()
+  val workerExecutor: ExecutorService = Executors.newCachedThreadPool((r: Runnable) => {
     val thread = new Thread(r)
     thread.setDaemon(true)
     thread
   })
-  final val taskPool = new TaskPool()
+  val taskPool = new TaskPool()
   var root: Root = uninitialized
-  final val shortcutManager = new ShortcutManager()
-  final val languageManager = new LanguageManager()
-  final val copyManager = new CopyManager()
-  final val mediaFactory = new MediaFactory()
-  final val nodeRegistry = new NodeRegistry()
-  final val cardWidgetsRegistry = new CardWidgetsRegistry()
+  val shortcutManager = new ShortcutManager()
+  val languageManager = new LanguageManager()
+  val copyManager = new CopyManager()
+  val mediaFactory = new MediaFactory()
+  val nodeRegistry = new NodeRegistry()
+  val cardWidgetsRegistry = new CardWidgetsRegistry()
 
 }

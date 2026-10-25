@@ -1,18 +1,18 @@
 package com.lomekwi.cave.util
 
 object Units {
-  private final val KILO = 1_000L
-  final val MEGA = KILO * KILO
-  private final val GIGA = KILO * MEGA
-  private final val TERA = KILO * GIGA
-  final val PETA = KILO * TERA
+  private val KILO = 1_000L
+  val MEGA = KILO * KILO
+  private val GIGA = KILO * MEGA
+  private val TERA = KILO * GIGA
+  val PETA = KILO * TERA
 
-  private final val MICROSECOND = 1 // 时间基准为一微秒
-  private final val MILLISECOND = KILO * MICROSECOND
-  final val SECOND = KILO * MILLISECOND
-  private final val MINUTE = 60 * SECOND
-  private final val HOUR = 60 * MINUTE
-  final val DAY = 24 * HOUR
+  private val MICROSECOND = 1 // 时间基准为一微秒
+  private val MILLISECOND = KILO * MICROSECOND
+  val SECOND = KILO * MILLISECOND
+  private val MINUTE = 60 * SECOND
+  private val HOUR = 60 * MINUTE
+  val DAY = 24 * HOUR
 
   /**
    * Nice Scale 算法，把原始区间值舍入到最近的"整齐"数（1、2 或 5 × 10^n），

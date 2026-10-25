@@ -12,5 +12,5 @@ class AppAudioOut {
 }
 
 object AppAudioOut {
-  final val SAMPLE_RATE = 44100
+  val SAMPLE_RATE = 44100
 }

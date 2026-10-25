@@ -59,5 +59,5 @@ class ShortcutManager {
 }
 
 object ShortcutManager {
-  private final val PREFS_NAME = "cave-shortcuts"
+  private val PREFS_NAME = "cave-shortcuts"
 }

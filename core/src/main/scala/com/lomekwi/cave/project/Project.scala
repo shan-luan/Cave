@@ -33,7 +33,7 @@ final class Project(val name: String,
 }
 
 object Project {
-  private final val PROJECT_EXTENSION = ".cave"
+  private val PROJECT_EXTENSION = ".cave"
 
   def create(): Project = new Project(
     ("未命名".in(Zh) | "Untitled".in(En)).str(),

@@ -78,7 +78,7 @@ object TlAudSegmentActor {
     shader
   }
 
-  private final val VERT =
+  private val VERT =
     """|attribute vec4 a_position;
        |attribute vec4 a_color;
        |attribute vec2 a_texCoord0;
@@ -89,7 +89,7 @@ object TlAudSegmentActor {
        |    gl_Position = u_projTrans * a_position;
        |}""".stripMargin
 
-  private final val FRAG =
+  private val FRAG =
     """|#ifdef GL_ES
        |precision mediump float;
        |#endif

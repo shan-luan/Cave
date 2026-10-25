@@ -59,8 +59,8 @@ class ExportOptionsSet extends Json.Serializable {
 }
 
 object ExportOptionsSet {
-  private final val PREFS_NAME = "cave-export-options"
-  private final val KEY = "options"
+  private val PREFS_NAME = "cave-export-options"
+  private val KEY = "options"
 
   def load(): ExportOptionsSet = {
     val prefs: Preferences = Gdx.app.getPreferences(PREFS_NAME)

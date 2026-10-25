@@ -105,6 +105,6 @@ object AudioFrameSink {
   }
 
   private object AudioFrameMixer {
-    private final val POLL_TIMEOUT_MILLIS = 20L
+    private val POLL_TIMEOUT_MILLIS = 20L
   }
 }

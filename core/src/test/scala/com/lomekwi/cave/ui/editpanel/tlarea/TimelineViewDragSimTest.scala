@@ -415,10 +415,10 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
 object TimelineViewDragSimTest {
 
-  private final val WIDTH: Float = 2000f
-  private final val HEIGHT: Float = 400f
-  private final val TRACK_H: Float = 80f
-  private final val DURATION_US: Long = 2_000_000L
+  private val WIDTH: Float = 2000f
+  private val HEIGHT: Float = 400f
+  private val TRACK_H: Float = 80f
+  private val DURATION_US: Long = 2_000_000L
 
   private def setField(target: Object, name: String, value: Any): Unit = {
     val f: Field = target.getClass.getDeclaredField(name)

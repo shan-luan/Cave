@@ -38,6 +38,6 @@ class LanguageSettingsTable extends EntryTable {
 }
 
 object LanguageSettingsTable {
-  final val langs: Seq[Lang] = Seq(Zh, En)
-  final val names: Array[String] = Array("中文", "English")
+  val langs: Seq[Lang] = Seq(Zh, En)
+  val names: Array[String] = Array("中文", "English")
 }

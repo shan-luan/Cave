@@ -305,15 +305,15 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
 }
 
 private[media] object SingleWaveform {
-  private[media] final val W = 160
-  private[media] final val H = 90
+  private[media] val W = 160
+  private[media] val H = 90
 
-  private[media] final val Consumer: AnyRef = new Object
+  private[media] val Consumer: AnyRef = new Object
 }
 
 private[media] object Waveformer {
-  private[media] final val DECIMATED_RATE = 400
-  private[media] final val BATCH_SIZE = 64
+  private[media] val DECIMATED_RATE = 400
+  private[media] val BATCH_SIZE = 64
 
-  private[media] final val Consumer: AnyRef = new Object
+  private[media] val Consumer: AnyRef = new Object
 }

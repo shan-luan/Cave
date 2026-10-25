@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters.*
  */
 final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
 
-  private final val entries = new ConcurrentHashMap[AnyRef, PooledDec]()
+  private val entries = new ConcurrentHashMap[AnyRef, PooledDec]()
 
   DecoderPool.registerPool(this)
 
@@ -128,13 +128,13 @@ final class DecoderLease private[media] (private val pooled: PooledDec) extends 
 }
 
 private[media] object DecoderPool {
-  private final val idleNanos: Long = TimeUnit.SECONDS.toNanos(30)
-  private final val weightBudget: Double = 8.0
+  private val idleNanos: Long = TimeUnit.SECONDS.toNanos(30)
+  private val weightBudget: Double = 8.0
 
-  private final val pools: java.util.Set[DecoderPool] = ConcurrentHashMap.newKeySet[DecoderPool]()
-  private final val totalWeight: DoubleAdder = new DoubleAdder()
+  private val pools: java.util.Set[DecoderPool] = ConcurrentHashMap.newKeySet[DecoderPool]()
+  private val totalWeight: DoubleAdder = new DoubleAdder()
 
-  private final val CLEANUP: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
+  private val CLEANUP: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor((r: Runnable) => {
     val t = new Thread(r, "decoder-pool-cleanup")
     t.setDaemon(true)
     t

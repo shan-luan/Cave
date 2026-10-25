@@ -7,7 +7,7 @@ import com.lomekwi.cave.util.i18n.TransTargetType.given
 object EvalClock {
   private final case class Context(timeline: Long, segment: Long)
 
-  private final val context: ThreadLocal[Context] = new ThreadLocal[Context]()
+  private val context: ThreadLocal[Context] = new ThreadLocal[Context]()
 
   /** 在指定时刻的上下文中执行 body，结束后恢复调用前的上下文。 */
   def withTime[T](timeline: Long, segment: Long)(body: => T): T = {

@@ -22,7 +22,7 @@ class LanguageManager {
 }
 
 object LanguageManager {
-  private final val PREFS_NAME = "cave-language"
-  private final val KEY = "language"
-  final val supported: Seq[Lang] = Seq(Zh, En)
+  private val PREFS_NAME = "cave-language"
+  private val KEY = "language"
+  val supported: Seq[Lang] = Seq(Zh, En)
 }

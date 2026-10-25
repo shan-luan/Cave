@@ -8,10 +8,10 @@ import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 @SerialVersionUID(1L)
 final class AddNode extends Filter[Double] {
-  private final val in: FilterIn = addInPort(new FilterIn("A"))
-  private final val b: Node.InPort[Double] = addInPort(new Node.InPort[Double]("B", 0.0, classOf[Double]))
+  private val in: FilterIn = addInPort(new FilterIn("A"))
+  private val b: Node.InPort[Double] = addInPort(new Node.InPort[Double]("B", 0.0, classOf[Double]))
 
-  private final val out: FilterOut = addOutPort(new FilterOut(("输出".in(Zh) | "Output".in(En)).str()) {
+  private val out: FilterOut = addOutPort(new FilterOut(("输出".in(Zh) | "Output".in(En)).str()) {
     override def getData: Double = filterIn.getData + b.getData
   })
 

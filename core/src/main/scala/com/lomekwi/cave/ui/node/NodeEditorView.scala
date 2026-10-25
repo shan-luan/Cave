@@ -175,6 +175,6 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
 }
 
 object NodeEditorView {
-  private final val GRID_SPACING: Float = 50f
-  private final val MIN_GRID_PIXEL: Float = 8f
+  private val GRID_SPACING: Float = 50f
+  private val MIN_GRID_PIXEL: Float = 8f
 }

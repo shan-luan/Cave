@@ -159,5 +159,5 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
 }
 
 object AudDecRes {
-  final val FRAME_SIZE = 1024
+  val FRAME_SIZE = 1024
 }

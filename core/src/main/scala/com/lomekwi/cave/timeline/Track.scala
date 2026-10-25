@@ -719,7 +719,7 @@ object Track {
       BiMap(Map.empty[Content, Transition], Map.empty[Transition, Content]))
   }
 
-  private final val MAX_SLIDE_STEPS = 10000
+  private val MAX_SLIDE_STEPS = 10000
 
   private def timeText(time: Long): String = {
     if (time == Long.MaxValue) "∞" else time.toString
