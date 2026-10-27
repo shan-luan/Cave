@@ -35,7 +35,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
 
   /** 本片段占用的时间区间；未在时间线上时为空。 */
   private[tlarea] def interval: Interval = {
-    if (track == null) null else track.getInterval(id)
+    if (track == null) null else track.interval(id)
   }
 
   /** 片段的 0 秒在时间轴中的位置；未在时间线上时为 0。 */
@@ -225,7 +225,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
           // 否则下一帧会把这段位移当成新的一帧位移，内容整体平移过去
           val anchor = dragMembers.head
           tl.timeline.findTrackOf(anchor).foreach { anchorTrack =>
-            firstX = viewX - tl.absoluteTimeToX(anchorTrack.getInterval(anchor).lo)
+            firstX = viewX - tl.absoluteTimeToX(anchorTrack.interval(anchor).lo)
           }
         }
       case _ => ()
@@ -396,7 +396,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     var appliedTracks: Int = 0
     val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
-      val currentStart0: Long = firstTrack.getInterval(members.head).lo
+      val currentStart0: Long = firstTrack.interval(members.head).lo
       tl.context.moveTime(members, target - currentStart0)
 
       if (trackDelta != 0) {
@@ -412,7 +412,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
-      val base = firstTrack.getInterval(first).lo
+      val base = firstTrack.interval(first).lo
       tl.context.setStart(members, newStart - base)
     }
   }
@@ -422,7 +422,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val members: mutable.ArrayBuffer[Id] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
-      val r = firstTrack.getInterval(first)
+      val r = firstTrack.interval(first)
       tl.context.setEnd(members, newEnd - r.hi)
     }
   }

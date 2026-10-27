@@ -43,9 +43,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
 
     // 两侧内容都保留自己的完整区间，转场单独占据交集
-    assertEquals(t0.getInterval(a), 0 ~~ 1000)
-    assertEquals(t0.getInterval(b), 500 ~~ 1500)
-    assertEquals(t0.getInterval(transitionOf(t0, 600)), 500 ~~ 1000)
+    assertEquals(t0.interval(a), 0 ~~ 1000)
+    assertEquals(t0.interval(b), 500 ~~ 1500)
+    assertEquals(t0.interval(transitionOf(t0, 600)), 500 ~~ 1000)
   }
 
   test("get 按内容-转场-内容遍历") {
@@ -100,8 +100,8 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(applied, 499L)
-    assertEquals(t0.getInterval(a), 0 ~~ 1499)
-    assertEquals(t0.getInterval(b), 500 ~~ 1500)
+    assertEquals(t0.interval(a), 0 ~~ 1499)
+    assertEquals(t0.interval(b), 500 ~~ 1500)
   }
 
   test("终点扩展在第二个后继前停止") {
@@ -116,7 +116,7 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(a), 100000)
 
     assertEquals(applied, 500L)
-    assertEquals(t0.getInterval(a), 0 ~~ 1500)
+    assertEquals(t0.interval(a), 0 ~~ 1500)
   }
 
   test("未受影响的转场保持对象身份") {
@@ -134,7 +134,7 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.moveTime(Seq(c), 100)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(c), 2100 ~~ 3100)
+    assertEquals(after.interval(c), 2100 ~~ 3100)
     assert((transition) eq (transitionOf(after, 600)))
   }
 
@@ -150,8 +150,8 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 750)
-    assertEquals(after.getInterval(b), 750 ~~ 1500)
+    assertEquals(after.interval(a), 0 ~~ 750)
+    assertEquals(after.interval(b), 750 ~~ 1500)
     assert((transitionOf(after, 700)) == null)
   }
 
@@ -167,8 +167,8 @@ class TrackTransitionTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 1000)
-    assertEquals(after.getInterval(c), 2000 ~~ 3000)
+    assertEquals(after.interval(a), 0 ~~ 1000)
+    assertEquals(after.interval(c), 2000 ~~ 3000)
     assert((transitionOf(after, 600)) == null)
   }
 
@@ -185,8 +185,8 @@ class TrackTransitionTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(c), -100000)
 
     assertEquals(applied, -999L)
-    assertEquals(t0.getInterval(c), 500 ~~ 1001)
-    assertEquals(t0.getInterval(a), 0 ~~ 1000)
+    assertEquals(t0.interval(c), 500 ~~ 1001)
+    assertEquals(t0.interval(a), 0 ~~ 1000)
   }
 
   test("左侧无法创建转场时回退到右侧") {

@@ -181,7 +181,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     if (placed.isEmpty) return
     val segment = placed(rnd.nextInt(placed.size))
     timeline.findTrackOf(segment).foreach { track =>
-      val r = track.getInterval(segment)
+      val r = track.interval(segment)
       val lo: Long = r.lo
       val hi: Long = r.hi
       if (hi - lo > 1) {

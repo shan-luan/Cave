@@ -40,7 +40,7 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(a)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(b), 500 ~~ 1500)
+    assertEquals(after.interval(b), 500 ~~ 1500)
     assert((transitionOf(after, 700)) == null)
     assert(after.get(300).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
@@ -56,7 +56,7 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 1000)
+    assertEquals(after.interval(a), 0 ~~ 1000)
     assertEquals(after.length, 1000L)
     assert((transitionOf(after, 700)) == null)
     assert(after.get(1200).isInstanceOf[Gap])
@@ -125,8 +125,8 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(b)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 1000)
-    assertEquals(after.getInterval(c), 1000 ~~ 2000)
+    assertEquals(after.interval(a), 0 ~~ 1000)
+    assertEquals(after.interval(c), 1000 ~~ 2000)
     assert((a) eq (after.get(700)))
     assert((c) eq (after.get(1200)))
     assert(after.transitionBetween(a, c).isEmpty)
@@ -173,7 +173,7 @@ class TrackRemoveTest extends GdxTestBase {
     place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(c), 500 ~~ 1500)
+    assertEquals(after.interval(c), 500 ~~ 1500)
     assert(after.get(100).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
@@ -193,7 +193,7 @@ class TrackRemoveTest extends GdxTestBase {
     val remaining = TrackLayout.contentsOf(after)
     assertEquals(remaining.size, 1)
     assert((b) eq (remaining.head))
-    assertEquals(after.getInterval(b), 500 ~~ 1500)
+    assertEquals(after.interval(b), 500 ~~ 1500)
     assert(after.get(2500).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
@@ -206,13 +206,13 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 989 ~~ 1500)
     val transition = transitionOf(t0, 995)
     assert((transition) != null)
-    assertEquals(t0.getInterval(transition), 989 ~~ 1000)
+    assertEquals(t0.interval(transition), 989 ~~ 1000)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 995)
-    assertEquals(after.getInterval(b), 995 ~~ 1500)
+    assertEquals(after.interval(a), 0 ~~ 995)
+    assertEquals(after.interval(b), 995 ~~ 1500)
     assert(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
@@ -225,13 +225,13 @@ class TrackRemoveTest extends GdxTestBase {
     place(t0, b, 999 ~~ 1500)
     val transition = transitionOf(t0, 999)
     assert((transition) != null)
-    assertEquals(t0.getInterval(transition), 999 ~~ 1000)
+    assertEquals(t0.interval(transition), 999 ~~ 1000)
 
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 1000)
-    assertEquals(after.getInterval(b), 1000 ~~ 1500)
+    assertEquals(after.interval(a), 0 ~~ 1000)
+    assertEquals(after.interval(b), 1000 ~~ 1500)
     assert(after.transitionBetween(a, b).isEmpty)
     TrackLayout.assertValid(after)
   }
@@ -250,8 +250,8 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 100 ~~ 1000)
-    assertEquals(after.getInterval(b), 1000 ~~ 1100)
+    assertEquals(after.interval(a), 100 ~~ 1000)
+    assertEquals(after.interval(b), 1000 ~~ 1100)
     assert((transitionOf(after, 500)) != null)
     TrackLayout.assertValid(after)
   }
@@ -270,9 +270,9 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 1000 ~~ 1100)
-    assertEquals(after.getInterval(b), 1100 ~~ 1500)
-    assertEquals(after.getInterval(rn), 1101 ~~ 2000)
+    assertEquals(after.interval(a), 1000 ~~ 1100)
+    assertEquals(after.interval(b), 1100 ~~ 1500)
+    assertEquals(after.interval(rn), 1101 ~~ 2000)
     assert((transitionOf(after, 1200)) != null)
     TrackLayout.assertValid(after)
   }
@@ -293,10 +293,10 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(transition)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 1000 ~~ 1101)
-    assertEquals(after.getInterval(p), 800 ~~ 1100)
-    assertEquals(after.getInterval(b), 1100 ~~ 1500)
-    assertEquals(after.getInterval(rn), 1101 ~~ 2000)
+    assertEquals(after.interval(a), 1000 ~~ 1101)
+    assertEquals(after.interval(p), 800 ~~ 1100)
+    assertEquals(after.interval(b), 1100 ~~ 1500)
+    assertEquals(after.interval(rn), 1101 ~~ 2000)
     assert((transition) eq (transitionOf(after, 1100)))
     TrackLayout.assertValid(after)
   }
@@ -346,9 +346,9 @@ class TrackRemoveTest extends GdxTestBase {
     timeline.remove(Seq(ab, bc))
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), 0 ~~ 750)
-    assertEquals(after.getInterval(b), 750 ~~ 1250)
-    assertEquals(after.getInterval(c), 1250 ~~ 2000)
+    assertEquals(after.interval(a), 0 ~~ 750)
+    assertEquals(after.interval(b), 750 ~~ 1250)
+    assertEquals(after.interval(c), 1250 ~~ 2000)
     TrackLayout.assertValid(after)
   }
 

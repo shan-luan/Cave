@@ -74,7 +74,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val segment = actor.segment
     timeline.findTrackOf(segment).foreach { track =>
       actor.track = track
-      val r = track.getInterval(segment)
+      val r = track.interval(segment)
       actor.setPosition(absX(r.lo), trackTopY(track.index))
       actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
     }
@@ -94,12 +94,12 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val mouseLocalY = actor.getY + firstY
 
     actor.dragTo(mouseLocalX, mouseLocalY)
-    assertEquals(t0.getInterval(s), 100_000L ~~ (1000_000L + 100_000L))
+    assertEquals(t0.interval(s), 100_000L ~~ (1000_000L + 100_000L))
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(t0.getInterval(s), 100_000L ~~ (1000_000L + 100_000L))
+      assertEquals(t0.interval(s), 100_000L ~~ (1000_000L + 100_000L))
       assertEquals(t0.getOrigin(s), 5_000_000L + 100_000L)
       i += 1
     }
@@ -107,7 +107,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.finishDrag()
 
     project.undo.undo()
-    assertEquals(t0.getInterval(s), 0L ~~ 1000_000L)
+    assertEquals(t0.interval(s), 0L ~~ 1000_000L)
     assertEquals(t0.getOrigin(s), 5_000_000L)
   }
 
@@ -147,13 +147,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newFrontLocalX = 50f
     actor.dragTo(newFrontLocalX, view.trackHeight / 2)
-    assertEquals(t0.getInterval(s), 50_000L ~~ 1000_000L)
+    assertEquals(t0.interval(s), 50_000L ~~ 1000_000L)
     assertEquals(t0.getOrigin(s), 0L)
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(t0.getInterval(s), 50_000L ~~ 1000_000L)
+      assertEquals(t0.interval(s), 50_000L ~~ 1000_000L)
       assertEquals(t0.getOrigin(s), 0L)
       i += 1
     }
@@ -169,13 +169,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     val newWidth = actor.getWidth + 60f
     actor.dragTo(newWidth, view.trackHeight / 2)
-    assertEquals(t0.getInterval(s), 0L ~~ (1000_000L + 60_000L))
+    assertEquals(t0.interval(s), 0L ~~ (1000_000L + 60_000L))
     assertEquals(t0.getOrigin(s), 5_000_000L)
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
-      assertEquals(t0.getInterval(s), 0L ~~ (1000_000L + 60_000L))
+      assertEquals(t0.interval(s), 0L ~~ (1000_000L + 60_000L))
       assertEquals(t0.getOrigin(s), 5_000_000L)
       i += 1
     }
@@ -220,7 +220,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     aActor.finishDrag()
     project.undo.undo()
-    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.interval(a), 0L ~~ 1000_000L)
     assert(timeline.findTrackOf(transition).isDefined)
   }
 
@@ -284,7 +284,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     aActor.dragTo(absX(495_000L) + firstX, aActor.getY + firstY)
 
     assertEquals(tl.snapIndicatorTime, 500_000L)
-    assert(math.abs((t0.getInterval(a).lo) - (500_000L)) <= (1L))
+    assert(math.abs((t0.interval(a).lo) - (500_000L)) <= (1L))
   }
 
   test("后缘拖拽越过转场删除后仍继续跟随") {
@@ -308,7 +308,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     tActor.dragTo(absX(400_000L), view.trackHeight / 2)
     assert(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(t0.getInterval(a), 0L ~~ 400_000L)
+    assertEquals(t0.interval(a), 0L ~~ 400_000L)
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
     val rebuilt: Segment = t0.get(600_000L) match {
@@ -316,12 +316,12 @@ class TimelineViewDragSimTest extends GdxTestBase {
       case _ => null
     }
     assert(rebuilt.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(rebuilt), 500_000L ~~ 900_000L)
+    assertEquals(t0.interval(rebuilt), 500_000L ~~ 900_000L)
 
     // 小幅左移（在吸附阈值内），目标不得被吸回转场右缘
     tActor.dragTo(absX(896_000L), view.trackHeight / 2)
-    assertEquals(t0.getInterval(a).hi, 896_000L)
-    assertEquals(t0.getInterval(rebuilt), 500_000L ~~ 896_000L)
+    assertEquals(t0.interval(a).hi, 896_000L)
+    assertEquals(t0.interval(rebuilt), 500_000L ~~ 896_000L)
   }
 
   test("前缘拖拽越过转场会删除转场并继续跟随") {
@@ -331,8 +331,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val aActor = place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     // 重叠建转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
-    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
-    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
+    assertEquals(t0.interval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.interval(b), 500_000L ~~ 1500_000L)
     rebuildFromModel(aActor)
 
     val transition: Segment = t0.get(500_000L) match {
@@ -351,15 +351,15 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragTo(mouseLocalX, view.trackHeight / 2)
 
     assert(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
-    val bInterval = t0.getInterval(b)
+    assertEquals(t0.interval(a), 0L ~~ 1000_000L)
+    val bInterval = t0.interval(b)
     assertEquals(bInterval.hi, 1500_000L)
     assert(Math.abs(bInterval.lo - 1200_000L) <= 1000L, "b 起点应跟手到约 1200000，实际 " + bInterval.lo)
 
     tActor.finishDrag()
     project.undo.undo()
-    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
-    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
+    assertEquals(t0.interval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.interval(b), 500_000L ~~ 1500_000L)
     assert(timeline.findTrackOf(transition).isDefined)
   }
 
@@ -386,8 +386,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
     assert(t0.get(900_000L).isInstanceOf[Transition])
-    assertEquals(t0.getInterval(a), 0L ~~ 1000_000L)
-    assertEquals(t0.getInterval(b), 900_000L ~~ 1500_000L)
+    assertEquals(t0.interval(a), 0L ~~ 1000_000L)
+    assertEquals(t0.interval(b), 900_000L ~~ 1500_000L)
   }
 
   test("后缘拖拽越过转场会删除转场并继续跟随") {
@@ -411,8 +411,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tActor.dragTo(absX(300_000L), view.trackHeight / 2)
 
     assert(timeline.findTrackOf(transition).isEmpty)
-    assertEquals(t0.getInterval(a), 0L ~~ 300_000L)
-    assertEquals(t0.getInterval(b), 500_000L ~~ 1500_000L)
+    assertEquals(t0.interval(a), 0L ~~ 300_000L)
+    assertEquals(t0.interval(b), 500_000L ~~ 1500_000L)
   }
 }
 

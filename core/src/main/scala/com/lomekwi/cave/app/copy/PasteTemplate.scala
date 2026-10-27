@@ -30,7 +30,7 @@ object PasteTemplate {
         case _: Transition =>
         case c: Content =>
           timeline.findTrackOf(c.id).foreach { track =>
-            raw += Entry(track.index, c, track.getInterval(c), track.getOrigin(c), timeline.getGroup(c.id))
+            raw += Entry(track.index, c, track.interval(c), track.getOrigin(c), timeline.getGroup(c.id))
           }
       }
     }

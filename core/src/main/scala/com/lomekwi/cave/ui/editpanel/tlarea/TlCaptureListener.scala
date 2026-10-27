@@ -83,14 +83,14 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
         val hits = track.getIntersecting(timeInterval)
         val covering = hits.collectFirst {
-          case t: Transition if track.getInterval(t).contains(timeInterval.lo) => t
+          case t: Transition if track.interval(t).contains(timeInterval.lo) => t
         }
         val selected = covering match {
           case Some(t) => Seq(t)
           case None => hits.toSeq
         }
         for (s <- selected) {
-          val r = track.getInterval(s)
+          val r = track.interval(s)
           val sourceLeft: Float = timelineView.absoluteTimeToX(r.lo)
           val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 

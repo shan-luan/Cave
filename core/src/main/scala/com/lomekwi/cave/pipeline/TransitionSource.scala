@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I], val to: Source[? <: I])
   (using ClassTag[O]) extends Source[O] {
 
-  // 求值时用 [[Track.getInterval]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查轨道布局
+  // 求值时用 [[Track.interval]]、[[Track.getOrigin]]、[[Track.transitionSides]] 反查轨道布局
   final override def canCreateTransitionWith(source: Source[?]): Boolean = false
 
   final override def createTransition(source: Source[?]): TransitionSource[? <: Frame, ? <: Frame] = {
@@ -60,7 +60,7 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     // 两侧都无帧才交出无帧，单侧无帧原样交给 [[mix]]，由效果决定表现
     if (a == null && b == null) null.asInstanceOf[O]
     else {
-      val progress = time.toFloat / track.getInterval(segment).len
+      val progress = time.toFloat / track.interval(segment).len
       // [[mix]] 的视角固定为起点侧在前，flipped 时参数对调、进度翻转
       if (flipped) mix(b, a, 1f - progress) else mix(a, b, progress)
     }

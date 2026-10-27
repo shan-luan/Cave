@@ -148,9 +148,9 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
           case _: Transition =>
         }
       }
-      refill.sortInPlaceWith((a: Content, b: Content) => before.getInterval(a.id).lo > before.getInterval(b.id).lo)
+      refill.sortInPlaceWith((a: Content, b: Content) => before.interval(a.id).lo > before.interval(b.id).lo)
       for (c <- refill) {
-        next = next.addOrThrow(c, before.getInterval(c.id).shift(applied), before.getOrigin(c.id) + applied)
+        next = next.addOrThrow(c, before.interval(c.id).shift(applied), before.getOrigin(c.id) + applied)
       }
       for (s <- onTrack) {
         s match {
@@ -187,7 +187,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 入口已排除转场
         val c = from.segment(id).asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
-        moves += ((c, from.index, to.index, from.getInterval(id), from.getOrigin(id)))
+        moves += ((c, from.index, to.index, from.interval(id), from.getOrigin(id)))
       }
     }
     if (moves.isEmpty) return (this, 0)
@@ -262,7 +262,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
         // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
         // 落点与既有内容重叠只要合法就允许，重叠会成为转场，不必强行换到空轨道
         ti >= tracks.size || (from.segment(id) match {
-          case c: Content => tracks(ti).canPlaceAt(c, from.getInterval(id), moving)
+          case c: Content => tracks(ti).canPlaceAt(c, from.interval(id), moving)
           case _ => false
         })
       }
@@ -280,7 +280,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     for (track <- tracks) {
       for (s <- track.getIntersecting(searchInterval)) {
         if (!ignore.contains(s.id)) {
-          val r = track.getInterval(s.id)
+          val r = track.interval(s.id)
           var dist = Math.abs(r.lo - time)
           if (dist < bestDist) {
             best = r.lo

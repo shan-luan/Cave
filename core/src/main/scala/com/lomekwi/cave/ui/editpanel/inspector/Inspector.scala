@@ -115,8 +115,8 @@ class Inspector extends VisTable {
       if (c != 0) {
         c < 0
       } else {
-        val ra = ta.map(_.getInterval(a).lo).getOrElse(Long.MaxValue)
-        val rb = tb.map(_.getInterval(b).lo).getOrElse(Long.MaxValue)
+        val ra = ta.map(_.interval(a).lo).getOrElse(Long.MaxValue)
+        val rb = tb.map(_.interval(b).lo).getOrElse(Long.MaxValue)
         ra < rb
       }
     })

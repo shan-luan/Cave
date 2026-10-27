@@ -15,15 +15,15 @@ object TrackLayout extends munit.Assertions {
     val contents = contentsOf(track)
     var i = 0
     while (i < contents.size) {
-      val cr = track.getInterval(contents(i))
+      val cr = track.interval(contents(i))
       if (i + 1 < contents.size) {
-        val nr = track.getInterval(contents(i + 1))
+        val nr = track.interval(contents(i + 1))
         if (cr.hi > nr.lo) {
           assert(cr.lo < nr.lo && cr.hi < nr.hi, "相邻内容未交叉: " + cr + " " + nr)
         }
       }
       if (i + 2 < contents.size) {
-        val nn = track.getInterval(contents(i + 2))
+        val nn = track.interval(contents(i + 2))
         assert(!(cr.hi > nn.lo), "隔项重叠: " + cr + " " + nn)
       }
       i += 1
@@ -33,10 +33,10 @@ object TrackLayout extends munit.Assertions {
         case t: Transition =>
           track.transitionSides(t) match {
             case Some((left, right)) =>
-              val lo = track.getInterval(right).lo
-              val hi = track.getInterval(left).hi
+              val lo = track.interval(right).lo
+              val hi = track.interval(left).hi
               assert(lo < hi, "转场两侧没有重叠")
-              assertEquals(track.getInterval(t), lo ~~ hi, "转场区间不是重叠区")
+              assertEquals(track.interval(t), lo ~~ hi, "转场区间不是重叠区")
             case None => fail("转场两侧缺失")
           }
         case _ =>

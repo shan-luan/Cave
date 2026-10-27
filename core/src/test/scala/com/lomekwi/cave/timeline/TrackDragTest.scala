@@ -96,7 +96,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, b, 800_000L ~~ 1800_000L)
 
     val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
-    assertEquals(t0.getInterval(tr), 800_000L ~~ 1000_000L)
+    assertEquals(t0.interval(tr), 800_000L ~~ 1000_000L)
 
     val members = scala.collection.mutable.ArrayBuffer.empty[Segment]
     members += a
@@ -104,9 +104,9 @@ class TrackDragTest extends GdxTestBase {
     members += b
     assertEquals(timeline.moveTime(members, 100_000L), 100_000L)
 
-    assertEquals(t0.getInterval(a), 100_000L ~~ 1100_000L)
-    assertEquals(t0.getInterval(b), 900_000L ~~ 1900_000L)
-    assertEquals(t0.getInterval(tr), 900_000L ~~ 1100_000L)
+    assertEquals(t0.interval(a), 100_000L ~~ 1100_000L)
+    assertEquals(t0.interval(b), 900_000L ~~ 1900_000L)
+    assertEquals(t0.interval(tr), 900_000L ~~ 1100_000L)
   }
 
   test("组前移在第二个后继处停止") {
@@ -119,9 +119,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, n, TrackDragTest.interval(1000, 2000))
 
     assertEquals(timeline.moveTime(Seq(x, y), 100), 0L)
-    assertEquals(t0.getInterval(x), TrackDragTest.interval(0, 1000))
-    assertEquals(t0.getInterval(y), TrackDragTest.interval(500, 1500))
-    assertEquals(t0.getInterval(n), TrackDragTest.interval(1000, 2000))
+    assertEquals(t0.interval(x), TrackDragTest.interval(0, 1000))
+    assertEquals(t0.interval(y), TrackDragTest.interval(500, 1500))
+    assertEquals(t0.interval(n), TrackDragTest.interval(1000, 2000))
   }
 
   test("组后移在第二个前驱处停止") {
@@ -136,9 +136,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, n, TrackDragTest.interval(2000, 3000))
 
     assertEquals(timeline.moveTime(Seq(x, y), -600), -500L)
-    assertEquals(t0.getInterval(x), TrackDragTest.interval(500, 1500))
-    assertEquals(t0.getInterval(y), TrackDragTest.interval(1000, 2000))
-    assertEquals(t0.getInterval(p), TrackDragTest.interval(0, 1000))
+    assertEquals(t0.interval(x), TrackDragTest.interval(500, 1500))
+    assertEquals(t0.interval(y), TrackDragTest.interval(1000, 2000))
+    assertEquals(t0.interval(p), TrackDragTest.interval(0, 1000))
   }
 
   test("组前移受近邻约束而非远处内容") {
@@ -155,10 +155,10 @@ class TrackDragTest extends GdxTestBase {
     place(t0, e, TrackDragTest.interval(8000, 11000))
 
     assertEquals(timeline.moveTime(Seq(a, b, c), 2000), 1000L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(3000, 6000))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(5000, 8000))
-    assertEquals(t0.getInterval(c), TrackDragTest.interval(7000, 10000))
-    assertEquals(t0.getInterval(e), TrackDragTest.interval(8000, 11000))
+    assertEquals(t0.interval(a), TrackDragTest.interval(3000, 6000))
+    assertEquals(t0.interval(b), TrackDragTest.interval(5000, 8000))
+    assertEquals(t0.interval(c), TrackDragTest.interval(7000, 10000))
+    assertEquals(t0.interval(e), TrackDragTest.interval(8000, 11000))
   }
 
   test("移动组时组内转场对象身份保持") {
@@ -179,9 +179,9 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(timeline.moveTime(Seq(a, b, c), 500L), 500L)
 
     val after = timeline.getTrackOrCreate(0)
-    assertEquals(after.getInterval(a), TrackDragTest.interval(2500, 5500))
-    assertEquals(after.getInterval(b), TrackDragTest.interval(4500, 7500))
-    assertEquals(after.getInterval(c), TrackDragTest.interval(6500, 9500))
+    assertEquals(after.interval(a), TrackDragTest.interval(2500, 5500))
+    assertEquals(after.interval(b), TrackDragTest.interval(4500, 7500))
+    assertEquals(after.interval(c), TrackDragTest.interval(6500, 9500))
     // 组内相邻对的转场随两侧一起平移，应当仍是原来那两个对象
     assertEquals(after.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]), Some(ab))
     assertEquals(after.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]), Some(bc))
@@ -201,7 +201,7 @@ class TrackDragTest extends GdxTestBase {
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.interval(0, 100))
 
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
 
     assert(t0.get(100).isInstanceOf[Gap])
     assertEquals(t0.intervalAt(100), TrackDragTest.interval(100, Long.MaxValue))
@@ -226,7 +226,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.interval(0, 100))
 
     assert((s) eq (srcAt(t0, 50)))
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
     assertEquals(timeline.findTrackOf(s), Some(t0))
   }
 
@@ -325,7 +325,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(Seq(s), 200)
 
     assertEquals(applied, 200L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(200, 300))
+    assertEquals(t0.interval(s), TrackDragTest.interval(200, 300))
     assertEquals(timeline.findTrackOf(s), Some(t0))
     assertEquals(t0.getOrigin(s), 1200L)
   }
@@ -340,7 +340,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(applied, 1)
     assertEquals(timeline.findTrackOf(s), Some(t1))
-    assertEquals(t1.getInterval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t1.interval(s), TrackDragTest.interval(0, 100))
     assert(t0.isEmpty)
     assert((s) eq (srcAt(t1, 50)))
   }
@@ -356,8 +356,8 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(Seq(a, b), 1000)
 
     assertEquals(applied, 1000L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(1000, 1100))
-    assertEquals(t1.getInterval(b), TrackDragTest.interval(1500, 1600))
+    assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))
+    assertEquals(t1.interval(b), TrackDragTest.interval(1500, 1600))
     assertEquals(timeline.findTrackOf(a), Some(t0))
     assertEquals(timeline.findTrackOf(b), Some(t1))
   }
@@ -372,8 +372,8 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.moveTime(Seq(a, b), -200)
 
     assertEquals(applied, -50L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 100))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(150, 250))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(b), TrackDragTest.interval(150, 250))
   }
 
   test("移入已占用位置生成转场") {
@@ -388,11 +388,11 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(applied, 99L)
     // 内容保留完整区间，转场是两者的重叠区
-    assertEquals(t0.getInterval(mover), TrackDragTest.interval(99, 199))
+    assertEquals(t0.interval(mover), TrackDragTest.interval(99, 199))
     val transition = srcAt(t0, 150)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(100, 199))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(100, 1100))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(100, 199))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(100, 1100))
   }
 
   test("按时间移动与障碍重叠时建立转场") {
@@ -404,15 +404,15 @@ class TrackDragTest extends GdxTestBase {
 
     val applied: Long = timeline.moveTime(Seq(mover), 250)
     assertEquals(applied, 250L)
-    assertEquals(t0.getInterval(mover), TrackDragTest.interval(250, 350))
+    assertEquals(t0.interval(mover), TrackDragTest.interval(250, 350))
     val transition = srcAt(t0, 320)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(300, 350))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(300, 400))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(300, 350))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(300, 400))
 
     assertEquals(timeline.moveTime(Seq(mover), -50), -50L)
-    assertEquals(t0.getInterval(mover), TrackDragTest.interval(200, 300))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(300, 400))
+    assertEquals(t0.interval(mover), TrackDragTest.interval(200, 300))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(300, 400))
     assert(!(t0.exists(_.isInstanceOf[Transition])))
   }
 
@@ -428,7 +428,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(applied, 0)
     assertEquals(timeline.findTrackOf(mover), Some(t0))
-    assertEquals(t0.getInterval(mover), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(mover), TrackDragTest.interval(0, 100))
     assert((obstacle) eq (srcAt(t1, 50)))
   }
 
@@ -440,16 +440,16 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.interval(0, 100))
     // 与 a 重叠建转场：a=[0,100) t=[80,100) b=[80,180)，b 的 origin 是 80
     placeAt(t0, b, TrackDragTest.interval(80, 180), 80)
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(80, 180))
-    assertEquals(t0.getInterval(srcAt(t0, 90)), TrackDragTest.interval(80, 100))
+    assertEquals(t0.interval(b), TrackDragTest.interval(80, 180))
+    assertEquals(t0.interval(srcAt(t0, 90)), TrackDragTest.interval(80, 100))
 
     val applied: Int = timeline.moveTrack(Seq(b), 1)
 
     assertEquals(applied, 1)
     // 搬运的是 b 的完整区间，origin 不变
-    assertEquals(t1.getInterval(b), TrackDragTest.interval(80, 180))
+    assertEquals(t1.interval(b), TrackDragTest.interval(80, 180))
     assertEquals(t1.getOrigin(b), 80L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
     assert(!(t0.exists(_.isInstanceOf[Transition])))
   }
 
@@ -461,7 +461,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(Seq(s), 30)
 
     assertEquals(applied, 30L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(30, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(30, 100))
     assertEquals(timeline.findTrackOf(s), Some(t0))
     assertEquals(t0.getOrigin(s), 0L)
   }
@@ -474,7 +474,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(s), 50)
 
     assertEquals(applied, 50L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
   }
 
   test("设置终点向后收缩") {
@@ -485,7 +485,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(s), -20)
 
     assertEquals(applied, -20L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 80))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 80))
   }
 
   test("设置起点进入障碍时生成转场") {
@@ -499,11 +499,11 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(Seq(s), -50)
 
     assertEquals(applied, -50L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(50, 200))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(50, 200))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(0, 100))
     val transition = srcAt(t0, 75)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(50, 100))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(50, 100))
   }
 
   test("向后设置起点时钳制到最近障碍边缘") {
@@ -516,11 +516,11 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(Seq(s), -60)
 
     assertEquals(applied, -49L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(1, 100))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(0, 30))
+    assertEquals(t0.interval(s), TrackDragTest.interval(1, 100))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(0, 30))
     val transition = srcAt(t0, 10)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(1, 30))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(1, 30))
   }
 
   test("向后设置起点受源起点钳制") {
@@ -532,7 +532,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(Seq(s), -50)
 
     assertEquals(applied, 0L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(100, 200))
+    assertEquals(t0.interval(s), TrackDragTest.interval(100, 200))
   }
 
   test("无界片段向后设置起点可到达时间轴起点") {
@@ -544,7 +544,7 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setStart(Seq(s), -150)
 
     assertEquals(applied, -100L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 200))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 200))
   }
 
   test("向前设置终点时钳制到最近障碍边缘") {
@@ -557,11 +557,11 @@ class TrackDragTest extends GdxTestBase {
     val applied: Long = timeline.setEnd(Seq(s), 200)
 
     assertEquals(applied, 50L)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 100))
-    assertEquals(t0.getInterval(obstacle), TrackDragTest.interval(80, 120))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(obstacle), TrackDragTest.interval(80, 120))
     val transition = srcAt(t0, 90)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(80, 100))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(80, 100))
   }
 
   test("设置组终点使相邻成员重叠") {
@@ -573,11 +573,11 @@ class TrackDragTest extends GdxTestBase {
 
     val applied: Long = timeline.setEnd(Seq(a, b), 50)
     assertEquals(applied, 50L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 150))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(100, 250))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 150))
+    assertEquals(t0.interval(b), TrackDragTest.interval(100, 250))
     val transition = srcAt(t0, 125)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(100, 150))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(100, 150))
   }
 
   test("设置组起点时相邻成员一起移动") {
@@ -589,22 +589,22 @@ class TrackDragTest extends GdxTestBase {
 
     val applied: Long = timeline.setStart(Seq(a, b), -50)
     assertEquals(applied, -50L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(50, 200))
+    assertEquals(t0.interval(a), TrackDragTest.interval(50, 200))
     val transition = srcAt(t0, 175)
     assert(transition.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(transition), TrackDragTest.interval(150, 200))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(150, 300))
+    assertEquals(t0.interval(transition), TrackDragTest.interval(150, 200))
+    assertEquals(t0.interval(b), TrackDragTest.interval(150, 300))
 
     assertEquals(timeline.setStart(Seq(a, b), -50), -50L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 200))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 200))
     val kept = srcAt(t0, 175)
     assert(kept.isInstanceOf[Transition])
-    assertEquals(t0.getInterval(kept), TrackDragTest.interval(100, 200))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(100, 300))
+    assertEquals(t0.interval(kept), TrackDragTest.interval(100, 200))
+    assertEquals(t0.interval(b), TrackDragTest.interval(100, 300))
 
     assertEquals(timeline.setStart(Seq(a, b), -50), 0L)
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 200))
-    assertEquals(t0.getInterval(b), TrackDragTest.interval(100, 300))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 200))
+    assertEquals(t0.interval(b), TrackDragTest.interval(100, 300))
   }
 
   test("阈值内吸附到最近边缘") {
@@ -636,12 +636,12 @@ class TrackDragTest extends GdxTestBase {
 
     timeline.split(t0, 40)
 
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 40))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 40))
     assert((s) eq (srcAt(t0, 20)))
     assertEquals(t0.getOrigin(s), 1000L)
     val right: Segment = srcAt(t0, 60)
     assert(!((s) eq (right)))
-    assertEquals(t0.getInterval(right), TrackDragTest.interval(40, 100))
+    assertEquals(t0.interval(right), TrackDragTest.interval(40, 100))
     assertEquals(timeline.findTrackOf(right), Some(t0))
     // 右半 origin 与左半一致，内容才接得上
     assertEquals(t0.getOrigin(right), 1000L)
@@ -678,14 +678,14 @@ class TrackDragTest extends GdxTestBase {
     Using.resource(timeline.record()) { _ =>
       timeline.setEnd(Seq(s), -30)
     }
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 70))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
 
     project.undo.undo()
     assertEquals(timeline.timeline, before)
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
 
     project.undo.redo()
-    assertEquals(t0.getInterval(s), TrackDragTest.interval(0, 70))
+    assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
   }
 
   test("撤销/重做分割恢复状态".ignore) {
@@ -721,15 +721,15 @@ class TrackDragTest extends GdxTestBase {
     Using.resource(timeline.record()) { h =>
       timeline.moveTime(Seq(a, b), 1000)
     }
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(1000, 1100))
+    assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))
     assertEquals(t0.getOrigin(a), 2000L)
-    assertEquals(t1.getInterval(b), TrackDragTest.interval(1500, 1600))
+    assertEquals(t1.interval(b), TrackDragTest.interval(1500, 1600))
     assertEquals(t1.getOrigin(b), 3000L)
 
     project.undo.undo()
-    assertEquals(t0.getInterval(a), TrackDragTest.interval(0, 100))
+    assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
     assertEquals(t0.getOrigin(a), 1000L)
-    assertEquals(t1.getInterval(b), TrackDragTest.interval(500, 600))
+    assertEquals(t1.interval(b), TrackDragTest.interval(500, 600))
     assertEquals(t1.getOrigin(b), 2000L)
   }
 

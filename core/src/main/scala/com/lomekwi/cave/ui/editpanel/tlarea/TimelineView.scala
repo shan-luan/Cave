@@ -187,7 +187,7 @@ class TimelineView(context0: ProjectSession) extends Group with Focusable {
           actor.tl = this
           actor.track = track
           actor.segment = track.segment(id)
-          val r = track.getInterval(id)
+          val r = track.interval(id)
           actor.setPosition(
             absoluteTimeToX(r.lo),
             getHeight + view.trackYShift - (i + 1) * view.trackHeight
@@ -332,7 +332,7 @@ class TimelineView(context0: ProjectSession) extends Group with Focusable {
     Using.resource(context.record()) { h =>
       for (memberId <- members) {
         context.timeline.findTrackOf(memberId).foreach { memberTrack =>
-          val interval = memberTrack.getInterval(memberId)
+          val interval = memberTrack.interval(memberId)
           val start: Long = interval.lo
           val end: Long = interval.hi
           if (time > start && time < end) {

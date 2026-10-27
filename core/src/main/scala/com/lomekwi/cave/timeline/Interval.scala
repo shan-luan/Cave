@@ -14,6 +14,8 @@ case class Interval(lo: Long, hi: Long) extends Serializable {
   def isEmpty: Boolean = lo == hi
 
   def len: Long = hi-lo
+  
+  def mid: Long = lo + len / 2
 
   def contains(time: Long): Boolean = lo <= time && time < hi
 

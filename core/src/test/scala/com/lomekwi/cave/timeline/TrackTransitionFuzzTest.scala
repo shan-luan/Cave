@@ -127,8 +127,8 @@ class TrackTransitionFuzzTest extends GdxTestBase {
 
       val transitions = visible.flatMap(track.segmentOption).collect { case t: Transition => t }
       for (c <- known if track.contains(c); t <- transitions) {
-        if (track.getInterval(c) == track.getInterval(t)) {
-          fail("内容与转场占据同一区间 " + label + " " + track.getInterval(c))
+        if (track.interval(c) == track.interval(t)) {
+          fail("内容与转场占据同一区间 " + label + " " + track.interval(c))
         }
       }
     }
