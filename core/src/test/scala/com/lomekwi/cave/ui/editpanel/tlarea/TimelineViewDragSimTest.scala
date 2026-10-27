@@ -60,9 +60,11 @@ class TimelineViewDragSimTest extends GdxTestBase {
   /** 在模型上放置一个片段，并按 [[TimelineView.act]] 的重建逻辑摆好 Actor。 */
   private def place(track: Track, segment: Content, start: Long, end: Long, origin: Long): TlSegmentActor = {
     timeline.tryAdd(track, segment, start ~~ end, origin)
+    val current = timeline.findTrackOf(segment).getOrElse(track)
     val actor = segment.getTlSegmentActor
     actor.tl = tl
-    actor.setPosition(absX(start), trackTopY(track.index))
+    actor.track = current
+    actor.setPosition(absX(start), trackTopY(current.index))
     actor.setSize(absX(end) - absX(start), view.trackHeight)
     actor
   }
@@ -71,6 +73,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
     val segment = actor.segment
     timeline.findTrackOf(segment).foreach { track =>
+      actor.track = track
       val r = track.getInterval(segment)
       actor.setPosition(absX(r.lo), trackTopY(track.index))
       actor.setSize(absX(r.hi) - absX(r.lo), view.trackHeight)
@@ -193,8 +196,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
     assert(transition.isInstanceOf[Transition])
 
-    tl.selectedSegments.add(a)
-    tl.selectedSegments.add(transition)
+    tl.selectedSegments.add(a.id)
+    tl.selectedSegments.add(transition.id)
 
     val firstX = aActor.getWidth / 2
     val firstY = view.trackHeight / 2
@@ -234,8 +237,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     }
     assert(transition.isInstanceOf[Transition])
 
-    tl.selectedSegments.add(transition)
-    tl.selectedSegments.add(b)
+    tl.selectedSegments.add(transition.id)
+    tl.selectedSegments.add(b.id)
 
     val tActor = transition.getTlSegmentActor
     tActor.tl = tl

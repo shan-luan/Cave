@@ -17,6 +17,8 @@ import scala.collection.mutable
 
 final class ProjectSession(initial: Project) {
   var project: Project = initial
+  val idGenerator: IdGenerator = IdGenerator(initial.maxId)
+  given idSource: IdSource = () => idGenerator.genId
   val bus: EventBus = new EventBus(initial.uuid.toString)
   val sourceFactory: SegmentFactory = new SegmentFactory(this)
   val undo: UndoManager = new UndoManager(this)
@@ -106,32 +108,32 @@ final class ProjectSession(initial: Project) {
     shift
   }
 
-  def remove(segment: Segment): Unit = applyTimeline(timeline.remove(segment))
+  def remove(id: Id): Unit = applyTimeline(timeline.remove(id))
 
-  def remove(segments: Iterable[Segment]): Unit = applyTimeline(timeline.remove(segments))
+  def remove(ids: Iterable[Id]): Unit = applyTimeline(timeline.remove(ids))
 
   def split(track: Track, time: Long): Unit = applyTimeline(timeline.split(track, time))
 
-  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = {
-    val (next, applied) = timeline.setStart(segments, deltaTime)
+  def setStart(ids: Iterable[Id], deltaTime: Long): Long = {
+    val (next, applied) = timeline.setStart(ids, deltaTime)
     applyTimeline(next)
     applied
   }
 
-  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = {
-    val (next, applied) = timeline.setEnd(segments, deltaTime)
+  def setEnd(ids: Iterable[Id], deltaTime: Long): Long = {
+    val (next, applied) = timeline.setEnd(ids, deltaTime)
     applyTimeline(next)
     applied
   }
 
-  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = {
-    val (next, applied) = timeline.moveTime(segments, deltaTime)
+  def moveTime(ids: Iterable[Id], deltaTime: Long): Long = {
+    val (next, applied) = timeline.moveTime(ids, deltaTime)
     applyTimeline(next)
     applied
   }
 
-  def moveTrack(segments: Iterable[Segment], deltaTrack: Int): Int = {
-    val (next, applied) = timeline.moveTrack(segments, deltaTrack)
+  def moveTrack(ids: Iterable[Id], deltaTrack: Int): Int = {
+    val (next, applied) = timeline.moveTrack(ids, deltaTrack)
     applyTimeline(next)
     applied
   }

@@ -30,6 +30,8 @@ final class Project(val name: String,
   def withTimeline(timeline: Timeline): Project = new Project(name, timeline, resources, uuid)
 
   def withResources(resources: Map[File, Vector[Resource]]): Project = new Project(name, timeline, resources, uuid)
+
+  lazy val maxId: Id = timeline.maxId
 }
 
 object Project {

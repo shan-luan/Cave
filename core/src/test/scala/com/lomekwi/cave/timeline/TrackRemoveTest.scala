@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.project.{IdSource, TestProject}
 
 /**
  * 删除路径的场景测试。内容与转场的删除在各种邻居与边界形态下的行为；
@@ -10,6 +10,8 @@ class TrackRemoveTest extends GdxTestBase {
 
   private var project: TestProject = null
   private var timeline: TestTimeline = null
+
+  given idSource: IdSource = () => project.context.idSource.nextId()
 
   override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()
@@ -320,7 +322,7 @@ class TrackRemoveTest extends GdxTestBase {
 
       val after = tl.getTrackOrCreate(0)
       for (s <- Vector(p, a, b, rn)) {
-        if (after.contains(s) != after.exists(_ eq s)) {
+        if (after.contains(s) != after.toVector.contains(s.id)) {
           fail("内容在轨道反查里存在却从迭代中消失: " + s + " rnLo=" + rnLo)
         }
       }

@@ -80,8 +80,9 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
    */
   def group(probability: Float = 0.35f, reuseProbability: Float = 0.5f): Unit = {
     for (track <- timeline.getTracks) {
-      for (s <- track) {
+      for (id <- track) {
         if (rnd.nextFloat() < probability) {
+          val s = track.segment(id)
           var reuse = -1
           if (!groups.isEmpty && rnd.nextFloat() < reuseProbability) {
             reuse = rnd.nextInt(groups.size)
@@ -136,7 +137,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
   private def dragMembers(segment: Segment): mutable.ArrayBuffer[Segment] = {
     timeline.getGroup(segment) match {
-      case Some(group) => mutable.ArrayBuffer.from(group)
+      case Some(group) => mutable.ArrayBuffer.from(group.flatMap(id => timeline.timeline.segment(id)))
       case None => mutable.ArrayBuffer(segment)
     }
   }
@@ -239,8 +240,8 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   private def placedSegments(): mutable.ArrayBuffer[Segment] = {
     val out = mutable.ArrayBuffer.empty[Segment]
     for (track <- timeline.getTracks) {
-      for (s <- track) {
-        out += s
+      for (id <- track) {
+        out += track.segment(id)
       }
     }
     out

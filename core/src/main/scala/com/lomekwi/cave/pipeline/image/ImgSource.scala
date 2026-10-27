@@ -38,7 +38,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     val cd = new CountDownLatch(1)
     if (!initialized) {
       Gdx.app.postRunnable(() => {
-        frame = new ImgFrame(track.index, segment)
+        frame = new ImgFrame(track.index, segment.id)
         frame.texture = texture
         frame.transform = new Transform(0, 0, 0)
         initialized = true

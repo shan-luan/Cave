@@ -1,10 +1,12 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.project.{Project, ProjectSession}
+import com.lomekwi.cave.project.{IdSource, Project, ProjectSession}
 
 import scala.collection.Set
 
 final class TestTimeline(val context: ProjectSession) {
+  given idSource: IdSource = context.idSource
+
   def timeline: Timeline = context.timeline
 
   def project: Project = context.project
@@ -15,19 +17,19 @@ final class TestTimeline(val context: ProjectSession) {
   def addOrThrow(track: Track, segment: Content, interval: Interval, origin: Long): Unit =
     context.applyTimeline(timeline.addOrThrow(track, segment, interval, origin))
 
-  def remove(segment: Segment): Unit = context.remove(segment)
+  def remove(segment: Segment): Unit = context.remove(segment.id)
 
-  def remove(segments: Iterable[Segment]): Unit = context.remove(segments)
+  def remove(segments: Iterable[Segment]): Unit = context.remove(segments.map(_.id))
 
   def split(track: Track, time: Long): Unit = context.split(track, time)
 
-  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = context.setStart(segments, deltaTime)
+  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = context.setStart(segments.map(_.id), deltaTime)
 
-  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = context.setEnd(segments, deltaTime)
+  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = context.setEnd(segments.map(_.id), deltaTime)
 
-  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = context.moveTime(segments, deltaTime)
+  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = context.moveTime(segments.map(_.id), deltaTime)
 
-  def moveTrack(segments: Iterable[Segment], deltaTrack: Int): Int = context.moveTrack(segments, deltaTrack)
+  def moveTrack(segments: Iterable[Segment], deltaTrack: Int): Int = context.moveTrack(segments.map(_.id), deltaTrack)
 
   def newGroup(): SegmentGroup = {
     val (next, group) = timeline.newGroup()
@@ -38,7 +40,7 @@ final class TestTimeline(val context: ProjectSession) {
   def adoptGroup(group: SegmentGroup): Unit = context.applyTimeline(timeline.adoptGroup(group))
 
   def groupAdd(group: SegmentGroup, segment: Segment): SegmentGroup = {
-    val next = group.add(segment)
+    val next = group.add(segment.id)
     context.applyTimeline(timeline.replaceGroup(group, next))
     next
   }
@@ -47,11 +49,11 @@ final class TestTimeline(val context: ProjectSession) {
 
   def record(): ProjectSession.Recording = context.record()
 
-  def snapTime(time: Long, threshold: Long, ignore: Set[Segment]): Long = timeline.snapTime(time, threshold, ignore)
+  def snapTime(time: Long, threshold: Long, ignore: Set[Segment]): Long = timeline.snapTime(time, threshold, ignore.map(_.id))
 
-  def findTrackOf(segment: Segment): Option[Track] = timeline.findTrackOf(segment)
+  def findTrackOf(segment: Segment): Option[Track] = timeline.findTrackOf(segment.id)
 
-  def getGroup(segment: Segment): Option[SegmentGroup] = timeline.getGroup(segment)
+  def getGroup(segment: Segment): Option[SegmentGroup] = timeline.getGroup(segment.id)
 
   def getTrackOrCreate(index: Int): Track = timeline.getTrackOrCreate(index)
 

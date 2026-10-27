@@ -1,7 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.{Filter, Frame, Source, TransitionSource}
-import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.project.{IdSource, TestIds, TestProject}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
@@ -45,15 +45,15 @@ class TransitionSourceTest extends GdxTestBase {
    * canLead 为 false 时不能作为前段构造转场，放置成左侧内容即走后段兜底路径。
    */
   private class ProbeContent(duration: Long, canLead: Boolean, nullAt: Long => Boolean)
-    extends Clip(new ProbeSource(duration, nullAt)) {
+    extends Clip(TestIds.nextId(), new ProbeSource(duration, nullAt)) {
 
     def this(duration: Long, canLead: Boolean) = this(duration, canLead, _ => false)
 
     override def canCreateTransitionWith(other: Content): Boolean = canLead
 
-    override def createTransition(other: Content): Transition = {
+    override def createTransition(other: Content)(using ids: IdSource): Transition = {
       // 测试布局中两侧都是探针内容，帧型必然相容
-      new Transition(new ProbeTransitionSource(
+      new Transition(ids.nextId(), new ProbeTransitionSource(
         this.source.asInstanceOf[Source[TimedFrame]],
         other.source.asInstanceOf[Source[TimedFrame]])) {}
     }

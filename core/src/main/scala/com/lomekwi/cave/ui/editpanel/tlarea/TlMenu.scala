@@ -29,7 +29,6 @@ import scala.util.Using
 
 class TlMenu private[tlarea] (private final val timelineView: TimelineView) extends PopupMenu {
   private var time: Long = 0L
-  private var pasteItem: MenuItem = uninitialized
 
   {
     val addMenu: PopupMenu = new PopupMenu()
@@ -38,14 +37,10 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val addItem: MenuItem = new MenuItem(("新增...".in(Zh) | "Add...".in(En)).str())
     addItem.setSubMenu(addMenu)
     this.addItem(addItem)
-
-    pasteItem = new MenuItem(("粘贴".in(Zh) | "Paste".in(En)).str(), new ChangeListenerX(() => timelineView.performPaste()))
-    this.addItem(pasteItem)
   }
 
   def setContext(time: Long): Unit = {
     this.time = time
-    pasteItem.setDisabled(!App.copyManager.clipboard.isInstanceOf[PasteTemplate])
   }
 
   private def onAddMedia(): Unit = {
@@ -74,7 +69,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val segment: Content = new Boundless(new TextSource())
+    val segment: Content = new Boundless(timelineView.context.idGenerator.genId, new TextSource())
     val duration: Long = segment.getDefaultDuration
 
     val context = timelineView.context
@@ -127,7 +122,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
         if (added.size >= 2) {
           val (t, group) = context.timeline.newGroup()
-          context.applyTimeline(t.replaceGroup(group, group.addAll(added)))
+          context.applyTimeline(t.replaceGroup(group, group.addAll(added.map(_.id))))
         }
 
         timelineView.markTimelineDirty()

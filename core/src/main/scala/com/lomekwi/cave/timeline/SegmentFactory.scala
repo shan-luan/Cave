@@ -26,9 +26,9 @@ class SegmentFactory(private val context: ProjectSession) {
   initDefaultConstructors()
 
   private def initDefaultConstructors(): Unit = {
-    register(classOf[VdoRes], (segment: Resource) => new Clip(new VdoSource(segment.asInstanceOf[VdoRes])))
-    register(classOf[AudRes], (segment: Resource) => new Clip(new AudSource(segment.asInstanceOf[AudRes])))
-    register(classOf[ImgRes], (segment: Resource) => new Boundless(new ImgSource(segment.asInstanceOf[ImgRes])))
+    register(classOf[VdoRes], (segment: Resource) => new Clip(context.idGenerator.genId, new VdoSource(segment.asInstanceOf[VdoRes])))
+    register(classOf[AudRes], (segment: Resource) => new Clip(context.idGenerator.genId, new AudSource(segment.asInstanceOf[AudRes])))
+    register(classOf[ImgRes], (segment: Resource) => new Boundless(context.idGenerator.genId, new ImgSource(segment.asInstanceOf[ImgRes])))
   }
   def register(clazz: ResourceClass, constructor: SegmentCtor): Unit = {
     constructors.put(clazz, constructor)

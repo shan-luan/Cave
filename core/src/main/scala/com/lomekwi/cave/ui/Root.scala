@@ -112,10 +112,6 @@ class Root extends ApplicationListener {
           true
         } else if (isTextInputFocused) {
           false
-        } else if (App.shortcutManager.isActive(TimelineView.Actions.COPY)) {
-          // 复制（全局，无需项目）
-          App.copyManager.copy()
-          true
         } else if (App.shortcutManager.isActive(TimelineView.Actions.UNDO)) {
           context.undo.undo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()

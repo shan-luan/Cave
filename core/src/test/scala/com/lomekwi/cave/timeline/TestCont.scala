@@ -1,12 +1,13 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.{Frame, Source, TransitionSource}
+import com.lomekwi.cave.project.TestIds
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
  * 测试用最小片段，仅提供拖拽/轨道逻辑测试所需的时序数据，不涉及真实编解码。
  */
-class TestCont(duration0: Long) extends Clip(new TestCont.TestSource(duration0))
+class TestCont(duration0: Long) extends Clip(TestIds.nextId(), new TestCont.TestSource(duration0))
 
 object TestCont {
   class TestFrame(trackIndex: Int) extends Frame(trackIndex) {

@@ -120,12 +120,12 @@ class TrackTransitionFuzzTest extends GdxTestBase {
       val visible = track.toVector
 
       for (s <- known) {
-        if (track.contains(s) != visible.exists(_ eq s)) {
+        if (track.contains(s) != visible.contains(s.id)) {
           fail("内容在轨道反查里存在却从迭代中消失 " + label + " track=" + track.index + " " + s)
         }
       }
 
-      val transitions = visible.collect { case t: Transition => t }
+      val transitions = visible.flatMap(track.segmentOption).collect { case t: Transition => t }
       for (c <- known if track.contains(c); t <- transitions) {
         if (track.getInterval(c) == track.getInterval(t)) {
           fail("内容与转场占据同一区间 " + label + " " + track.getInterval(c))

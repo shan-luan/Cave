@@ -17,7 +17,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.timeline.Segment
-import com.lomekwi.cave.project.UndoManager
+import com.lomekwi.cave.project.{Id, UndoManager}
 
 
 import scala.collection.mutable
@@ -26,7 +26,7 @@ import scala.compiletime.uninitialized
 
 class Inspector extends VisTable {
   private final val content: VisTable = new VisTable()
-  private var currentSegment: Segment = uninitialized
+  private var currentSegment: Option[Id] = None
   private var currentSet: SegmentSet = uninitialized
 
   {
@@ -50,13 +50,13 @@ class Inspector extends VisTable {
   private def rebuildContent(): Unit = {
     if (currentSet != null) {
       showMultiInfo(currentSet)
-    } else if (currentSegment != null) {
-      showInfo(currentSegment)
+    } else {
+      currentSegment.foreach(showInfo)
     }
   }
 
   private def showEmpty(): Unit = {
-    currentSegment = null
+    currentSegment = None
     currentSet = null
     content.clear()
     content.setFillParent(true)
@@ -64,26 +64,30 @@ class Inspector extends VisTable {
   }
 
   private def showMultiInfo(set: SegmentSet): Unit = {
-    currentSegment = null
+    currentSegment = None
     currentSet = set
     content.clear()
     content.setFillParent(false)
     content.top()
-    val segments: mutable.ArrayBuffer[Segment] = mutable.ArrayBuffer.from(set)
-    sortByPlacement(segments)
+    val ids: mutable.ArrayBuffer[Id] = mutable.ArrayBuffer.from(set)
+    sortByPlacement(ids)
     var first = true
-    for (segment <- segments) {
-      if (!first) {
-        content.row()
+    for (id <- ids) {
+      val segment = resolve(id)
+      if (segment != null) {
+        if (!first) {
+          content.row()
+        }
+        first = false
+        appendSegmentInfo(segment)
       }
-      first = false
-      appendSegmentInfo(segment)
     }
   }
 
-  private def showInfo(segment: Segment): Unit = {
+  private def showInfo(id: Id): Unit = {
+    val segment = resolve(id)
     if (segment != null) {
-      currentSegment = segment
+      currentSegment = Some(id)
       currentSet = null
       content.clear()
       content.setFillParent(false)
@@ -92,12 +96,17 @@ class Inspector extends VisTable {
     }
   }
 
+  private def resolve(id: Id): Segment = {
+    val context = App.root.getFrontendContext
+    if (context == null) null else context.timeline.segment(id).orNull
+  }
+
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
-  private def sortByPlacement(segments: mutable.ArrayBuffer[Segment]): Unit = {
+  private def sortByPlacement(ids: mutable.ArrayBuffer[Id]): Unit = {
     val context = App.root.getFrontendContext
     if (context == null) return
     val timeline = context.timeline
-    segments.sortInPlaceWith((a: Segment, b: Segment) => {
+    ids.sortInPlaceWith((a: Id, b: Id) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
       val ia = ta.map(_.index).getOrElse(Integer.MAX_VALUE)
@@ -114,9 +123,9 @@ class Inspector extends VisTable {
   }
 
   private def appendSegmentInfo(segment: Segment): Unit = {
-    content.add(new SourceActor(segment)).growX().pad(4).row()
+    content.add(new SourceActor(segment.id)).growX().pad(4).row()
     for (filter <- segment.filters) {
-      val actor = new FilterActor(segment, filter)
+      val actor = new FilterActor(segment.id, filter)
       actor.setRebuildCallback(() => rebuildContent())
       content.add(actor).growX().pad(4).row()
     }

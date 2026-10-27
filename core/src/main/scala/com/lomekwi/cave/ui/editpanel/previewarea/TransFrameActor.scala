@@ -10,8 +10,8 @@ import com.lomekwi.cave.app.selection.Selectable
 import com.lomekwi.cave.pipeline.{Filter, Frame}
 import com.lomekwi.cave.pipeline.image.{TransNode, Transform, Transformable}
 import com.lomekwi.cave.playback.RefreshRequestEvent
-import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.task.ExportOptionsSet
+import com.lomekwi.cave.project.{Id, ProjectSession}
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
@@ -68,10 +68,16 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   this.frame = frame0
   this.transformable = frame0
+
+  private def frameSegment: Segment = {
+    val c = App.root.getFrontendContext
+    if (c == null) null else c.timeline.segment(frame.segmentId).orNull
+  }
+
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
       if (button != 0 || pointer != 0) return false
-      val segment = frame.segment
+      val segment = frameSegment
       if (segment == null) return false
 
       val handle = gizmo.hitHandle(event.getStageX, event.getStageY)
@@ -100,11 +106,14 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         updateGizmoDrag(event.getStageX, event.getStageY)
       } else {
         // 首次拖动才创建节点
-        if (dragModifier == null && frame.segment != null) {
-          dragModifier = TransFrameActor.findOrCreateTransNode(frame.segment)
-          startNodeDx = dragModifier.getDx.toFloat
-          startNodeDy = dragModifier.getDy.toFloat
-          computeDragContext()
+        if (dragModifier == null && frame.segmentId != Id.noId()) {
+          val segment = frameSegment
+          if (segment != null) {
+            dragModifier = TransFrameActor.findOrCreateTransNode(segment)
+            startNodeDx = dragModifier.getDx.toFloat
+            startNodeDy = dragModifier.getDy.toFloat
+            computeDragContext()
+          }
         }
         if (dragModifier != null) {
           dragging = true
@@ -126,10 +135,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         }
       }
       if (!dragging && !gizmoDragging) {
-        val segment: Segment = frame.segment
+        val segment: Segment = frameSegment
         val editPanel = App.root.getFrontendEditPanel
         if (segment != null && editPanel != null) {
-          editPanel.getTimelineView.selectSegment(segment, Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
+          editPanel.getTimelineView.selectSegment(frame.segmentId, Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
         }
       }
       dragModifier = null
@@ -517,7 +526,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def computeDragContext(): Unit = {
     val t = new Transform(0, 0, 0)
-    val segment = frame.segment
+    val segment = frameSegment
     if (segment != null) {
       val filters = segment.filters
       filters.takeWhile(f => !(f eq dragModifier)).foreach {

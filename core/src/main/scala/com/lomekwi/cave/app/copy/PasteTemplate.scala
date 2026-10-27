@@ -1,5 +1,6 @@
 package com.lomekwi.cave.app.copy
 
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentGroup, Timeline, Transition}
 
 import scala.collection.mutable
@@ -28,8 +29,8 @@ object PasteTemplate {
       segment match {
         case _: Transition =>
         case c: Content =>
-          timeline.findTrackOf(c).foreach { track =>
-            raw += Entry(track.index, c, track.getInterval(c), track.getOrigin(c), timeline.getGroup(c))
+          timeline.findTrackOf(c.id).foreach { track =>
+            raw += Entry(track.index, c, track.getInterval(c), track.getOrigin(c), timeline.getGroup(c.id))
           }
       }
     }
@@ -46,7 +47,7 @@ object PasteTemplate {
     val groupCopies: mutable.HashMap[SegmentGroup, SegmentGroup] = mutable.HashMap.empty
     for (i <- entries.indices) {
       entries(i).group.foreach { original =>
-        groupCopies.put(original, groupCopies.getOrElse(original, SegmentGroup(Set.empty)).add(dups(i)))
+        groupCopies.put(original, groupCopies.getOrElse(original, SegmentGroup(Set.empty[Id])).add(dups(i).id))
       }
     }
     val copied = mutable.ArrayBuffer.empty[Entry]

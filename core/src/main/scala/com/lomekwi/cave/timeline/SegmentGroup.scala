@@ -1,18 +1,20 @@
 package com.lomekwi.cave.timeline
 
+import com.lomekwi.cave.project.Id
+
 import java.io.Serializable
 
 @SerialVersionUID(1L)
-case class SegmentGroup(segments: Set[Segment]) extends Iterable[Segment] with Serializable {
-  def contains(segment: Segment): Boolean = segments.contains(segment)
+case class SegmentGroup(segments: Set[Id]) extends Iterable[Id] with Serializable {
+  def contains(id: Id): Boolean = segments.contains(id)
 
-  def add(segment: Segment): SegmentGroup = SegmentGroup(segments + segment)
+  def add(id: Id): SegmentGroup = SegmentGroup(segments + id)
 
-  def addAll(more: Iterable[Segment]): SegmentGroup = SegmentGroup(segments ++ more)
+  def addAll(more: Iterable[Id]): SegmentGroup = SegmentGroup(segments ++ more)
 
-  def remove(segment: Segment): SegmentGroup = SegmentGroup(segments - segment)
+  def remove(id: Id): SegmentGroup = SegmentGroup(segments - id)
 
   override def isEmpty: Boolean = segments.isEmpty
 
-  override def iterator: Iterator[Segment] = segments.iterator
+  override def iterator: Iterator[Id] = segments.iterator
 }

@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.selection.SegmentSetSelectedEvent
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.pipeline.{Frame, GapFrame}
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.project.ProjectSession
@@ -120,7 +121,7 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
       if (frame != null) {
         frame.actor match {
           case tfa: TransFrameActor =>
-            val selected = frame.segment != null && event.set.contains(frame.segment)
+            val selected = frame.segmentId != Id.noId() && event.set.contains(frame.segmentId)
             tfa.setSelected(selected)
           case _ =>
         }

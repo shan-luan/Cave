@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
@@ -62,7 +63,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
     val firstTrack: Int = Math.max(0, timelineView.yToTrackIndex(maxY))
     val lastTrack: Int = Math.min(timelineView.timeline.getTrackCount - 1, timelineView.yToTrackIndex(minY))
 
-    val toSelect: mutable.LinkedHashSet[Segment] = mutable.LinkedHashSet.empty
+    val toSelect: mutable.LinkedHashSet[Id] = mutable.LinkedHashSet.empty
     var i = firstTrack
     while (i <= lastTrack) {
       val track: Track = timelineView.timeline.getTrackOrCreate(i)
@@ -94,9 +95,9 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
           val sourceRight: Float = timelineView.absoluteTimeToX(r.hi)
 
           if (sourceRight > minX && sourceLeft < maxX) {
-            timelineView.timeline.getGroup(s) match {
+            timelineView.timeline.getGroup(s.id) match {
               case Some(group) => toSelect.addAll(group)
-              case None => toSelect.add(s)
+              case None => toSelect.add(s.id)
             }
           }
         }

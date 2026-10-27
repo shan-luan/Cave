@@ -96,7 +96,7 @@ class TextSource(text: String) extends Source[TextFrame] {
           font = fontRes.getFont(getFontSize)
           generatedFontSize = getFontSize
         }
-        frame = new TextFrame(track.index, segment)
+        frame = new TextFrame(track.index, segment.id)
         frame.setFont(font)
         frame.transform = new Transform(0, 0, 0)
         initialized = true

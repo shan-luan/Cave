@@ -10,13 +10,14 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.pipeline.image.Transformable
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.project.Id
+import com.lomekwi.cave.timeline.Track
 import com.lomekwi.cave.ui.editpanel.previewarea.TransFrameActor
 
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class TextFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, segment) with Transformable {
+class TextFrame(trackIndex: Int, segmentId: Id) extends Frame(trackIndex, segmentId) with Transformable {
   @volatile private var text: String = uninitialized
   @volatile private var font: BitmapFont = uninitialized
   private final val layout: GlyphLayout = new GlyphLayout()
@@ -32,7 +33,7 @@ class TextFrame(trackIndex: Int, segment: Segment) extends Frame(trackIndex, seg
   override protected def createActor(): Actor = new TransFrameActor(this)
 
   def this(trackIndex: Int) = {
-    this(trackIndex, null)
+    this(trackIndex, Id.noId())
   }
 
   override def baseWidth: Float = cachedWidth

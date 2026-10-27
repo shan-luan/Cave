@@ -8,6 +8,7 @@ import com.kotcrab.vis.ui.widget.{VisImageButton, VisTable}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.playback.RefreshRequestEvent
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.widget.Card
 
@@ -18,7 +19,9 @@ import scala.jdk.CollectionConverters.*
  * 过滤器节点卡，显示 `filter` 名称，可编辑其数值输入端口（默认值），支持删除、
  * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class FilterActor(private val segment: Segment, private val filter: Filter[?]) extends Card(filter.name) {
+final class FilterActor(private val id: Id, private val filter: Filter[?]) extends Card(filter.name) {
+  private def segment: Segment = SegmentLookup.resolve(id)
+
   private var rebuildCallback: Runnable = uninitialized
   private var dragging: Boolean = false
   private var dragStageY: Float = 0

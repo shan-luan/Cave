@@ -3,7 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.pipeline.{Source, TransitionSource}
 import com.lomekwi.cave.pipeline.audio.{AudCrossfadeSource, AudFrame}
-import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.project.{TestIds, TestProject}
 import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
@@ -52,8 +52,8 @@ class AudTransitionTrackTest extends GdxTestBase {
 
   test("重叠的音频片段推导出交叉淡化转场") {
     val track = timeline.getTrackOrCreate(0)
-    timeline.addOrThrow(track, new Clip(new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, new Clip(new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
+    timeline.addOrThrow(track, new Clip(TestIds.nextId(), new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
+    timeline.addOrThrow(track, new Clip(TestIds.nextId(), new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
     val current = timeline.getTrackOrCreate(0)
 
     val transition = current.get(600L) match {

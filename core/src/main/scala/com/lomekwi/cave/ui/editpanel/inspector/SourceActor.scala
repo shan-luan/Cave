@@ -3,15 +3,25 @@ package com.lomekwi.cave.ui.editpanel.inspector
 import com.badlogic.gdx.utils.Align
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Source
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.widget.Card
+
+object SourceActor {
+  private def displayName(id: Id): String = {
+    val segment = SegmentLookup.resolve(id)
+    if (segment == null) "" else segment.displayName
+  }
+}
 
 /**
  * 源信息卡，显示源名称与输入端口、信息输出端口（不含参与过滤器链的 [[FilterOut]]）。
  * 一个片段的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
  * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
  */
-final class SourceActor(private val segment: Segment) extends Card(segment.displayName) {
+final class SourceActor(private val id: Id) extends Card(SourceActor.displayName(id)) {
+  private def segment: Segment = SegmentLookup.resolve(id)
+
   private val source: Source[?] = segment.source
 
   align(Align.top | Align.left)

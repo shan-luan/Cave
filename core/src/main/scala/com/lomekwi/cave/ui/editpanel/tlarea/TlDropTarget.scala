@@ -60,7 +60,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
       }
       if (added.size >= 2) {
         val (t, group) = timelineView.context.timeline.newGroup()
-        timelineView.context.applyTimeline(t.replaceGroup(group, group.addAll(added)))
+        timelineView.context.applyTimeline(t.replaceGroup(group, group.addAll(added.map(_.id))))
       }
       timelineView.dirty = true
     } catch {

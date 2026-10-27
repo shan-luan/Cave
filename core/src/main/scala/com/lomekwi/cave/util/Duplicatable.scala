@@ -4,7 +4,7 @@ import java.io.*
 import scala.util.Using
 @deprecated("先等model完全不可变重构完")
 trait Duplicatable[T <: Duplicatable[T]] extends Serializable {
-
+  @deprecated("先等model完全不可变重构完")
   def duplicate(): T = {
     try {
       Using.resource(new ByteArrayOutputStream()) { baos =>

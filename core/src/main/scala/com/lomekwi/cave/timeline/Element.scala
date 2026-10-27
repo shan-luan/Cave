@@ -1,6 +1,7 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.pipeline.{Filter, FilterList, Frame, Source}
+import com.lomekwi.cave.project.{Id, IdSource}
 import com.lomekwi.cave.ui.editpanel.inspector.SourceActor
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import com.lomekwi.cave.util.Duplicatable
@@ -21,7 +22,7 @@ sealed trait Element extends Serializable
  */
 @SerialVersionUID(1L)
 //TODO：让其（及字段）不可变。
-sealed abstract class Segment(val source: Source[? <: Frame])
+sealed abstract class Segment(val id: Id, val source: Source[? <: Frame])
   extends Element with Serializable with Duplicatable[Segment] {
   final val filters: FilterList = new FilterList(source)
   @transient private lazy val segmentActor: TlSegmentActor = createTlSegmentActor()
@@ -80,7 +81,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
   }
 
   def getSourceActor: SourceActor = {
-    new SourceActor(this)
+    new SourceActor(id)
   }
 
   private def createTlSegmentActor(): TlSegmentActor = {
@@ -102,7 +103,7 @@ sealed abstract class Segment(val source: Source[? <: Frame])
  * 有界用 [[Clip]]，时长无界的用 [[Boundless]]。
  */
 @SerialVersionUID(1L)
-abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
+abstract class Content(id: Id, source: Source[? <: Frame]) extends Segment(id, source) {
 
   /** 本片段能否与给定内容片段构造转场。 */
   def canCreateTransitionWith(other: Content): Boolean = {
@@ -113,8 +114,8 @@ abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
    * 以本片段为前段、另一个内容片段为后段，构造转场片段。
    * 转场源由 [[Source.createTransition]] 提供。
    */
-  def createTransition(other: Content): Transition = {
-    new Transition(source.createTransition(other.source)) {}
+  def createTransition(other: Content)(using ids: IdSource): Transition = {
+    new Transition(ids.nextId(), source.createTransition(other.source)) {}
   }
 }
 
@@ -122,7 +123,7 @@ abstract class Content(source: Source[? <: Frame]) extends Segment(source) {
  * 有界素材内容。origin 是素材 0 秒在时间轴上的位置，前边缘最多回退到素材起点。
  */
 @SerialVersionUID(1L)
-class Clip(source: Source[? <: Frame]) extends Content(source) {
+class Clip(id: Id, source: Source[? <: Frame]) extends Content(id, source) {
   require(source.getDuration != Long.MaxValue,
     ("有界片段的源时长必须有限: ".in(Zh) | "The source duration of a bounded segment must be finite: ".in(En)).str() + source.displayName)
 }
@@ -131,7 +132,7 @@ class Clip(source: Source[? <: Frame]) extends Content(source) {
  * 时长无界的内容，没有素材起点。origin 仅作内时间锚，前边缘不受它约束。
  */
 @SerialVersionUID(1L)
-class Boundless(source: Source[? <: Frame]) extends Content(source) {
+class Boundless(id: Id, source: Source[? <: Frame]) extends Content(id, source) {
   require(source.getDuration == Long.MaxValue,
     ("无界片段的源时长必须无界: ".in(Zh) | "The source duration of an unbounded segment must be unbounded: ".in(En)).str() + source.displayName)
 }
@@ -140,10 +141,10 @@ class Boundless(source: Source[? <: Frame]) extends Content(source) {
  * 转场。一种特殊的片段。对其来说的障碍与 [[Content]] 看到的障碍不同。
  */
 @SerialVersionUID(1L)
-abstract class Transition(source: Source[? <: Frame]) extends Segment(source)
+abstract class Transition(id: Id, source: Source[? <: Frame]) extends Segment(id, source)
 
 /**
  * 空隙。随取随建
  */
 @SerialVersionUID(1L)
-final case class Gap(before: Option[Content], after: Option[Content]) extends Element
+final case class Gap(before: Option[Id], after: Option[Id]) extends Element

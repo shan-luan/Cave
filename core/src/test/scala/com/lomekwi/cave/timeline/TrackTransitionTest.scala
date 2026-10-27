@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.project.TestProject
+import com.lomekwi.cave.project.{IdSource, TestProject}
 
 /**
  * 转场拓扑的模型级测试。内容保留覆盖完整的区间，转场是相邻两块内容的重叠区，
@@ -31,7 +31,7 @@ class TrackTransitionTest extends GdxTestBase {
   private class NoTransitionCont(duration: Long) extends TestCont(duration) {
     override def canCreateTransitionWith(other: Content): Boolean = false
 
-    override def createTransition(other: Content): Transition =
+    override def createTransition(other: Content)(using IdSource): Transition =
       throw new UnsupportedOperationException("转场不应由本片段构造")
   }
 
