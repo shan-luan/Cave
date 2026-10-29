@@ -14,8 +14,8 @@ scala {
 
 
 android {
-  namespace "com.lomekwi.cave"
-  compileSdk 36
+  namespace = "com.lomekwi.cave"
+  compileSdk = 36
   sourceSets {
     main {
       manifest.srcFile 'AndroidManifest.xml'
@@ -38,7 +38,7 @@ android {
                      'META-INF/NOTICE.txt', 'META-INF/NOTICE', 'META-INF/notice.txt']
 		}
     jniLibs {
-      useLegacyPackaging true
+      useLegacyPackaging = true
     }
   }
   defaultConfig {
@@ -54,7 +54,7 @@ android {
   compileOptions {
     sourceCompatibility "17"
     targetCompatibility "17"
-    coreLibraryDesugaringEnabled true
+    coreLibraryDesugaringEnabled = true
   }
   buildTypes {
     release {
