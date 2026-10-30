@@ -70,9 +70,9 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     val duration = TrackTransitionFuzzTest.DURATION_MIN + rnd.nextLong(TrackTransitionFuzzTest.DURATION_MAX - TrackTransitionFuzzTest.DURATION_MIN + 1)
     val lo = rnd.nextLong(TrackTransitionFuzzTest.SPAN)
     val segment = new TestCont(duration)
-    val shift = timeline.tryAdd(timeline.getTrackOrCreate(0), segment,
+    val added = timeline.add(timeline.getTrackOrCreate(0), segment,
       lo ~~ (lo + duration), rnd.nextLong(TrackTransitionFuzzTest.SPAN))
-    if (shift == 0) segment else null
+    if (added) segment else null
   }
 
   /**
@@ -103,10 +103,10 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     val rnEnd = rnStart + rDur
 
     val tl = timeline
-    tl.addOrThrow(tl.getTrackOrCreate(0), p, pStart ~~ (pStart + pDur), origin)
-    tl.addOrThrow(tl.getTrackOrCreate(0), a, aStart ~~ aEnd, origin)
-    tl.addOrThrow(tl.getTrackOrCreate(0), b, bStart ~~ bEnd, origin)
-    tl.addOrThrow(tl.getTrackOrCreate(0), rn, rnStart ~~ rnEnd, origin)
+    tl.add(tl.getTrackOrCreate(0), p, pStart ~~ (pStart + pDur), origin)
+    tl.add(tl.getTrackOrCreate(0), a, aStart ~~ aEnd, origin)
+    tl.add(tl.getTrackOrCreate(0), b, bStart ~~ bEnd, origin)
+    tl.add(tl.getTrackOrCreate(0), rn, rnStart ~~ rnEnd, origin)
 
     val track = tl.getTrackOrCreate(0)
     val transition = track.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])

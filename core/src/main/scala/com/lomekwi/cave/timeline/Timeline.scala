@@ -36,19 +36,11 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
   private def ensureTrack(index: Int): Timeline = {
     if (tracks.size > index) this else new Timeline(grownTo(tracks, index), groups)
   }
-
-  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long)(using ids: IdSource): (Timeline, Long) = {
-    val grown = ensureTrack(track.index)
-    val current = grown.tracks(track.index)
-    val (next, shift) = current.tryAdd(segment, interval, origin)
-    if (shift == 0) (grown.withTrack(track.index, next), 0L) else (this, shift)
-  }
-
-  protected[timeline] def addOrThrow(track: Track, segment: Content, interval: Interval, origin: Long)(using ids: IdSource): Timeline = {
-    val grown = ensureTrack(track.index)
-    val current = grown.tracks(track.index)
-    val next = current.addOrThrow(segment, interval, origin)
-    grown.withTrack(track.index, next)
+  def add(trackIndex: Int, segment: Content, interval: Interval, origin: Long)(using ids: IdSource): Timeline = {
+    val grown = ensureTrack(trackIndex)
+    val current = grown.tracks(trackIndex)
+    val next = current.add(segment, interval, origin)
+    if (next eq current) this else grown.withTrack(trackIndex, next)
   }
 
   def remove(id: Id)(using ids: IdSource): Timeline = {
@@ -150,7 +142,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
       }
       refill.sortInPlaceWith((a: Content, b: Content) => before.interval(a.id).lo > before.interval(b.id).lo)
       for (c <- refill) {
-        next = next.addOrThrow(c, before.interval(c.id).shift(applied), before.getOrigin(c.id) + applied)
+        next = next.add(c, before.interval(c.id).shift(applied), before.getOrigin(c.id) + applied)
       }
       for (s <- onTrack) {
         s match {
@@ -209,7 +201,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     }
     for ((s, _, toIndex, interval, origin) <- moves) {
       val before = currentOf(toIndex)
-      working.put(toIndex, before.addOrThrow(s, interval, origin))
+      working.put(toIndex, before.add(s, interval, origin))
     }
 
     var out = base

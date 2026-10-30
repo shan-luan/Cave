@@ -3,12 +3,8 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.collection.BiMap
 import com.lomekwi.cave.pipeline.{BlockSource, EvalClock, Frame}
 import com.lomekwi.cave.project.{Id, IdSource}
-import com.lomekwi.cave.util.i18n.*
-import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.Serializable
-import scala.annotation.tailrec
 import scala.collection.immutable
 import scala.collection.immutable.TreeMap
 
@@ -88,7 +84,7 @@ case class Track private (index: Int,
   private def placedTransitionAfter(c: Content): Option[Transition] =
     transitions.get(c.id).filter(id => contains(id)).map(transitionOf)
 
-  /** 条目独占播放的终点。有右侧转场时内容只播到转场起点，转场则播满自己的区间。 */
+  /** 带有后接转场的片段，其后接转场的起点（自己的单独终点） */
   def soloEndOf(segment: Segment): Long = segment match {
     case c: Content =>
       val r = c.id.interval
@@ -107,19 +103,8 @@ case class Track private (index: Int,
       }
     }
 
-  /**
-   * 尝试把内容片段放进指定区间，与已有内容的重叠自然成为转场。
-   * @return 放得下时是 `(新轨道, 0)`；放不下时不加入，返回 `(本轨道, 最近的可容纳偏移)`
-   */
-  protected[timeline] def tryAdd(c: Content, r: Interval, origin: Long)(using ids: IdSource): (Track, Long) = {
-    if (canPlaceAt(c, r)) (put(c, r, origin).syncAround(c), 0L) else (this, getShift(r))
-  }
-
-  /** 把内容片段放到指定区间。放不下时抛 IllegalArgumentException。要求片段不在本轨道上。 */
-  protected[timeline] def addOrThrow(c: Content, r: Interval, origin: Long)(using ids: IdSource): Track = {
-    if (!canPlaceAt(c, r)) throw new IllegalArgumentException(("目标区间无法放置内容: ".in(Zh) | "Cannot place content at the target interval: ".in(En)).str() + r)
-    put(c, r, origin).syncAround(c)
-  }
+  protected[timeline] def add(c: Content, r: Interval, origin: Long)(using ids: IdSource): Track =
+    if (canPlaceAt(c, r)) put(c, r, origin).syncAround(c) else this
 
   private def put(element: Segment, r: Interval, origin: Long): Track = {
     val id = element.id
@@ -463,51 +448,6 @@ case class Track private (index: Int,
   private def withSegments(segments: Map[Id, Segment]): Track =
     new Track(index, segments, layout, segToOrigin, transitions)
 
-  private def getShift(r: Interval): Long = pickShift(shiftScan(r, true), shiftScan(r, false))
-
-  private def pickShift(forward: Long, backward: Long): Long = {
-    val fOk = forward != Long.MaxValue
-    val bOk = backward != Long.MinValue
-    if (fOk && bOk) {
-      if (Math.abs(forward) <= Math.abs(backward)) forward else backward
-    } else if (fOk) {
-      forward
-    } else if (bOk) {
-      backward
-    } else {
-      0
-    }
-  }
-
-  private def shiftScan(r: Interval, forward: Boolean): Long = {
-    val lo: Long = r.lo
-    val hi: Long = r.hi
-
-    @tailrec
-    def scan(s: Long, step: Int): Long = {
-      if (step >= Track.MAX_SLIDE_STEPS || noSegment(r.shift(s))) {
-        s
-      } else {
-        val obstacles = intersectingEntries(intervalToSeg, r.shift(s))
-          .map(_._1)
-        val candidate =
-          if (forward) obstacles.map(_.hi).maxOption.map(_ - lo)
-          else obstacles.map(_.lo).minOption.map(_ - hi)
-        candidate match {
-          case None => s
-          case Some(next) if forward && next <= s => Long.MaxValue
-          case Some(next) if !forward && next >= s => s
-          case Some(next) => scan(next, step + 1)
-        }
-      }
-    }
-
-    scan(0L, 0)
-  }
-
-  private def noSegment(interval: Interval): Boolean =
-    !intersectingEntries(intervalToSeg, interval).hasNext
-
   /** interval 内是否没有被 ignore 之外的片段占用。 */
   def isFree(interval: Interval, ignore: Set[Id]): Boolean = {
     intersectingEntries(intervalToSeg, interval).forall { case (_, id) => ignore.contains(id) }
@@ -762,8 +702,6 @@ object Track {
       Map.empty[Id, Long],
       BiMap(Map.empty[Id, Id], Map.empty[Id, Id]))
   }
-
-  private val MAX_SLIDE_STEPS = 10000
 
   private def timeText(time: Long): String = {
     if (time == Long.MaxValue) "∞" else time.toString

@@ -48,7 +48,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
         // 该轨道放不下就跳过
       } else {
         val segment = segmentFactory(duration)
-        timeline.tryAdd(timeline.getTrackOrCreate(trackIndex), segment, interval, rnd.nextLong(span * 2))
+        timeline.add(timeline.getTrackOrCreate(trackIndex), segment, interval, rnd.nextLong(span * 2))
       }
       i += 1
     }
@@ -65,7 +65,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       if (track.isFree(interval, Set.empty)) {
         val segment = segmentFactory(duration)
         Using.resource(timeline.record()) { _ =>
-          timeline.tryAdd(track, segment, interval, rnd.nextLong(span))
+          timeline.add(track, segment, interval, rnd.nextLong(span))
         }
         return true
       }

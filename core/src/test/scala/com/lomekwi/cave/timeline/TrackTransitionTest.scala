@@ -19,7 +19,7 @@ class TrackTransitionTest extends GdxTestBase {
   private def newSegment(duration: Long): Content = new TestCont(duration)
 
   private def place(track: Track, segment: Content, interval: Interval, origin: Long = 0L): Unit = {
-    timeline.addOrThrow(track, segment, interval, origin)
+    timeline.add(track, segment, interval, origin)
   }
 
   private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
@@ -86,7 +86,7 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 1500)
 
     // c 放在 [800,1800) 会与 a 和 b 同时重叠，隔项不重叠被破坏
-    intercept[IllegalArgumentException] { place(t0, c, 800 ~~ 1800) }
+    assert(!timeline.add(t0, c, 800 ~~ 1800, 0L))
     assertEquals(t0.size, 3)
   }
 
@@ -217,7 +217,7 @@ class TrackTransitionTest extends GdxTestBase {
     val b = new NoTransitionCont(1000)
     place(t0, a, 0 ~~ 1000)
 
-    intercept[IllegalArgumentException] { place(t0, b, 500 ~~ 1500) }
+    assert(!timeline.add(t0, b, 500 ~~ 1500, 0L))
     assertEquals(t0.size, 1)
   }
 }

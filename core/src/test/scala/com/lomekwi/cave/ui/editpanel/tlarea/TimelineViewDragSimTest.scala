@@ -59,7 +59,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
   /** 在模型上放置一个片段，并按 [[TimelineView.act]] 的重建逻辑摆好 Actor。 */
   private def place(track: Track, segment: Content, start: Long, end: Long, origin: Long): TlSegmentActor = {
-    timeline.tryAdd(track, segment, start ~~ end, origin)
+    timeline.add(track, segment, start ~~ end, origin)
     val current = timeline.findTrackOf(segment).getOrElse(track)
     val actor = segment.getTlSegmentActor
     actor.tl = tl

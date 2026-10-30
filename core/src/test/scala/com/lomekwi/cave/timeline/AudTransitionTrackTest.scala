@@ -52,8 +52,8 @@ class AudTransitionTrackTest extends GdxTestBase {
 
   test("重叠的音频片段推导出交叉淡化转场") {
     val track = timeline.getTrackOrCreate(0)
-    timeline.addOrThrow(track, new Clip(TestIds.nextId(), new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, new Clip(TestIds.nextId(), new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
+    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
+    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
     val current = timeline.getTrackOrCreate(0)
 
     val transition = current.get(600L) match {

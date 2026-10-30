@@ -21,7 +21,7 @@ class TrackRemoveTest extends GdxTestBase {
   private def newContent(duration: Long): Content = new TestCont(duration)
 
   private def place(track: Track, segment: Content, interval: Interval, origin: Long = 0L): Unit = {
-    timeline.addOrThrow(track, segment, interval, origin)
+    timeline.add(track, segment, interval, origin)
   }
 
   private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
@@ -308,10 +308,10 @@ class TrackRemoveTest extends GdxTestBase {
       val a = newContent(1000)
       val b = newContent(1000)
       val rn = newContent(1000)
-      tl.addOrThrow(tl.getTrackOrCreate(0), p, 800 ~~ 1100, 0L)
-      tl.addOrThrow(tl.getTrackOrCreate(0), a, 1000 ~~ 1101, 0L)
-      tl.addOrThrow(tl.getTrackOrCreate(0), b, 1100 ~~ 1500, 0L)
-      tl.addOrThrow(tl.getTrackOrCreate(0), rn, rnLo ~~ (rnLo + 1000), 0L)
+      tl.add(tl.getTrackOrCreate(0), p, 800 ~~ 1100, 0L)
+      tl.add(tl.getTrackOrCreate(0), a, 1000 ~~ 1101, 0L)
+      tl.add(tl.getTrackOrCreate(0), b, 1100 ~~ 1500, 0L)
+      tl.add(tl.getTrackOrCreate(0), rn, rnLo ~~ (rnLo + 1000), 0L)
       val transition = tl.getTrackOrCreate(0).get(1100) match {
         case t: Transition => t
         case _ => null

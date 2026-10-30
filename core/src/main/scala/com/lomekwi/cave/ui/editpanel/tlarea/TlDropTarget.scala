@@ -46,8 +46,9 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
             // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
             var placed = false
             while (!placed) {
-              val track = timelineView.context.timeline.getTrackOrCreate(targetTrack)
-              if (timelineView.context.tryAdd(track, segment, interval, startTime) == 0) {
+              val before = timelineView.context.timeline
+              val next = timelineView.context.add(before.getTrackOrCreate(targetTrack), segment, interval, startTime)
+              if (next ne before) {
                 placed = true
               } else {
                 targetTrack += 1

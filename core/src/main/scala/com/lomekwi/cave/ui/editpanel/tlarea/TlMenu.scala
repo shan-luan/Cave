@@ -79,7 +79,9 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
       var targetTrack: Int = 0
       var placed = false
       while (!placed) {
-        if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, interval, time) == 0) {
+        val before = context.timeline
+        val next = context.add(before.getTrackOrCreate(targetTrack), segment, interval, time)
+        if (next ne before) {
           placed = true
         } else {
           targetTrack += 1
@@ -107,7 +109,9 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
               val interval: Interval = time ~~ (time + duration)
               var placed = false
               while (!placed) {
-                if (context.tryAdd(context.timeline.getTrackOrCreate(targetTrack), segment, interval, time) == 0) {
+                val before = context.timeline
+                val next = context.add(before.getTrackOrCreate(targetTrack), segment, interval, time)
+                if (next ne before) {
                   placed = true
                 } else {
                   targetTrack += 1

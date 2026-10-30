@@ -11,11 +11,11 @@ final class TestTimeline(val context: ProjectSession) {
 
   def project: Project = context.project
 
-  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long): Long =
-    context.tryAdd(track, segment, interval, origin)
-
-  def addOrThrow(track: Track, segment: Content, interval: Interval, origin: Long): Unit =
-    context.applyTimeline(timeline.addOrThrow(track, segment, interval, origin))
+  def add(track: Track, segment: Content, interval: Interval, origin: Long): Boolean = {
+    val before = timeline
+    context.add(track, segment, interval, origin)
+    timeline ne before
+  }
 
   def remove(segment: Segment): Unit = context.remove(segment.id)
 

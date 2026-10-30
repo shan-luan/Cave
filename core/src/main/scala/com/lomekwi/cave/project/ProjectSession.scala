@@ -102,10 +102,10 @@ final class ProjectSession(initial: Project) {
     workers.getOrElseUpdate(index, new TrackWorker(this, index))
   }
 
-  def tryAdd(track: Track, segment: Content, interval: Interval, origin: Long): Long = {
-    val (next, shift) = timeline.tryAdd(track, segment, interval, origin)
+  def add(track: Track, segment: Content, interval: Interval, origin: Long): Timeline = {
+    val next = timeline.add(track.index, segment, interval, origin)
     applyTimeline(next)
-    shift
+    next
   }
 
   def remove(id: Id): Unit = applyTimeline(timeline.remove(id))

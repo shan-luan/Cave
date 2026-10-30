@@ -25,8 +25,8 @@ class TrackIdTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val a = new TestCont(1000)
     val b = new TestCont(1000)
-    timeline.addOrThrow(track, a, 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, b, 500L ~~ 1500L, 500L)
+    timeline.add(track, a, 0L ~~ 1000L, 0L)
+    timeline.add(track, b, 500L ~~ 1500L, 500L)
     val current = timeline.getTrackOrCreate(0)
     val transition = current.get(600L) match {
       case t: Transition => t
@@ -41,7 +41,7 @@ class TrackIdTest extends GdxTestBase {
   test("移除后 id 不再解析，撤销后恢复") {
     val track = timeline.getTrackOrCreate(0)
     val a = new TestCont(1000)
-    timeline.addOrThrow(track, a, 0L ~~ 1000L, 0L)
+    timeline.add(track, a, 0L ~~ 1000L, 0L)
     Using.resource(timeline.record()) { _ => timeline.remove(a) }
     assert(timeline.timeline.segment(a.id).isEmpty)
     project.undo.undo()
@@ -51,7 +51,7 @@ class TrackIdTest extends GdxTestBase {
   test("组只存 id") {
     val track = timeline.getTrackOrCreate(0)
     val a = new TestCont(1000)
-    timeline.addOrThrow(track, a, 0L ~~ 1000L, 0L)
+    timeline.add(track, a, 0L ~~ 1000L, 0L)
     val group = timeline.groupAdd(timeline.newGroup(), a)
     assertEquals(group.toSet, Set(a.id))
     assert(timeline.getGroup(a).exists(_.contains(a.id)))
@@ -61,8 +61,8 @@ class TrackIdTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val a = new TestCont(1000)
     val b = new TestCont(1000)
-    timeline.addOrThrow(track, a, 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, b, 500L ~~ 1500L, 500L)
+    timeline.add(track, a, 0L ~~ 1000L, 0L)
+    timeline.add(track, b, 500L ~~ 1500L, 500L)
     assertEquals(timeline.timeline.maxId, Seq(a.id, b.id).max(Ordering[Id]))
   }
 }

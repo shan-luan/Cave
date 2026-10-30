@@ -16,7 +16,7 @@ class PlayheadSeekingTest extends GdxTestBase {
     val duration = SECOND
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track = project.timeline.getTrackOrCreate(0)
-    assertEquals(project.timeline.tryAdd(track, cont, 0 ~~ duration, 0), 0L, "源应被加入轨道")
+    assert(project.timeline.add(track, cont, 0 ~~ duration, 0), "源应被加入轨道")
 
     val thread = new Thread(project.worker(track.index), "seek-paused-test")
     thread.setDaemon(true)
@@ -39,7 +39,7 @@ class PlayheadSeekingTest extends GdxTestBase {
     val duration = SECOND
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track = project.timeline.getTrackOrCreate(0)
-    assertEquals(project.timeline.tryAdd(track, cont, 0 ~~ duration, 0), 0L, "源应被加入轨道")
+    assert(project.timeline.add(track, cont, 0 ~~ duration, 0), "源应被加入轨道")
 
     val thread = new Thread(project.worker(track.index), "seek-playing-test")
     thread.setDaemon(true)
@@ -63,7 +63,7 @@ class PlayheadSeekingTest extends GdxTestBase {
     val duration = SECOND
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track0 = project.timeline.getTrackOrCreate(0)
-    assertEquals(project.timeline.tryAdd(track0, cont, 0 ~~ duration, 0), 0L, "源应被加入轨道")
+    assert(project.timeline.add(track0, cont, 0 ~~ duration, 0), "源应被加入轨道")
     // 只产生 gap 的空轨道同样要上报完成
     val track1 = project.timeline.getTrackOrCreate(1)
 

@@ -29,11 +29,11 @@ class TrackDragTest extends GdxTestBase {
   }
 
   private def place(track: Track, segment: Content, interval: Interval): Unit = {
-    timeline.addOrThrow(track, segment, interval, 0L)
+    timeline.add(track, segment, interval, 0L)
   }
 
   private def placeAt(track: Track, segment: Content, interval: Interval, origin: Long): Unit = {
-    timeline.addOrThrow(track, segment, interval, origin)
+    timeline.add(track, segment, interval, origin)
   }
 
   /** 无界测试片段，与 [[TestCont]] 相对，用于验证无界内容的前边缘约束。 */
@@ -230,15 +230,14 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(timeline.findTrackOf(s), Some(t0))
   }
 
-  test("在已占用区间 tryAdd 不会替换") {
+  test("在已占用区间 add 不会替换") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(0, 100))
 
-    val shift: Long = timeline.tryAdd(t0, b, TrackDragTest.interval(0, 100), 0L)
+    assert(!timeline.add(t0, b, TrackDragTest.interval(0, 100), 0L))
 
-    assert(shift != 0)
     assert((a) eq (srcAt(t0, 50)))
     assertEquals(countOn(t0), 1)
   }

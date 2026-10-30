@@ -100,8 +100,8 @@ class TransitionSourceTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, leftLead, leftNullAt)
     val right = new ProbeContent(1000, canLead = true, rightNullAt)
-    timeline.addOrThrow(track, left, 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, right, 500L ~~ 1500L, 500L)
+    timeline.add(track, left, 0L ~~ 1000L, 0L)
+    timeline.add(track, right, 500L ~~ 1500L, 500L)
     // 轨道不可变，编辑后取最新版本断言
     val current = timeline.getTrackOrCreate(0)
     val transition = current.get(600L) match {
@@ -129,8 +129,8 @@ class TransitionSourceTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, canLead = true)
     val right = new ProbeContent(1000, canLead = true)
-    timeline.addOrThrow(track, left, 0L ~~ 1000L, 0L)
-    timeline.addOrThrow(track, right, 500L ~~ 1500L, 500L)
+    timeline.add(track, left, 0L ~~ 1000L, 0L)
+    timeline.add(track, right, 500L ~~ 1500L, 500L)
     val current = timeline.getTrackOrCreate(0)
     val transition = current.get(600L) match {
       case t: Transition => t
