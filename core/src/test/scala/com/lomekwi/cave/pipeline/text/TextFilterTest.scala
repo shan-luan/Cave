@@ -1,8 +1,6 @@
 package com.lomekwi.cave.pipeline.text
 
-import com.badlogic.gdx.graphics.g2d.Batch
-import com.badlogic.gdx.scenes.scene2d.Actor
-import com.lomekwi.cave.pipeline.{Frame, Source}
+import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.project.TestIds
 import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
@@ -95,43 +93,6 @@ object TextFilterTest {
 
     override def displayName: String = {
       "文本帧源"
-    }
-
-    override def createTlSegmentActor(segment: Segment): TlSegmentActor = {
-      null
-    }
-  }
-
-  private final class RendFrame extends Frame(-1) with com.lomekwi.cave.pipeline.image.Renderable {
-    override def render(batch: Batch): Unit = {}
-
-    override protected def createActor(): Actor = null
-  }
-
-  private final class RendCont extends Boundless(TestIds.nextId(), new RendSource)
-
-  private final class RendSource extends Source[RendFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): RendFrame = {
-      if (frame == null) {
-        frame = new RendFrame
-      }
-      frame
-    }
-
-    override def getLengthPerExportFrame: Long = {
-      1
-    }
-
-    override def getDuration: Long = {
-      Long.MaxValue
-    }
-
-    override def getDefaultDuration: Option[Long] = {
-      None
-    }
-
-    override def displayName: String = {
-      "渲染帧源"
     }
 
     override def createTlSegmentActor(segment: Segment): TlSegmentActor = {

@@ -2,7 +2,7 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 
 import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{Content, GdxTestBase, Segment, TestCont, TestTimeline, Timeline, Track, Transition}
+import com.lomekwi.cave.timeline.{Content, GdxTestBase, Segment, TestCont, TestTimeline, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
 import org.objenesis.ObjenesisStd

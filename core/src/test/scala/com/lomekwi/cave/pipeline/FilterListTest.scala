@@ -180,9 +180,9 @@ object FilterListTest {
   private[pipeline] final class AddFilter extends Filter[Fpable] {
     private[FilterListTest] val delta: Node.InPort[Double] = addInPort(
       new Node.InPort[Double]("delta", 0.0, classOf[Double]) {})
-    private val in: FilterIn = addInPort(new FilterIn("in") {
+    addInPort(new FilterIn("in") {
     })
-    private val out: FilterOut = addOutPort(new FilterOut("out") {
+    addOutPort(new FilterOut("out") {
       override def getData: Fpable = {
         val f = filterIn.getData
         if (f != null) {

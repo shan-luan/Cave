@@ -2,7 +2,7 @@ package com.lomekwi.cave.app.copy
 
 import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline, Timeline}
+import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline}
 import com.lomekwi.cave.timeline.~~
 
 /**

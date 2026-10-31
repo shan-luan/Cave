@@ -153,21 +153,14 @@ trait PortActor extends Actor with PortHolder {
     if (owner == null) {
       return null
     }
-    owner.getParent match {
-      case canvas: Group =>
-        for (child <- canvas.getChildren.asScala) {
-          child match {
-            case card: NodeActor =>
-              val actor: PortActor = card.getPortActor(port)
-              if (actor != null) {
-                return actor
-              }
-            case _ =>
-          }
-        }
-      case _ =>
+    val canvas = owner.getParent
+    if (canvas == null) {
+      return null
     }
-    null
+    canvas.getChildren.asScala.iterator
+      .collect { case card: NodeActor => card.getPortActor(port) }
+      .find(_ != null)
+      .orNull
   }
 
   private def findNodeActor: NodeActor = {

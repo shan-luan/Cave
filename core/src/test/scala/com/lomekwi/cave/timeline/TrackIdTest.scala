@@ -63,6 +63,6 @@ class TrackIdTest extends GdxTestBase {
     val b = new TestCont(1000)
     timeline.add(track, a, 0L ~~ 1000L, 0L)
     timeline.add(track, b, 500L ~~ 1500L, 500L)
-    assertEquals(timeline.timeline.maxId, Seq(a.id, b.id).max(Ordering[Id]))
+    assertEquals(timeline.timeline.maxId, Seq(a.id, b.id).max(using Ordering[Id]))
   }
 }

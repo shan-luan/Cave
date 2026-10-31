@@ -1,9 +1,6 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.{TestIds, TestProject}
-import com.lomekwi.cave.project.UndoManager
-
-import scala.collection.mutable
 
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
@@ -717,7 +714,7 @@ class TrackDragTest extends GdxTestBase {
     placeAt(t1, b, TrackDragTest.interval(500, 600), 2000)
 
     // 模拟 UI 拖拽，record 期间直接改动模型，关闭时合并为一条复合命令
-    Using.resource(timeline.record()) { h =>
+    Using.resource(timeline.record()) { _ =>
       timeline.moveTime(Seq(a, b), 1000)
     }
     assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))

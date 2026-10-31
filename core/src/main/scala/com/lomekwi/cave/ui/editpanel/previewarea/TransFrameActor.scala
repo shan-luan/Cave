@@ -551,14 +551,13 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private def captureSnapData(): Unit = {
     myStartBBox = computeCanvasBBox()
     siblingBBoxes = mutable.ArrayBuffer.empty[Array[Float]]
-    getParent match {
-      case g: com.badlogic.gdx.scenes.scene2d.Group =>
-        g.getChildren.asScala.foreach {
-          case other: TransFrameActor if other ne this =>
-            siblingBBoxes += other.computeCanvasBBox()
-          case _ =>
-        }
-      case _ =>
+    val parent = getParent
+    if (parent != null) {
+      parent.getChildren.asScala.foreach {
+        case other: TransFrameActor if other ne this =>
+          siblingBBoxes += other.computeCanvasBBox()
+        case _ =>
+      }
     }
     val set = ExportOptionsSet.load()
     for (opts <- set.presets.asScala) {

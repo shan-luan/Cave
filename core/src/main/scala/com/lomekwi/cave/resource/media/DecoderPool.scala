@@ -168,8 +168,9 @@ private[media] object DecoderPool {
     val candidates = pools.asScala.toList
       .flatMap(p => p.idleEntries.map(e => (p, e._1, e._2)))
       .sortBy(_._3.lastAccessNanos)
-    for ((pool, key, pd) <- candidates) {
-      if (totalWeight.sum() + incoming <= weightBudget) return
+    val it = candidates.iterator
+    while (it.hasNext && totalWeight.sum() + incoming > weightBudget) {
+      val (pool, key, pd) = it.next()
       pool.evict(key, pd)
     }
   }

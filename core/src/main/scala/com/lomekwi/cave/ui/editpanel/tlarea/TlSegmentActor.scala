@@ -283,7 +283,6 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
               memberTrack.transitionAfter(c).foreach(t => ignore += t.id)
             case t: Transition =>
               ignoreTransition(ignore, memberTrack, t)
-            case _ =>
           }
         }
       }
