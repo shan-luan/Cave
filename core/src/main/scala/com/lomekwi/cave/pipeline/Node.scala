@@ -7,10 +7,12 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 abstract class Node extends Serializable {
-  @deprecated("连接关系应该被移到Node外部")
-  final val inPorts: mutable.ArrayBuffer[Node.InPort[?]] = mutable.ArrayBuffer.empty
-  @deprecated("连接关系应该被移到Node外部")
-  final val outPorts: mutable.ArrayBuffer[Node.OutPort[?]] = mutable.ArrayBuffer.empty
+  private var _inPorts: Vector[Node.InPort[?]] = Vector.empty
+  private var _outPorts: Vector[Node.OutPort[?]] = Vector.empty
+
+  def inPorts: Vector[Node.InPort[?]] = _inPorts
+
+  def outPorts: Vector[Node.OutPort[?]] = _outPorts
 
   protected[pipeline] def remove(): Unit = {
     for (in <- inPorts) {
@@ -28,11 +30,11 @@ abstract class Node extends Serializable {
   def canRemove: Boolean = true
 
   protected def addInPort[P <: Node.InPort[?]](p: P): P = {
-    inPorts += p
+    _inPorts :+= p
     p
   }
   protected def addOutPort[P <: Node.OutPort[?]](p: P): P = {
-    outPorts += p
+    _outPorts :+= p
     p
   }
   def name: String
@@ -51,6 +53,7 @@ object Node {
 
     var defaultData: T = null.asInstanceOf[T]
 
+    @deprecated("连接关系应该被移到Node外部")
     var prev: Node.OutPort[? <: T] = uninitialized
 
     override def link(target: Port): Boolean = target match {
@@ -105,6 +108,7 @@ object Node {
       case _ => false
     }
 
+    @deprecated("连接关系应该被移到Node外部")
     final val next: mutable.LinkedHashSet[Node.InPort[? >: T]] = mutable.LinkedHashSet.empty
 
     def getData: T
