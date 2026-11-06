@@ -405,7 +405,7 @@ class TimelineView(context0: ProjectSession) extends Group with Focusable {
         for (id <- selectedSegments) {
           t.getGroup(id).foreach { group => t = t.replaceGroup(group, group.remove(id)) }
         }
-        context.applyTimeline(new Timeline(t.tracks, t.groups.filter(_.size >= 2)))
+        context.applyTimeline(Timeline(t.tracks, t.groups.filter(_.size >= 2)))
       }
     } else {
       Using.resource(context.record()) { h =>

@@ -11,7 +11,7 @@ import java.io.Serializable
 import scala.collection.mutable
 
 @SerialVersionUID(1L)
-class Timeline(final val tracks: Vector[Track], final val groups: Vector[SegmentGroup]) extends Serializable with Iterable[Track] with Duplicatable[Timeline] {
+case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends Serializable with Iterable[Track] with Duplicatable[Timeline] {
 
   private def grownTo(ts: Vector[Track], index: Int): Vector[Track] = {
     var out = ts
@@ -30,11 +30,11 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
       ts = grownTo(ts, i)
       ts = ts.updated(i, t)
     }
-    new Timeline(ts, groups)
+    Timeline(ts, groups)
   }
 
   private def ensureTrack(index: Int): Timeline = {
-    if (tracks.size > index) this else new Timeline(grownTo(tracks, index), groups)
+    if (tracks.size > index) this else Timeline(grownTo(tracks, index), groups)
   }
   def add(trackIndex: Int, segment: Content, interval: Interval, origin: Long)(using ids: IdSource): Timeline = {
     val grown = ensureTrack(trackIndex)
@@ -208,7 +208,7 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
     for ((i, _) <- beforeOf) {
       out = out.updated(i, currentOf(i))
     }
-    (new Timeline(out, groups), applied)
+    (Timeline(out, groups), applied)
   }
 
   /** 涉及到的轨道索引，按出现顺序去重。 */
@@ -304,20 +304,20 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
 
   def newGroup(): (Timeline, SegmentGroup) = {
     val group = SegmentGroup(Set.empty)
-    (new Timeline(tracks, groups :+ group), group)
+    (Timeline(tracks, groups :+ group), group)
   }
 
   def adoptGroup(group: SegmentGroup): Timeline = {
-    if (groups.contains(group)) this else new Timeline(tracks, groups :+ group)
+    if (groups.contains(group)) this else Timeline(tracks, groups :+ group)
   }
 
   def dropGroup(group: SegmentGroup): Timeline = {
-    new Timeline(tracks, groups.filterNot(_ == group))
+    Timeline(tracks, groups.filterNot(_ == group))
   }
 
   def replaceGroup(old: SegmentGroup, next: SegmentGroup): Timeline = {
     val i = groups.indexOf(old)
-    if (i < 0) this else new Timeline(tracks, groups.updated(i, next))
+    if (i < 0) this else Timeline(tracks, groups.updated(i, next))
   }
 
   def getGroup(id: Id): Option[SegmentGroup] = {
@@ -354,5 +354,5 @@ class Timeline(final val tracks: Vector[Track], final val groups: Vector[Segment
 }
 
 object Timeline {
-  def empty: Timeline = new Timeline(Vector.empty[Track], Vector.empty[SegmentGroup])
+  def empty: Timeline = Timeline(Vector.empty[Track], Vector.empty[SegmentGroup])
 }
