@@ -13,39 +13,56 @@ final class TestTimeline(val context: ProjectSession) {
 
   def add(track: Track, segment: Content, interval: Interval, origin: Long): Boolean = {
     val before = timeline
-    context.add(track, segment, interval, origin)
+    val next = before.add(track.index, segment, interval, origin)
+    context.applyProject(_.withTimeline(next))
     timeline ne before
   }
 
-  def remove(segment: Segment): Unit = context.remove(segment.id)
+  def remove(segment: Segment): Unit = context.applyProject(p => p.withTimeline(p.timeline.remove(segment.id)))
 
-  def remove(segments: Iterable[Segment]): Unit = context.remove(segments.map(_.id))
+  def remove(segments: Iterable[Segment]): Unit = context.applyProject(p => p.withTimeline(p.timeline.remove(segments.map(_.id))))
 
-  def split(track: Track, time: Long): Unit = context.split(track, time)
+  def split(track: Track, time: Long): Unit = context.applyProject(p => p.withTimeline(p.timeline.split(track, time)))
 
-  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = context.setStart(segments.map(_.id), deltaTime)
+  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = {
+    val (next, applied) = timeline.setStart(segments.map(_.id), deltaTime)
+    context.applyProject(_.withTimeline(next))
+    applied
+  }
 
-  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = context.setEnd(segments.map(_.id), deltaTime)
+  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = {
+    val (next, applied) = timeline.setEnd(segments.map(_.id), deltaTime)
+    context.applyProject(_.withTimeline(next))
+    applied
+  }
 
-  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = context.moveTime(segments.map(_.id), deltaTime)
+  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = {
+    val (next, applied) = timeline.moveTime(segments.map(_.id), deltaTime)
+    context.applyProject(_.withTimeline(next))
+    applied
+  }
 
-  def moveTrack(segments: Iterable[Segment], deltaTrack: Int): Int = context.moveTrack(segments.map(_.id), deltaTrack)
+  def moveTrack(segments: Iterable[Segment], deltaTrack: Int): Int = {
+    val (next, applied) = timeline.moveTrack(segments.map(_.id), deltaTrack)
+    context.applyProject(_.withTimeline(next))
+    applied
+  }
 
   def newGroup(): SegmentGroup = {
     val (next, group) = timeline.newGroup()
-    context.applyTimeline(next)
+    context.applyProject(_.withTimeline(next))
     group
   }
 
-  def adoptGroup(group: SegmentGroup): Unit = context.applyTimeline(timeline.adoptGroup(group))
+  def adoptGroup(group: SegmentGroup): Unit = context.applyProject(_.withTimeline(timeline.adoptGroup(group)))
 
   def groupAdd(group: SegmentGroup, segment: Segment): SegmentGroup = {
     val next = group.add(segment.id)
-    context.applyTimeline(timeline.replaceGroup(group, next))
+    context.applyProject(_.withTimeline(timeline.replaceGroup(group, next)))
     next
   }
 
-  def dropGroup(group: SegmentGroup): Unit = context.applyTimeline(timeline.dropGroup(group))
+  def dropGroup(group: SegmentGroup): Unit = context.applyProject(_.withTimeline(timeline.dropGroup(group)))
 
   def record(): ProjectSession.Recording = context.record()
 

@@ -18,7 +18,7 @@ final class UndoManager(@transient private val session: ProjectSession) {
   def undo(): Unit = {
     if (undoStack.nonEmpty) {
       redoStack.prepend(session.project)
-      session.applyProject(undoStack.removeHead())
+      session.applyProject(_ => undoStack.removeHead())
       session.bumpVersion(-1)
     }
   }
@@ -26,7 +26,7 @@ final class UndoManager(@transient private val session: ProjectSession) {
   def redo(): Unit = {
     if (redoStack.nonEmpty) {
       undoStack.prepend(session.project)
-      session.applyProject(redoStack.removeHead())
+      session.applyProject(_ => redoStack.removeHead())
       session.bumpVersion(1)
     }
   }

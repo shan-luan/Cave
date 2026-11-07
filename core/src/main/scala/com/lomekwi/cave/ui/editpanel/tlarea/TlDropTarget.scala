@@ -47,8 +47,9 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
             var placed = false
             while (!placed) {
               val before = timelineView.context.timeline
-              val next = timelineView.context.add(before.getTrackOrCreate(targetTrack), segment, interval, startTime)
+              val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, startTime)(using timelineView.context.idSource)
               if (next ne before) {
+                timelineView.context.applyProject(_.withTimeline(next))
                 placed = true
               } else {
                 targetTrack += 1
@@ -61,7 +62,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
       }
       if (added.size >= 2) {
         val (t, group) = timelineView.context.timeline.newGroup()
-        timelineView.context.applyTimeline(t.replaceGroup(group, group.addAll(added.map(_.id))))
+        timelineView.context.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
       }
       timelineView.dirty = true
     } catch {

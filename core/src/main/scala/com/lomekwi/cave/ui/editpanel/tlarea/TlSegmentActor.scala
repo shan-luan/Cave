@@ -397,10 +397,13 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.interval(members.head).lo
-      tl.context.moveTime(members, target - currentStart0)
+      val (moved, _) = tl.timeline.moveTime(members, target - currentStart0)(using tl.context.idSource)
+      tl.context.applyProject(_.withTimeline(moved))
 
       if (trackDelta != 0) {
-        appliedTracks = tl.context.moveTrack(members, trackDelta)
+        val (movedTrack, applied) = tl.timeline.moveTrack(members, trackDelta)(using tl.context.idSource)
+        tl.context.applyProject(_.withTimeline(movedTrack))
+        appliedTracks = applied
       }
     }
     appliedTracks
@@ -413,7 +416,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
       val base = firstTrack.interval(first).lo
-      tl.context.setStart(members, newStart - base)
+      val (next, _) = tl.timeline.setStart(members, newStart - base)(using tl.context.idSource)
+      tl.context.applyProject(_.withTimeline(next))
     }
   }
 
@@ -423,7 +427,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       val r = firstTrack.interval(first)
-      tl.context.setEnd(members, newEnd - r.hi)
+      val (next, _) = tl.timeline.setEnd(members, newEnd - r.hi)(using tl.context.idSource)
+      tl.context.applyProject(_.withTimeline(next))
     }
   }
 

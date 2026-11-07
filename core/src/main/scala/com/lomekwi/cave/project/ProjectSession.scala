@@ -6,7 +6,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.playback.{Playhead, TrackWorker}
 import com.lomekwi.cave.resource.Resource
-import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentFactory, Timeline, Track}
+import com.lomekwi.cave.timeline.{SegmentFactory, Timeline}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -52,27 +52,13 @@ final class ProjectSession(initial: Project) {
     savedVersion = version
   }
 
-  def applyTimeline(next: Timeline): Unit = {
-    if (next ne project.timeline) {
-      applyProject(project.withTimeline(next))
-    }
-  }
-
-  def applyProject(next: Project): Unit = {
+  def applyProject(f: Project => Project): Unit = {
     val previousResources = project.resources
-    project = next
+    project = f(project)
     for (i <- project.timeline.tracks.indices) {
       worker(i).onTrackChanged()
     }
     postResourcesChanged(previousResources, project.resources)
-  }
-
-  def applyResources(next: Map[File, Vector[Resource]]): Unit = {
-    undo.push(project)
-    val previousResources = project.resources
-    project = project.withResources(next)
-    touch()
-    postResourcesChanged(previousResources, next)
   }
 
   private def postResourcesChanged(before: Map[File, Vector[Resource]], after: Map[File, Vector[Resource]]): Unit = {
@@ -100,42 +86,6 @@ final class ProjectSession(initial: Project) {
 
   def worker(index: Int): TrackWorker = synchronized {
     workers.getOrElseUpdate(index, new TrackWorker(this, index))
-  }
-
-  def add(track: Track, segment: Content, interval: Interval, origin: Long): Timeline = {
-    val next = timeline.add(track.index, segment, interval, origin)
-    applyTimeline(next)
-    next
-  }
-
-  def remove(id: Id): Unit = applyTimeline(timeline.remove(id))
-
-  def remove(ids: Iterable[Id]): Unit = applyTimeline(timeline.remove(ids))
-
-  def split(track: Track, time: Long): Unit = applyTimeline(timeline.split(track, time))
-
-  def setStart(ids: Iterable[Id], deltaTime: Long): Long = {
-    val (next, applied) = timeline.setStart(ids, deltaTime)
-    applyTimeline(next)
-    applied
-  }
-
-  def setEnd(ids: Iterable[Id], deltaTime: Long): Long = {
-    val (next, applied) = timeline.setEnd(ids, deltaTime)
-    applyTimeline(next)
-    applied
-  }
-
-  def moveTime(ids: Iterable[Id], deltaTime: Long): Long = {
-    val (next, applied) = timeline.moveTime(ids, deltaTime)
-    applyTimeline(next)
-    applied
-  }
-
-  def moveTrack(ids: Iterable[Id], deltaTrack: Int): Int = {
-    val (next, applied) = timeline.moveTrack(ids, deltaTrack)
-    applyTimeline(next)
-    applied
   }
 
   @Subscribe

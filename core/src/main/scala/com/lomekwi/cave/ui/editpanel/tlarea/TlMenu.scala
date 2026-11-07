@@ -80,8 +80,9 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
       var placed = false
       while (!placed) {
         val before = context.timeline
-        val next = context.add(before.getTrackOrCreate(targetTrack), segment, interval, time)
+        val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using context.idSource)
         if (next ne before) {
+          context.applyProject(_.withTimeline(next))
           placed = true
         } else {
           targetTrack += 1
@@ -110,8 +111,9 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
               var placed = false
               while (!placed) {
                 val before = context.timeline
-                val next = context.add(before.getTrackOrCreate(targetTrack), segment, interval, time)
+                val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using context.idSource)
                 if (next ne before) {
+                  context.applyProject(_.withTimeline(next))
                   placed = true
                 } else {
                   targetTrack += 1
@@ -126,7 +128,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
         if (added.size >= 2) {
           val (t, group) = context.timeline.newGroup()
-          context.applyTimeline(t.replaceGroup(group, group.addAll(added.map(_.id))))
+          context.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
         }
 
         timelineView.markTimelineDirty()

@@ -46,7 +46,9 @@ class SegmentFactory(private val context: ProjectSession) {
   def ensureResources(file: File): Vector[Resource] = {
     context.project.resources.getOrElse(file, {
       val created = createResources(file)
-      context.applyResources(context.project.resources.updated(file, created))
+      context.undo.push(context.project)
+      context.applyProject(p => p.withResources(p.resources.updated(file, created)))
+      context.touch()
       created
     })
   }
