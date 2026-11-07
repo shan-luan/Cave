@@ -18,7 +18,7 @@ import java.io.{File, IOException}
 
 import scala.collection.mutable
 
-class SegmentFactory(private val context: ProjectSession) {
+class SegmentFactory(private val session: ProjectSession) {
   import SegmentFactory.*
 
   private val constructors: mutable.HashMap[ResourceClass, SegmentCtor] = mutable.HashMap.empty[ResourceClass, SegmentCtor]
@@ -26,9 +26,9 @@ class SegmentFactory(private val context: ProjectSession) {
   initDefaultConstructors()
 
   private def initDefaultConstructors(): Unit = {
-    register(classOf[VdoRes], (segment: Resource) => new Clip(context.idGenerator.genId, new VdoSource(segment.asInstanceOf[VdoRes])))
-    register(classOf[AudRes], (segment: Resource) => new Clip(context.idGenerator.genId, new AudSource(segment.asInstanceOf[AudRes])))
-    register(classOf[ImgRes], (segment: Resource) => new Boundless(context.idGenerator.genId, new ImgSource(segment.asInstanceOf[ImgRes])))
+    register(classOf[VdoRes], (segment: Resource) => new Clip(session.idGenerator.genId, new VdoSource(segment.asInstanceOf[VdoRes])))
+    register(classOf[AudRes], (segment: Resource) => new Clip(session.idGenerator.genId, new AudSource(segment.asInstanceOf[AudRes])))
+    register(classOf[ImgRes], (segment: Resource) => new Boundless(session.idGenerator.genId, new ImgSource(segment.asInstanceOf[ImgRes])))
   }
   def register(clazz: ResourceClass, constructor: SegmentCtor): Unit = {
     constructors.put(clazz, constructor)
@@ -44,11 +44,11 @@ class SegmentFactory(private val context: ProjectSession) {
   }
 
   def ensureResources(file: File): Vector[Resource] = {
-    context.project.resources.getOrElse(file, {
+    session.project.resources.getOrElse(file, {
       val created = createResources(file)
-      context.undo.push(context.project)
-      context.applyProject(p => p.withResources(p.resources.updated(file, created)))
-      context.touch()
+      session.undo.push(session.project)
+      session.applyProject(p => p.withResources(p.resources.updated(file, created)))
+      session.touch()
       created
     })
   }
@@ -60,7 +60,7 @@ class SegmentFactory(private val context: ProjectSession) {
     }
     val created = App.mediaFactory.createAll(mimeType, file.getPath)
     for (medRes <- created) {
-      context.bus.post(MediaCreatedEvent(file, medRes))
+      session.bus.post(MediaCreatedEvent(file, medRes))
     }
     created.toVector
   }

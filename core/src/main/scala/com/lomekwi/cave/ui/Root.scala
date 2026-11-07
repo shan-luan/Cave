@@ -89,7 +89,7 @@ class Root extends ApplicationListener {
 
     multiplexer.addProcessor(0, new InputProcessor {
       override def keyDown(keycode: Int): Boolean = {
-        val context: ProjectSession = getFrontendContext
+        val session: ProjectSession = getFrontendSession
         val ep: EditPanel = getFrontendEditPanel
         // 无需项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
@@ -101,7 +101,7 @@ class Root extends ApplicationListener {
         } else if (App.shortcutManager.isActive(TopBar.TopActions.CLOSE)) {
           topBar.performClose()
           true
-        } else if (context == null) {
+        } else if (session == null) {
           false
         } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
           // 需要项目的 TopActions
@@ -113,11 +113,11 @@ class Root extends ApplicationListener {
         } else if (isTextInputFocused) {
           false
         } else if (App.shortcutManager.isActive(TimelineView.Actions.UNDO)) {
-          context.undo.undo()
+          session.undo.undo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
         } else if (App.shortcutManager.isActive(TimelineView.Actions.REDO)) {
-          context.undo.redo()
+          session.undo.redo()
           if (ep != null) ep.getTimelineView.markTimelineDirty()
           true
         } else {
@@ -296,8 +296,8 @@ class Root extends ApplicationListener {
     case _ => null
   }
 
-  def getFrontendContext: ProjectSession = tabbedPane.getActiveTab match {
-    case tab: ProjectTab => tab.context
+  def getFrontendSession: ProjectSession = tabbedPane.getActiveTab match {
+    case tab: ProjectTab => tab.session
     case _ => null
   }
 
@@ -308,8 +308,8 @@ class Root extends ApplicationListener {
 
   /** 处理从系统桌面或文件管理器拖入窗口的文件，为前台项目创建媒体资源 */
   def importDroppedFiles(paths: Array[String]): Unit = {
-    val context = getFrontendContext
-    if (context == null) {
+    val session = getFrontendSession
+    if (session == null) {
       toastManager.show(("请先打开或新建项目".in(Zh) | "Please open or create a project first".in(En)).str(), 2f)
       return
     }
@@ -322,7 +322,7 @@ class Root extends ApplicationListener {
         failed += file.getName
       } else {
         try {
-          context.sourceFactory.ensureResources(file)
+          session.sourceFactory.ensureResources(file)
           imported += 1
         } catch {
           case e: Exception =>

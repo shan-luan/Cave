@@ -22,14 +22,14 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 import java.io.IOException
 
 class ProjectTab(project0: Project) extends Tab(true, true) {
-  final val context: ProjectSession = new ProjectSession(project0)
-  final val editPanel: EditPanel = new EditPanel(context)
-  context.bus.register(this)
+  final val session: ProjectSession = new ProjectSession(project0)
+  final val editPanel: EditPanel = new EditPanel(session)
+  session.bus.register(this)
 
-  def project: Project = context.project
+  def project: Project = session.project
 
   override def getTabTitle: String = {
-    context.project.name
+    session.project.name
   }
   override def getContentTable: Table = {
     EditPanelFrame.getINSTANCE.`with`(editPanel)
@@ -37,12 +37,12 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
 
   @Subscribe
   def onProjectDirtyChanged(event: ProjectDirtyChangedEvent): Unit = {
-    setDirty(context.isDirty)
+    setDirty(session.isDirty)
   }
 
   //FIXME 当保存时，如果取消文件选择器，则会在未保存的情况下关闭标签页。这是vis-ui的设计缺陷且我已经打开一个issue(#405)
   override def save(): Boolean = {
-    if (context.savePath.isEmpty) {
+    if (session.savePath.isEmpty) {
       val conf = new NativeFileChooserConfiguration()
       conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
       if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -52,7 +52,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       App.fileChooser.chooseFile(conf, new NativeFileChooserCallback {
         override def onFileChosen(file: com.badlogic.gdx.files.FileHandle): Unit = {
           try {
-            Project.save(context, file)
+            Project.save(session, file)
             setDirty(false)
           } catch {
             case e: IOException =>
@@ -66,7 +66,7 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
       })
     }
     try {
-      Project.save(context)
+      Project.save(session)
       setDirty(false)
       true
     } catch {
@@ -78,9 +78,9 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
 
   //不需要手动调用！
   override def dispose(): Unit = {
-    context.bus.unregister(this)
+    session.bus.unregister(this)
     super.dispose()
-    context.close()
+    session.close()
     editPanel.dispose()
   }
 }

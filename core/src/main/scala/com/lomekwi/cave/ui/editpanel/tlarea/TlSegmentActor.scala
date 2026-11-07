@@ -7,7 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.badlogic.gdx.{Application, Gdx, Input}
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.project.{Id, ProjectSession}
+import com.lomekwi.cave.project.Id
 import com.lomekwi.cave.timeline.*
 import com.lomekwi.cave.ui.Colors
 
@@ -25,7 +25,6 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
   private[tlarea] var firstX: Float = Float.NaN
   private[tlarea] var firstY: Float = Float.NaN
   private var dragMembers: mutable.ArrayBuffer[Id] = uninitialized
-  private var dragRecording: ProjectSession.Recording = uninitialized
 
   private val scissors: Rectangle = new Rectangle()
   private val bounds: Rectangle = new Rectangle()
@@ -178,11 +177,11 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
 
   // 拖拽会话由本 actor 驱动，actor 位置是模型的纯投影。
 
-  /** 按下时调用，快照参与拖拽的成员并开始录制 undo。 */
+  /** 按下时调用，快照参与拖拽的成员并记录 undo。 */
   private[tlarea] def initDrag(diffToActorX: Float, diffToActorY: Float): Unit = {
     firstX = diffToActorX
     firstY = diffToActorY
-    dragRecording = tl.context.record()
+    tl.session.snapshot()
     initDragMembers()
     tl.draggingActor = this
   }
@@ -331,10 +330,6 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
       tl.draggingActor = null
       tl.dirty = true
       tl.snapIndicatorTime = -1
-      if (dragRecording != null) {
-        dragRecording.close()
-        dragRecording = null
-      }
       dragMembers = null
     }
   }
@@ -397,12 +392,12 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
       val currentStart0: Long = firstTrack.interval(members.head).lo
-      val (moved, _) = tl.timeline.moveTime(members, target - currentStart0)(using tl.context.idSource)
-      tl.context.applyProject(_.withTimeline(moved))
+      val (moved, _) = tl.timeline.moveTime(members, target - currentStart0)(using tl.session.idSource)
+      tl.session.applyProject(_.withTimeline(moved))
 
       if (trackDelta != 0) {
-        val (movedTrack, applied) = tl.timeline.moveTrack(members, trackDelta)(using tl.context.idSource)
-        tl.context.applyProject(_.withTimeline(movedTrack))
+        val (movedTrack, applied) = tl.timeline.moveTrack(members, trackDelta)(using tl.session.idSource)
+        tl.session.applyProject(_.withTimeline(movedTrack))
         appliedTracks = applied
       }
     }
@@ -416,8 +411,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       // 越界由 setStart 自己的夹取处理，这里不再用按下时的快照预判，否则拖过一次头就永久卡住
       val base = firstTrack.interval(first).lo
-      val (next, _) = tl.timeline.setStart(members, newStart - base)(using tl.context.idSource)
-      tl.context.applyProject(_.withTimeline(next))
+      val (next, _) = tl.timeline.setStart(members, newStart - base)(using tl.session.idSource)
+      tl.session.applyProject(_.withTimeline(next))
     }
   }
 
@@ -427,8 +422,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     val first = members.head
     tl.timeline.findTrackOf(first).foreach { firstTrack =>
       val r = firstTrack.interval(first)
-      val (next, _) = tl.timeline.setEnd(members, newEnd - r.hi)(using tl.context.idSource)
-      tl.context.applyProject(_.withTimeline(next))
+      val (next, _) = tl.timeline.setEnd(members, newEnd - r.hi)(using tl.session.idSource)
+      tl.session.applyProject(_.withTimeline(next))
     }
   }
 

@@ -6,7 +6,7 @@ import com.lomekwi.cave.timeline.Segment
 
 private[inspector] object SegmentLookup {
   def resolve(id: Id): Segment = {
-    val context = App.root.getFrontendContext
-    if (context == null) null else context.timeline.segment(id).orNull
+    val session = App.root.getFrontendSession
+    if (session == null) null else session.timeline.segment(id).orNull
   }
 }

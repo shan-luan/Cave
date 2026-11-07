@@ -61,7 +61,7 @@ class EditPanelFrame private extends VisTable {
       mediaPoolAndFileTreeSplitPane.setFirstWidget(new VisScrollPane(editPanel.res.fill()))
       previewAndDetailSplitPane.setFirstWidget(editPanel.previewArea)
       previewAndTimelineSplitPane.setSecondWidget(editPanel.tl)
-      editPanel.context.bus.register(detailPanel)
+      editPanel.session.bus.register(detailPanel)
     }
     this
   }

@@ -69,24 +69,24 @@ object Project {
     }
   }
 
-  def save(context: ProjectSession, fileHandle: FileHandle): Unit = {
+  def save(session: ProjectSession, fileHandle: FileHandle): Unit = {
     val target = ensureExtension(fileHandle)
-    context.markSaved()
+    session.markSaved()
     val baos = new ByteArrayOutputStream()
     Using.resource(new ObjectOutputStream(baos)) { oos =>
-      oos.writeObject(context.project)
+      oos.writeObject(session.project)
     }
     val data = baos.toByteArray
     Using.resource(target.write(false)) { os =>
       os.write(data)
     }
-    context.savePath = Some(target.file.toPath)
-    context.bus.post(ProjectDirtyChangedEvent)
+    session.savePath = Some(target.file.toPath)
+    session.bus.post(ProjectDirtyChangedEvent)
   }
 
-  def save(context: ProjectSession): Unit = {
-    val path = context.savePath.getOrElse(throw new FileNotFoundException())
-    save(context, new FileHandle(path.toFile))
+  def save(session: ProjectSession): Unit = {
+    val path = session.savePath.getOrElse(throw new FileNotFoundException())
+    save(session, new FileHandle(path.toFile))
   }
 
   def hasProjectExtension(name: String): Boolean = {

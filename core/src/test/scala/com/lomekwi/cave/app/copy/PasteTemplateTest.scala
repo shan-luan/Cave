@@ -29,7 +29,7 @@ class PasteTemplateTest extends GdxTestBase {
     group = timeline.groupAdd(group, a)
     group = timeline.groupAdd(group, b)
 
-    val selection = new SegmentSet(project.context)
+    val selection = new SegmentSet(project.session)
     selection.add(a.id)
     selection.add(b.id)
     val template = selection.copy().asInstanceOf[PasteTemplate]
@@ -70,7 +70,7 @@ class PasteTemplateTest extends GdxTestBase {
     group = timeline.groupAdd(group, a)
     group = timeline.groupAdd(group, b)
 
-    val selection = new SegmentSet(project.context)
+    val selection = new SegmentSet(project.session)
     selection.add(a.id)
     selection.add(b.id)
     val first = selection.copy().asInstanceOf[PasteTemplate]
@@ -93,7 +93,7 @@ class PasteTemplateTest extends GdxTestBase {
     val a = new TestCont(100)
     timeline.add(t0, a, 0 ~~ 100, 5000)
 
-    val selection = new SegmentSet(project.context)
+    val selection = new SegmentSet(project.session)
     selection.add(a.id)
     val template = selection.copy().asInstanceOf[PasteTemplate]
 

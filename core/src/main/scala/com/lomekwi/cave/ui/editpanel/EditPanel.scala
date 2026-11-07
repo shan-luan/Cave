@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.tabs.edit.EditTabbedPane
 import com.kotcrab.vis.ui.widget.VisTable
 import scala.compiletime.uninitialized
 
-class EditPanel(private[editpanel] val context: ProjectSession) {
+class EditPanel(private[editpanel] val session: ProjectSession) {
   var previewArea: PreviewArea = uninitialized
   private[editpanel] var tl: VisTable = uninitialized
   private[editpanel] var tlMain: Container[TimelineView] = uninitialized
@@ -18,15 +18,15 @@ class EditPanel(private[editpanel] val context: ProjectSession) {
   var tlTabs: EditTabbedPane = uninitialized
 
   {
-    previewArea = new PreviewArea(context)
-    tlMain = new Container[TimelineView](new TimelineView(context)).fill().clip().minSize(0, 0)
+    previewArea = new PreviewArea(session)
+    tlMain = new Container[TimelineView](new TimelineView(session)).fill().clip().minSize(0, 0)
     tlTabs = new EditTabbedPane()
     tlTabs.add(new TimelineTab(tlMain))
     tl = new VisTable()
     tl.add(tlTabs.getTable).fillX().top().row()
     tl.add(tlTabs.contentHost).grow()
     tlTabs.refreshVisibility()
-    res = new Container[MediaPool](new MediaPool(context, context.bus))
+    res = new Container[MediaPool](new MediaPool(session, session.bus))
   }
 
   def getTimelineView: TimelineView = {

@@ -3,14 +3,13 @@ package com.lomekwi.cave.timeline
 import java.util.Random
 
 import scala.collection.mutable
-import scala.util.Using
 
 /**
  * 随机构造时间线内容的测试引擎。随机落片段、随机组合成组、随机执行各种“拖拽”
  * （整体移动、头/尾裁切、分割、删除、新增），供需要随机时间线场景的测试复用。
  * 调用方持有同一个 [[Random]] 实例，同一个种子即可完全复现场景。
  *
- * 各操作与 UI 上的一次操作对应，且各自作为一个 [[Timeline.record]] 会话提交，因此一步即一条可撤销命令。
+ * 各操作与 UI 上的一次操作对应，且各自调用一次 snapshot 提交，因此一步即一条可撤销命令。
  *
  * @param timeline       被操作的时间线，撤销栈取自 [[Timeline.project]]
  * @param rnd            随机数源，与调用方共用同一个实例
@@ -64,9 +63,8 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       val interval: Interval = start ~~ (start + duration)
       if (track.isFree(interval, Set.empty)) {
         val segment = segmentFactory(duration)
-        Using.resource(timeline.record()) { _ =>
-          timeline.add(track, segment, interval, rnd.nextLong(span))
-        }
+        timeline.snapshot()
+        timeline.add(track, segment, interval, rnd.nextLong(span))
         return true
       }
       attempt += 1
@@ -104,9 +102,9 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   def randomDrag(): Unit = {
     var attempt = 0
     while (attempt < 40) {
-      val before = timeline.context.version
+      val before = timeline.session.version
       performRandomOp()
-      if (timeline.context.version != before) {
+      if (timeline.session.version != before) {
         assertLayoutValid()
         return // 成功记录了一步
       }
@@ -152,29 +150,26 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     var trackDelta = rnd.nextInt(3) - 1 // -1..1
     if (minIdx + trackDelta < 0) trackDelta = 0
     val deltaTime = rnd.nextLong(span / 2) - span / 4
-    Using.resource(timeline.record()) { _ =>
-      // 与 UI 一致，时间与轨道维度各自截断到最大可用偏移后应用
-      timeline.moveTime(members, deltaTime)
-      timeline.moveTrack(members, trackDelta)
-    }
+    timeline.snapshot()
+    // 与 UI 一致，时间与轨道维度各自截断到最大可用偏移后应用
+    timeline.moveTime(members, deltaTime)
+    timeline.moveTrack(members, trackDelta)
   }
 
   private def frontResizeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
-    Using.resource(timeline.record()) { _ =>
-      timeline.setStart(members, delta)
-    }
+    timeline.snapshot()
+    timeline.setStart(members, delta)
   }
 
   private def behindResizeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
-    Using.resource(timeline.record()) { _ =>
-      timeline.setEnd(members, delta)
-    }
+    timeline.snapshot()
+    timeline.setEnd(members, delta)
   }
 
   private def splitOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
@@ -186,9 +181,8 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       val hi: Long = r.hi
       if (hi - lo > 1) {
         val time = lo + 1 + rnd.nextLong(hi - lo - 1)
-        Using.resource(timeline.record()) { _ =>
-          timeline.split(track, time)
-        }
+        timeline.snapshot()
+        timeline.split(track, time)
       }
     }
   }
@@ -196,9 +190,8 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   private def removeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
     if (placed.isEmpty) return
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
-    Using.resource(timeline.record()) { _ =>
-      timeline.remove(members)
-    }
+    timeline.snapshot()
+    timeline.remove(members)
   }
 
   /** 兜底改动：删掉一个随机片段；时间线为空时改为新增，保证后续步骤仍有东西可操作。 */
@@ -209,9 +202,8 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       return
     }
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
-    Using.resource(timeline.record()) { _ =>
-      timeline.remove(members)
-    }
+    timeline.snapshot()
+    timeline.remove(members)
   }
 
   /** 在 [0, span] 内试探一个不与 occupied 相连的区间，50 次内找不到返回 null。 */

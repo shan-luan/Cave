@@ -27,7 +27,7 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
       val newVal: Double = model.getValue.toDouble
       val oldVal: Double = defaultValue
       if (oldVal != newVal) {
-        val c = App.root.getFrontendContext
+        val c = App.root.getFrontendSession
         setDefaultValue(newVal)
         if (c != null) {
           c.touch()

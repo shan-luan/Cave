@@ -71,17 +71,9 @@ final class ProjectSession(initial: Project) {
     }
   }
 
-  @deprecated("过时的设计。改为一个copy()方法就行了。")
-  def record(): ProjectSession.Recording = {
-    val before = project
-    () => endRecord(before)
-  }
-  @deprecated
-  private def endRecord(before: Project): Unit = {
-    if (project ne before) {
-      touch()
-      undo.push(before)
-    }
+  def snapshot(): Unit = {
+    undo.push(project)
+    touch()
   }
 
   def worker(index: Int): TrackWorker = synchronized {
@@ -141,11 +133,5 @@ final class ProjectSession(initial: Project) {
           throw new RuntimeException(e)
       }
     }
-  }
-}
-
-object ProjectSession {
-  trait Recording extends AutoCloseable {
-    override def close(): Unit
   }
 }

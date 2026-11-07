@@ -11,7 +11,7 @@ class TrackRemoveTest extends GdxTestBase {
   private var project: TestProject = null
   private var timeline: TestTimeline = null
 
-  given idSource: IdSource = () => project.context.idSource.nextId()
+  given idSource: IdSource = () => project.session.idSource.nextId()
 
   override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()

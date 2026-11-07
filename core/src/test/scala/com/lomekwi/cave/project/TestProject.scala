@@ -14,14 +14,14 @@ class TestProject() {
     Timeline.empty,
     Map.empty[File, Vector[Resource]],
     UUID.randomUUID())
-  val context: ProjectSession = new ProjectSession(project)
-  val timeline: TestTimeline = new TestTimeline(context)
+  val session: ProjectSession = new ProjectSession(project)
+  val timeline: TestTimeline = new TestTimeline(session)
 
-  def playhead: Playhead = context.playhead
+  def playhead: Playhead = session.playhead
 
-  def undo: UndoManager = context.undo
+  def undo: UndoManager = session.undo
 
-  def worker(index: Int): TrackWorker = context.worker(index)
+  def worker(index: Int): TrackWorker = session.worker(index)
 
-  def close(): Unit = context.close()
+  def close(): Unit = session.close()
 }

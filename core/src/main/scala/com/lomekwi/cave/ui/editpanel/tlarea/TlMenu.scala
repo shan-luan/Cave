@@ -25,7 +25,6 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
-import scala.util.Using
 
 class TlMenu private[tlarea] (private final val timelineView: TimelineView) extends PopupMenu {
   private var time: Long = 0L
@@ -69,24 +68,23 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def onAddText(): Unit = {
-    val segment: Content = new Boundless(timelineView.context.idGenerator.genId, new TextSource())
+    val segment: Content = new Boundless(timelineView.session.idGenerator.genId, new TextSource())
     val duration: Long = segment.getDefaultDuration
 
-    val context = timelineView.context
+    val session = timelineView.session
     val interval: Interval = time ~~ (time + duration)
-    Using.resource(context.record()) { h =>
-      // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
-      var targetTrack: Int = 0
-      var placed = false
-      while (!placed) {
-        val before = context.timeline
-        val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using context.idSource)
-        if (next ne before) {
-          context.applyProject(_.withTimeline(next))
-          placed = true
-        } else {
-          targetTrack += 1
-        }
+    session.snapshot()
+    // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
+    var targetTrack: Int = 0
+    var placed = false
+    while (!placed) {
+      val before = session.timeline
+      val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using session.idSource)
+      if (next ne before) {
+        session.applyProject(_.withTimeline(next))
+        placed = true
+      } else {
+        targetTrack += 1
       }
     }
 
@@ -94,41 +92,40 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
   }
 
   private def addMediaFile(file: File): Unit = {
-    val context = timelineView.context
+    val session = timelineView.session
     try {
-      val segments: Vector[Content] = context.sourceFactory.getAll(file)
+      val segments: Vector[Content] = session.sourceFactory.getAll(file)
       if (segments.nonEmpty) {
         val baseTrack: Int = 0
         var trackOffset: Int = 0
         val added = mutable.ArrayBuffer.empty[Segment]
 
-        Using.resource(context.record()) { h =>
-          for (segment <- segments) {
-            val duration: Long = segment.getDefaultDuration
-            if (duration > 0) {
-              var targetTrack: Int = baseTrack + trackOffset
-              val interval: Interval = time ~~ (time + duration)
-              var placed = false
-              while (!placed) {
-                val before = context.timeline
-                val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using context.idSource)
-                if (next ne before) {
-                  context.applyProject(_.withTimeline(next))
-                  placed = true
-                } else {
-                  targetTrack += 1
-                }
+        session.snapshot()
+        for (segment <- segments) {
+          val duration: Long = segment.getDefaultDuration
+          if (duration > 0) {
+            var targetTrack: Int = baseTrack + trackOffset
+            val interval: Interval = time ~~ (time + duration)
+            var placed = false
+            while (!placed) {
+              val before = session.timeline
+              val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, time)(using session.idSource)
+              if (next ne before) {
+                session.applyProject(_.withTimeline(next))
+                placed = true
+              } else {
+                targetTrack += 1
               }
-
-              trackOffset = targetTrack - baseTrack + 1
-              added += segment
             }
+
+            trackOffset = targetTrack - baseTrack + 1
+            added += segment
           }
         }
 
         if (added.size >= 2) {
-          val (t, group) = context.timeline.newGroup()
-          context.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
+          val (t, group) = session.timeline.newGroup()
+          session.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
         }
 
         timelineView.markTimelineDirty()

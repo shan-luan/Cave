@@ -22,9 +22,8 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
-class PreviewArea(context0: ProjectSession) extends Group with Focusable {
+class PreviewArea(private final val session: ProjectSession) extends Group with Focusable {
 
-  private final val context: ProjectSession = context0
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.canvas
   // 此列表仅应在主线程读取。
@@ -34,7 +33,7 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
   private var exportOpts: ExportOptionsSet = uninitialized
   private var lastHeight: Float = 0
 
-  context.bus.register(this)
+  session.bus.register(this)
   App.appEventBus.register(this)
   addActor(panZoom)
   setupDragListener()
@@ -74,11 +73,11 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
     // 进预览的 [[Renderable]] 都承载在 [[Frame]] 上，[[Frame.trackIndex]] 与生命周期状态都在 [[Frame]] 一侧
     val f = frame.asInstanceOf[Frame & Renderable]
     val idx: Int = f.trackIndex
-    context.worker(idx).sinkPhaser.register()
+    session.worker(idx).sinkPhaser.register()
     Gdx.app.postRunnable(() => {
       setFrame(f)
       canvas.addActor(f.actor)
-      context.worker(idx).sinkPhaser.arriveAndDeregister()
+      session.worker(idx).sinkPhaser.arriveAndDeregister()
     })
   }
 
@@ -116,7 +115,7 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
   @Subscribe
   def onSelectionChanged(event: SegmentSetSelectedEvent): Unit = {
     // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
-    if (!(event.set.timeline eq context.timeline)) return
+    if (!(event.set.timeline eq session.timeline)) return
     for (frame <- frames) {
       if (frame != null) {
         frame.actor match {
@@ -249,7 +248,7 @@ class PreviewArea(context0: ProjectSession) extends Group with Focusable {
   }
 
   def dispose(): Unit = {
-    context.bus.unregister(this)
+    session.bus.unregister(this)
     App.appEventBus.unregister(this)
   }
 }

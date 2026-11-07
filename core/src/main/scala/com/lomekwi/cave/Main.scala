@@ -40,7 +40,7 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
   }
 
   override def render(): Unit = {
-    val p: ProjectSession = ui.getFrontendContext
+    val p: ProjectSession = ui.getFrontendSession
     if (p != null) {
       p.update()
     }

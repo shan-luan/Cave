@@ -70,7 +70,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   this.transformable = frame0
 
   private def frameSegment: Segment = {
-    val c = App.root.getFrontendContext
+    val c = App.root.getFrontendSession
     if (c == null) null else c.timeline.segment(frame.segmentId).orNull
   }
 
@@ -128,7 +128,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return
       }
       if (dragModifier != null && dragging) {
-        val c: ProjectSession = App.root.getFrontendContext
+        val c: ProjectSession = App.root.getFrontendSession
         if (c != null) {
           c.touch()
           c.bus.post(RefreshRequestEvent)
@@ -489,7 +489,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   private def finishGizmoDrag(): Unit = {
     if (dragModifier != null) {
-      val c: ProjectSession = App.root.getFrontendContext
+      val c: ProjectSession = App.root.getFrontendSession
       if (c != null) {
         c.touch()
         c.bus.post(RefreshRequestEvent)
@@ -520,7 +520,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
   /** 拖拽改值后请求轨道线程重新求值，画面统一由管线滤镜链刷新，UI 不做本地重放 */
   private def requestRefresh(): Unit = {
-    val c: ProjectSession = App.root.getFrontendContext
+    val c: ProjectSession = App.root.getFrontendSession
     if (c != null) c.bus.post(RefreshRequestEvent)
   }
 

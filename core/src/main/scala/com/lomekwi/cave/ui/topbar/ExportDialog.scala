@@ -18,7 +18,7 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import scala.compiletime.uninitialized
 
-class ExportDialog(private val context: ProjectSession) extends VisDialog(("导出视频".in(Zh) | "Export Video".in(En)).str()) {
+class ExportDialog(private val session: ProjectSession) extends VisDialog(("导出视频".in(Zh) | "Export Video".in(En)).str()) {
   private var fileChooserField: FileChooserField = uninitialized
   private var widthModel: IntSpinnerModel = uninitialized
   private var heightModel: IntSpinnerModel = uninitialized
@@ -154,7 +154,7 @@ class ExportDialog(private val context: ProjectSession) extends VisDialog(("导�
   }
 
   private def detectDimensions(): Array[Int] = {
-    context.project.resources.valuesIterator.flatMap(_.iterator)
+    session.project.resources.valuesIterator.flatMap(_.iterator)
       .collectFirst { case v: VdoRes => Array(v.width, v.height) }
       .getOrElse(Array(1920, 1080))
   }
@@ -195,7 +195,7 @@ class ExportDialog(private val context: ProjectSession) extends VisDialog(("导�
       val fps: Double = fpsModel.getValue.toDouble
       val bitrate: Int = (bitrateModel.getValue * MEGA).toInt
 
-      val snapshot: Project = Project.dump(context.project)
+      val snapshot: Project = Project.dump(session.project)
       val task = new VideoExportTask(
         snapshot.timeline,
         snapshot,

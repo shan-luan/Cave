@@ -9,20 +9,20 @@ import java.util
 import java.util.concurrent.{Future, LinkedBlockingQueue, TimeUnit}
 import scala.compiletime.uninitialized
 
-class AudioFrameSink(private val context: ProjectSession) {
-  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(context)
+class AudioFrameSink(private val session: ProjectSession) {
+  @volatile private var afm: AudioFrameSink.AudioFrameMixer = new AudioFrameSink.AudioFrameMixer(session)
   private var currentFuture: Future[?] = uninitialized
 
   @Subscribe
   def sink(frame: AudFrame): Unit = {
-    context.worker(frame.trackIndex).sinkPhaser.register()
+    session.worker(frame.trackIndex).sinkPhaser.register()
     afm.submit(frame)
   }
 
   @Subscribe
   def onProjectFronted(event: ProjectFrontedEvent): Unit = {
     stopMixer()
-    afm = new AudioFrameSink.AudioFrameMixer(context)
+    afm = new AudioFrameSink.AudioFrameMixer(session)
     currentFuture = App.workerExecutor.submit(afm)
   }
 
@@ -47,7 +47,7 @@ class AudioFrameSink(private val context: ProjectSession) {
 }
 
 object AudioFrameSink {
-  private[audio] class AudioFrameMixer(private val context: ProjectSession) extends Runnable {
+  private[audio] class AudioFrameMixer(private val session: ProjectSession) extends Runnable {
     private final val frames: LinkedBlockingQueue[AudFrame] = new LinkedBlockingQueue[AudFrame]()
     private final val output: Array[Float] = new Array[Float](AudDecRes.FRAME_SIZE)
     @volatile private var stopped: Boolean = false
@@ -74,7 +74,7 @@ object AudioFrameSink {
               output(j) += sample
               j += 1
             }
-            context.worker(f.trackIndex).sinkPhaser.arriveAndDeregister()
+            session.worker(f.trackIndex).sinkPhaser.arriveAndDeregister()
             if (stopped || Thread.currentThread().isInterrupted) {
               continueLoop = false
             } else {

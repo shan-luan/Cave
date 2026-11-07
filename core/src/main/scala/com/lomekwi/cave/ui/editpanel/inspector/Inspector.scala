@@ -97,15 +97,15 @@ class Inspector extends VisTable {
   }
 
   private def resolve(id: Id): Segment = {
-    val context = App.root.getFrontendContext
-    if (context == null) null else context.timeline.segment(id).orNull
+    val session = App.root.getFrontendSession
+    if (session == null) null else session.timeline.segment(id).orNull
   }
 
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
   private def sortByPlacement(ids: mutable.ArrayBuffer[Id]): Unit = {
-    val context = App.root.getFrontendContext
-    if (context == null) return
-    val timeline = context.timeline
+    val session = App.root.getFrontendSession
+    if (session == null) return
+    val timeline = session.timeline
     ids.sortInPlaceWith((a: Id, b: Id) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
@@ -137,7 +137,7 @@ class Inspector extends VisTable {
       val created: Node = App.nodeRegistry.createCompatible(segment, idx)
       filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
         segment.filters += created.asInstanceOf[Filter[?]]
-        val c = App.root.getFrontendContext
+        val c = App.root.getFrontendSession
         if (c != null) c.touch()
         rebuildContent()
       }))

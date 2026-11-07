@@ -31,7 +31,7 @@ final class TextPortEditor(port0: Node.InPort[?], segment: Segment) extends VisT
         if (!Objects.equals(oldVal, newVal)) {
           val strPort: Node.InPort[String] = port.asInstanceOf[Node.InPort[String]]
           strPort.defaultData = newVal
-          val c = App.root.getFrontendContext
+          val c = App.root.getFrontendSession
           if (c != null) {
             c.bus.post(RefreshRequestEvent)
           }

@@ -16,7 +16,7 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 
-class MediaPool(private val context: ProjectSession, eventBus: EventBus) extends FlowGroup(false) {
+class MediaPool(private val session: ProjectSession, eventBus: EventBus) extends FlowGroup(false) {
   private var dnd: DragAndDrop = uninitialized
 
   {
@@ -32,14 +32,14 @@ class MediaPool(private val context: ProjectSession, eventBus: EventBus) extends
       override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
         if (!source.getActor.isDescendantOf(MediaPool.this)) {
           val file = payload.getObject.asInstanceOf[File]
-          if (!context.project.resources.contains(file)) {
+          if (!session.project.resources.contains(file)) {
             addItem(file, findShowable(file))
           }
         }
       }
     })
 
-    for (file <- context.project.resources.keys) {
+    for (file <- session.project.resources.keys) {
       addItem(file, findShowable(file))
     }
 
@@ -47,7 +47,7 @@ class MediaPool(private val context: ProjectSession, eventBus: EventBus) extends
   }
 
   private def findShowable(file: File): Showable = {
-    context.project.resources.get(file).flatMap(_.collectFirst { case showable: Showable => showable }).orNull
+    session.project.resources.get(file).flatMap(_.collectFirst { case showable: Showable => showable }).orNull
   }
 
   private def isListed(file: File): Boolean = getChildren.asScala.exists {

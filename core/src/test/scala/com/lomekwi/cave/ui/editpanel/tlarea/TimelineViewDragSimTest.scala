@@ -33,8 +33,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     tl = new ObjenesisStd().newInstance(classOf[TimelineView])
     tl.setSize(WIDTH, HEIGHT)
 
-    setField(tl, "context", project.context)
-    setField(tl, "selectedSegments", new SegmentSet(project.context))
+    setField(tl, "session", project.session)
+    setField(tl, "selectedSegments", new SegmentSet(project.session))
     setField(tl, "dirty", true)
 
     view = new TimelineView.ViewState()

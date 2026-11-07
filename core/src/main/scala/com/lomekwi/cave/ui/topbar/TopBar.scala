@@ -75,9 +75,9 @@ class TopBar extends MenuBar {
     fileMenu.addSeparator()
 
     fileMenu.addItem(new MenuItemP(("导出".in(Zh) | "Export".in(En)).str(), new ChangeListenerX(() => {
-      val context = App.root.getFrontendContext
-      if (context != null) {
-        App.root.showDialog(new ExportDialog(context))
+      val session = App.root.getFrontendSession
+      if (session != null) {
+        App.root.showDialog(new ExportDialog(session))
       }
     })))
 
@@ -93,9 +93,9 @@ class TopBar extends MenuBar {
     val editMenu: Menu = new MenuX(("编辑".in(Zh) | "Edit".in(En)).str())
 
     val undoItem: MenuItem = new MenuItemP(("撤销".in(Zh) | "Undo".in(En)).str(), new ChangeListenerX(() => {
-      val context = App.root.getFrontendContext
-      if (context != null) {
-        context.undo.undo()
+      val session = App.root.getFrontendSession
+      if (session != null) {
+        session.undo.undo()
         val ep = App.root.getFrontendEditPanel
         if (ep != null) ep.getTimelineView.markTimelineDirty()
       }
@@ -104,9 +104,9 @@ class TopBar extends MenuBar {
     editMenu.addItem(undoItem)
 
     val redoItem: MenuItem = new MenuItemP(("重做".in(Zh) | "Redo".in(En)).str(), new ChangeListenerX(() => {
-      val context = App.root.getFrontendContext
-      if (context != null) {
-        context.undo.redo()
+      val session = App.root.getFrontendSession
+      if (session != null) {
+        session.undo.redo()
         val ep = App.root.getFrontendEditPanel
         if (ep != null) ep.getTimelineView.markTimelineDirty()
       }
@@ -247,9 +247,9 @@ class TopBar extends MenuBar {
 
   def performSave(): Unit = {
     try {
-      val context = App.root.getFrontendContext
-      if (context != null) {
-        if (context.savePath.isEmpty) {
+      val session = App.root.getFrontendSession
+      if (session != null) {
+        if (session.savePath.isEmpty) {
           val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
           conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
           if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -259,7 +259,7 @@ class TopBar extends MenuBar {
           fileChooser.chooseFile(conf, new NativeFileChooserCallback {
             override def onFileChosen(file: FileHandle): Unit = {
               try {
-                val c = App.root.getFrontendContext
+                val c = App.root.getFrontendSession
                 if (c != null) {
                   Project.save(c, file)
                   App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)
@@ -273,7 +273,7 @@ class TopBar extends MenuBar {
             override def onError(exception: Exception): Unit = {}
           })
         } else {
-          Project.save(context)
+          Project.save(session)
           App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)
         }
       }
@@ -285,7 +285,7 @@ class TopBar extends MenuBar {
 
   def performSaveAs(): Unit = {
     try {
-      if (App.root.getFrontendContext != null) {
+      if (App.root.getFrontendSession != null) {
         val conf: NativeFileChooserConfiguration = new NativeFileChooserConfiguration()
         conf.title = ("选择保存位置...".in(Zh) | "Choose Save Location...".in(En)).str()
         if (Gdx.app.getType == Application.ApplicationType.Android) {
@@ -295,7 +295,7 @@ class TopBar extends MenuBar {
         fileChooser.chooseFile(conf, new NativeFileChooserCallback {
           override def onFileChosen(file: FileHandle): Unit = {
             try {
-              val c = App.root.getFrontendContext
+              val c = App.root.getFrontendSession
               if (c != null) {
                 Project.save(c, file)
                 App.root.toastManager.show(("项目已保存".in(Zh) | "Project saved".in(En)).str(), toastTimeOut)

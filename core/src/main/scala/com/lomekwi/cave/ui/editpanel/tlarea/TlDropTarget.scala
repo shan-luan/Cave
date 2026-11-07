@@ -15,7 +15,6 @@ import java.io.File
 import java.io.IOException
 
 import scala.collection.mutable
-import scala.util.Using
 
 /** 时间线拖放目标，接收拖入的文件并落地为片段。 */
 class TlDropTarget(private final val timelineView: TimelineView) extends DragAndDrop.Target(timelineView) {
@@ -32,37 +31,36 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
   override def drop(source: DragAndDrop.Source, payload: DragAndDrop.Payload, x: Float, y: Float, pointer: Int): Unit = {
     try {
       val file: File = payload.getObject.asInstanceOf[File]
-      val segments: Vector[Content] = timelineView.context.sourceFactory.getAll(file)
+      val segments: Vector[Content] = timelineView.session.sourceFactory.getAll(file)
       val startTime: Long = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
       val added = mutable.ArrayBuffer.empty[Segment]
-      Using.resource(timelineView.context.record()) { h =>
-        for (segment <- segments) {
-          val duration: Long = segment.getDefaultDuration
-          if (duration > 0) {
-            var targetTrack: Int = baseTrack + trackOffset
-            val interval: Interval = startTime ~~ (startTime + duration)
-            // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
-            var placed = false
-            while (!placed) {
-              val before = timelineView.context.timeline
-              val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, startTime)(using timelineView.context.idSource)
-              if (next ne before) {
-                timelineView.context.applyProject(_.withTimeline(next))
-                placed = true
-              } else {
-                targetTrack += 1
-              }
+      timelineView.session.snapshot()
+      for (segment <- segments) {
+        val duration: Long = segment.getDefaultDuration
+        if (duration > 0) {
+          var targetTrack: Int = baseTrack + trackOffset
+          val interval: Interval = startTime ~~ (startTime + duration)
+          // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
+          var placed = false
+          while (!placed) {
+            val before = timelineView.session.timeline
+            val next = before.add(before.getTrackOrCreate(targetTrack).index, segment, interval, startTime)(using timelineView.session.idSource)
+            if (next ne before) {
+              timelineView.session.applyProject(_.withTimeline(next))
+              placed = true
+            } else {
+              targetTrack += 1
             }
-            trackOffset = targetTrack - baseTrack + 1
-            added += segment
           }
+          trackOffset = targetTrack - baseTrack + 1
+          added += segment
         }
       }
       if (added.size >= 2) {
-        val (t, group) = timelineView.context.timeline.newGroup()
-        timelineView.context.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
+        val (t, group) = timelineView.session.timeline.newGroup()
+        timelineView.session.applyProject(_.withTimeline(t.replaceGroup(group, group.addAll(added.map(_.id)))))
       }
       timelineView.dirty = true
     } catch {

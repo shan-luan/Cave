@@ -102,7 +102,7 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
       if (index >= 0 && target >= 0 && target < filters.size) {
         filters.remove(index)
         filters.insert(target, filter)
-        val c = App.root.getFrontendContext
+        val c = App.root.getFrontendSession
         if (c != null) {
           c.touch()
           c.bus.post(RefreshRequestEvent)
@@ -137,7 +137,7 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
         filters.remove(myIndex)
         filters.insert(target, filter)
 
-        val c = App.root.getFrontendContext
+        val c = App.root.getFrontendSession
         if (c != null) {
           c.touch()
           c.bus.post(RefreshRequestEvent)
@@ -150,7 +150,7 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
     val index = segment.filters.indexOf(filter)
     if (index >= 0) {
       segment.filters -= filter
-      val c = App.root.getFrontendContext
+      val c = App.root.getFrontendSession
       if (c != null) {
         c.touch()
         c.bus.post(RefreshRequestEvent)

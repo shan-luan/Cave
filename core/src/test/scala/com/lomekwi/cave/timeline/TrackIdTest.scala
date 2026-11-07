@@ -2,8 +2,6 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.{Id, TestProject}
 
-import scala.util.Using
-
 class TrackIdTest extends GdxTestBase {
 
   private var project: TestProject = null
@@ -42,7 +40,8 @@ class TrackIdTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val a = new TestCont(1000)
     timeline.add(track, a, 0L ~~ 1000L, 0L)
-    Using.resource(timeline.record()) { _ => timeline.remove(a) }
+    timeline.snapshot()
+    timeline.remove(a)
     assert(timeline.timeline.segment(a.id).isEmpty)
     project.undo.undo()
     assertEquals(timeline.timeline.segment(a.id), Some(a))

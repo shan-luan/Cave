@@ -8,8 +8,6 @@ import scala.collection.mutable
 import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
-import scala.util.Using
-
 /**
  * 拖拽 API 的模型级测试，验证截断语义：一次调用就把 deltaTime 同向截到最大可用偏移量并应用，
  * 返回值是实际应用的偏移量，0 表示未移动。
@@ -273,9 +271,8 @@ class TrackDragTest extends GdxTestBase {
     group = timeline.groupAdd(group, a)
     group = timeline.groupAdd(group, b)
 
-    Using.resource(timeline.record()) { _ =>
-      timeline.remove(a)
-    }
+    timeline.snapshot()
+    timeline.remove(a)
 
     assert(timeline.findTrackOf(a).isEmpty)
     val remaining = timeline.getGroup(b).orNull
@@ -653,9 +650,8 @@ class TrackDragTest extends GdxTestBase {
     placeAt(t0, s, TrackDragTest.interval(0, 100), 1000)
     val before = timeline.timeline
 
-    Using.resource(timeline.record()) { _ =>
-      timeline.moveTrack(Seq(s), 1)
-    }
+    timeline.snapshot()
+    timeline.moveTrack(Seq(s), 1)
     val after = timeline.timeline
     assertEquals(timeline.findTrackOf(s).orNull, timeline.getTrackOrCreate(1))
 
@@ -674,9 +670,8 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.interval(0, 100))
     val before = timeline.timeline
 
-    Using.resource(timeline.record()) { _ =>
-      timeline.setEnd(Seq(s), -30)
-    }
+    timeline.snapshot()
+    timeline.setEnd(Seq(s), -30)
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
 
     project.undo.undo()
@@ -694,9 +689,8 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, interval)
     val before = timeline.timeline.duplicate()
 
-    Using.resource(timeline.record()) { _ =>
-      timeline.split(t0, interval.lo + 40)
-    }
+    timeline.snapshot()
+    timeline.split(t0, interval.lo + 40)
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 2)
 
     project.undo.undo()
@@ -716,10 +710,9 @@ class TrackDragTest extends GdxTestBase {
     val b: Content = newSegment(100)
     placeAt(t1, b, TrackDragTest.interval(500, 600), 2000)
 
-    // 模拟 UI 拖拽，record 期间直接改动模型，关闭时合并为一条复合命令
-    Using.resource(timeline.record()) { h =>
-      timeline.moveTime(Seq(a, b), 1000)
-    }
+    // 模拟 UI 拖拽，快照后直接改动模型，撤销时整体恢复
+    timeline.snapshot()
+    timeline.moveTime(Seq(a, b), 1000)
     assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))
     assertEquals(t0.getOrigin(a), 2000L)
     assertEquals(t1.interval(b), TrackDragTest.interval(1500, 1600))
