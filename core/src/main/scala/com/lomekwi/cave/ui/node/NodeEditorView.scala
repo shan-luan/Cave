@@ -104,7 +104,7 @@ class NodeEditorView(nodeGraph0: NodeGraph) extends VisTable with Focusable {
     })
   }
 
-  /** 在空画布上右键弹出节点创建菜单，创建位置取右键处。 */
+  /** 在空画布上右键弹出节点创建菜单。 */
   private def setupContextMenu(): Unit = {
     panZoom.addListener(new InputListener {
       override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {

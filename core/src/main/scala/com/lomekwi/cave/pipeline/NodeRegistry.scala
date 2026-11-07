@@ -16,10 +16,6 @@ import scala.collection.mutable
 
 /**
  * 通用节点注册表，注册任意 [[Node]] 子类，并按目标帧类型动态匹配可用的节点。
- *
- * 兼容性规则是，节点为 [[Filter]] 时，看其泛型声明的目标帧类型是否
- * `isAssignableFrom` 该片段的帧类型；非 Filter 的图内节点不参与帧类型匹配，
- * 始终视为不兼容，因为兼容节点只会被挂到片段的滤镜链上。
  */
 class NodeRegistry {
   private final val entries: mutable.ArrayBuffer[Class[? <: Node]] = mutable.ArrayBuffer.empty[Class[? <: Node]]
@@ -40,12 +36,12 @@ class NodeRegistry {
     entries += nodeClass
   }
 
-  /** 已注册节点的数量（不做帧类型过滤）。 */
+  /** 已注册节点的数量。 */
   def getCount: Int = {
     entries.size
   }
 
-  /** 按注册顺序创建第 `index` 个节点（不做帧类型过滤）。 */
+  /** 按注册顺序创建第 `index` 个节点。 */
   def create(index: Int): Node = {
     NodeRegistry.create(entries(index))
   }
@@ -60,8 +56,7 @@ class NodeRegistry {
   }
 
   /**
-   * 创建第 `index` 个兼容节点。只会返回可挂到片段滤镜链上的 [[Filter]] 节点，
-   * 非 Filter 的图内节点不参与匹配。
+   * 创建第 `index` 个兼容节点。
    */
   def createCompatible(segment: Segment, index: Int): Node = {
     val frameType: Class[?] = segment.getType

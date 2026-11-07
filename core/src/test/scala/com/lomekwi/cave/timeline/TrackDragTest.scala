@@ -9,8 +9,7 @@ import com.lomekwi.cave.pipeline.Source
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
- * 拖拽 API 的模型级测试，验证截断语义：一次调用就把 deltaTime 同向截到最大可用偏移量并应用，
- * 返回值是实际应用的偏移量，0 表示未移动。
+ * 拖拽 API 的模型级测试。
  */
 class TrackDragTest extends GdxTestBase {
 
@@ -34,7 +33,7 @@ class TrackDragTest extends GdxTestBase {
     timeline.add(track, segment, interval, origin)
   }
 
-  /** 无界测试片段，与 [[TestCont]] 相对，用于验证无界内容的前边缘约束。 */
+  /** 无界测试片段。 */
   private class TestUnbounded extends Boundless(TestIds.nextId(), new UnbSource)
 
   private class UnbSource extends Source[TestCont.TestFrame] {
@@ -63,7 +62,7 @@ class TrackDragTest extends GdxTestBase {
     }
   }
 
-  /** 该时间点上的片段；落在空隙或轨道外时为 null。 */
+  /** 该时间点上的片段。 */
   private def srcAt(track: Track, time: Long): Segment = track.get(time) match {
     case s: Segment => s
     case _: Gap => null
@@ -180,7 +179,6 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(after.interval(a), TrackDragTest.interval(2500, 5500))
     assertEquals(after.interval(b), TrackDragTest.interval(4500, 7500))
     assertEquals(after.interval(c), TrackDragTest.interval(6500, 9500))
-    // 组内相邻对的转场随两侧一起平移，应当仍是原来那两个对象
     assertEquals(after.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]), Some(ab))
     assertEquals(after.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]), Some(bc))
   }
@@ -377,13 +375,11 @@ class TrackDragTest extends GdxTestBase {
     val mover: Content = newSegment(100)
     val obstacle: Content = newSegment(1000)
     place(t0, mover, TrackDragTest.interval(0, 100))
-    // 障碍占据 [100, 1100)，把 mover 挪到 [150,250) 会与它重叠
     place(t0, obstacle, TrackDragTest.interval(100, 1100))
 
     val applied: Long = timeline.moveTime(Seq(mover), 150)
 
     assertEquals(applied, 99L)
-    // 内容保留完整区间，转场是两者的重叠区
     assertEquals(t0.interval(mover), TrackDragTest.interval(99, 199))
     val transition = srcAt(t0, 150)
     assert(transition.isInstanceOf[Transition])
@@ -434,7 +430,6 @@ class TrackDragTest extends GdxTestBase {
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(0, 100))
-    // 与 a 重叠建转场：a=[0,100) t=[80,100) b=[80,180)，b 的 origin 是 80
     placeAt(t0, b, TrackDragTest.interval(80, 180), 80)
     assertEquals(t0.interval(b), TrackDragTest.interval(80, 180))
     assertEquals(t0.interval(srcAt(t0, 90)), TrackDragTest.interval(80, 100))
@@ -442,7 +437,6 @@ class TrackDragTest extends GdxTestBase {
     val applied: Int = timeline.moveTrack(Seq(b), 1)
 
     assertEquals(applied, 1)
-    // 搬运的是 b 的完整区间，origin 不变
     assertEquals(t1.interval(b), TrackDragTest.interval(80, 180))
     assertEquals(t1.getOrigin(b), 80L)
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
@@ -491,7 +485,6 @@ class TrackDragTest extends GdxTestBase {
     place(t0, obstacle, TrackDragTest.interval(0, 100))
     place(t0, s, TrackDragTest.interval(100, 200))
 
-    // 可建转场，起点最多左移到障碍终点前一微秒
     val applied: Long = timeline.setStart(Seq(s), -50)
 
     assertEquals(applied, -50L)
@@ -506,7 +499,7 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(200)
     val obstacle: Content = newSegment(50)
-    place(t0, s, TrackDragTest.interval(50, 100))      // origin 为 0，最小起点也是 0
+    place(t0, s, TrackDragTest.interval(50, 100))
     place(t0, obstacle, TrackDragTest.interval(0, 30))
 
     val applied: Long = timeline.setStart(Seq(s), -60)
@@ -522,9 +515,8 @@ class TrackDragTest extends GdxTestBase {
   test("向后设置起点受源起点钳制") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    placeAt(t0, s, TrackDragTest.interval(100, 200), 100) // 素材起点即 origin
+    placeAt(t0, s, TrackDragTest.interval(100, 200), 100)
 
-    // 素材前面没有内容，前边缘回退不到 origin 之前
     val applied: Long = timeline.setStart(Seq(s), -50)
 
     assertEquals(applied, 0L)
@@ -534,9 +526,8 @@ class TrackDragTest extends GdxTestBase {
   test("无界片段向后设置起点可到达时间轴起点") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = new TestUnbounded
-    placeAt(t0, s, TrackDragTest.interval(100, 200), 100) // origin 是落点，无界内容不被它卡住
+    placeAt(t0, s, TrackDragTest.interval(100, 200), 100)
 
-    // 没有素材起点，前边缘一直回退到时间轴 0
     val applied: Long = timeline.setStart(Seq(s), -150)
 
     assertEquals(applied, -100L)
@@ -564,8 +555,8 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
-    placeAt(t0, a, TrackDragTest.interval(0, 100), 500)   // 允许尾端伸展
-    placeAt(t0, b, TrackDragTest.interval(100, 200), 600) // 与 a 相邻
+    placeAt(t0, a, TrackDragTest.interval(0, 100), 500)
+    placeAt(t0, b, TrackDragTest.interval(100, 200), 600)
 
     val applied: Long = timeline.setEnd(Seq(a, b), 50)
     assertEquals(applied, 50L)
@@ -581,7 +572,7 @@ class TrackDragTest extends GdxTestBase {
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(100, 200))
-    place(t0, b, TrackDragTest.interval(200, 300)) // 与 a 相邻
+    place(t0, b, TrackDragTest.interval(200, 300))
 
     val applied: Long = timeline.setStart(Seq(a, b), -50)
     assertEquals(applied, -50L)
@@ -639,7 +630,6 @@ class TrackDragTest extends GdxTestBase {
     assert(!((s) eq (right)))
     assertEquals(t0.interval(right), TrackDragTest.interval(40, 100))
     assertEquals(timeline.findTrackOf(right), Some(t0))
-    // 右半 origin 与左半一致，内容才接得上
     assertEquals(t0.getOrigin(right), 1000L)
     assertEquals(countOn(t0), 2)
   }
@@ -710,7 +700,6 @@ class TrackDragTest extends GdxTestBase {
     val b: Content = newSegment(100)
     placeAt(t1, b, TrackDragTest.interval(500, 600), 2000)
 
-    // 模拟 UI 拖拽，快照后直接改动模型，撤销时整体恢复
     timeline.snapshot()
     timeline.moveTime(Seq(a, b), 1000)
     assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))

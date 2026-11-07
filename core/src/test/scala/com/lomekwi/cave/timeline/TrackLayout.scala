@@ -1,12 +1,10 @@
 package com.lomekwi.cave.timeline
 
 /**
- * 轨道布局不变量校验，供各测试复用。删除路径的场景测试与随机拖拽场景都依赖它兜住
- * 布局被破坏的情况。
+ * 轨道布局不变量校验。
  */
 object TrackLayout extends munit.Assertions {
 
-  /** 轨道上按时间排列的全部内容。 */
   def contentsOf(track: Track): Vector[Content] =
     track.iterator.flatMap(track.segmentOption).collect { case c: Content => c }.toVector
 

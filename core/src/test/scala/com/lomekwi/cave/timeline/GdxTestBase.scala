@@ -5,8 +5,7 @@ import com.badlogic.gdx.backends.headless.HeadlessApplication
 import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration
 
 /**
- * 为纯模型测试提供 headless 的 libGDX 环境（Gdx.app 等），
- * 避免在构建 Timeline/Track/Segment 时因未初始化 Gdx 而崩溃。
+ * 为纯模型测试提供 headless 的 libGDX 环境（Gdx.app 等）。
  */
 abstract class GdxTestBase extends munit.FunSuite {
   override def beforeAll(): Unit = GdxTestBase.initGdx()
@@ -30,7 +29,6 @@ object GdxTestBase {
       }, cfg)
     } catch {
       case t: Throwable =>
-        // 某些环境下 headless 后端不可用；模型测试大多不真正触碰 Gdx。
         throw new IllegalStateException("无法初始化 headless Gdx", t)
     }
   }

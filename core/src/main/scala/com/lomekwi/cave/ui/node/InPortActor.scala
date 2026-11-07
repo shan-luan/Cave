@@ -16,7 +16,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
   setActor(editor)
   syncControl(animate = false)
 
-  /** 输入端口只有一条连接，拖动即把它从原地提起，落空断开，落在别的输出端口则改接。 */
+  /** 输入端口只有一条连接，拖动即把它从原地提起。 */
   override protected def detachForDrag(): PortActor = {
     val prev: Node.OutPort[?] = port.prev
     port.unlink()
@@ -27,7 +27,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
     out.set(getX, getY + getHeight / 2f)
   }
 
-  /** 连接状态改变后编辑控件淡出或淡入，避免跳变。 */
+  /** 连接状态改变后编辑控件淡出或淡入。 */
   override def act(delta: Float): Unit = {
     super.act(delta)
     val now: Boolean = port.isLinked
@@ -44,7 +44,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
     drawDot(drawer)
   }
 
-  /** 连接后输入端口不再取默认值，编辑控件失去意义，随之淡出；animate 为 false 时直接对齐状态。 */
+  /** 连接后输入端口不再取默认值，编辑控件失去意义，随之淡出。 */
   private def syncControl(animate: Boolean): Unit = {
     if (editor == null) {
       return

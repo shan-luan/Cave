@@ -7,7 +7,7 @@ trait Renderable {
   var opacity: Float = 1f
   def render(batch: Batch): Unit
 
-  /** 本帧在预览画布上的可视化壳，随取随建。 */
+  /** 本帧在预览画布上的可视化壳。 */
   @transient lazy val actor: Actor = createActor()
 
   protected def createActor(): Actor

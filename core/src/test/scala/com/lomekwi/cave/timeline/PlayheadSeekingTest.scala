@@ -64,7 +64,6 @@ class PlayheadSeekingTest extends GdxTestBase {
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track0 = project.timeline.getTrackOrCreate(0)
     assert(project.timeline.add(track0, cont, 0 ~~ duration, 0), "源应被加入轨道")
-    // 只产生 gap 的空轨道同样要上报完成
     val track1 = project.timeline.getTrackOrCreate(1)
 
     val thread0 = new Thread(project.worker(track0.index), "seek-multi-0")

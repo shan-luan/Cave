@@ -13,8 +13,7 @@ import com.lomekwi.cave.timeline.Segment
 import java.util
 
 /**
- * 数值输入端口编辑 widget，[[Spinner]] 行。直接持有端口模型，修改写默认值记 undo，
- * 并在自身的 [[act]] 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
+ * 数值输入端口编辑 widget，[[Spinner]] 行。
  */
 final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override val port: Node.InPort[?] = port0
@@ -45,7 +44,6 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
 
   override def act(delta: Float): Unit = {
     super.act(delta)
-    // 用户正在输入时不覆盖，避免打断编辑
     if (!spinner.getTextField.hasKeyboardFocus) {
       val modelVal: Double = defaultValue
       val current: Float = model.getValue

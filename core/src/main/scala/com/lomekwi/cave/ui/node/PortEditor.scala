@@ -6,9 +6,9 @@ import com.lomekwi.cave.pipeline.Node
 trait PortEditor extends PortHolder {
   override def port: Node.InPort[?]
 
-  /** 端口名标签，始终绘制。 */
+  /** 端口名标签。 */
   def label: Actor
 
-  /** 编辑默认值的控件，端口连接后由 [[InPortActor]] 隐藏。 */
+  /** 编辑默认值的控件。 */
   def control: Actor
 }

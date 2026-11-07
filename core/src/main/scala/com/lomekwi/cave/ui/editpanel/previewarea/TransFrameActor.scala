@@ -62,7 +62,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private var myStartBBox: Array[Float] = uninitialized
   private var siblingBBoxes: mutable.ArrayBuffer[Array[Float]] = uninitialized
 
-  /** 移动吸附时的提示线位置（画布坐标），NaN 表示无吸附 */
+  /** 移动吸附时的提示线位置（画布坐标）。 */
   var snapLineX: Float = Float.NaN
   var snapLineY: Float = Float.NaN
 
@@ -86,7 +86,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         return true
       }
 
-      // 只找现成节点，创建推迟到确认进入拖动，避免单击也在滤镜链里留下空变换
       dragModifier = TransFrameActor.findTransNode(segment)
       if (dragModifier != null) {
         startNodeDx = dragModifier.getDx.toFloat
@@ -105,7 +104,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       if (gizmoDragging) {
         updateGizmoDrag(event.getStageX, event.getStageY)
       } else {
-        // 首次拖动才创建节点
         if (dragModifier == null && frame.segmentId != Id.noId()) {
           val segment = frameSegment
           if (segment != null) {
@@ -217,10 +215,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     else null
   }
 
-  /**
-   * 判断事件点 (x, y) 是否落在本 actor 在 stage 坐标下的 AABB 与预览区域 AABB
-   * 的交集内，仅处理交集内的事件，避免本 actor 抢夺预览区域之外的事件。
-   */
+  /** 判断事件点 (x, y) 是否落在本 actor 与预览区域的 AABB 交集内。 */
   private def insidePreviewHitRegion(x: Float, y: Float): Boolean = {
     val w = getWidth
     val h = getHeight
@@ -241,7 +236,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val extTop = h + handleOff
     if (x < extLeft || x >= extRight || y < extBottom || y >= extTop) return false
 
-    // 帧 actor 挂在画布上，画布在 [[PanZoomCanvas]] 里，[[PreviewArea]] 还要更上几层，因此沿祖先链找
     var preview: Actor = getParent
     while (preview != null && !preview.isInstanceOf[PreviewArea]) {
       preview = preview.getParent
@@ -361,7 +355,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     gizmoAnchorStageX = TransFrameActor.tmp1.x
     gizmoAnchorStageY = TransFrameActor.tmp1.y
 
-    // 总变换（含 [[dragModifier]] 自身的旋转/翻转）
     val totalRad = Math.toRadians(getRotation.toDouble).toFloat
     gizmoCos = Math.cos(totalRad.toDouble).toFloat
     gizmoSin = Math.sin(totalRad.toDouble).toFloat
@@ -382,12 +375,10 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       return
     }
 
-    // stage 坐标取差后换算为画布本地 delta（canvas 仅平移+均匀缩放）
     val p = getParent
     val canvasDeltaX = if (p != null) (stageX - gizmoAnchorStageX) / p.getScaleX else stageX - gizmoAnchorStageX
     val canvasDeltaY = if (p != null) (stageY - gizmoAnchorStageY) / p.getScaleY else stageY - gizmoAnchorStageY
 
-    // 画布空间 → 本地空间（用含 dragModifier 的总变换）
     var dLocalX = canvasDeltaX * gizmoCos + canvasDeltaY * gizmoSin
     var dLocalY = -canvasDeltaX * gizmoSin + canvasDeltaY * gizmoCos
     if (gizmoFlipX) dLocalX = -dLocalX
@@ -444,7 +435,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val scaleChangeW = newScaleX / gizmoStartScaleX
     val scaleChangeH = newScaleY / gizmoStartScaleY
 
-    // 锚点补偿（画布空间）。锚点相对中心偏移随缩放变化，扣掉中心位移后保持锚点不动
     val halfW = gizmoStartW * 0.5f
     val halfH = gizmoStartH * 0.5f
     val compX = (scaleChangeW - 1f) * (halfW - gizmoAnchorLocalX)
@@ -456,7 +446,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     val posDeltaX = rotCompX - (scaleChangeW - 1f) * halfW
     val posDeltaY = rotCompY - (scaleChangeH - 1f) * halfH
 
-    // 画布位移 → [[dragModifier]] 本地位移（仅用其之前的变换）
     var ddx = (posDeltaX * dragCos + posDeltaY * dragSin) / dragScaleX
     var ddy = (-posDeltaX * dragSin + posDeltaY * dragCos) / dragScaleY
     if (dragFlipX) ddx = -ddx
@@ -518,7 +507,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     requestRefresh()
   }
 
-  /** 拖拽改值后请求轨道线程重新求值，画面统一由管线滤镜链刷新，UI 不做本地重放 */
+  /** 拖拽改值后请求轨道线程重新求值。 */
   private def requestRefresh(): Unit = {
     val c: ProjectSession = App.root.getFrontendSession
     if (c != null) c.bus.post(RefreshRequestEvent)
@@ -779,7 +768,6 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand)
         return
       }
-      // 光标由锚点→手柄的屏幕方向决定，旋转/翻转后仍与视觉一致
       val w = getWidth
       val h = getHeight
       var hx: Float = 0f

@@ -41,7 +41,7 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     outTable.add(portActor).row()
   }
 
-  /** 本卡片中承载指定端口的端口圆点，没有则返回 null。 */
+  /** 本卡片中承载指定端口的端口圆点。 */
   def getPortActor(port: Node.Port): PortActor = {
     portActors.getOrElse(port, null)
   }
@@ -51,7 +51,6 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
 
   private final val dragPos: Vector2 = new Vector2()
-  // 按下时鼠标在卡片本地坐标系中的位置，拖拽目标是鼠标回到这个偏移
   private var grabX: Float = 0f
   private var grabY: Float = 0f
 
@@ -59,7 +58,6 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     setButton(Input.Buttons.LEFT)
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      // 在端口编辑器的文本框上拖拽是在选字，不该把节点一起拖走
       if (nodeGraph.isEmpty || TextInputs.contains(event.getTarget) || !super.touchDown(event, x, y, pointer, button)) {
         false
       } else {
@@ -75,13 +73,13 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
   addListener(dragListener)
 
-  /** 把卡片贴到鼠标下；x/y 是鼠标在卡片本地坐标系中的位置。 */
+  /** 把卡片贴到鼠标下。 */
   private def applyDrag(x: Float, y: Float): Unit = {
     moveBy(x - grabX, y - grabY)
     nodeGraph.foreach(graph => graph.setPosition(node, getX, getY))
   }
 
-  /** 拖拽中每帧重算鼠标位置，画布在拖拽期间平移缩放后卡片仍跟手。 */
+  /** 拖拽中每帧重算鼠标位置。 */
   override def act(delta: Float): Unit = {
     super.act(delta)
     if (dragListener.isDragging && getStage != null) {

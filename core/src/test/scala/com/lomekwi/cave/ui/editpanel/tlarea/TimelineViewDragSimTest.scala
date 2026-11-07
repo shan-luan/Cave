@@ -13,11 +13,6 @@ import TimelineViewDragSimTest.*
 
 /**
  * 用真实 TlSegmentActor 拖拽会话模拟"鼠标拖拽"交互，验证 UI 拖拽逻辑。
- * 1) 小幅拖拽不应被放大成大幅移动；
- * 2) 拖拽边缘裁切时不该改变片段内偏移 origin；
- * 3) [[TimelineView.act]] 重建是模型的纯投影，重建不得改动模型，模型状态必须稳定。
- *
- * TimelineView 无法在 headless 下正常构造，这里用 Objenesis 绕过构造函数实例化并反射注入拖拽逻辑依赖的字段；actor 不挂 parent，直接注入 TimelineView 引用。
  */
 class TimelineViewDragSimTest extends GdxTestBase {
 
@@ -69,7 +64,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor
   }
 
-  /** 模拟 [[TimelineView.act]] 重建，actor 纯粹按模型摆位，不得改动模型。 */
+  /** 模拟 [[TimelineView.act]] 重建。 */
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
     val segment = actor.segment
     timeline.findTrackOf(segment).foreach { track =>
@@ -112,7 +107,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
   }
 
   test("中部拖拽竖直落到鼠标所在轨道且稳定") {
-    // 用 yToTrackIndex 反推，鼠标停在轨道 2 的带内（mouseLocalY≈200 → index 2）
     def t0 = timeline.getTrackOrCreate(0)
     timeline.getTrackOrCreate(3)
     val s = newSegment(1000_000L)
@@ -185,7 +179,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     def t0 = timeline.getTrackOrCreate(0)
     val a = newSegment(2000_000L)
     val b = newSegment(2000_000L)
-    // a 与 b 重叠建转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
     val aActor = place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
@@ -230,7 +223,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(2000_000L)
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    // a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
     val transition: Segment = t0.get(500_000L) match {
       case s: Segment => s
       case _ => null
@@ -272,7 +264,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(1000_000L)
     val aActor = place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    // a 与 b 重叠出转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
     rebuildFromModel(aActor)
 
     val firstX = aActor.getWidth / 2
@@ -280,7 +271,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     aActor.dragSide = DragSide.MIDDLE
     aActor.initDrag(firstX, firstY)
 
-    // 目标起点落在 b 起点内侧 5px（阈值 10px），应吸到 b 的起点
     aActor.dragTo(absX(495_000L) + firstX, aActor.getY + firstY)
 
     assertEquals(tl.snapIndicatorTime, 500_000L)
@@ -293,7 +283,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(1000_000L)
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    // a=[0,500000) 转场=[500000,1000000) b=[1000000,1500000)
     val transition: Segment = t0.get(500_000L) match {
       case s: Segment => s
       case _ => null
@@ -318,7 +307,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assert(rebuilt.isInstanceOf[Transition])
     assertEquals(t0.interval(rebuilt), 500_000L ~~ 900_000L)
 
-    // 小幅左移（在吸附阈值内），目标不得被吸回转场右缘
     tActor.dragTo(absX(896_000L), view.trackHeight / 2)
     assertEquals(t0.interval(a).hi, 896_000L)
     assertEquals(t0.interval(rebuilt), 500_000L ~~ 896_000L)
@@ -330,7 +318,6 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(1000_000L)
     val aActor = place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    // 重叠建转场，得 a=[0,1000000) 转场=[500000,1000000) b=[500000,1500000)
     assertEquals(t0.interval(a), 0L ~~ 1000_000L)
     assertEquals(t0.interval(b), 500_000L ~~ 1500_000L)
     rebuildFromModel(aActor)

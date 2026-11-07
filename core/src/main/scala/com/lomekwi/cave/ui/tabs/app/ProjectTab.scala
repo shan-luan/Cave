@@ -76,7 +76,6 @@ class ProjectTab(project0: Project) extends Tab(true, true) {
     }
   }
 
-  //不需要手动调用！
   override def dispose(): Unit = {
     session.bus.unregister(this)
     super.dispose()

@@ -14,14 +14,7 @@ import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
 /**
- * 按消费者键池化的解码器池。键相等的借出复用同一解码器，其内部位置等状态跨调用连贯。
- * 归还的解码器留在池中供同键复用，空闲超过 [[DecoderPool.idleNanos]] 的条目被定时驱逐关闭。
- *
- * 借出期间引用计数为正，驱逐与预算回收路径都不会触碰活跃条目。
- * 全局权重预算 [[DecoderPool.weightBudget]] 约束解码器总量，超限时新建先驱逐全局最久未用的空闲条目，
- * 仍不足则放行新建。
- *
- * 约定同一键同时只有一个消费者借出，违反时抛 [[IllegalStateException]]。
+ * 按消费者键池化的解码器池。
  */
 final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
 
@@ -29,7 +22,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
 
   DecoderPool.registerPool(this)
 
-  /** 借出 consumer 专用的解码器，用完必须 [[DecoderLease.close]] 归还。 */
+  /** 借出 consumer 专用的解码器。 */
   @tailrec
   def acquire(consumer: AnyRef): DecoderLease = {
     val pd = entries.get(consumer)
@@ -41,7 +34,6 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
     } else {
       val lent = pd.synchronized {
         if (entries.get(consumer) ne pd) {
-          // 条目刚被驱逐，按空键重试
           None
         } else if (pd.refcount == 0) {
           pd.refcount = 1
@@ -97,7 +89,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
     removed
   }
 
-  /** 关闭全部条目，含活跃中的。仅在所有者 [[MedRes]] 关闭时调用。 */
+  /** 关闭全部条目。 */
   private[media] def disposeAll(): Unit = {
     DecoderPool.unregisterPool(this)
     val it = entries.values().iterator()
@@ -110,13 +102,13 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
   }
 }
 
-/** 池中一个解码器的占位，引用计数由本对象锁保护，空闲时刻供驱逐排序。 */
+/** 池中一个解码器的占位。 */
 private[media] final class PooledDec(val dec: DecRes[?], val weight: Double) {
   var refcount: Int = 0
   @volatile var lastAccessNanos: Long = 0L
 }
 
-/** 一次借出的持有凭证，[[close]] 归还后解码器回到池中等待同键复用。 */
+/** 一次借出的持有凭证。 */
 final class DecoderLease private[media] (private val pooled: PooledDec) extends AutoCloseable {
   def dec: DecRes[?] = pooled.dec
   override def close(): Unit = {
@@ -162,7 +154,7 @@ private[media] object DecoderPool {
     totalWeight.add(-pd.weight)
   }
 
-  /** 新建前回收全局空闲预算，最久未用的先关。 */
+  /** 新建前回收全局空闲预算。 */
   private[media] def admit(incoming: Double): Unit = {
     if (totalWeight.sum() + incoming <= weightBudget) return
     val candidates = pools.asScala.toList

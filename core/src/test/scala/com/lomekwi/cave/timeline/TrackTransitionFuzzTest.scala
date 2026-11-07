@@ -7,11 +7,7 @@ import java.util.Random
 import scala.collection.mutable
 
 /**
- * 转场删除的随机形态测试。反复删除转场并断言：内容不会被转场顶掉区间而从迭代里消失，
- * 且没有任何内容与转场占据同一个区间。
- *
- * 一半用随机堆叠的布局做广泛覆盖，一半用收紧的形态族随机生成：p 与 a 重叠、a 与 b 重叠、
- * 第二后继 rn 的起点在 p 的终点附近抖动，把“交界点被第二后继压回下界”的边界两侧都扫到。
+ * 转场删除的随机形态测试。
  */
 class TrackTransitionFuzzTest extends GdxTestBase {
 
@@ -49,7 +45,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     }
   }
 
-  /** 用随机时长与随机落点堆叠片段；放得下才留下，因此每次得到的都是合法布局。 */
+  /** 用随机时长与随机落点堆叠片段。 */
   private def buildRandomTrack(timeline: TestTimeline, rnd: Random): Vector[Segment] = {
     val out = Vector.newBuilder[Segment]
     var added = 0
@@ -65,7 +61,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     out.result()
   }
 
-  /** 试放一个随机片段，放得下返回它，否则返回 null。 */
+  /** 试放一个随机片段。 */
   private def tryAddRandom(timeline: TestTimeline, rnd: Random): Segment = {
     val duration = TrackTransitionFuzzTest.DURATION_MIN + rnd.nextLong(TrackTransitionFuzzTest.DURATION_MAX - TrackTransitionFuzzTest.DURATION_MIN + 1)
     val lo = rnd.nextLong(TrackTransitionFuzzTest.SPAN)
@@ -76,8 +72,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
   }
 
   /**
-   * 生成一组 p、a、b、rn，各段时长、重叠量与 rn 的抖动都在随机范围内，
-   * 然后删掉 a-b 转场并校验。rn 起点取 p 终点加 j，j 从 1 起，j=1 时交界点会被压回下界。
+   * 生成一组 p、a、b、rn，然后删掉 a-b 转场并校验。
    */
   private def runNeighbourShape(iter: Int): Unit = {
     val rnd = new Random(iter * 2654435761L + 17)

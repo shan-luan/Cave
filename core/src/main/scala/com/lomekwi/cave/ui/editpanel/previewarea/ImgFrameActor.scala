@@ -5,9 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.lomekwi.cave.pipeline.image.BiRenderFrame
 
-/**
- * 转场帧的预览壳。draw 时把帧原样画到画布上。
- */
+/** 转场帧的预览壳。 */
 class ImgFrameActor(frame: BiRenderFrame) extends Actor {
 
   setTouchable(Touchable.disabled)

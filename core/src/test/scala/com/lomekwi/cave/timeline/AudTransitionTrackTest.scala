@@ -8,7 +8,7 @@ import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
- * 音频转场在轨道上的派生测试。两个音频片段重叠时应自动生成声音叠化，并产出正确混合的帧。
+ * 音频转场在轨道上的派生测试。
  */
 class AudTransitionTrackTest extends GdxTestBase {
 
@@ -18,10 +18,7 @@ class AudTransitionTrackTest extends GdxTestBase {
     timeline = new TestProject().timeline
   }
 
-  /**
-   * 产出固定填充值帧的音频探针源。转场接线复刻 [[com.lomekwi.cave.pipeline.audio.AudSource]]，
-   * 探针无法持有需要真实文件的 AudRes。
-   */
+  /** 产出固定填充值帧的音频探针源。 */
   private class AudProbeSource(fill: Float) extends Source[AudFrame] {
     override protected def produce(time: Long, track: Track, segment: Segment): AudFrame = {
       if (frame == null || frame.trackIndex != track.index) {
@@ -62,7 +59,6 @@ class AudTransitionTrackTest extends GdxTestBase {
     }
     assert(transition.source.isInstanceOf[AudCrossfadeSource])
 
-    // 转场区间 [500, 1000)，t=600 的局部进度为 0.2
     val mixed = current.frameAt(transition, 600L).asInstanceOf[AudFrame]
     val expected = 0.5f * math.cos(0.2f * math.Pi / 2).toFloat - 0.25f * math.sin(0.2f * math.Pi / 2).toFloat
     assertEqualsFloat(mixed.samples(0), expected, 1e-5f)

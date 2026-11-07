@@ -4,8 +4,7 @@ import com.lomekwi.cave.timeline.{Segment, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSegmentActor, TlSegmentActor}
 
 /**
- * 阻挡片段的源。它填充时间轴 0 点左侧，使左边界由普通障碍表达，
- * 拖拽与裁切因此不必再单独判断"不能小于 0"。
+ * 阻挡片段的源。
  */
 @SerialVersionUID(1L)
 class BlockSource extends Source[Frame] {

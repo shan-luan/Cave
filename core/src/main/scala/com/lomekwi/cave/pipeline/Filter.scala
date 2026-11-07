@@ -64,7 +64,7 @@ abstract class Filter[T](using protected val classTag: ClassTag[T]) extends Node
     }
 
     /**
-     * @return 输入已连接时返回上游实际类型，否则返回 null 表示类型未知。
+     * @return 上游实际类型
      */
     override def getType: Class[? <: T] = {
       if (filterIn.isLinked) {

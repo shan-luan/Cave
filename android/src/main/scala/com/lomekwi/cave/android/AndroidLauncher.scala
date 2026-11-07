@@ -13,7 +13,7 @@ class AndroidLauncher extends AndroidApplication {
     override protected def onCreate(savedInstanceState: Bundle): Unit = {
         super.onCreate(savedInstanceState);
         val configuration: AndroidApplicationConfiguration = new AndroidApplicationConfiguration();
-        configuration.useImmersiveMode = true; // Recommended, but not required.
+        configuration.useImmersiveMode = true;
         configuration.stencil = 8;
         initialize(new Main(new AndroidFileChooser(this)), configuration);
     }

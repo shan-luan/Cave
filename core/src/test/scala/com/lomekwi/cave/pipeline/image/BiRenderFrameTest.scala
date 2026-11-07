@@ -55,7 +55,6 @@ class BiRenderFrameTest extends munit.FunSuite {
 
     frame.render(null)
 
-    // 绘制期间子帧收到自身与帧 opacity 的乘积
     assertEqualsFloat(a.renderedOpacity, 0.2f, 1e-6f)
     assertEqualsFloat(b.renderedOpacity, 0.5f, 1e-6f)
     assertEqualsFloat(a.opacity, 0.4f, 1e-6f)

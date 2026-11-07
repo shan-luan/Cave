@@ -3,8 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.project.{IdSource, TestProject}
 
 /**
- * 删除路径的场景测试。内容与转场的删除在各种邻居与边界形态下的行为；
- * 移除后 [[TrackLayout]] 校验的布局不变量由本测试守护。
+ * 删除路径的场景测试。
  */
 class TrackRemoveTest extends GdxTestBase {
 
@@ -92,7 +91,6 @@ class TrackRemoveTest extends GdxTestBase {
     val c = newContent(1000)
     place(timeline.getTrackOrCreate(0), c, 500 ~~ 1500)
 
-    // 邻居回来后复用同一个转场对象，身份因此保持稳定
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.transitionAfter(a), Some(transition))
     TrackLayout.assertValid(after)

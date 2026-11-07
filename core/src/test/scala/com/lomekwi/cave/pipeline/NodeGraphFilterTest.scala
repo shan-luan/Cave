@@ -6,8 +6,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, 
 import scala.util.Using
 
 /**
- * 验证 [[NodeGraphFilter]] 的图边界，入口节点把图外连入的帧送给图内节点，
- * 总输出节点把图内的结果送出图外。
+ * 验证 [[NodeGraphFilter]] 的图边界。
  */
 class NodeGraphFilterTest extends munit.FunSuite {
 
@@ -92,7 +91,7 @@ class NodeGraphFilterTest extends munit.FunSuite {
     ngf.innerNodes.collectFirst { case node: Sink => node }.orNull
   }
 
-  /** [[AddFilter.delta]] 端口是私有的，按端口名取值设置默认数据。 */
+  /** 按端口名取值设置默认数据。 */
   private def setDelta(add: AddFilter, value: Double): Unit = {
     add.inPorts.find(_.name == "delta").get.asInstanceOf[Node.InPort[Any]].defaultData = value
   }

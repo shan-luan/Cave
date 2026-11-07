@@ -121,8 +121,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     val edits = mutable.ArrayBuffer.empty[(Int, Track)]
     for (i <- indices) {
       val before = tracks(i)
-      // 内容先全部摘掉，再按新位置放回。转场是重叠区的派生物，随内容自动重建；
-      // 只有两侧内容都不在本次搬运范围内时，才需要把转场本身当作搬运动作
       val onTrack = idsVector.filter(id => before.contains(id)).flatMap(id => before.segmentOption(id))
       var next = before
       for (s <- onTrack) {
@@ -131,8 +129,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
           case _: Transition =>
         }
       }
-      // 内容自右向左放回：放每个内容时它的右邻居已经就位，右侧原有的转场对象才接得上。
-      // 从左往右的话右邻居还在缺席，转场会被当成不再重叠而摘掉，放回后只能新建一个
       val refill = mutable.ArrayBuffer.empty[Content]
       for (s <- onTrack) {
         s match {
@@ -161,12 +157,11 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
   }
 
   /**
-   * 仅按轨道索引平移片段（时间区间不变）。deltaTrack 截断到最大可用量后应用，保持组内成员相对间距。
-   * @return 实际应用的轨道偏移；0 表示该方向无法移动，保持原位。
+   * 仅按轨道索引平移片段（时间区间不变）。
+   * @return 实际应用的轨道偏移。
    */
   def moveTrack(ids: Iterable[Id], deltaTrack: Int)(using source: IdSource): (Timeline, Int) = {
     val idsVector = ids.toVector
-    // 转场不允许换轨
     if (idsVector.exists(id => segment(id).exists(_.isInstanceOf[Transition]))) {
       return (this, 0)
     }
@@ -176,7 +171,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     val moves = mutable.ArrayBuffer.empty[(Content, Int, Int, Interval, Long)]
     for (id <- idsVector) {
       findTrackOf(id).foreach { from =>
-        // 入口已排除转场
         val c = from.segment(id).asInstanceOf[Content]
         val to = getTrackOrCreate(from.index + applied)
         moves += ((c, from.index, to.index, from.interval(id), from.getOrigin(id)))
@@ -195,7 +189,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
       beforeOf.getOrElseUpdate(fromIndex, base(fromIndex))
       beforeOf.getOrElseUpdate(toIndex, base(toIndex))
     }
-    // 先全部摘除再全部放回。片段可能在成员之间换轨，摘除不完全会让放置被自己挡住
     for ((s, fromIndex, _, _, _) <- moves) {
       working.put(fromIndex, currentOf(fromIndex).remove(s.id))
     }
@@ -220,11 +213,11 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     indices
   }
 
-  /** 成员所在的轨道；要求成员在时间线上，否则抛 IllegalArgumentException。 */
+  /** 成员所在的轨道。 */
   private def requiredTrack(id: Id): Track =
     findTrackOf(id).getOrElse(throw new IllegalArgumentException(("片段不在时间线上: ".in(Zh) | "Segment is not on the timeline: ".in(En)).str() + id))
 
-  /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移（带符号，绝对值 ≤ |deltaTrack|）。 */
+  /** 在 deltaTrack 方向上找出整组可放置的最大轨道偏移。 */
   private def findPlaceableTrack(ids: Iterable[Id], deltaTrack: Int): Int = {
     if (deltaTrack == 0 || ids.isEmpty) return 0
     val minIdx: Int = ids.iterator.map((id: Id) => requiredTrack(id).index).min
@@ -232,7 +225,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     val span = Math.abs(deltaTrack)
     var k = span
     while (k > 0) {
-      // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲
       val target = minIdx + deltaTrack - step * (span - k)
       if (canPlaceGroupOnTrack(ids, target)) return step * k
       k -= 1
@@ -251,8 +243,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
       ids.forall { id =>
         val from = requiredTrack(id)
         val ti = from.index + (target - refIdx)
-        // 目标轨道尚不存在（索引 ≥ tracks.size）时视为空闲。
-        // 落点与既有内容重叠只要合法就允许，重叠会成为转场，不必强行换到空轨道
         ti >= tracks.size || (from.segment(id) match {
           case c: Content => tracks(ti).canPlaceAt(c, from.interval(id), moving)
           case _ => false
@@ -261,7 +251,7 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     }
   }
 
-  /** 在 [time±threshold] 内扫描所有轨道条目，返回最近的起点/终点（无则原值）；ignore 不参与。 */
+  /** 在 [time±threshold] 内扫描所有轨道条目，返回最近的起点/终点。 */
   def snapTime(time: Long, threshold: Long, ignore: scala.collection.Set[Id]): Long = {
     var best = time
     var bestDist = threshold
@@ -292,11 +282,11 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     best
   }
 
-  /** 持有该片段的轨道；未放置时返回 None。 */
+  /** 持有该片段的轨道。 */
   def findTrackOf(id: Id): Option[Track] =
     tracks.find(_.contains(id))
 
-  /** 按 id 解析片段；block 与未放置的片段返回 None。 */
+  /** 按 id 解析片段。 */
   def segment(id: Id): Option[Segment] = {
     if (id == Id.noId()) None
     else tracks.iterator.flatMap(_.segmentOption(id)).nextOption()
@@ -329,7 +319,6 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     if (index < ts.size) ts(index) else Track(index)
   }
 
-  /** 已有轨道的条数。 */
   def getTrackCount: Int = tracks.size
 
   override def toString: String = {

@@ -46,7 +46,6 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
       decoded = true
     } catch {
       case _: Exception =>
-        // 首次 get() 时才惰性解码
     }
   }
 

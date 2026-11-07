@@ -12,7 +12,7 @@ import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 /**
- * 端口圆点。圆点位置由 [[PortActor.getAnchor]] 单一定义，绘制与拖拽都以它为端点。
+ * 端口圆点。
  */
 trait PortActor extends Actor with PortHolder {
   private final val anchorTmp: Vector2 = new Vector2()
@@ -33,7 +33,6 @@ trait PortActor extends Actor with PortHolder {
       if (button != Input.Buttons.LEFT || !isDotAt(x, y)) {
         false
       } else {
-        // 圆点上的按下不应冒泡到卡片，否则会同时拖动节点
         event.stop()
         dragging = true
         detached = false
@@ -65,8 +64,7 @@ trait PortActor extends Actor with PortHolder {
   })
 
   /**
-   * 连线拖拽开始后每帧重算鼠标位置，画布在拖拽期间平移缩放后连线端点仍跟手。
-   * 只延续 [[detached]] 之后的过程，提起连接本身仍由鼠标移动事件触发，保持不动不提起的语义。
+   * 连线拖拽开始后每帧重算鼠标位置。
    */
   override def act(delta: Float): Unit = {
     super.act(delta)
@@ -78,7 +76,6 @@ trait PortActor extends Actor with PortHolder {
   }
 
   override def hit(x: Float, y: Float, touchable: Boolean): Actor = {
-    // 容器与表格默认是 childrenOnly，圆点仍需能被直接命中，因此只排除 disabled
     if (touchable && (getTouchable eq Touchable.disabled)) {
       null
     } else if (isDotAt(x, y)) {
@@ -93,7 +90,7 @@ trait PortActor extends Actor with PortHolder {
     drawer.filledCircle(anchorTmp.x, anchorTmp.y, PortActor.DOT_RADIUS, Color.WHITE)
   }
 
-  /** 绘制拖拽中的临时连线。起点是被拖连接的固定端，没有固定端时从本圆点引出。 */
+  /** 绘制拖拽中的临时连线。 */
   protected def drawPendingLink(drawer: ShapeDrawer): Unit = {
     if (detached) {
       if (pendingPeer == null) {
@@ -105,8 +102,7 @@ trait PortActor extends Actor with PortHolder {
   }
 
   /**
-   * 开始拖拽连线时摘下端口上已有的连接，返回该连接另一端的圆点，作为拖拽线的固定端，
-   * 使整条线看起来是被从原地提起来。默认不摘，返回 null，拖拽线从本圆点引出。
+   * 开始拖拽连线时摘下端口上已有的连接，返回该连接另一端的圆点。
    */
   protected def detachForDrag(): PortActor = null
 
@@ -147,7 +143,7 @@ trait PortActor extends Actor with PortHolder {
     }
   }
 
-  /** 在所在画布中查找承载指定端口的端口圆点；端口可能属于另一张卡片。 */
+  /** 在所在画布中查找承载指定端口的端口圆点。 */
   protected def findPortActor(port: Node.Port): PortActor = {
     val owner: NodeActor = findNodeActor
     if (owner == null) {
@@ -194,7 +190,6 @@ trait PortActor extends Actor with PortHolder {
 
   /** 绘制坐标系，即绘制时批次所在的坐标系。 */
   private def drawingFrame: Group = {
-    // 分组默认关闭变换，改为把自身 x/y 折算进子 actor，因此坐标系由更上层第一个开启变换的祖先决定
     var current: Group = getParent
     while (current != null && !current.isTransform) {
       current = current.getParent
@@ -236,7 +231,6 @@ trait PortActor extends Actor with PortHolder {
 
 object PortActor {
   private val DOT_RADIUS: Float = 5f
-  /** 圆点的可抓取半径，比圆点本身大，便于命中。 */
   private val GRAB_RADIUS: Float = 9f
   private val MIN_CTRL_OFFSET: Float = 30f
   private val CURVE_SEGMENTS: Int = 24

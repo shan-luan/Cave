@@ -6,16 +6,7 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 
 /**
- * 有序的 filter 链表。链表本身是 [[Source]]（作为头）与各 [[Filter]] 组成的
- * 节点链，并维护相邻端口连接。
- *
- * ```
- * source.FilterOut → f1.FilterIn → f1.FilterOut → f2.FilterIn → ...
- * ```
- *
- * 列表每个元素都是 [[Filter]]；第 0 个元素的 [[Filter.filterIn]] 连到头（[[Source]]）的
- * [[Filter.filterOut]]。链的末端就是最后一个元素自身的 [[Filter.filterOut]]（不额外连接端口），
- * [[Segment.get]] 直接从它取数据。添加/移除/重排时自动维护连接。
+ * 有序的 filter 链表。
  */
 @deprecated("这破玩意也太难维护了。而且还是可变的。")
 @SerialVersionUID(1L)
@@ -37,7 +28,7 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
 
   override def apply(index: Int): Filter[?] = entryAt(index).filter
 
-  /** 替换 index 处的 filter，旧 filter 的端口连接被断开。 */
+  /** 替换 index 处的 filter。 */
   override def update(index: Int, filter: Filter[?]): Unit = {
     val entry = entryAt(index)
     val old = entry.filter
@@ -50,7 +41,7 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
     old.filterOut.unlink()
   }
 
-  /** 在 index 处插入 filter 并维护连接。index == size 表示追加到尾部。 */
+  /** 在 index 处插入 filter。 */
   override def insert(index: Int, filter: Filter[?]): Unit = {
     if (index < 0 || index > _size) {
       throw new IndexOutOfBoundsException("index: " + index + ", size: " + _size)
@@ -117,12 +108,9 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
   }
 
   /**
-   * 把 filter 插入到 succ 之前，并维护连接。
-   * pred 可能为 [[headEntry]]（此时 pred.out = [[head.filterOut]]），
-   * succ 可能为 tailEntry（此时 succ.in = tail.FilterIn）。
+   * 把 filter 插入到 succ 之前。
    */
   private def linkBefore(filter: Filter[?], succ: FilterList.Entry): Unit = {
-    // 断开 pred.out → succ.in，改为 pred.out → filter.in → filter.out → succ.in
     if (filter == null) {
       throw new NullPointerException("filter")
     }
@@ -141,7 +129,7 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
     connect(newEntry, succ)
   }
 
-  /** 删除节点，重连 pred.out → next.in。 */
+  /** 删除节点。 */
   private def unlink(entry: FilterList.Entry): Unit = {
     val pred = entry.prev
     val next = entry.next
@@ -157,7 +145,6 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
     _size -= 1
   }
 
-  /** pred.out 与 succ.in 之间的连接（pred/succ 可能是哨兵）。 */
   private def connect(pred: FilterList.Entry, succ: FilterList.Entry): Unit = {
     val in: Node.InPort[?] = portIn(succ)
     val out: Node.OutPort[?] = portOut(pred)
@@ -166,7 +153,6 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
     }
   }
 
-  /** 断开 pred.out 与 succ.in 之间的连接（pred/succ 可能是哨兵）。 */
   private def disconnect(pred: FilterList.Entry, succ: FilterList.Entry): Unit = {
     val in: Node.InPort[?] = portIn(succ)
     if (in != null) in.unlink()
@@ -179,7 +165,6 @@ class FilterList(private final val headFilter: Filter[?]) extends mutable.Buffer
   }
 
   private def portIn(entry: FilterList.Entry): Node.InPort[?] = {
-    // 链末端不连接端口，输出即最后一个 filter 的 [[Filter.filterOut]]
     if (entry == tailEntry || entry == headEntry) null
     else entry.filter.filterIn
   }

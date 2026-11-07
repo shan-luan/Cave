@@ -35,7 +35,7 @@ abstract class MedRes(val path: String) extends Resource with Serializable {
 
   private def newPool(): DecoderPool = new DecoderPool(() => newDecoder(), decoderWeight)
 
-  /** 借出 consumer 专用的解码器，用完必须 [[DecoderLease.close]] 归还。 */
+  /** 借出 consumer 专用的解码器。 */
   def acquire(consumer: AnyRef): DecoderLease = {
     pool.acquire(consumer)
   }
@@ -63,7 +63,7 @@ abstract class MedRes(val path: String) extends Resource with Serializable {
 
   protected def newDecoder(): DecRes[?]
 
-  /** 本资源的解码器在全局预算中的权重，以视频解码器为 1。覆写必须是常量，池在超类构造期间读取它。 */
+  /** 本资源的解码器在全局预算中的权重，以视频解码器为 1。 */
   protected def decoderWeight: Double = 0.1
 
   protected def generateMetadata(metadataDecRes: DecRes[?]): Unit

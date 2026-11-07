@@ -9,7 +9,7 @@ import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
- * 声音叠化转场。两侧采样按等功率曲线交叉混合，转场中点对不相关素材保持响度平稳。
+ * 声音叠化转场。
  */
 @SerialVersionUID(1L)
 class AudCrossfadeSource(from: Source[? <: AudFrame], to: Source[? <: AudFrame])
@@ -23,7 +23,6 @@ class AudCrossfadeSource(from: Source[? <: AudFrame], to: Source[? <: AudFrame])
     val result =
       if (frame == null || frame.trackIndex != trackIndex) new AudFrame(AppAudioOut.SAMPLE_RATE, trackIndex)
       else frame
-    // 两侧的 samples 是各自解码器复用的缓冲，混合结果必须落在独立的缓冲上
     val samples =
       if (result.samples == null) {
         val s = new Array[Float](AudDecRes.FRAME_SIZE)
@@ -31,7 +30,6 @@ class AudCrossfadeSource(from: Source[? <: AudFrame], to: Source[? <: AudFrame])
         s
       } else result.samples
 
-    // 等功率交叉混合，转场中点两路权重各为 √2/2
     val fromGain = math.cos(progress * math.Pi / 2).toFloat
     val toGain = math.sin(progress * math.Pi / 2).toFloat
     val a = fromFrame.samples

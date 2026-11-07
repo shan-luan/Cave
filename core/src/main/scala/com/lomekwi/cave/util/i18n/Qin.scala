@@ -24,26 +24,19 @@ trait Lang extends Enum {
 
 /**
  * See [[https://w3techs.com/technologies/overview/content_language]].
- *
- * Top 5.
- *
- * I added Chinese because I am ;)
  */
 enum BasicLang extends Lang {
-  case De //German
-  case En //English
-  case Es //Spanish
-  case Fr //French
-  case Ja //Japanese
-  case Zh //Chinese
+  case De
+  case En
+  case Es
+  case Fr
+  case Ja
+  case Zh
 }
 
 trait Target[L <: Lang]
 
 object Target {
-  /**
-   * If you define any more specific and "matching" Target Given, this won’t be used here.
-   */
   @deprecated("Translation missing. This will fall back to English or random language at runtime.")
   given fallback[L <: Lang]: Target[L] = new Target[L] {}
 }

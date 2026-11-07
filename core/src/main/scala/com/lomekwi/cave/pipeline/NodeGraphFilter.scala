@@ -21,7 +21,6 @@ class NodeGraphFilter extends Filter[Object] {
 
   ensureInnerIn()
 
-  // 只在新图里默认连线。反序列化补建入口节点时不连，避免覆盖旧存档中用户已有的连接。
   innerSink.in.linkFrom(innerIn.out)
 
   addOutPort(new FilterOut {
@@ -30,14 +29,13 @@ class NodeGraphFilter extends Filter[Object] {
     }
   })
 
-  // 旧存档没有入口节点，反序列化也不执行构造器，取图时补建，避免图里缺边界
   private def readObject(in: ObjectInputStream): Unit = {
     in.defaultReadObject()
     ensureInnerIn()
   }
 
   /**
-   * 创建图入口节点。入口依赖 [[Filter.filterIn]]，因此必须在 [[Node.addInPort]] 之后调用。
+   * 创建图入口节点。
    */
   private def ensureInnerIn(): Unit = {
     if (innerIn != null) {
@@ -47,7 +45,6 @@ class NodeGraphFilter extends Filter[Object] {
     innerIn = node
     innerNodes.add(node)
     innerNodes.setPosition(node, 0f, 0f)
-    // 两个边界节点都停在默认位置时（旧存档），按初始布局把它们摆开
     val sinkPos: Vector2 = innerNodes.getPosition(innerSink)
     if (sinkPos.x == 0f && sinkPos.y == 0f) {
       innerNodes.setPosition(innerSink, NodeGraphFilter.SINK_OFFSET_X, 0f)

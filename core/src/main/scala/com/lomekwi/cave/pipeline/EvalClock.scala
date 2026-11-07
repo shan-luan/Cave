@@ -9,7 +9,7 @@ object EvalClock {
 
   private val context: ThreadLocal[Context] = new ThreadLocal[Context]()
 
-  /** 在指定时刻的上下文中执行 body，结束后恢复调用前的上下文。 */
+  /** 在指定时刻的上下文中执行 body。 */
   def withTime[T](timeline: Long, segment: Long)(body: => T): T = {
     val prev: Context = context.get()
     context.set(Context(timeline, segment))

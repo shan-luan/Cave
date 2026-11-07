@@ -11,8 +11,7 @@ import java.util.regex.{Pattern, PatternSyntaxException}
 import scala.compiletime.uninitialized
 
 /**
- * 对 [[TextFrame]] 的文本执行正则替换的滤镜。对帧文本做 `replaceAll`，替换结果与
- * 原文本相同时不重写帧，避免触发无谓的重排版。正则非法时保持原文本。
+ * 对 [[TextFrame]] 的文本执行正则替换的滤镜。
  */
 @SerialVersionUID(1L)
 class TextFilter extends Filter[TextFrame] {

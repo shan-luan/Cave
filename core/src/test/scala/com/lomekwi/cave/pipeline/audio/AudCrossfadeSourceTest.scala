@@ -4,7 +4,7 @@ import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.resource.decoder.AudDecRes
 
 /**
- * 声音叠化转场混合行为的测试。轨道上的转场派生在 timeline 包的 AudTransitionTrackTest 覆盖。
+ * 声音叠化转场混合行为的测试。
  */
 class AudCrossfadeSourceTest extends munit.FunSuite {
 
@@ -27,7 +27,6 @@ class AudCrossfadeSourceTest extends munit.FunSuite {
     assertEqualsFloat(atQuarter.samples(0), quarterExpected, 1e-5f)
     assertEqualsFloat(atQuarter.samples(AudDecRes.FRAME_SIZE - 1), quarterExpected, 1e-5f)
 
-    // 中点两路权重各为 √2/2
     val atHalf = source.mix(a, b, 0.5f)
     assertEqualsFloat(atHalf.samples(0), (0.5f - 0.25f) * math.sqrt(2f).toFloat / 2f, 1e-5f)
   }

@@ -8,10 +8,7 @@ import java.io.Serializable
 import scala.collection.immutable
 import scala.collection.immutable.TreeMap
 
-/**
- * 轨道。不可变，每次编辑返回新实例。
- * 转场由相邻内容的重叠区派生，由轨道自行维护，不直接修改。
- */
+/** 轨道。 */
 @SerialVersionUID(1L)
 case class Track private (index: Int,
                           private val segments: Map[Id, Segment],
@@ -32,7 +29,7 @@ case class Track private (index: Int,
   /** 是否没有用户内容。 */
   override def isEmpty: Boolean = intervalToSeg.valuesIterator.forall(id => isBlock(id))
 
-  /** 元素占用的区间。片段要求在本轨道，否则抛 IllegalArgumentException */
+  /** 元素占用的区间。 */
   extension (e: Element)
     def interval: Interval = e match {
       case s: Segment => s.id.interval
@@ -48,7 +45,7 @@ case class Track private (index: Int,
       layout.reverse(id)
     }
 
-  /** 片段的 0 秒在时间轴中的位置。要求片段在本轨道，否则抛 IllegalArgumentException。 */
+  /** 片段的 0 秒在时间轴中的位置。 */
   def getOrigin(segment: Segment): Long = getOrigin(segment.id)
 
   def getOrigin(id: Id): Long = segment(id) match {
@@ -71,7 +68,7 @@ case class Track private (index: Int,
   /** 按起点顺序的上一个内容片段。 */
   private[timeline] def prevContent(c: Content): Option[Content] = contentBefore(c.id.interval.lo, Set.empty)
 
-  /** left 与 right 之间的转场，仅在两者确实相邻时返回。 */
+  /** left 与 right 之间的转场。 */
   private[timeline] def transitionBetween(left: Content, right: Content): Option[Transition] =
     transitions.get(left.id).filter(_ => nextContent(left).exists(_.id == right.id)).map(transitionOf)
 
@@ -84,7 +81,7 @@ case class Track private (index: Int,
   private def placedTransitionAfter(c: Content): Option[Transition] =
     transitions.get(c.id).filter(id => contains(id)).map(transitionOf)
 
-  /** 带有后接转场的片段，其后接转场的起点（自己的单独终点） */
+  /** 带有后接转场的片段，其后接转场的起点。 */
   def soloEndOf(segment: Segment): Long = segment match {
     case c: Content =>
       val r = c.id.interval
@@ -127,30 +124,25 @@ case class Track private (index: Int,
     if (r.isEmpty) return false
     val left = contentBefore(r.lo, skip)
     val right = contentAtOrAfter(r.lo, skip)
-    // 与左邻居重叠时必须交叉，否则新条目会被左邻居包含
     val leftOk = left.forall { l =>
       val lr = l.id.interval
       val crosses = lr.hi <= r.lo || (lr.lo < r.lo && lr.hi < r.hi && canTransition(l, c))
       crosses && contentBefore(lr.lo, skip).forall(ll => ll.id.interval.hi <= r.lo)
     }
     if (!leftOk) return false
-    // 与右邻居重叠时必须交叉
     val rightOk = right.forall { x =>
       val rr = x.id.interval
       val crosses = r.hi <= rr.lo || (r.lo < rr.lo && r.hi < rr.hi && canTransition(c, x))
       crosses && contentAtOrAfter(rr.lo + 1, skip).forall(rn => r.hi <= rn.id.interval.lo)
     }
     if (!rightOk) return false
-    // 新条目把原来的相邻对拆成了隔项，左右邻居之间从此不能再重叠
     (left, right) match {
       case (Some(l), Some(x)) => l.id.interval.hi <= x.id.interval.lo
       case _ => true
     }
   }
 
-  /**
-   * 起点小于 time 的最后一个内容片段，跳过 skip 里的条目。
-   */
+  /** 起点小于 time 的最后一个内容片段，跳过 skip 里的条目。 */
   private def contentBefore(time: Long, skip: Set[Id]): Option[Content] = {
     var bound = Interval.at(time)
     var entry = intervalToSeg.rangeUntil(bound).lastOption
@@ -187,7 +179,6 @@ case class Track private (index: Int,
     val old: Option[Id] = transitions.get(left.id)
     nextContent(left) match {
       case None =>
-        // 右邻居暂时缺席，索引项留着等它回来，表里的条目先摘掉
         unplaceTransition(left)
       case Some(right) =>
         val lo = right.id.interval.lo
@@ -196,7 +187,6 @@ case class Track private (index: Int,
           old.filter(id => contains(id)) match {
             case Some(currentId) =>
               val r = currentId.interval
-              // 已在对应区间时无需改动
               if (r.lo == lo && r.hi == hi) this else put(segment(currentId), lo ~~ hi, lo)
             case None =>
               old match {
@@ -209,7 +199,6 @@ case class Track private (index: Int,
         } else if (old.isEmpty) {
           this
         } else {
-          // 两侧内容都在却不再重叠，表里的条目与索引项都要摘掉
           old.filter(id => contains(id)).map(dropFromLayout).getOrElse(this).unindexTransition(left.id)
         }
     }
@@ -230,7 +219,7 @@ case class Track private (index: Int,
     }
   }
 
-  /** 移除片段。片段不在本轨道时原样返回本实例。 */
+  /** 移除片段。 */
   protected[timeline] def remove(segment: Segment)(using ids: IdSource): Track = remove(segment.id)
 
   protected[timeline] def remove(id: Id)(using ids: IdSource): Track = {
@@ -262,9 +251,7 @@ case class Track private (index: Int,
     p.map(t.syncTransition).getOrElse(t)
   }
 
-  /**
-   * 删除转场，即消除两侧内容的重叠。无法在不破坏布局的前提下消除时放弃本次删除，原样返回本实例。
-   */
+  /** 删除转场，即消除两侧内容的重叠。 */
   private def removeTransition(t: Transition)(using ids: IdSource): Track = {
     val sides = transitionSides(t)
     if (sides.isEmpty) return this
@@ -278,7 +265,6 @@ case class Track private (index: Int,
     boundary = Math.max(boundary, lower)
     boundary = Math.min(boundary, rr.hi - 1)
     nextContent(right).foreach(rn => boundary = Math.min(boundary, rn.interval.lo - 1))
-    // 右后继的上限把交界点压回下界之下时两侧内容不再交叉，消除重叠无解，放弃本次删除
     if (boundary < lower || boundary <= lr.lo || boundary >= rr.hi) return this
     val next = dropFromLayout(t.id)
       .put(left, lr.lo ~~ boundary, getOrigin(left))
@@ -286,7 +272,7 @@ case class Track private (index: Int,
     next.syncAround(left)
   }
 
-  /** 移除这批片段，返回新版本。不在本轨道的片段会被忽略。 */
+  /** 移除这批片段。 */
   private def removeAll(idsToRemove: Iterable[Id])(using ids: IdSource): Track = {
     var t = this
     for (id <- idsToRemove) {
@@ -295,7 +281,7 @@ case class Track private (index: Int,
     t
   }
 
-  /** 在 time 处把内容片段一分为二。time 不落在内容片段的区间内部时原样返回本实例。 */
+  /** 在 time 处把内容片段一分为二。 */
   protected[timeline] def split(time: Long): Track = ???
 
   /** 裁切一组片段的起始边缘（各自终点不变）。 */
@@ -411,7 +397,6 @@ case class Track private (index: Int,
   }
 
   private def newTransition(from: Content, to: Content)(using ids: IdSource): Transition = {
-    // 后段兜底构造出的转场源，[[TransitionSource.from]]与[[TransitionSource.to]]相对时间顺序互换
     if (from.canCreateTransitionWith(to)) from.createTransition(to) else to.createTransition(from)
   }
 
@@ -423,7 +408,6 @@ case class Track private (index: Int,
     val (left, right) = sides.get
     val lr = left.id.interval
     val rr = right.id.interval
-    // 两侧同步移动，只需保证移动后仍交叉且不越过各自的素材与邻居约束
     val minShift = Math.max(
       Math.max(Math.max(minStartOf(right) - rr.lo, lr.lo + 1 - rr.lo), endLower(left) - lr.hi),
       lr.lo + 1 - lr.hi)
@@ -462,7 +446,6 @@ case class Track private (index: Int,
           case c: Content => startLimit(c, forward)
         }
       }
-    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
@@ -475,7 +458,6 @@ case class Track private (index: Int,
           case c: Content => endLimit(c, forward)
         }
       }
-    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
   }
 
@@ -495,22 +477,21 @@ case class Track private (index: Int,
   private def endLimit(t: Transition, forward: Boolean): Long =
     transitionSides(t).map(s => endLimit(s._1, forward)).getOrElse(0L)
 
-  /** 素材起点。有界素材是 origin，无界内容没有素材起点，视作时间轴 0。 */
+  /** 素材起点。 */
   private def minStartOf(segment: Segment): Long = segment match {
     case _: Clip => Math.max(0, getOrigin(segment))
     case _ => 0L
   }
 
-  /** 素材终点。有界素材是 origin 加时长，无界内容与转场没有素材终点。 */
+  /** 素材终点。 */
   private def maxEndOf(segment: Segment): Long = segment match {
     case c: Clip => getOrigin(c) + c.getDuration
     case _ => Long.MaxValue
   }
 
   protected[timeline] def moveLimit(ids: Iterable[Id], forward: Boolean)(using source: IdSource): Long = {
-    val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue // 该方向无障碍，视作无界
+    val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue
     val moving: Set[Id] = ids.toSet
-    // 两侧内容都不动的转场要带着它们一起平移，得在摘掉整组后的布局上单独探测，按需构造
     lazy val bare: Track = removeAll(moving)
     val offsets = moving.iterator
       .filter(id => contains(id))
@@ -522,13 +503,11 @@ case class Track private (index: Int,
                 bare.moveLimit(left.id, right.id, left.id.interval, right.id.interval,
                   maxEndOf(left), minStartOf(right), forward)
               case _ =>
-                // 至少一侧内容也在搬运范围内时，转场随内容重建，不构成独立限制
                 noBlock
             }
           case c: Content => moveLimit(c, c.id.interval, moving, forward)
         }
       }
-    // 各成员偏移与请求同号，正向取最小、反向取最大即最严限制
     if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
   }
 
@@ -583,11 +562,11 @@ case class Track private (index: Int,
     }
   }
 
-  /** 包含 time 的条目；。 */
+  /** 包含 time 的条目。 */
   def get(time: Long): Element = segmentAt(time).map(segment).getOrElse(
     Gap(contentBefore(time, Set.empty).map(_.id), contentAtOrAfter(time, Set.empty).map(_.id)))
 
-  /** time 所在条目（片段、转场或空隙）的区间。重叠时取区间最短的条目。 */
+  /** time 所在条目（片段、转场或空隙）的区间。 */
   def intervalAt(time: Long): Interval = get(time).interval
 
   /** time 是否落在某个内容片段的区间内部，即能否在此分割。 */
@@ -610,7 +589,7 @@ case class Track private (index: Int,
   private[timeline] def sourceBefore(time: Long): Option[Segment] =
     lastBefore(intervalToSeg, time).map(_._2).map(segment)
 
-  /** 与 interval 有公共点的用户片段，按区间升序；返回快照。 */
+  /** 与 interval 有公共点的用户片段，按区间升序。 */
   def getIntersecting(interval: Interval): Seq[Segment] = {
     intersectingEntries(intervalToSeg, interval).map(_._2).filter(id => !isBlock(id)).map(segment).toList
   }
@@ -629,12 +608,12 @@ case class Track private (index: Int,
     segment.sync(time - getOrigin(segment), this)
   }
 
-  /** 轨道上的用户片段 id；阻挡片段对遍历不可见。 */
+  /** 轨道上的用户片段 id。 */
   override def iterator: Iterator[Id] = {
     intervalToSeg.valuesIterator.filterNot(id => isBlock(id))
   }
 
-  /** 调试用摘要，按时间顺序列出片段，内容附带 origin 与素材终点。 */
+  /** 调试用摘要，按时间顺序列出片段。 */
   override def toString: String = {
     val parts = intervalToSeg.iterator.filterNot((_, id) => isBlock(id)).map { case (r, id) =>
       segment(id) match {
@@ -647,11 +626,8 @@ case class Track private (index: Int,
     parts.mkString(", ")
   }
 
-  /** 包含 time 的片段。重叠时取区间最短的那个，它一定是转场。 */
+  /** 包含 time 的片段。 */
   private def segmentAt(time: Long): Option[Id] = {
-    // 布局不变量（放置约束见 [[canPlaceAt]]，平移与裁切的上下界计算与之配套）使条目按 (lo, hi)
-    // 排序后 hi 不减，覆盖 time 的条目因而是 lo ≤ time 的条目末尾的连续几个，反向扫描
-    // 遇到 hi ≤ time 的条目即可停止，其之前的条目 hi 更短，不可能覆盖 time
     var best: Option[Id] = None
     var bestLen = Long.MaxValue
     var current = lastAtOrBefore(Interval.upTo(time))

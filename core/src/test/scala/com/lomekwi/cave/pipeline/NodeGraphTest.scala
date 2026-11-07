@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 /**
- * 验证 [[NodeGraph]] 的增删语义，移除节点时同时断开它在图内的全部连接。
+ * 验证 [[NodeGraph]] 的增删语义。
  */
 class NodeGraphTest extends munit.FunSuite {
 

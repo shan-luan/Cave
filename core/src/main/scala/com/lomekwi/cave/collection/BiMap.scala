@@ -30,13 +30,10 @@ final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]
 
   def isEmpty: Boolean = forward.isEmpty
 
-  /** 交换正反方向得到反向视图，O(1)。 */
+  /** 交换正反方向得到反向视图。 */
   def inverse: BiMap[V, K, V2KM, K2VM] = new BiMap(reverse, forward)
 
-  /**
-   * 绑定 key 与 value。若 key 原本绑定其他 value，或 value 原本绑定其他 key，
-   * 冲突的旧绑定会被驱逐，保持一一对应。
-   */
+  /** 绑定 key 与 value。 */
   def updated(key: K, value: V): BiMap[K, V, K2VM, V2KM] = {
     val rawForward = reverse.get(value) match {
       case Some(oldKey) if oldKey != key => forward.updated(key, value).removed(oldKey)
@@ -54,7 +51,7 @@ final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]
   def ++(entries: IterableOnce[(K, V)]): BiMap[K, V, K2VM, V2KM] =
     entries.iterator.foldLeft(this)(_ + _)
 
-  /** 按 key 解除绑定，key 不存在时返回自身。 */
+  /** 按 key 解除绑定。 */
   def removed(key: K): BiMap[K, V, K2VM, V2KM] = forward.get(key) match {
     case Some(value) => new BiMap(forward.removed(key).asInstanceOf[K2VM], reverse.removed(value).asInstanceOf[V2KM])
     case None => this
@@ -62,7 +59,7 @@ final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]
 
   def -(key: K): BiMap[K, V, K2VM, V2KM] = removed(key)
 
-  /** 按 value 解除绑定，value 不存在时返回自身。 */
+  /** 按 value 解除绑定。 */
   def removedValue(value: V): BiMap[K, V, K2VM, V2KM] = reverse.get(value) match {
     case Some(key) => new BiMap(forward.removed(key).asInstanceOf[K2VM], reverse.removed(value).asInstanceOf[V2KM])
     case None => this
@@ -74,7 +71,7 @@ final class BiMap[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]
 object BiMap {
 
   /**
-   * 以一对空 Map 构造，两者的具体实现类型决定正反视图的类型与性能特征。
+   * 以一对空 Map 构造。
    */
   def apply[K, V, K2VM <: immutable.Map[K, V], V2KM <: immutable.Map[V, K]](
       emptyForward: K2VM,

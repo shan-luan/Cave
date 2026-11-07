@@ -6,7 +6,7 @@ import com.lomekwi.cave.util.Units
 import scala.compiletime.uninitialized
 
 /**
- * 导出参数数据模型，使用 libGDX [[Json]] 序列化。
+ * 导出参数数据模型。
  */
 class ExportOptions extends Json.Serializable {
   var outputPath: String = uninitialized
@@ -32,7 +32,7 @@ class ExportOptions extends Json.Serializable {
     bitrate = other.bitrate
   }
 
-  /** 以 Mbps 为单位读写 [[bitrate]]，字段本身以 bps 存储。 */
+  /** 以 Mbps 为单位读写 [[bitrate]]。 */
   def getBitrateMbps: Double = {
     bitrate / Units.MEGA.toDouble
   }

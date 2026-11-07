@@ -3,8 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.project.{IdSource, TestProject}
 
 /**
- * 转场拓扑的模型级测试。内容保留覆盖完整的区间，转场是相邻两块内容的重叠区，
- * 三者共存于同一张按区间索引的表里。
+ * 转场拓扑的模型级测试。
  */
 class TrackTransitionTest extends GdxTestBase {
 
@@ -27,7 +26,7 @@ class TrackTransitionTest extends GdxTestBase {
     case _ => null
   }
 
-  /** 不能构造转场的内容，createTransition 落到它身上即失败，用来验证兜底走向。 */
+  /** 不能构造转场的内容。 */
   private class NoTransitionCont(duration: Long) extends TestCont(duration) {
     override def canCreateTransitionWith(other: Content): Boolean = false
 
@@ -42,7 +41,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    // 两侧内容都保留自己的完整区间，转场单独占据交集
     assertEquals(t0.interval(a), 0 ~~ 1000)
     assertEquals(t0.interval(b), 500 ~~ 1500)
     assertEquals(t0.interval(transitionOf(t0, 600)), 500 ~~ 1000)
@@ -85,7 +83,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    // c 放在 [800,1800) 会与 a 和 b 同时重叠，隔项不重叠被破坏
     assert(!timeline.add(t0, c, 800 ~~ 1800, 0L))
     assertEquals(t0.size, 3)
   }
@@ -130,7 +127,6 @@ class TrackTransitionTest extends GdxTestBase {
     val transition = transitionOf(t0, 600)
     assert((transition) != null)
 
-    // 平移远处的内容，a 与 b 之间的转场不受影响，应当复用同一个对象
     timeline.moveTime(Seq(c), 100)
 
     val after = timeline.getTrackOrCreate(0)
@@ -162,7 +158,7 @@ class TrackTransitionTest extends GdxTestBase {
     val c = newSegment(1000)
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 1500 ~~ 2500)
-    place(t0, c, 2000 ~~ 3000) // 与 b 重叠
+    place(t0, c, 2000 ~~ 3000)
 
     timeline.remove(b)
 
@@ -181,7 +177,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, c, 500 ~~ 2000)
     place(t0, b, 1200 ~~ 2500)
 
-    // c 缩短到落进 a 内部时会变成 a 的真子集，终点必须留在 a 的终点之后
     val applied: Long = timeline.setEnd(Seq(c), -100000)
 
     assertEquals(applied, -999L)
@@ -196,7 +191,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    // 前段不能构造，兜底由后段构造，重叠照常成为转场
     assert((transitionOf(t0, 600)) != null)
   }
 
@@ -207,7 +201,6 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    // 前段能构造时仍走前段，后段不能构造不构成障碍
     assert((transitionOf(t0, 600)) != null)
   }
 

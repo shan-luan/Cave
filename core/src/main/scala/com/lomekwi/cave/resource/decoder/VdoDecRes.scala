@@ -101,14 +101,12 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
    *
    * @param time  目标时间
    * @param frame 要更新的帧对象
-   * @throws Exception 解码过程中的异常
    */
   override def get(time: Long, frame: ImgFrame): Unit = {
     if (!initialized) {
       start()
     }
 
-    // 根据时间戳判断沿用缓存帧还是抓取新帧
     if (isTimeLegal(time)) {
       val nextFrameTime = getTimestamp + lengthPerFrame
 
@@ -128,7 +126,6 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
         }
       }
 
-      // 目标时间在下一帧之前，且缓存有效，直接返回缓存
       frame.setPixels(bufferedPixels)
       frame.unpackRowLength = unpackRowLength
     }

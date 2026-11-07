@@ -6,7 +6,7 @@ import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline, Timeline}
 import com.lomekwi.cave.timeline.~~
 
 /**
- * 剪贴板模板。模板必须自带位置与组结构，才能脱离原对象、在时间轴任意位置重放。
+ * 剪贴板模板。
  */
 class PasteTemplateTest extends GdxTestBase {
 
@@ -47,12 +47,10 @@ class PasteTemplateTest extends GdxTestBase {
     assertEquals(eb.interval, 500 ~~ 600)
     assertEquals(eb.origin, 2000L)
 
-    // 组结构在模板里保留，成员共享同一个模板组
     assert(ea.group.isDefined)
     assertEquals(eb.group, ea.group)
     assertEquals(ea.group.map(_.size), Some(2))
 
-    // 模板持有的是拷贝，且这些拷贝不在时间线上，位置只能从模板本身读
     assert(!((a) eq (ea.segment)))
     assert(!((b) eq (eb.segment)))
     assert(timeline.findTrackOf(ea.segment).isEmpty)

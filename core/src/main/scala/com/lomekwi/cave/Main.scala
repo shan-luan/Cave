@@ -53,7 +53,7 @@ class Main(fileChooser: NativeFileChooser) extends ApplicationAdapter {
     ui.dispose()
   }
 
-  /** 桌面端系统文件拖放的入口，实现在 [[Root.importDroppedFiles]] */
+  /** 桌面端系统文件拖放的入口。 */
   def importDroppedFiles(paths: Array[String]): Unit = {
     ui.importDroppedFiles(paths)
   }

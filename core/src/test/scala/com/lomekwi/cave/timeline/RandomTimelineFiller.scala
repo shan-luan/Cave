@@ -5,19 +5,15 @@ import java.util.Random
 import scala.collection.mutable
 
 /**
- * 随机构造时间线内容的测试引擎。随机落片段、随机组合成组、随机执行各种“拖拽”
- * （整体移动、头/尾裁切、分割、删除、新增），供需要随机时间线场景的测试复用。
- * 调用方持有同一个 [[Random]] 实例，同一个种子即可完全复现场景。
+ * 随机构造时间线内容的测试引擎。
  *
- * 各操作与 UI 上的一次操作对应，且各自调用一次 snapshot 提交，因此一步即一条可撤销命令。
- *
- * @param timeline       被操作的时间线，撤销栈取自 [[Timeline.project]]
- * @param rnd            随机数源，与调用方共用同一个实例
- * @param span           时间轴总跨度（µs），落点与移动偏移都在这个范围内取
- * @param trackCount     轨道数，落点随机落在 [0, trackCount) 上
+ * @param timeline       被操作的时间线
+ * @param rnd            随机数源
+ * @param span           时间轴总跨度（µs）
+ * @param trackCount     轨道数
  * @param minDuration    片段最小时长（µs）
  * @param maxDuration    片段最大时长（µs）
- * @param segmentFactory 按随机时长构造片段，默认 [[TestCont]]
+ * @param segmentFactory 按随机时长构造片段
  */
 class RandomTimelineFiller(final val timeline: TestTimeline,
                            final val rnd: Random,
@@ -27,10 +23,10 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
                            private val maxDuration: Long = 15_000L,
                            private val segmentFactory: Long => Content = duration => new TestCont(duration)) {
 
-  /** 组注册表。组跨轨道，放在引擎里才能在分组时并入已有的随机一个组。 */
+  /** 组注册表。 */
   private final val groups: mutable.ArrayBuffer[SegmentGroup] = mutable.ArrayBuffer.empty
 
-  /** 随机往各轨道塞入 count 个片段，时长与落点均随机；该轨道放不下就跳过。 */
+  /** 随机往各轨道塞入 count 个片段，时长与落点均随机。 */
   def fill(count: Int): Unit = {
     val occupied = mutable.ArrayBuffer.empty[mutable.ArrayBuffer[Interval]]
     var i = 0
@@ -44,7 +40,6 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       val trackIndex = rnd.nextInt(trackCount)
       val interval = pickFreeInterval(occupied(trackIndex), duration)
       if (interval == null) {
-        // 该轨道放不下就跳过
       } else {
         val segment = segmentFactory(duration)
         timeline.add(timeline.getTrackOrCreate(trackIndex), segment, interval, rnd.nextLong(span * 2))
@@ -53,7 +48,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     }
   }
 
-  /** 随机往一条随机轨道上放一个片段，30 次试探内找到空位才放置。 */
+  /** 随机往一条随机轨道上放一个片段。 */
   def addOne(): Boolean = {
     val duration = randomDuration()
     val track = timeline.getTrackOrCreate(rnd.nextInt(trackCount))
@@ -73,8 +68,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   }
 
   /**
-   * 按概率把片段随机组合成组。每个片段以 probability 被选中，选中后以 reuseProbability
-   * 并入已有的随机一个组，否则新建一个组。
+   * 按概率把片段随机组合成组。
    */
   def group(probability: Float = 0.35f, reuseProbability: Float = 0.5f): Unit = {
     for (track <- timeline.getTracks) {
@@ -96,8 +90,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
   }
 
   /**
-   * 随机执行一次“拖拽”，保证提交出一条可撤销命令；多次尝试都改动不了模型时兜底增删一个片段。
-   * 每次改动后都校验所有轨道的布局不变量。
+   * 随机执行一次“拖拽”，保证提交出一条可撤销命令。
    */
   def randomDrag(): Unit = {
     var attempt = 0
@@ -106,7 +99,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       performRandomOp()
       if (timeline.session.version != before) {
         assertLayoutValid()
-        return // 成功记录了一步
+        return
       }
       attempt += 1
     }
@@ -132,7 +125,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     }
   }
 
-  /** 与 UI 一致，拖拽锚点片段时，其所在组的成员会一起被操作。 */
+  /** 拖拽锚点片段时，其所在组的成员会一起被操作。 */
   private def dragMembers(segment: Segment): mutable.ArrayBuffer[Segment] = {
     timeline.getGroup(segment) match {
       case Some(group) => mutable.ArrayBuffer.from(group.flatMap(id => timeline.timeline.segment(id)))
@@ -147,11 +140,10 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     for (m <- members) {
       timeline.findTrackOf(m).foreach(t => minIdx = Math.min(minIdx, t.index))
     }
-    var trackDelta = rnd.nextInt(3) - 1 // -1..1
+    var trackDelta = rnd.nextInt(3) - 1
     if (minIdx + trackDelta < 0) trackDelta = 0
     val deltaTime = rnd.nextLong(span / 2) - span / 4
     timeline.snapshot()
-    // 与 UI 一致，时间与轨道维度各自截断到最大可用偏移后应用
     timeline.moveTime(members, deltaTime)
     timeline.moveTrack(members, trackDelta)
   }
@@ -194,11 +186,11 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     timeline.remove(members)
   }
 
-  /** 兜底改动：删掉一个随机片段；时间线为空时改为新增，保证后续步骤仍有东西可操作。 */
+  /** 兜底改动：删掉一个随机片段。 */
   private def forceChange(): Unit = {
     val placed = placedSegments()
     if (placed.isEmpty) {
-      addOne() // 仍失败则放弃这一步
+      addOne()
       return
     }
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
@@ -206,7 +198,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     timeline.remove(members)
   }
 
-  /** 在 [0, span] 内试探一个不与 occupied 相连的区间，50 次内找不到返回 null。 */
+  /** 在 [0, span] 内试探一个不与 occupied 相连的区间。 */
   private def pickFreeInterval(occupied: mutable.ArrayBuffer[Interval], duration: Long): Interval = {
     var attempt = 0
     while (attempt < 50) {
@@ -228,7 +220,6 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     null
   }
 
-  /** 当前时间线上已放置的全部片段。 */
   private def placedSegments(): mutable.ArrayBuffer[Segment] = {
     val out = mutable.ArrayBuffer.empty[Segment]
     for (track <- timeline.getTracks) {

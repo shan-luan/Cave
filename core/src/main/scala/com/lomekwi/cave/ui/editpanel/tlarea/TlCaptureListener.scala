@@ -80,7 +80,6 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         }
 
         val timeInterval: Interval = intervalStartTime ~~ intervalEndTime
-        // 框选范围整个落在某个转场内部时只选中该转场；内容的区间覆盖转场区，不过滤会把两侧内容一并带进来
         val hits = track.getIntersecting(timeInterval)
         val covering = hits.collectFirst {
           case t: Transition if track.interval(t).contains(timeInterval.lo) => t

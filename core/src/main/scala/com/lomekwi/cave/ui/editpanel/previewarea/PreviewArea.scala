@@ -26,7 +26,6 @@ class PreviewArea(private final val session: ProjectSession) extends Group with 
 
   private final val panZoom: PanZoomCanvas = new PanZoomCanvas(0.07f, 30f, 1000f)
   private final val canvas: Group = panZoom.canvas
-  // 此列表仅应在主线程读取。
   private final val frames: mutable.ArrayBuffer[Frame & Renderable] = mutable.ArrayBuffer.empty[Frame & Renderable]
   private var refViewportArea: Float = -1f
   private var lastWidth: Float = 0
@@ -70,7 +69,6 @@ class PreviewArea(private final val session: ProjectSession) extends Group with 
 
   @Subscribe
   def sink(frame: Renderable): Unit = {
-    // 进预览的 [[Renderable]] 都承载在 [[Frame]] 上，[[Frame.trackIndex]] 与生命周期状态都在 [[Frame]] 一侧
     val f = frame.asInstanceOf[Frame & Renderable]
     val idx: Int = f.trackIndex
     session.worker(idx).sinkPhaser.register()
@@ -87,7 +85,6 @@ class PreviewArea(private final val session: ProjectSession) extends Group with 
       frames.append(null)
     }
     val legacy = frames(idx)
-    // 同一帧重发时不动 actor，摘挂会经 Stage.unfocus 取消触控捕获，打断进行中的拖拽
     if (legacy eq frame) return
     frames(idx) = frame
     if (legacy != null && legacy.actor != null) {
@@ -114,7 +111,6 @@ class PreviewArea(private final val session: ProjectSession) extends Group with 
 
   @Subscribe
   def onSelectionChanged(event: SegmentSetSelectedEvent): Unit = {
-    // 选中事件走全局总线，别的项目的时间线也会收到，靠自己这条时间线过滤
     if (!(event.set.timeline eq session.timeline)) return
     for (frame <- frames) {
       if (frame != null) {

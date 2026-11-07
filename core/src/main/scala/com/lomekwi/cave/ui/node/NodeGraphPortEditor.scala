@@ -17,7 +17,6 @@ import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * [[NodeGraph]] 输入端口编辑 widget，端口名标签加一个按钮，按下后在项目的内部标签栏打开绑定到该端口当前默认值节点图的编辑器。
- * 外层表格占满卡片宽度，标签与按钮保持自身尺寸左对齐，避免被卡片的 growX 拉伸。
  */
 final class NodeGraphPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override val port: Node.InPort[?] = port0

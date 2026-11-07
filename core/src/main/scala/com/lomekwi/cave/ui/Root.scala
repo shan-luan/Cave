@@ -91,7 +91,6 @@ class Root extends ApplicationListener {
       override def keyDown(keycode: Int): Boolean = {
         val session: ProjectSession = getFrontendSession
         val ep: EditPanel = getFrontendEditPanel
-        // 无需项目的 TopActions
         if (App.shortcutManager.isActive(TopBar.TopActions.NEW)) {
           topBar.performNew()
           true
@@ -104,7 +103,6 @@ class Root extends ApplicationListener {
         } else if (session == null) {
           false
         } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE)) {
-          // 需要项目的 TopActions
           topBar.performSave()
           true
         } else if (App.shortcutManager.isActive(TopBar.TopActions.SAVE_AS)) {
@@ -201,7 +199,6 @@ class Root extends ApplicationListener {
     majorArea.fill()
     mainLayout.add(majorArea).fill().expand().row()
 
-    // [[Stack]] 的 layout 会强制所有直接子项填满自身，因此弹窗不能直接放进 [[Stack]]，而是放进 [[dialogLayer]]
     val rootStack = new Stack()
     rootStack.setFillParent(true)
     stage.addActor(rootStack)
@@ -252,7 +249,6 @@ class Root extends ApplicationListener {
     }
   }
 
-  /** [[VisDialog.show]] 只接受 [[Stage]]，会先把窗口加到 stage 根，这里再转移到 [[dialogLayer]] */
   def showDialog(dialog: VisDialog): Unit = {
     dialog.show(stage)
     dialogLayer.addActor(dialog)

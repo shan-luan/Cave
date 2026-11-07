@@ -13,7 +13,7 @@ import com.lomekwi.cave.playback.PlayState
 /** 时间线空白区输入监听器，处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
 class TlInputListener(private final val timelineView: TimelineView) extends InputListener {
 
-  /** 左键在空白区按下即进入播放头刷动会话，松开结束，供 [[TimelineView.act]] 每帧驱动。 */
+  /** 左键在空白区按下即进入播放头刷动会话。 */
   private[tlarea] var scrubbing: Boolean = false
 
   override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {

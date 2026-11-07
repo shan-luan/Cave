@@ -74,7 +74,6 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val session = timelineView.session
     val interval: Interval = time ~~ (time + duration)
     session.snapshot()
-    // 落点与既有内容重叠只要合法就接受，重叠会成为转场；放不下才换到下一条轨道
     var targetTrack: Int = 0
     var placed = false
     while (!placed) {

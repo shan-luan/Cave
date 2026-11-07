@@ -23,7 +23,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
   }
 
   override def seek(time: Long): Unit = {
-    seek(time, 0)        // 底层即使传入合法时间也可能触发一次非法跳跃（如目标时间为负），这里用重试兜底。
+    seek(time, 0)
   }
 
   @tailrec
@@ -62,7 +62,6 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     var written = 0
     util.Arrays.fill(output, 0f)
 
-    // 先使用缓冲区中遗留的采样点，没有则轻量同步到目标时间
     if (bufLen > 0) {
       val toCopy = Math.min(bufLen, FRAME_SIZE)
       System.arraycopy(sampleBuf, 0, output, 0, toCopy)
@@ -101,7 +100,6 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
       }
     }
 
-    // 持续抓取原始帧直至凑够 FRAME_SIZE 个采样点
     var filling = true
     while (written < FRAME_SIZE && filling) {
       val f = grab()
@@ -110,7 +108,6 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
           frame.samples = null
           return
         }
-        // 文件末尾不足部分以静音填充
         filling = false
       } else {
         val sb = f.samples(0).asInstanceOf[FloatBuffer]

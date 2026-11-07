@@ -200,8 +200,6 @@ class TopBar extends MenuBar {
     }
   }
 
-  // 全局快捷键动作，由 [[com.lomekwi.cave.ui.Root]] 中的全局 InputProcessor 调用
-
   def performNew(): Unit = {
     try {
       App.appEventBus.post(ProjectLoadedEvent(Project.create()))
@@ -351,7 +349,7 @@ object TopBar {
   }
 
   /**
-   * 与项目关联的菜单项，没有可用项目时自动禁用
+   * 与项目关联的菜单项
    */
   private class MenuItemP(text: String) extends MenuItem(text) {
     App.appEventBus.register(this)

@@ -7,14 +7,13 @@ import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
- * 叠化转场。后帧经 [[BiRenderFrame]] 以渐显的透明度叠在前帧之上。
+ * 叠化转场。
  */
 @SerialVersionUID(1L)
 class CrossfadeSource(from: Source[? <: ImgFrame], to: Source[? <: ImgFrame])
   extends TransitionSource[ImgFrame, BiRenderFrame](from, to) {
 
   override def mix(fromFrame: ImgFrame, toFrame: ImgFrame, progress: Float): BiRenderFrame = {
-    // 渐显系数乘进终点侧 opacity 而非覆盖，内容滤镜设置的值得以保留
     if (toFrame != null) toFrame.opacity *= progress
     val trackIndex = (if (fromFrame != null) fromFrame else toFrame).trackIndex
     val result =
@@ -22,7 +21,6 @@ class CrossfadeSource(from: Source[? <: ImgFrame], to: Source[? <: ImgFrame])
       else frame
     result.a = fromFrame
     result.b = toFrame
-    // 帧实例跨帧复用，自身 opacity 是逐帧状态，交给滤镜链前先复位
     result.opacity = 1f
     frame = result
     result

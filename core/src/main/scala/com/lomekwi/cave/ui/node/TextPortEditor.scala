@@ -14,7 +14,7 @@ import com.lomekwi.cave.playback.RefreshRequestEvent
 import java.util.Objects
 
 /**
- * [[String]] 输入端口编辑 widget，[[VisTextArea]] 行。直接持有端口模型，修改写默认值并刷新预览。
+ * [[String]] 输入端口编辑 widget，[[VisTextArea]] 行。
  */
 final class TextPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override val port: Node.InPort[?] = port0
@@ -22,7 +22,6 @@ final class TextPortEditor(port0: Node.InPort[?], segment: Segment) extends VisT
   private val textArea: VisTextArea = {
     val defaultValue: String = port.defaultData.asInstanceOf[String]
     val area: VisTextArea = new VisTextArea(if (defaultValue == null) "" else defaultValue)
-    // 撑高 prefHeight，否则 X2 皮肤下 linesShowing 为 0，文字不会绘制
     area.setPrefRows(3f)
     area.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: Actor): Unit = {

@@ -34,7 +34,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
 
   private[tlarea] final val view: TimelineView.ViewState = new TimelineView.ViewState()
 
-  /** 拖拽吸附时的吸附时间点，-1 表示无吸附（由 [[TlSegmentActor]] 拖拽时设置） */
+  /** 拖拽吸附时的吸附时间点。 */
   private[tlarea] var snapIndicatorTime: Long = -1
 
   private[tlarea] var dirty: Boolean = true
@@ -46,10 +46,10 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
   private final val inputListener: TlInputListener = new TlInputListener(this)
   private final val captureListener: TlCaptureListener = new TlCaptureListener(this)
 
-  /** 当前有拖拽会话的片段，拖拽中每帧由 [[act]] 驱动 [[TlSegmentActor.dragTo]]；转场拖到消失被移出舞台时仍需驱动 */
+  /** 当前有拖拽会话的片段。 */
   private[tlarea] var draggingActor: TlSegmentActor = uninitialized
 
-  /** [[TimelineView.Actions.SEEK]] 快捷键按住时的刷动会话标志，按住期间播放头与拖拽刷动同样冻结在 Seeking */
+  /** [[TimelineView.Actions.SEEK]] 快捷键按住时的刷动会话标志。 */
   private var seekScrubbing: Boolean = false
 
   private[tlarea] var marqueeActive: Boolean = false
@@ -136,7 +136,6 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
 
       if (acted) dirty = true
 
-      // SEEK 按住与拖拽刷动走同一套会话，两者叠加时靠 Playhead 的会话计数保持冻结，全部结束才恢复
       if (App.shortcutManager.isActive(TimelineView.Actions.SEEK)) {
         if (!seekScrubbing) {
           playhead.beginScrub()
@@ -147,8 +146,6 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
         seekScrubbing = false
       }
 
-      // 拖拽会话每帧驱动一次回调，视图在拖拽期间滚动缩放时目标仍跟手。
-      // 视图状态可能已被上面的滚动改变，鼠标位置要重算，不能复用本次开头的 pointer
       if (draggingActor != null || inputListener.scrubbing || marqueeActive) {
         pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
         getStage.screenToStageCoordinates(pointer)
@@ -163,8 +160,6 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
       }
     }
 
-    // dirty 时按模型重建 UI，所有 Actor（含拖拽中）都是模型的纯投影。
-    // 拖拽只改模型并置 dirty，不做手动摆位，拖拽目标只依赖鼠标轨迹与按下锚点。
     if (dirty) {
       clearChildren(false)
 
@@ -173,7 +168,6 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
       for (i <- timeline.getTracks.indices.reverse) {
         val track = timeline.getTracks(i)
 
-        // 转场排在最后添加，压在两侧内容之上，重叠区里鼠标命中的是转场
         val entries = track.getIntersecting(visibleInterval).sortBy {
           case _: Transition => 1
           case _ => 0
@@ -242,7 +236,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     playhead.seek(Math.max(xToAbsoluteTime(x), 0))
   }
 
-  /** 单选/追加选择。选中的是组则整组一起切换。 */
+  /** 单选/追加选择，选中的是组则整组一起切换。 */
   def selectSegment(id: Id, addToSelection: Boolean): Unit = {
     timeline.getGroup(id) match {
       case Some(group) =>
@@ -335,7 +329,6 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
         if (time > start && time < end) {
           session.applyProject(p => p.withTimeline(p.timeline.split(memberTrack, time)))
           beforeSegments += memberId
-          // 分割换上了新版本，右半段要从时间线现取，旧实例上还是整段
           session.timeline.getTrackOrCreate(memberTrack.index).get(time) match {
             case s: Segment => afterSegments += s.id
             case _: Gap =>

@@ -24,7 +24,6 @@ class TextSource(text: String) extends Source[TextFrame] {
     new Node.InPort[Double](("字号".in(Zh) | "Font Size".in(En)).str(), 48.0, classOf[Double]) {})
   @transient private var fontRes: FontRes = uninitialized
   @transient private var font: BitmapFont = uninitialized
-  // 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体
   @transient private var generatedFontSize: Int = 0
   @volatile @transient private var initialized: Boolean = false
 
@@ -85,7 +84,6 @@ class TextSource(text: String) extends Source[TextFrame] {
       initialized = false
     }
     if (font != null && generatedFontSize != getFontSize) {
-      // spinner 等外部直接改了端口值，丢弃旧字体并重建帧
       font = null
       initialized = false
     }

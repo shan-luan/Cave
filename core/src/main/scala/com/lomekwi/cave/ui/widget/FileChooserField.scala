@@ -18,7 +18,6 @@ import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 /**
  * 一个带文本字段和浏览按钮的文件选择器小组件。
- * 点击浏览按钮会弹出系统原生文件选择对话框，选中后路径自动填入文本框。
  */
 class FileChooserField(private val chooserTitle: String, private val intent: NativeFileChooserIntent) extends VisTable {
   private final val pathField: VisValidatableTextField = new VisValidatableTextField("")
@@ -53,7 +52,7 @@ class FileChooserField(private val chooserTitle: String, private val intent: Nat
     })
   }
 
-  /** 获取当前路径文本（已 trim）。 */
+  /** 获取当前路径文本。 */
   def getPath: String = {
     pathField.getText.trim()
   }

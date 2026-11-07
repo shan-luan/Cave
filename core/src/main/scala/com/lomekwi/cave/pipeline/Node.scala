@@ -23,7 +23,7 @@ abstract class Node extends Serializable {
   }
 
   /**
-   * 是否允许从节点图中移除。图边界节点（图入口、总输出）不允许。
+   * 是否允许从节点图中移除。
    */
   def canRemove: Boolean = true
 
@@ -66,7 +66,7 @@ object Node {
     def getData: T = if (prev == null) defaultData else prev.getData
 
     /**
-     * @return 可连接到此输入端口的输出端口需满足的全部约束，即交叉类型（&）。
+     * @return 可连接到此输入端口的输出端口需满足的全部约束
      */
     def constraint: Set[Class[?]] = constraintSet
 

@@ -73,7 +73,6 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
       while (t < timeline.getLength) {
         i = 0
         for (track <- timeline) {
-          // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
           val segment = track.get(t) match {
             case s: Segment => s
             case _: Gap => null
@@ -182,7 +181,6 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
       queue.put(cvFrame)
     } catch {
       case _: InterruptedException =>
-        // ignore
     }
   }
   override def close(): Unit = {

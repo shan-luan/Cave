@@ -14,8 +14,7 @@ import java.util.concurrent.{Future, Phaser}
 import scala.compiletime.uninitialized
 
 /**
- * 轨道线程，按时间独立推进播放头，把帧投到项目事件总线上，
- * 并用 Phaser 与消费方（预览、音频混音）做握手。
+ * 轨道线程，按时间独立推进播放头。
  */
 class TrackWorker(private val session: ProjectSession, private val index: Int) extends Runnable {
   private final val gapFrame: GapFrame = new GapFrame(index)
@@ -36,7 +35,6 @@ class TrackWorker(private val session: ProjectSession, private val index: Int) e
       while (!Thread.currentThread().isInterrupted) {
         val track = timeline.getTrackOrCreate(index)
         var t: Long = p.getTime
-        // 当前时刻实际生效的条目。内容的区间覆盖转场区，不能用区间包含关系判断是否还在原片段上
         val current: Segment = track.get(t) match {
           case s: Segment => s
           case _: Gap => null
@@ -61,12 +59,10 @@ class TrackWorker(private val session: ProjectSession, private val index: Int) e
             val s = current
             Gdx.app.debug("Track" + index, ("找到源: ".in(Zh) | "Found source: ".in(En)).str() + s)
             track.syncAt(s, t)
-            // 独占播放的终点：内容被右侧转场遮盖时只播到转场起点，不能一路播过转场
             val end: Long = track.soloEndOf(s)
             var owns: Boolean = true
             while (t < end && owns && !updateNeeded && !Thread.currentThread().isInterrupted) {
               t = session.playhead.getTime
-              // 片段可能已被搬到别的轨道，本线程不再驱动它，交由外层重新解析
               val cur = timeline.getTrackOrCreate(index)
               if (!cur.contains(s)) {
                 owns = false

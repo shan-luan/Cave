@@ -5,7 +5,7 @@ import com.lomekwi.cave.project.TestIds
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 /**
- * 测试用最小片段，仅提供拖拽/轨道逻辑测试所需的时序数据，不涉及真实编解码。
+ * 测试用最小片段。
  */
 class TestCont(duration0: Long) extends Clip(TestIds.nextId(), new TestCont.TestSource(duration0))
 
@@ -46,7 +46,7 @@ object TestCont {
     }
   }
 
-  /** 忽略两侧帧与进度的最小转场源，供轨道布局类测试构造转场。 */
+  /** 忽略两侧帧与进度的最小转场源。 */
   private final class TestTransition(from: Source[? <: TestFrame], to: Source[? <: TestFrame])
     extends TransitionSource[TestFrame, TestFrame](from, to) {
 

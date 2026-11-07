@@ -74,9 +74,8 @@ class SegmentFactory(private val session: ProjectSession) {
 }
 
 object SegmentFactory {
-  /** 资源类型，构造器登记表的键。 */
+  /** 资源类型。 */
   private type ResourceClass = Class[? <: Resource]
 
-  /** 由单个资源构造内容片段。 */
   private type SegmentCtor = Resource => Content
 }

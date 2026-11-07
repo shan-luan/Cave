@@ -1,8 +1,7 @@
 package com.lomekwi.cave.resource.media
 
 /**
- * 内嵌单例守卫。类内的 object 会被 Scala 编码为宿主实例的非 transient 惰性字段，
- * 因此这些常量单例必须保持在文件顶层，不得移回类内。
+ * 内嵌单例守卫。
  */
 class InnerObjectGuardTest extends munit.FunSuite {
 

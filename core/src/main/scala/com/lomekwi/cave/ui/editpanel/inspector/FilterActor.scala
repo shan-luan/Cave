@@ -17,7 +17,7 @@ import scala.jdk.CollectionConverters.*
 
 /**
  * 过滤器节点卡，显示 `filter` 名称，可编辑其数值输入端口（默认值），支持删除、
- * 标题栏上下交换与拖拽重排。类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
+ * 标题栏上下交换与拖拽重排。
  */
 final class FilterActor(private val id: Id, private val filter: Filter[?]) extends Card(filter.name) {
   private def segment: Segment = SegmentLookup.resolve(id)
@@ -34,7 +34,6 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
   addCloseButton()
   addListener(new InputListener {
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      // 按住标题栏区域即可拖动重排
       if (button == 0 && y >= getHeight - getPadTop) {
         dragging = true
         dragStageY = event.getStageY
@@ -64,10 +63,8 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
     }
   })
   for (in <- filter.inPorts) {
-    // 链端口由 [[filter]] 自身持有，其约束取决于链路而非参数类型，不作为卡片参数编辑
     if (in != filter.filterIn) {
       val widget = App.cardWidgetsRegistry.createEditor(in, segment)
-      // 未注册该端口类型的 widget，不显示
       if (widget != null) {
         add(widget).growX().pad(2).row()
       }
@@ -114,7 +111,7 @@ final class FilterActor(private val id: Id, private val filter: Filter[?]) exten
     }
   }
 
-  /** 拖拽结束后，按卡片与其他过滤器卡片的垂直位置计算目标索引并重排。 */
+  /** 拖拽结束后重排过滤器顺序。 */
   private def doReorder(): Unit = {
     if (segment == null) return
     val p = getParent

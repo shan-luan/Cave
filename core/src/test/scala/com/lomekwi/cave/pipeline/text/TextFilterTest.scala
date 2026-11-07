@@ -10,7 +10,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import TextFilterTest.*
 
 /**
- * 验证 [[TextFilter]] 对帧文本的正则替换行为，且注册表只为文本片段提供它。
+ * 验证 [[TextFilter]] 对帧文本的正则替换行为。
  */
 class TextFilterTest extends munit.FunSuite {
 
@@ -76,7 +76,6 @@ object TextFilterTest {
       if (frame == null) {
         frame = new TextFrame(-1)
       }
-      // 真实源在每次产出时把帧恢复到基线，替换的语义依赖这一点
       frame.setText(ORIGIN)
       frame
     }

@@ -15,7 +15,7 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val sb: java.lang.StringBuilder = new java.lang.StringBuilder(8)
   private final val pointer: Vector2 = new Vector2()
 
-  /** 左键按下即进入播放头刷动会话，松开结束，供 [[act]] 每帧驱动。 */
+  /** 左键按下即进入播放头刷动会话。 */
   private var scrubbing: Boolean = false
 
 
@@ -44,7 +44,6 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
 
   override def act(delta: Float): Unit = {
     super.act(delta)
-    // 刷动中每帧重算鼠标位置，时间线视图在刷动期间滚动后播放头仍跟手
     if (scrubbing) {
       pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)
       getStage.screenToStageCoordinates(pointer)
