@@ -23,7 +23,7 @@ class TaskPool extends Iterable[Task] {
         }
       } catch {
         case e: Exception =>
-          // FIXME:ignore
+          throw new RuntimeException(e)
       }
       tasks -= task
       Gdx.app.postRunnable(() => App.root.toastManager.show(("任务".in(Zh) | "Task ".in(En)).str() + task.getName + ("已完成".in(Zh) | " completed".in(En)).str()))

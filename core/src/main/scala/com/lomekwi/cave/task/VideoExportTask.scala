@@ -179,7 +179,8 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
     try {
       queue.put(cvFrame)
     } catch {
-      case _: InterruptedException =>
+      case e: InterruptedException =>
+        throw new RuntimeException(e)
     }
   }
   override def close(): Unit = {

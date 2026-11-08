@@ -44,7 +44,8 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
       unpackRowLength = idr.unpackRowLength
       decoded = true
     } catch {
-      case _: Exception =>
+      case e: Exception =>
+        throw new RuntimeException(e)
     }
   }
 

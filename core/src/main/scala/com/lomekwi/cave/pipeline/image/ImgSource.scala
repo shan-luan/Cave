@@ -55,8 +55,7 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
       imgRes.get(segment, time, frame)
     } catch {
       case e: Exception =>
-        e.printStackTrace()
-        frame.setPixels(null)
+        throw new RuntimeException(e)
     }
     frame.transform.reset(0, 0)
     frame.opacity = 1f

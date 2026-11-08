@@ -41,14 +41,16 @@ class TextFilterTest extends munit.FunSuite {
     assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
-  test("正则非法时保留原文") {
+  test("正则非法时包装后抛出") {
     val segment = new TxtCont
     val filter = new TextFilter()
     filter.setRegex("[")
     filter.setReplacement("!")
     segment.attach(filter)
 
-    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, ORIGIN)
+    intercept[RuntimeException] {
+      segment.get(Timespan.Zero, null)
+    }
   }
 
   test("正则变化使已编译模式失效") {

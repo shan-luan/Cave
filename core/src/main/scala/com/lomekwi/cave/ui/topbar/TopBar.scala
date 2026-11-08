@@ -206,7 +206,7 @@ class TopBar extends MenuBar {
       App.root.toastManager.show(("项目已新建".in(Zh) | "Project created".in(En)).str(), toastTimeOut)
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        throw new RuntimeException(e)
     }
   }
 
@@ -231,15 +231,15 @@ class TopBar extends MenuBar {
             }
           } catch {
             case e @ (_: IOException | _: ClassNotFoundException) =>
-              e.printStackTrace()
+              throw new RuntimeException(e)
           }
         }
         override def onCancellation(): Unit = {}
-        override def onError(exception: Exception): Unit = {}
+        override def onError(exception: Exception): Unit = throw new RuntimeException(exception)
       })
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        throw new RuntimeException(e)
     }
   }
 
@@ -264,11 +264,11 @@ class TopBar extends MenuBar {
                 }
               } catch {
                 case e: IOException =>
-                  e.printStackTrace()
+                  throw new RuntimeException(e)
               }
             }
             override def onCancellation(): Unit = {}
-            override def onError(exception: Exception): Unit = {}
+            override def onError(exception: Exception): Unit = throw new RuntimeException(exception)
           })
         } else {
           Project.save(session)
@@ -277,7 +277,7 @@ class TopBar extends MenuBar {
       }
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        throw new RuntimeException(e)
     }
   }
 
@@ -300,16 +300,16 @@ class TopBar extends MenuBar {
               }
             } catch {
               case e: IOException =>
-                e.printStackTrace()
+                throw new RuntimeException(e)
             }
           }
           override def onCancellation(): Unit = {}
-          override def onError(exception: Exception): Unit = {}
+          override def onError(exception: Exception): Unit = throw new RuntimeException(exception)
         })
       }
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        throw new RuntimeException(e)
     }
   }
 
@@ -318,7 +318,7 @@ class TopBar extends MenuBar {
       Gdx.app.exit()
     } catch {
       case e: Exception =>
-        e.printStackTrace()
+        throw new RuntimeException(e)
     }
   }
 }

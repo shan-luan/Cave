@@ -165,8 +165,7 @@ object StartupHelper {
             }
         } catch {
             case e: Exception =>
-                System.err.println("There was a problem restarting the JVM")
-                e.printStackTrace();
+                throw new RuntimeException("There was a problem restarting the JVM", e)
         }
 
         true

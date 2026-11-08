@@ -58,8 +58,7 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
       vdoRes.get(segment, time, frame)
     } catch {
       case e: Exception =>
-        e.printStackTrace()
-        frame.setPixels(null)
+        throw new RuntimeException(e)
     }
     frame.transform.reset(0, 0)
     frame.opacity = 1f

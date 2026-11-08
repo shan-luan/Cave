@@ -267,7 +267,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
                   }
                 }
               } catch {
-                case _: Exception => ()
+                case e: Exception => throw new RuntimeException(e)
               }
             }
           }

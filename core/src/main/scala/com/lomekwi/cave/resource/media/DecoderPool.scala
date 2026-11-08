@@ -57,7 +57,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
       DecoderPool.admitWeight(pd)
       Some(new DecoderLease(pd))
     } else {
-      try pd.dec.close() catch { case _: Exception => () }
+      try pd.dec.close() catch { case e: Exception => throw new RuntimeException(e) }
       None
     }
   }
@@ -84,7 +84,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
     val removed = pd.synchronized(pd.refcount == 0 && entries.remove(key, pd))
     if (removed) {
       DecoderPool.retireWeight(pd)
-      try pd.dec.close() catch { case _: Exception => () }
+      try pd.dec.close() catch { case e: Exception => throw new RuntimeException(e) }
     }
     removed
   }
@@ -97,7 +97,7 @@ final class DecoderPool(factory: () => DecRes[?], val weight: Double) {
       val pd = it.next()
       it.remove()
       DecoderPool.retireWeight(pd)
-      try pd.dec.close() catch { case _: Exception => () }
+      try pd.dec.close() catch { case e: Exception => throw new RuntimeException(e) }
     }
   }
 }

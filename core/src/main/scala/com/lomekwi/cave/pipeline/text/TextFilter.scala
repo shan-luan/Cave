@@ -39,7 +39,8 @@ class TextFilter extends Filter[TextFrame] {
               frame.setText(replaced)
             }
           } catch {
-            case _: PatternSyntaxException =>
+            case e: PatternSyntaxException =>
+              throw new RuntimeException(e)
           }
         }
       }
