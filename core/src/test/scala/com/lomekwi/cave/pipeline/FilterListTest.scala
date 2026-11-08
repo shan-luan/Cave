@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.project.TestIds
-import com.lomekwi.cave.timeline.{Boundless, Segment}
+import com.lomekwi.cave.timeline.{Boundless, Segment, Timespan}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
@@ -16,7 +16,7 @@ class FilterListTest extends munit.FunSuite {
 
   test("空滤镜链直接返回片段帧") {
     val segment = new FpCont(10)
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
   }
 
   test("添加滤镜按顺序连接端口") {
@@ -32,7 +32,7 @@ class FilterListTest extends munit.FunSuite {
 
     f1.delta.defaultData = 1
     f2.delta.defaultData = 2
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
   }
 
   test("指定下标插入后链保持完整") {
@@ -52,7 +52,7 @@ class FilterListTest extends munit.FunSuite {
     a.delta.defaultData = 1
     b.delta.defaultData = 2
     c.delta.defaultData = 3
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
   }
 
   test("在下标等于长度时追加到链尾") {
@@ -87,7 +87,7 @@ class FilterListTest extends munit.FunSuite {
 
     a.delta.defaultData = 1
     c.delta.defaultData = 2
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
 
     assertEquals(segment.filters(0), a)
     assertEquals(segment.filters(1), c)
@@ -111,7 +111,7 @@ class FilterListTest extends munit.FunSuite {
 
     c.delta.defaultData = 5
     b.delta.defaultData = 1
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 16.0, 0)
   }
 
   test("clear 恢复为空链") {
@@ -124,7 +124,7 @@ class FilterListTest extends munit.FunSuite {
 
     assertEquals(segment.filters.size, 0)
     assert(!(segment.source.headOut.isLinked))
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 10.0, 0)
   }
 
   test("按下标插入与删除后链保持完整") {
@@ -170,7 +170,7 @@ class FilterListTest extends munit.FunSuite {
     assertEquals(copy.filters.size, 1)
     assert((copy.source.headOut) eq (copy.filters(0).filterIn.prev))
     assert(!(copy.filters(0).filterOut.isLinked))
-    assertEqualsDouble(copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
+    assertEqualsDouble(copy.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 13.0, 0)
   }
 }
 
@@ -204,19 +204,19 @@ object FilterListTest {
 
   /** 以固定 val 产出帧的最小源。 */
   private[pipeline] final class FpSource(private val base: Double) extends Source[Fpable] {
-    override protected def produce(time: Long, track: com.lomekwi.cave.timeline.Track, segment: Segment): Fpable = {
+    override protected def produce(time: Timespan, track: com.lomekwi.cave.timeline.Track, segment: Segment): Fpable = {
       return new Fpable(base)
     }
 
-    override def getLengthPerExportFrame: Long = {
-      1
+    override def getLengthPerExportFrame: Timespan = {
+      Timespan(1)
     }
 
-    override def getDuration: Long = {
-      Long.MaxValue
+    override def getDuration: Timespan = {
+      Timespan.MaxValue
     }
 
-    override def getDefaultDuration: Option[Long] = {
+    override def getDefaultDuration: Option[Timespan] = {
       None
     }
 

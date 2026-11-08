@@ -2,7 +2,6 @@ package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.TestProject
 import com.lomekwi.cave.playback.PlayState
-import com.lomekwi.cave.util.Units.SECOND
 
 /**
  * seek 的 SEEKING 过渡语义：seek 后进入 Seeking，所有轨道 sync 到目标后恢复 seek 前的状态。
@@ -11,22 +10,24 @@ class PlayheadSeekingTest extends GdxTestBase {
 
   private final val SETTLE_MILLIS = 500L
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
   test("暂停时跳转后在目标处恢复暂停") {
     val project = new TestProject()
-    val duration = SECOND
+    val duration = Timespan.SECOND.value
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track = project.timeline.getTrackOrCreate(0)
-    assert(project.timeline.add(track, cont, 0 ~~ duration, 0), "源应被加入轨道")
+    assert(project.timeline.add(track, cont, at(0) ~~ at(duration), Instant.Zero), "源应被加入轨道")
 
     val thread = new Thread(project.worker(track.index), "seek-paused-test")
     thread.setDaemon(true)
     thread.start()
     try {
-      val target = duration / 2
+      val target = at(duration / 2)
       project.playhead.seek(target)
       assertEquals(project.playhead.state, PlayState.Seeking, "seek 后应进入 SEEKING")
       assert(awaitState(project, PlayState.Paused), "轨道 sync 到目标后应恢复 Paused")
-      assertEquals(cont.getLastSyncTime, target, "轨道应 sync 到 seek 目标")
+      assertEquals(cont.getLastSyncTime, target - Instant.Zero, "轨道应 sync 到 seek 目标")
     } finally {
       thread.interrupt()
       thread.join(2000)
@@ -36,17 +37,17 @@ class PlayheadSeekingTest extends GdxTestBase {
 
   test("播放中跳转后在目标处继续播放") {
     val project = new TestProject()
-    val duration = SECOND
+    val duration = Timespan.SECOND.value
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track = project.timeline.getTrackOrCreate(0)
-    assert(project.timeline.add(track, cont, 0 ~~ duration, 0), "源应被加入轨道")
+    assert(project.timeline.add(track, cont, at(0) ~~ at(duration), Instant.Zero), "源应被加入轨道")
 
     val thread = new Thread(project.worker(track.index), "seek-playing-test")
     thread.setDaemon(true)
     thread.start()
     try {
       project.playhead.state = PlayState.Playing
-      val target = duration / 2
+      val target = at(duration / 2)
       project.playhead.seek(target)
       assertEquals(project.playhead.state, PlayState.Seeking, "播放中 seek 也应进入 SEEKING")
       assert(awaitState(project, PlayState.Playing), "恢复后应为 Playing")
@@ -60,10 +61,10 @@ class PlayheadSeekingTest extends GdxTestBase {
 
   test("跳转等待所有轨道完成（含空轨道）") {
     val project = new TestProject()
-    val duration = SECOND
+    val duration = Timespan.SECOND.value
     val cont = new PlayheadSeekingTest.SyncTimeCont(duration)
     val track0 = project.timeline.getTrackOrCreate(0)
-    assert(project.timeline.add(track0, cont, 0 ~~ duration, 0), "源应被加入轨道")
+    assert(project.timeline.add(track0, cont, at(0) ~~ at(duration), Instant.Zero), "源应被加入轨道")
     val track1 = project.timeline.getTrackOrCreate(1)
 
     val thread0 = new Thread(project.worker(track0.index), "seek-multi-0")
@@ -73,11 +74,11 @@ class PlayheadSeekingTest extends GdxTestBase {
     thread0.start()
     thread1.start()
     try {
-      val target = duration / 2
+      val target = at(duration / 2)
       project.playhead.seek(target)
       assertEquals(project.playhead.state, PlayState.Seeking)
       assert(awaitState(project, PlayState.Paused), "所有轨道（含 gap 轨道）sync 完才应恢复")
-      assertEquals(cont.getLastSyncTime, target, "有内容的轨道应 sync 到目标")
+      assertEquals(cont.getLastSyncTime, target - Instant.Zero, "有内容的轨道应 sync 到目标")
     } finally {
       thread0.interrupt()
       thread1.interrupt()
@@ -101,12 +102,12 @@ object PlayheadSeekingTest {
 
   /** 记录最后一次 sync 的源内时间。 */
   class SyncTimeCont(duration: Long) extends TestCont(duration) {
-    private var lastSyncTime: Long = -1L
+    private var lastSyncTime: Timespan = Timespan.MinValue
 
-    override def sync(time: Long, track: Track): Unit = this.synchronized {
+    override def sync(time: Timespan, track: Track): Unit = this.synchronized {
       lastSyncTime = time
     }
 
-    def getLastSyncTime: Long = this.synchronized(lastSyncTime)
+    def getLastSyncTime: Timespan = this.synchronized(lastSyncTime)
   }
 }

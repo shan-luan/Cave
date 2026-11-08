@@ -25,11 +25,15 @@ class TrackDragTest extends GdxTestBase {
     new TestCont(duration)
   }
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  private def span(value: Long): Timespan = Timespan(value)
+
   private def place(track: Track, segment: Content, interval: Interval): Unit = {
-    timeline.add(track, segment, interval, 0L)
+    timeline.add(track, segment, interval, Instant.Zero)
   }
 
-  private def placeAt(track: Track, segment: Content, interval: Interval, origin: Long): Unit = {
+  private def placeAt(track: Track, segment: Content, interval: Interval, origin: Instant): Unit = {
     timeline.add(track, segment, interval, origin)
   }
 
@@ -37,19 +41,19 @@ class TrackDragTest extends GdxTestBase {
   private class TestUnbounded extends Boundless(TestIds.nextId(), new UnbSource)
 
   private class UnbSource extends Source[TestCont.TestFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): TestCont.TestFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): TestCont.TestFrame = {
       new TestCont.TestFrame(track.index)
     }
 
-    override def getLengthPerExportFrame: Long = {
-      1
+    override def getLengthPerExportFrame: Timespan = {
+      Timespan(1)
     }
 
-    override def getDuration: Long = {
-      Long.MaxValue
+    override def getDuration: Timespan = {
+      Timespan.MaxValue
     }
 
-    override def getDefaultDuration: Option[Long] = {
+    override def getDefaultDuration: Option[Timespan] = {
       None
     }
 
@@ -63,7 +67,7 @@ class TrackDragTest extends GdxTestBase {
   }
 
   /** 该时间点上的片段。 */
-  private def srcAt(track: Track, time: Long): Segment = track.get(time) match {
+  private def srcAt(track: Track, time: Long): Segment = track.get(at(time)) match {
     case s: Segment => s
     case _: Gap => null
   }
@@ -72,8 +76,8 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
-    place(t0, a, 0L ~~ 1000_000L)
-    place(t0, b, 800_000L ~~ 1800_000L)
+    place(t0, a, TrackDragTest.interval(0, 1000_000))
+    place(t0, b, TrackDragTest.interval(800_000, 1800_000))
 
     val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
 
@@ -89,21 +93,21 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a = newSegment(1000_000L)
     val b = newSegment(1000_000L)
-    place(t0, a, 0L ~~ 1000_000L)
-    place(t0, b, 800_000L ~~ 1800_000L)
+    place(t0, a, TrackDragTest.interval(0, 1000_000))
+    place(t0, b, TrackDragTest.interval(800_000, 1800_000))
 
     val tr = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
-    assertEquals(t0.interval(tr), 800_000L ~~ 1000_000L)
+    assertEquals(t0.interval(tr), TrackDragTest.interval(800_000, 1000_000))
 
     val members = scala.collection.mutable.ArrayBuffer.empty[Segment]
     members += a
     members += tr
     members += b
-    assertEquals(timeline.moveTime(members, 100_000L), 100_000L)
+    assertEquals(timeline.moveTime(members, span(100_000)), span(100_000))
 
-    assertEquals(t0.interval(a), 100_000L ~~ 1100_000L)
-    assertEquals(t0.interval(b), 900_000L ~~ 1900_000L)
-    assertEquals(t0.interval(tr), 900_000L ~~ 1100_000L)
+    assertEquals(t0.interval(a), TrackDragTest.interval(100_000, 1100_000))
+    assertEquals(t0.interval(b), TrackDragTest.interval(900_000, 1900_000))
+    assertEquals(t0.interval(tr), TrackDragTest.interval(900_000, 1100_000))
   }
 
   test("组前移在第二个后继处停止") {
@@ -115,7 +119,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, y, TrackDragTest.interval(500, 1500))
     place(t0, n, TrackDragTest.interval(1000, 2000))
 
-    assertEquals(timeline.moveTime(Seq(x, y), 100), 0L)
+    assertEquals(timeline.moveTime(Seq(x, y), span(100)), span(0))
     assertEquals(t0.interval(x), TrackDragTest.interval(0, 1000))
     assertEquals(t0.interval(y), TrackDragTest.interval(500, 1500))
     assertEquals(t0.interval(n), TrackDragTest.interval(1000, 2000))
@@ -132,7 +136,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, y, TrackDragTest.interval(1500, 2500))
     place(t0, n, TrackDragTest.interval(2000, 3000))
 
-    assertEquals(timeline.moveTime(Seq(x, y), -600), -500L)
+    assertEquals(timeline.moveTime(Seq(x, y), span(-600)), span(-500))
     assertEquals(t0.interval(x), TrackDragTest.interval(500, 1500))
     assertEquals(t0.interval(y), TrackDragTest.interval(1000, 2000))
     assertEquals(t0.interval(p), TrackDragTest.interval(0, 1000))
@@ -151,7 +155,7 @@ class TrackDragTest extends GdxTestBase {
     place(t0, c, TrackDragTest.interval(6000, 9000))
     place(t0, e, TrackDragTest.interval(8000, 11000))
 
-    assertEquals(timeline.moveTime(Seq(a, b, c), 2000), 1000L)
+    assertEquals(timeline.moveTime(Seq(a, b, c), span(2000)), span(1000))
     assertEquals(t0.interval(a), TrackDragTest.interval(3000, 6000))
     assertEquals(t0.interval(b), TrackDragTest.interval(5000, 8000))
     assertEquals(t0.interval(c), TrackDragTest.interval(7000, 10000))
@@ -173,7 +177,7 @@ class TrackDragTest extends GdxTestBase {
     val ab = t0.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content]).getOrElse(fail("a 与 b 之间应有转场"))
     val bc = t0.transitionBetween(b.asInstanceOf[Content], c.asInstanceOf[Content]).getOrElse(fail("b 与 c 之间应有转场"))
 
-    assertEquals(timeline.moveTime(Seq(a, b, c), 500L), 500L)
+    assertEquals(timeline.moveTime(Seq(a, b, c), span(500)), span(500))
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(a), TrackDragTest.interval(2500, 5500))
@@ -187,9 +191,9 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
 
     assert(t0.isEmpty)
-    assertEquals(t0.length, 0L)
+    assertEquals(t0.length, Instant.Zero)
     assert(srcAt(t0, 0) == null)
-    assert(srcAt(t0, TrackDragTest.interval(0, 100).hi) == null)
+    assert(srcAt(t0, TrackDragTest.interval(0, 100).hi.value) == null)
   }
 
   test("片段区间可查询且空隙是隐式的") {
@@ -199,8 +203,8 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
 
-    assert(t0.get(100).isInstanceOf[Gap])
-    assertEquals(t0.intervalAt(100), TrackDragTest.interval(100, Long.MaxValue))
+    assert(t0.get(at(100)).isInstanceOf[Gap])
+    assertEquals(t0.intervalAt(at(100)), TrackDragTest.interval(100, Long.MaxValue))
   }
 
   test("删除片段后合并两侧空隙") {
@@ -212,8 +216,8 @@ class TrackDragTest extends GdxTestBase {
 
     timeline.remove(a)
     assert(srcAt(t0, 50) == null)
-    assertEquals(t0.intervalAt(50), TrackDragTest.interval(0, 200))
-    assertEquals(t0.intervalAt(250), TrackDragTest.interval(200, 300))
+    assertEquals(t0.intervalAt(at(50)), TrackDragTest.interval(0, 200))
+    assertEquals(t0.intervalAt(at(250)), TrackDragTest.interval(200, 300))
   }
 
   test("添加片段时设置区间与轨道") {
@@ -232,7 +236,7 @@ class TrackDragTest extends GdxTestBase {
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(0, 100))
 
-    assert(!timeline.add(t0, b, TrackDragTest.interval(0, 100), 0L))
+    assert(!timeline.add(t0, b, TrackDragTest.interval(0, 100), Instant.Zero))
 
     assert((a) eq (srcAt(t0, 50)))
     assertEquals(countOn(t0), 1)
@@ -292,36 +296,36 @@ class TrackDragTest extends GdxTestBase {
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(0, 100))
     place(t0, b, TrackDragTest.interval(500, 600))
-    assertEquals(t0.length, 600L)
+    assertEquals(t0.length, at(600))
 
     timeline.remove(b)
-    assertEquals(t0.length, 100L)
+    assertEquals(t0.length, at(100))
   }
 
   test("时间轴长度随编辑更新") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.interval(0, 100))
-    assertEquals(timeline.getLength, 100L)
+    assertEquals(timeline.getLength, at(100))
 
-    timeline.moveTime(Seq(s), 900)
-    assertEquals(timeline.getLength, 1000L)
+    timeline.moveTime(Seq(s), span(900))
+    assertEquals(timeline.getLength, at(1000))
 
     timeline.remove(s)
-    assertEquals(timeline.getLength, 0L)
+    assertEquals(timeline.getLength, Instant.Zero)
   }
 
   test("单片段按时间移动保持时长并偏移 origin") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    placeAt(t0, s, TrackDragTest.interval(0, 100), 1000)
+    placeAt(t0, s, TrackDragTest.interval(0, 100), at(1000))
 
-    val applied: Long = timeline.moveTime(Seq(s), 200)
+    val applied: Timespan = timeline.moveTime(Seq(s), span(200))
 
-    assertEquals(applied, 200L)
+    assertEquals(applied, span(200))
     assertEquals(t0.interval(s), TrackDragTest.interval(200, 300))
     assertEquals(timeline.findTrackOf(s), Some(t0))
-    assertEquals(t0.getOrigin(s), 1200L)
+    assertEquals(t0.getOrigin(s), at(1200))
   }
 
   test("单片段可跨轨道移动") {
@@ -347,9 +351,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.interval(0, 100))
     place(t1, b, TrackDragTest.interval(500, 600))
 
-    val applied: Long = timeline.moveTime(Seq(a, b), 1000)
+    val applied: Timespan = timeline.moveTime(Seq(a, b), span(1000))
 
-    assertEquals(applied, 1000L)
+    assertEquals(applied, span(1000))
     assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))
     assertEquals(t1.interval(b), TrackDragTest.interval(1500, 1600))
     assertEquals(timeline.findTrackOf(a), Some(t0))
@@ -363,9 +367,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.interval(50, 150))
     place(t0, b, TrackDragTest.interval(200, 300))
 
-    val applied: Long = timeline.moveTime(Seq(a, b), -200)
+    val applied: Timespan = timeline.moveTime(Seq(a, b), span(-200))
 
-    assertEquals(applied, -50L)
+    assertEquals(applied, span(-50))
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
     assertEquals(t0.interval(b), TrackDragTest.interval(150, 250))
   }
@@ -377,9 +381,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, mover, TrackDragTest.interval(0, 100))
     place(t0, obstacle, TrackDragTest.interval(100, 1100))
 
-    val applied: Long = timeline.moveTime(Seq(mover), 150)
+    val applied: Timespan = timeline.moveTime(Seq(mover), span(150))
 
-    assertEquals(applied, 99L)
+    assertEquals(applied, span(99))
     assertEquals(t0.interval(mover), TrackDragTest.interval(99, 199))
     val transition = srcAt(t0, 150)
     assert(transition.isInstanceOf[Transition])
@@ -394,15 +398,15 @@ class TrackDragTest extends GdxTestBase {
     place(t0, mover, TrackDragTest.interval(0, 100))
     place(t0, obstacle, TrackDragTest.interval(300, 400))
 
-    val applied: Long = timeline.moveTime(Seq(mover), 250)
-    assertEquals(applied, 250L)
+    val applied: Timespan = timeline.moveTime(Seq(mover), span(250))
+    assertEquals(applied, span(250))
     assertEquals(t0.interval(mover), TrackDragTest.interval(250, 350))
     val transition = srcAt(t0, 320)
     assert(transition.isInstanceOf[Transition])
     assertEquals(t0.interval(transition), TrackDragTest.interval(300, 350))
     assertEquals(t0.interval(obstacle), TrackDragTest.interval(300, 400))
 
-    assertEquals(timeline.moveTime(Seq(mover), -50), -50L)
+    assertEquals(timeline.moveTime(Seq(mover), span(-50)), span(-50))
     assertEquals(t0.interval(mover), TrackDragTest.interval(200, 300))
     assertEquals(t0.interval(obstacle), TrackDragTest.interval(300, 400))
     assert(!(t0.exists(_.isInstanceOf[Transition])))
@@ -430,7 +434,7 @@ class TrackDragTest extends GdxTestBase {
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(0, 100))
-    placeAt(t0, b, TrackDragTest.interval(80, 180), 80)
+    placeAt(t0, b, TrackDragTest.interval(80, 180), at(80))
     assertEquals(t0.interval(b), TrackDragTest.interval(80, 180))
     assertEquals(t0.interval(srcAt(t0, 90)), TrackDragTest.interval(80, 100))
 
@@ -438,7 +442,7 @@ class TrackDragTest extends GdxTestBase {
 
     assertEquals(applied, 1)
     assertEquals(t1.interval(b), TrackDragTest.interval(80, 180))
-    assertEquals(t1.getOrigin(b), 80L)
+    assertEquals(t1.getOrigin(b), at(80))
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
     assert(!(t0.exists(_.isInstanceOf[Transition])))
   }
@@ -448,12 +452,12 @@ class TrackDragTest extends GdxTestBase {
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.interval(0, 100))
 
-    val applied: Long = timeline.setStart(Seq(s), 30)
+    val applied: Timespan = timeline.setStart(Seq(s), span(30))
 
-    assertEquals(applied, 30L)
+    assertEquals(applied, span(30))
     assertEquals(t0.interval(s), TrackDragTest.interval(30, 100))
     assertEquals(timeline.findTrackOf(s), Some(t0))
-    assertEquals(t0.getOrigin(s), 0L)
+    assertEquals(t0.getOrigin(s), Instant.Zero)
   }
 
   test("设置终点时后缘滑动且起点固定") {
@@ -461,9 +465,9 @@ class TrackDragTest extends GdxTestBase {
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.interval(0, 50))
 
-    val applied: Long = timeline.setEnd(Seq(s), 50)
+    val applied: Timespan = timeline.setEnd(Seq(s), span(50))
 
-    assertEquals(applied, 50L)
+    assertEquals(applied, span(50))
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
   }
 
@@ -472,9 +476,9 @@ class TrackDragTest extends GdxTestBase {
     val s: Content = newSegment(100)
     place(t0, s, TrackDragTest.interval(0, 100))
 
-    val applied: Long = timeline.setEnd(Seq(s), -20)
+    val applied: Timespan = timeline.setEnd(Seq(s), span(-20))
 
-    assertEquals(applied, -20L)
+    assertEquals(applied, span(-20))
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 80))
   }
 
@@ -485,9 +489,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, obstacle, TrackDragTest.interval(0, 100))
     place(t0, s, TrackDragTest.interval(100, 200))
 
-    val applied: Long = timeline.setStart(Seq(s), -50)
+    val applied: Timespan = timeline.setStart(Seq(s), span(-50))
 
-    assertEquals(applied, -50L)
+    assertEquals(applied, span(-50))
     assertEquals(t0.interval(s), TrackDragTest.interval(50, 200))
     assertEquals(t0.interval(obstacle), TrackDragTest.interval(0, 100))
     val transition = srcAt(t0, 75)
@@ -502,9 +506,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.interval(50, 100))
     place(t0, obstacle, TrackDragTest.interval(0, 30))
 
-    val applied: Long = timeline.setStart(Seq(s), -60)
+    val applied: Timespan = timeline.setStart(Seq(s), span(-60))
 
-    assertEquals(applied, -49L)
+    assertEquals(applied, span(-49))
     assertEquals(t0.interval(s), TrackDragTest.interval(1, 100))
     assertEquals(t0.interval(obstacle), TrackDragTest.interval(0, 30))
     val transition = srcAt(t0, 10)
@@ -515,22 +519,22 @@ class TrackDragTest extends GdxTestBase {
   test("向后设置起点受源起点钳制") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    placeAt(t0, s, TrackDragTest.interval(100, 200), 100)
+    placeAt(t0, s, TrackDragTest.interval(100, 200), at(100))
 
-    val applied: Long = timeline.setStart(Seq(s), -50)
+    val applied: Timespan = timeline.setStart(Seq(s), span(-50))
 
-    assertEquals(applied, 0L)
+    assertEquals(applied, span(0))
     assertEquals(t0.interval(s), TrackDragTest.interval(100, 200))
   }
 
   test("无界片段向后设置起点可到达时间轴起点") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = new TestUnbounded
-    placeAt(t0, s, TrackDragTest.interval(100, 200), 100)
+    placeAt(t0, s, TrackDragTest.interval(100, 200), at(100))
 
-    val applied: Long = timeline.setStart(Seq(s), -150)
+    val applied: Timespan = timeline.setStart(Seq(s), span(-150))
 
-    assertEquals(applied, -100L)
+    assertEquals(applied, span(-100))
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 200))
   }
 
@@ -541,9 +545,9 @@ class TrackDragTest extends GdxTestBase {
     place(t0, s, TrackDragTest.interval(0, 50))
     place(t0, obstacle, TrackDragTest.interval(80, 120))
 
-    val applied: Long = timeline.setEnd(Seq(s), 200)
+    val applied: Timespan = timeline.setEnd(Seq(s), span(200))
 
-    assertEquals(applied, 50L)
+    assertEquals(applied, span(50))
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
     assertEquals(t0.interval(obstacle), TrackDragTest.interval(80, 120))
     val transition = srcAt(t0, 90)
@@ -555,11 +559,11 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     val a: Content = newSegment(100)
     val b: Content = newSegment(100)
-    placeAt(t0, a, TrackDragTest.interval(0, 100), 500)
-    placeAt(t0, b, TrackDragTest.interval(100, 200), 600)
+    placeAt(t0, a, TrackDragTest.interval(0, 100), at(500))
+    placeAt(t0, b, TrackDragTest.interval(100, 200), at(600))
 
-    val applied: Long = timeline.setEnd(Seq(a, b), 50)
-    assertEquals(applied, 50L)
+    val applied: Timespan = timeline.setEnd(Seq(a, b), span(50))
+    assertEquals(applied, span(50))
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 150))
     assertEquals(t0.interval(b), TrackDragTest.interval(100, 250))
     val transition = srcAt(t0, 125)
@@ -574,22 +578,22 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.interval(100, 200))
     place(t0, b, TrackDragTest.interval(200, 300))
 
-    val applied: Long = timeline.setStart(Seq(a, b), -50)
-    assertEquals(applied, -50L)
+    val applied: Timespan = timeline.setStart(Seq(a, b), span(-50))
+    assertEquals(applied, span(-50))
     assertEquals(t0.interval(a), TrackDragTest.interval(50, 200))
     val transition = srcAt(t0, 175)
     assert(transition.isInstanceOf[Transition])
     assertEquals(t0.interval(transition), TrackDragTest.interval(150, 200))
     assertEquals(t0.interval(b), TrackDragTest.interval(150, 300))
 
-    assertEquals(timeline.setStart(Seq(a, b), -50), -50L)
+    assertEquals(timeline.setStart(Seq(a, b), span(-50)), span(-50))
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 200))
     val kept = srcAt(t0, 175)
     assert(kept.isInstanceOf[Transition])
     assertEquals(t0.interval(kept), TrackDragTest.interval(100, 200))
     assertEquals(t0.interval(b), TrackDragTest.interval(100, 300))
 
-    assertEquals(timeline.setStart(Seq(a, b), -50), 0L)
+    assertEquals(timeline.setStart(Seq(a, b), span(-50)), span(0))
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 200))
     assertEquals(t0.interval(b), TrackDragTest.interval(100, 300))
   }
@@ -601,10 +605,10 @@ class TrackDragTest extends GdxTestBase {
     place(t0, a, TrackDragTest.interval(100, 200))
     place(t0, b, TrackDragTest.interval(400, 500))
 
-    assertEquals(timeline.snapTime(105, 10, Set.empty), 100L)
-    assertEquals(timeline.snapTime(497, 10, Set.empty), 500L)
-    assertEquals(timeline.snapTime(300, 10, Set.empty), 300L)
-    assertEquals(timeline.snapTime(120, 10, Set.empty), 120L)
+    assertEquals(timeline.snapTime(at(105), span(10), Set.empty), at(100))
+    assertEquals(timeline.snapTime(at(497), span(10), Set.empty), at(500))
+    assertEquals(timeline.snapTime(at(300), span(10), Set.empty), at(300))
+    assertEquals(timeline.snapTime(at(120), span(10), Set.empty), at(120))
   }
 
   test("吸附忽略指定片段并吸附到零") {
@@ -612,32 +616,32 @@ class TrackDragTest extends GdxTestBase {
     val a: Content = newSegment(100)
     place(t0, a, TrackDragTest.interval(100, 200))
 
-    assertEquals(timeline.snapTime(150, 10, Set(a)), 150L)
-    assertEquals(timeline.snapTime(5, 10, Set.empty), 0L)
+    assertEquals(timeline.snapTime(at(150), span(10), Set(a)), at(150))
+    assertEquals(timeline.snapTime(at(5), span(10), Set.empty), Instant.Zero)
   }
 
   test("分割把片段切成区间正确的两半".ignore) {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    placeAt(t0, s, TrackDragTest.interval(0, 100), 1000)
+    placeAt(t0, s, TrackDragTest.interval(0, 100), at(1000))
 
-    timeline.split(t0, 40)
+    timeline.split(t0, at(40))
 
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 40))
     assert((s) eq (srcAt(t0, 20)))
-    assertEquals(t0.getOrigin(s), 1000L)
+    assertEquals(t0.getOrigin(s), at(1000))
     val right: Segment = srcAt(t0, 60)
     assert(!((s) eq (right)))
     assertEquals(t0.interval(right), TrackDragTest.interval(40, 100))
     assertEquals(timeline.findTrackOf(right), Some(t0))
-    assertEquals(t0.getOrigin(right), 1000L)
+    assertEquals(t0.getOrigin(right), at(1000))
     assertEquals(countOn(t0), 2)
   }
 
   test("撤销/重做移动恢复状态") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
-    placeAt(t0, s, TrackDragTest.interval(0, 100), 1000)
+    placeAt(t0, s, TrackDragTest.interval(0, 100), at(1000))
     val before = timeline.timeline
 
     timeline.snapshot()
@@ -648,7 +652,7 @@ class TrackDragTest extends GdxTestBase {
     project.undo.undo()
     assertEquals(timeline.timeline, before)
     assertEquals(timeline.findTrackOf(s), Some(t0))
-    assertEquals(t0.getOrigin(s), 1000L)
+    assertEquals(t0.getOrigin(s), at(1000))
 
     project.undo.redo()
     assertEquals(timeline.timeline, after)
@@ -661,7 +665,7 @@ class TrackDragTest extends GdxTestBase {
     val before = timeline.timeline
 
     timeline.snapshot()
-    timeline.setEnd(Seq(s), -30)
+    timeline.setEnd(Seq(s), span(-30))
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
 
     project.undo.undo()
@@ -680,13 +684,13 @@ class TrackDragTest extends GdxTestBase {
     val before = timeline.timeline.duplicate()
 
     timeline.snapshot()
-    timeline.split(t0, interval.lo + 40)
+    timeline.split(t0, interval.lo + span(40))
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 2)
 
     project.undo.undo()
     assertEquals(timeline.timeline, before)
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 1)
-    assert((s) eq (srcAt(timeline.getTrackOrCreate(0), interval.lo + 50)))
+    assert((s) eq (srcAt(timeline.getTrackOrCreate(0), 50)))
 
     project.undo.redo()
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 2)
@@ -696,22 +700,22 @@ class TrackDragTest extends GdxTestBase {
     def t0: Track = timeline.getTrackOrCreate(0)
     def t1: Track = timeline.getTrackOrCreate(1)
     val a: Content = newSegment(100)
-    placeAt(t0, a, TrackDragTest.interval(0, 100), 1000)
+    placeAt(t0, a, TrackDragTest.interval(0, 100), at(1000))
     val b: Content = newSegment(100)
-    placeAt(t1, b, TrackDragTest.interval(500, 600), 2000)
+    placeAt(t1, b, TrackDragTest.interval(500, 600), at(2000))
 
     timeline.snapshot()
-    timeline.moveTime(Seq(a, b), 1000)
+    timeline.moveTime(Seq(a, b), span(1000))
     assertEquals(t0.interval(a), TrackDragTest.interval(1000, 1100))
-    assertEquals(t0.getOrigin(a), 2000L)
+    assertEquals(t0.getOrigin(a), at(2000))
     assertEquals(t1.interval(b), TrackDragTest.interval(1500, 1600))
-    assertEquals(t1.getOrigin(b), 3000L)
+    assertEquals(t1.getOrigin(b), at(3000))
 
     project.undo.undo()
     assertEquals(t0.interval(a), TrackDragTest.interval(0, 100))
-    assertEquals(t0.getOrigin(a), 1000L)
+    assertEquals(t0.getOrigin(a), at(1000))
     assertEquals(t1.interval(b), TrackDragTest.interval(500, 600))
-    assertEquals(t1.getOrigin(b), 2000L)
+    assertEquals(t1.getOrigin(b), at(2000))
   }
 
   private def countOn(track: Track): Int = track.size
@@ -719,6 +723,6 @@ class TrackDragTest extends GdxTestBase {
 
 object TrackDragTest {
   private def interval(lo: Long, hi: Long): Interval = {
-    lo ~~ hi
+    Instant.At(Timespan(lo)) ~~ Instant.At(Timespan(hi))
   }
 }

@@ -6,7 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.project.Id
-import com.lomekwi.cave.timeline.{Gap, Interval, Segment, Track, Transition}
+import com.lomekwi.cave.timeline.{Gap, Instant, Interval, Segment, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
 
@@ -34,7 +34,7 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
         }
       }
       if (!onSegment) {
-        timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
+        timelineView.playhead.seek(timelineView.xToAbsoluteTime(x).max(Instant.Zero))
       }
       false
     }
@@ -71,8 +71,8 @@ class TlCaptureListener(private final val timelineView: TimelineView) extends In
       val trackBottom: Float = trackTop - timelineView.view.trackHeight
 
       if (!(trackTop <= minY || trackBottom >= maxY)) {
-        var intervalStartTime: Long = timelineView.xToAbsoluteTime(minX)
-        var intervalEndTime: Long = timelineView.xToAbsoluteTime(maxX)
+        var intervalStartTime: Instant = timelineView.xToAbsoluteTime(minX)
+        var intervalEndTime: Instant = timelineView.xToAbsoluteTime(maxX)
         if (intervalStartTime > intervalEndTime) {
           val t = intervalStartTime
           intervalStartTime = intervalEndTime

@@ -1,13 +1,14 @@
 package com.lomekwi.cave.ui.editpanel.tlarea
 
-import com.lomekwi.cave.util.Units.niceScale
+import com.lomekwi.cave.util.niceScale
 
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.image.VdoSource
 import com.lomekwi.cave.resource.media.VdoRes
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Segment, Timespan}
+import com.lomekwi.cave.timeline.Timespan.*
 import com.lomekwi.cave.ui.Colors
 import space.earlygrey.shapedrawer.ShapeDrawer
 
@@ -17,37 +18,37 @@ class TlVdoSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
     val sd: ShapeDrawer = App.root.shapeDrawer
     val contentInterval = interval
     val contentOrigin = origin
-    val srcLocalStart: Long = contentInterval.lo - contentOrigin
-    val srcLocalEnd: Long = contentInterval.hi - contentOrigin
-    val srcDuration: Long = srcLocalEnd - srcLocalStart
+    val srcLocalStart: Timespan = contentInterval.lo - contentOrigin
+    val srcLocalEnd: Timespan = contentInterval.hi - contentOrigin
+    val srcDuration: Timespan = srcLocalEnd - srcLocalStart
 
     sd.filledRectangle(getX, getY, getWidth, getHeight, Colors.ACCENT_LIGHT)
 
-    if (srcDuration > 0) {
+    if (srcDuration > Timespan.Zero) {
       val res: VdoRes = segment.source.asInstanceOf[VdoSource].vdoRes
 
-      val pxPerUs: Float = getWidth / srcDuration.toFloat
+      val pxPerUs: Float = getWidth / srcDuration.value.toFloat
       val aspect: Float = res.width.toFloat / res.height
       val thumbDisplayW: Float = getHeight * aspect
 
       var rawStep: Long = (thumbDisplayW / pxPerUs).toLong
       if (rawStep <= 0) rawStep = 1
-      val timeStep: Long = niceScale(rawStep)
+      val timeStep: Timespan = Timespan(niceScale(rawStep))
 
-      val gridOrigin: Long = (srcLocalStart / timeStep) * timeStep
-      val absVisibleStart: Long = srcLocalStart + (visibleStartX / pxPerUs).toLong
-      val absVisibleEnd: Long = srcLocalStart + (visibleEndX / pxPerUs).toLong
-      var firstT: Long = ((absVisibleStart - gridOrigin) / timeStep) * timeStep + gridOrigin
-      firstT = Math.max(gridOrigin, firstT)
-      val lastT: Long = Math.min(srcLocalEnd, absVisibleEnd)
+      val gridOrigin: Timespan = srcLocalStart.floorTo(timeStep)
+      val absVisibleStart: Timespan = srcLocalStart + (visibleStartX / pxPerUs).micros
+      val absVisibleEnd: Timespan = srcLocalStart + (visibleEndX / pxPerUs).micros
+      var firstT: Timespan = (absVisibleStart - gridOrigin).floorTo(timeStep) + gridOrigin
+      firstT = gridOrigin.max(firstT)
+      val lastT: Timespan = srcLocalEnd.min(absVisibleEnd)
 
       var lastRightEdge: Float = Float.NegativeInfinity
 
-      var t: Long = firstT
+      var t: Timespan = firstT
       while (t < lastT) {
         val tex: Texture = res.getPreview(t)
         if (tex != null) {
-          val x: Float = getX + (t - srcLocalStart) * pxPerUs
+          val x: Float = getX + (t - srcLocalStart).value * pxPerUs
 
           if (x + thumbDisplayW > lastRightEdge) {
             batch.draw(tex, x, getY, thumbDisplayW, getHeight)

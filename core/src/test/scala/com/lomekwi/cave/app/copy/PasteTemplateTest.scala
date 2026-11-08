@@ -2,7 +2,7 @@ package com.lomekwi.cave.app.copy
 
 import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{GdxTestBase, TestCont, TestTimeline, Timeline}
+import com.lomekwi.cave.timeline.{GdxTestBase, Instant, Interval, TestCont, TestTimeline, Timespan, Timeline}
 import com.lomekwi.cave.timeline.~~
 
 /**
@@ -12,6 +12,10 @@ class PasteTemplateTest extends GdxTestBase {
 
   private var project: TestProject = null
   private var timeline: TestTimeline = null
+
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  private def interval(lo: Long, hi: Long): Interval = at(lo) ~~ at(hi)
 
   override def beforeEach(context: BeforeEach): Unit = {
     project = new TestProject()
@@ -23,8 +27,8 @@ class PasteTemplateTest extends GdxTestBase {
     val t1 = timeline.getTrackOrCreate(1)
     val a = new TestCont(100)
     val b = new TestCont(100)
-    timeline.add(t0, a, 0 ~~ 100, 1000)
-    timeline.add(t1, b, 500 ~~ 600, 2000)
+    timeline.add(t0, a, interval(0, 100), at(1000))
+    timeline.add(t1, b, interval(500, 600), at(2000))
     var group = timeline.newGroup()
     group = timeline.groupAdd(group, a)
     group = timeline.groupAdd(group, b)
@@ -39,13 +43,13 @@ class PasteTemplateTest extends GdxTestBase {
 
     val ea = entries(0)
     assertEquals(ea.trackIndex, 0)
-    assertEquals(ea.interval, 0 ~~ 100)
-    assertEquals(ea.origin, 1000L)
+    assertEquals(ea.interval, interval(0, 100))
+    assertEquals(ea.origin, at(1000))
 
     val eb = entries(1)
     assertEquals(eb.trackIndex, 1)
-    assertEquals(eb.interval, 500 ~~ 600)
-    assertEquals(eb.origin, 2000L)
+    assertEquals(eb.interval, interval(500, 600))
+    assertEquals(eb.origin, at(2000))
 
     assert(ea.group.isDefined)
     assertEquals(eb.group, ea.group)
@@ -62,8 +66,8 @@ class PasteTemplateTest extends GdxTestBase {
     val t1 = timeline.getTrackOrCreate(1)
     val a = new TestCont(100)
     val b = new TestCont(100)
-    timeline.add(t0, a, 0 ~~ 100, 1000)
-    timeline.add(t1, b, 500 ~~ 600, 2000)
+    timeline.add(t0, a, interval(0, 100), at(1000))
+    timeline.add(t1, b, interval(500, 600), at(2000))
     var group = timeline.newGroup()
     group = timeline.groupAdd(group, a)
     group = timeline.groupAdd(group, b)
@@ -89,7 +93,7 @@ class PasteTemplateTest extends GdxTestBase {
   test("原片段删除后模板仍然可用".ignore) {
     val t0 = timeline.getTrackOrCreate(0)
     val a = new TestCont(100)
-    timeline.add(t0, a, 0 ~~ 100, 5000)
+    timeline.add(t0, a, interval(0, 100), at(5000))
 
     val selection = new SegmentSet(project.session)
     selection.add(a.id)
@@ -98,7 +102,7 @@ class PasteTemplateTest extends GdxTestBase {
     timeline.remove(a)
 
     assertEquals(template.entries.size, 1)
-    assertEquals(template.entries(0).interval, 0 ~~ 100)
-    assertEquals(template.entries(0).origin, 5000L)
+    assertEquals(template.entries(0).interval, interval(0, 100))
+    assertEquals(template.entries(0).origin, at(5000))
   }
 }

@@ -9,6 +9,7 @@ import com.badlogic.gdx.Input.Keys.*
 
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.playback.PlayState
+import com.lomekwi.cave.timeline.Instant
 
 /** 时间线空白区输入监听器，处理空白点击、播放头刷动、滚轮、右键菜单与快捷键。 */
 class TlInputListener(private final val timelineView: TimelineView) extends InputListener {
@@ -20,11 +21,11 @@ class TlInputListener(private final val timelineView: TimelineView) extends Inpu
     if (button == Input.Buttons.LEFT && !timelineView.marqueeActive) {
       timelineView.clearSelection()
       timelineView.playhead.beginScrub()
-      timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
+      timelineView.playhead.seek(timelineView.xToAbsoluteTime(x).max(Instant.Zero))
       scrubbing = true
       true
     } else if (button == Input.Buttons.RIGHT && event.getTarget.eq(event.getListenerActor)) {
-      timelineView.viewMenu.setContext(Math.max(timelineView.xToAbsoluteTime(x), 0))
+      timelineView.viewMenu.setContext(timelineView.xToAbsoluteTime(x).max(Instant.Zero))
       true
     } else {
       false
@@ -43,7 +44,7 @@ class TlInputListener(private final val timelineView: TimelineView) extends Inpu
 
   override def touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int): Unit = {
     if (!timelineView.marqueeActive) {
-      timelineView.playhead.seek(Math.max(timelineView.xToAbsoluteTime(x), 0))
+      timelineView.playhead.seek(timelineView.xToAbsoluteTime(x).max(Instant.Zero))
     }
   }
 

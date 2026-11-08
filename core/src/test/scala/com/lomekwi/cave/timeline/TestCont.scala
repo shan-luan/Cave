@@ -15,20 +15,20 @@ object TestCont {
 
   /** 按给定总时长产出空帧的最小源。 */
   private final class TestSource(duration: Long) extends Source[TestFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): TestFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): TestFrame = {
       new TestFrame(track.index)
     }
 
-    override def getLengthPerExportFrame: Long = {
-      1
+    override def getLengthPerExportFrame: Timespan = {
+      Timespan(1)
     }
 
-    override def getDuration: Long = {
-      duration
+    override def getDuration: Timespan = {
+      Timespan(duration)
     }
 
-    override def getDefaultDuration: Option[Long] = {
-      Some(duration)
+    override def getDefaultDuration: Option[Timespan] = {
+      Some(Timespan(duration))
     }
 
     override def displayName: String = {

@@ -3,6 +3,7 @@ package com.lomekwi.cave.resource.media
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.decoder.DecRes
+import com.lomekwi.cave.timeline.Timespan
 
 import java.io.ObjectInputStream
 import java.io.Serializable
@@ -16,7 +17,7 @@ import scala.util.Using
 @SerialVersionUID(1L)
 abstract class MedRes(val path: String) extends Resource with Serializable {
 
-  var duration: Long = 0
+  var duration: Timespan = Timespan.Zero
   var codecName: String = uninitialized
   var codec: Int = 0
 
@@ -26,7 +27,7 @@ abstract class MedRes(val path: String) extends Resource with Serializable {
     Using.resource(newDecoder()) { metadataDecRes =>
       metadataDecRes.start()
       generateMetadata(metadataDecRes)
-      this.duration = Math.max(0, metadataDecRes.getLengthInTime)
+      this.duration = Timespan.Zero.max(metadataDecRes.getLengthInTime)
     }
   } catch {
     case e: Exception =>
@@ -40,13 +41,13 @@ abstract class MedRes(val path: String) extends Resource with Serializable {
     pool.acquire(consumer)
   }
 
-  def get(consumer: AnyRef, time: Long, frame: Frame): Unit = {
+  def get(consumer: AnyRef, time: Timespan, frame: Frame): Unit = {
     val lease = acquire(consumer)
     try lease.dec.asInstanceOf[DecRes[Frame]].get(time, frame)
     finally lease.close()
   }
 
-  def sync(consumer: AnyRef, time: Long): Unit = {
+  def sync(consumer: AnyRef, time: Timespan): Unit = {
     val lease = acquire(consumer)
     try lease.dec.sync(time)
     finally lease.close()

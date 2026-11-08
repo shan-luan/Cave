@@ -9,14 +9,13 @@ import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.pipeline.image.ImgFrame
 import com.lomekwi.cave.resource.decoder.DecRes
 import com.lomekwi.cave.resource.decoder.ImgDecRes
+import com.lomekwi.cave.timeline.Timespan
 
 import java.io.ObjectInputStream
 import java.nio.ByteBuffer
 
 import scala.compiletime.uninitialized
 import scala.util.Using
-
-import com.lomekwi.cave.util.Units.SECOND
 
 @SerialVersionUID(1L)
 class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
@@ -40,7 +39,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     height = idr.getHeight
     val tmp = new ImgFrame(-1)
     try {
-      idr.get(0, tmp)
+      idr.get(Timespan.Zero, tmp)
       cachedPixels = idr.cachedPixels
       unpackRowLength = idr.unpackRowLength
       decoded = true
@@ -49,14 +48,14 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
   }
 
-  final val frameLength: Long = SECOND / 30
+  final val frameLength: Timespan = Timespan.SECOND / 30
 
-  override def get(consumer: AnyRef, time: Long, frame: Frame): Unit = {
+  override def get(consumer: AnyRef, time: Timespan, frame: Frame): Unit = {
     if (!decoded) {
       Using.resource(new ImgDecRes(this)) { dec =>
         dec.start()
         val tmp = new ImgFrame(-1)
-        dec.get(0, tmp)
+        dec.get(Timespan.Zero, tmp)
         cachedPixels = dec.cachedPixels
         unpackRowLength = dec.unpackRowLength
       }
@@ -67,7 +66,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     imgFrame.unpackRowLength = unpackRowLength
   }
 
-  override def sync(consumer: AnyRef, time: Long): Unit = {
+  override def sync(consumer: AnyRef, time: Timespan): Unit = {
   }
 
   private def getTexture: Texture = {
@@ -87,7 +86,7 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     }
   }
 
-  override def getPreview(time: Long): Texture = {
+  override def getPreview(time: Timespan): Texture = {
     getTexture
   }
 
@@ -95,8 +94,8 @@ class ImgRes(path: String) extends MedRes(path) with Previewable with Showable {
     getTexture
   }
 
-  override def getPreviewInterval: Long = {
-    SECOND
+  override def getPreviewInterval: Timespan = {
+    Timespan.SECOND
   }
 
   override def close(): Unit = {

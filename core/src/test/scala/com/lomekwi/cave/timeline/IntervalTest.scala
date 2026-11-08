@@ -2,59 +2,61 @@ package com.lomekwi.cave.timeline
 
 class IntervalTest extends munit.FunSuite {
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
   test("contains 不包含上端点") {
-    val r = 100 ~~ 200
-    assert(r.contains(100))
-    assert(r.contains(199))
-    assert(!(r.contains(200)))
-    assert(!(r.contains(99)))
+    val r = at(100) ~~ at(200)
+    assert(r.contains(at(100)))
+    assert(r.contains(at(199)))
+    assert(!(r.contains(at(200))))
+    assert(!(r.contains(at(99))))
   }
 
   test("空区间不包含任何时间点") {
-    val r = 100 ~~ 100
+    val r = at(100) ~~ at(100)
     assert(r.isEmpty)
-    assert(!(r.contains(100)))
+    assert(!(r.contains(at(100))))
   }
 
   test("intersects 要求存在公共点") {
-    assert((0 ~~ 10).intersects(5 ~~ 15))
-    assert(!((0 ~~ 10).intersects(10 ~~ 20)))
+    assert((at(0) ~~ at(10)).intersects(at(5) ~~ at(15)))
+    assert(!((at(0) ~~ at(10)).intersects(at(10) ~~ at(20))))
   }
 
   test("交集返回公共部分") {
-    assertEquals((0 ~~ 10) & (5 ~~ 15), Some(5 ~~ 10))
-    assertEquals((0 ~~ 10) & (-5 ~~ 10), Some(0 ~~ 10))
-    assertEquals((0 ~~ 10) & (2 ~~ 8), Some(2 ~~ 8))
-    assertEquals((2 ~~ 8) & (0 ~~ 10), (0 ~~ 10) & (2 ~~ 8))
+    assertEquals((at(0) ~~ at(10)) & (at(5) ~~ at(15)), Some(at(5) ~~ at(10)))
+    assertEquals((at(0) ~~ at(10)) & (at(-5) ~~ at(10)), Some(at(0) ~~ at(10)))
+    assertEquals((at(0) ~~ at(10)) & (at(2) ~~ at(8)), Some(at(2) ~~ at(8)))
+    assertEquals((at(2) ~~ at(8)) & (at(0) ~~ at(10)), (at(0) ~~ at(10)) & (at(2) ~~ at(8)))
   }
 
   test("不相交或仅相接时交集为空") {
-    assertEquals((0 ~~ 10) & (10 ~~ 20), None)
-    assertEquals((0 ~~ 10) & (20 ~~ 30), None)
-    assertEquals((20 ~~ 30) & (0 ~~ 10), None)
-    assert(((0 ~~ 10) & (20 ~~ 30)).isEmpty)
-    assert(!(((0 ~~ 10) & (9 ~~ 30)).isEmpty))
+    assertEquals((at(0) ~~ at(10)) & (at(10) ~~ at(20)), None)
+    assertEquals((at(0) ~~ at(10)) & (at(20) ~~ at(30)), None)
+    assertEquals((at(20) ~~ at(30)) & (at(0) ~~ at(10)), None)
+    assert(((at(0) ~~ at(10)) & (at(20) ~~ at(30))).isEmpty)
+    assert(!(((at(0) ~~ at(10)) & (at(9) ~~ at(30))).isEmpty))
   }
 
   test("与空区间求交为空") {
-    assertEquals((0 ~~ 10) & (5 ~~ 5), None)
-    assertEquals((5 ~~ 5) & (0 ~~ 10), None)
-    assertEquals((0 ~~ 0) & (0 ~~ 0), None)
+    assertEquals((at(0) ~~ at(10)) & (at(5) ~~ at(5)), None)
+    assertEquals((at(5) ~~ at(5)) & (at(0) ~~ at(10)), None)
+    assertEquals((at(0) ~~ at(0)) & (at(0) ~~ at(0)), None)
   }
 
   test("isConnected 把相邻也算作连通") {
-    assert((0 ~~ 10).isConnected(5 ~~ 15))
-    assert((0 ~~ 10).isConnected(10 ~~ 20))
-    assert(!((0 ~~ 10).isConnected(11 ~~ 20)))
+    assert((at(0) ~~ at(10)).isConnected(at(5) ~~ at(15)))
+    assert((at(0) ~~ at(10)).isConnected(at(10) ~~ at(20)))
+    assert(!((at(0) ~~ at(10)).isConnected(at(11) ~~ at(20))))
   }
 
   test("shift 同时移动两个端点") {
-    assertEquals((100 ~~ 200).shift(10), 110 ~~ 210)
-    assertEquals((100 ~~ 200).shift(-10), 90 ~~ 190)
+    assertEquals((at(100) ~~ at(200)).shift(Timespan(10)), at(110) ~~ at(210))
+    assertEquals((at(100) ~~ at(200)).shift(Timespan(-10)), at(90) ~~ at(190))
   }
 
   test("排序按字典序") {
-    val sorted = List(10 ~~ 20, 0 ~~ 5, 0 ~~ 3).sorted
-    assertEquals(sorted, List(0 ~~ 3, 0 ~~ 5, 10 ~~ 20))
+    val sorted = List(at(10) ~~ at(20), at(0) ~~ at(5), at(0) ~~ at(3)).sorted
+    assertEquals(sorted, List(at(0) ~~ at(3), at(0) ~~ at(5), at(10) ~~ at(20)))
   }
 }

@@ -13,8 +13,9 @@ import com.lomekwi.cave.app.shortcut.ShortcutAction
 import com.lomekwi.cave.playback.Playhead
 import com.lomekwi.cave.project.{Id, ProjectSession}
 import com.lomekwi.cave.timeline.*
+import com.lomekwi.cave.timeline.Timespan.*
 import com.lomekwi.cave.ui.{Colors, Focusable}
-import com.lomekwi.cave.util.Units.{SECOND, niceScale}
+import com.lomekwi.cave.util.niceScale
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -35,7 +36,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
   private[tlarea] final val view: TimelineView.ViewState = new TimelineView.ViewState()
 
   /** 拖拽吸附时的吸附时间点。 */
-  private[tlarea] var snapIndicatorTime: Long = -1
+  private[tlarea] var snapIndicatorTime: Option[Instant] = None
 
   private[tlarea] var dirty: Boolean = true
   private[tlarea] var selectedSegments: SegmentSet = uninitialized
@@ -62,8 +63,8 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
 
   session.bus.register(this)
 
-  this.view.startTime = 0
-  this.view.durationTime = Math.max(session.timeline.getLength, 30 * SECOND)
+  this.view.startTime = Instant.Zero
+  this.view.durationTime = 30.seconds.max(session.timeline.getLength - Instant.Zero)
   this.view.trackHeight = 80
 
   addDefaultListeners()
@@ -109,14 +110,12 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
       var acted = false
 
       if (!App.root.isTextInputFocused && (getStage.getKeyboardFocus eq this)) {
-        val timePerPixel: Float = view.durationTime.toFloat / getWidth
-
         if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_RIGHT)) {
-          view.startTime += (TimelineView.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong
+          view.startTime += view.durationTime * (TimelineView.KEY_HORIZONTAL_SPEED * delta.toDouble / getWidth)
           acted = true
         }
         if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_LEFT)) {
-          view.startTime = Math.max(0, view.startTime - (TimelineView.KEY_HORIZONTAL_SPEED * delta * timePerPixel).toLong)
+          view.startTime = Instant.Zero.max(view.startTime - view.durationTime * (TimelineView.KEY_HORIZONTAL_SPEED * delta.toDouble / getWidth))
           acted = true
         }
         if (App.shortcutManager.isActive(TimelineView.Actions.SCROLL_DOWN)) {
@@ -206,8 +205,8 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     batch.setColor(Color.WHITE)
     super.draw(batch, parentAlpha)
     renderer.drawPlayhead()
-    if (snapIndicatorTime >= 0) {
-      val x = absoluteTimeToX(snapIndicatorTime)
+    snapIndicatorTime.foreach { time =>
+      val x = absoluteTimeToX(time)
       renderer.shapeDrawer.line(x, 0, x, getHeight, Colors.SNAP_GUIDE, 2)
     }
     if (marqueeActive) {
@@ -224,16 +223,16 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     session.bus.unregister(this)
   }
 
-  private[tlarea] def absoluteTimeToX(time: Long): Float = {
+  private[tlarea] def absoluteTimeToX(time: Instant): Float = {
     view.timeToX(time, getWidth)
   }
 
-  private[tlarea] def xToAbsoluteTime(x: Float): Long = {
+  private[tlarea] def xToAbsoluteTime(x: Float): Instant = {
     view.xToTime(x, getWidth)
   }
 
   private[tlarea] def seekPlayheadAtX(x: Float): Unit = {
-    playhead.seek(Math.max(xToAbsoluteTime(x), 0))
+    playhead.seek(xToAbsoluteTime(x).max(Instant.Zero))
   }
 
   /** 单选/追加选择，选中的是组则整组一起切换。 */
@@ -292,7 +291,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
   }
 
   /** 右键菜单“分割”入口。 */
-  private[tlarea] def split(segmentActor: TlSegmentActor, time: Long): Unit = {
+  private[tlarea] def split(segmentActor: TlSegmentActor, time: Instant): Unit = {
     splitSegment(segmentActor.id, time)
     dirty = true
   }
@@ -313,7 +312,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     }
   }
 
-  private def splitSegment(id: Id, time: Long): Unit = {
+  private def splitSegment(id: Id, time: Instant): Unit = {
     if (timeline.findTrackOf(id).isEmpty) return
     val group = timeline.getGroup(id)
     val members: Seq[Id] = group.map(_.toList).getOrElse(List(id))
@@ -324,8 +323,8 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     for (memberId <- members) {
       session.timeline.findTrackOf(memberId).foreach { memberTrack =>
         val interval = memberTrack.interval(memberId)
-        val start: Long = interval.lo
-        val end: Long = interval.hi
+        val start: Instant = interval.lo
+        val end: Instant = interval.hi
         if (time > start && time < end) {
           session.applyProject(p => p.withTimeline(p.timeline.split(memberTrack, time)))
           beforeSegments += memberId
@@ -433,15 +432,16 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     private[tlarea] def drawBackground(): Unit = {
       shapeDrawer.filledRectangle(0, 0, getWidth, getHeight, Colors.TIMELINE_BG)
 
-      val startX = absoluteTimeToX(0)
+      val startX = absoluteTimeToX(Instant.Zero)
       val endX = absoluteTimeToX(timeline.getLength)
 
       shapeDrawer.filledRectangle(startX, 0, endX - startX, getHeight, Colors.TIMELINE_OVERLAY)
     }
 
     private[tlarea] def drawTicks(): Unit = {
-      val interval = niceScale((view.durationTime * TimelineRenderer.PIXELS_PER_TICK / getWidth).toLong)
-      val start = (view.startTime / interval) * interval
+      val rawInterval = view.durationTime * (TimelineRenderer.PIXELS_PER_TICK / getWidth)
+      val interval = Timespan(niceScale(rawInterval.value))
+      val start = view.startTime.floorTo(interval)
 
       var t = start
       while (t < view.startTime + view.durationTime) {
@@ -512,17 +512,17 @@ object TimelineView {
   }
 
   private[tlarea] class ViewState {
-    private[tlarea] var startTime: Long = 0
-    private[tlarea] var durationTime: Long = 0
+    private[tlarea] var startTime: Instant = Instant.Zero
+    private[tlarea] var durationTime: Timespan = Timespan.Zero
     private[tlarea] var trackHeight: Float = 0
     private[tlarea] var trackYShift: Float = 0
 
-    private[tlarea] def timeToX(time: Long, width: Float): Float = {
-      (time - startTime).toFloat / durationTime * width
+    private[tlarea] def timeToX(time: Instant, width: Float): Float = {
+      (time - startTime).value.toFloat / durationTime.value * width
     }
 
-    private[tlarea] def xToTime(x: Float, width: Float): Long = {
-      startTime + ((x / width) * durationTime).toLong
+    private[tlarea] def xToTime(x: Float, width: Float): Instant = {
+      startTime + durationTime * (x.toDouble / width)
     }
 
     private[tlarea] def visibleInterval(): Interval = {
@@ -535,18 +535,18 @@ object TimelineView {
       if (scaleFactor <= 0f) {
         false
       } else {
-        var newDuration = (oldDuration * scaleFactor).toLong
-        if (newDuration <= SECOND) newDuration = SECOND
+        var newDuration = oldDuration * scaleFactor
+        if (newDuration <= Timespan.SECOND) newDuration = Timespan.SECOND
 
-        val anchorTime = startTime + (anchorXRatio * oldDuration).toLong
+        val anchorTime = startTime + oldDuration * anchorXRatio
         durationTime = newDuration
-        startTime = Math.max(anchorTime - (anchorXRatio * newDuration).toLong, 0)
+        startTime = Instant.Zero.max(anchorTime - newDuration * anchorXRatio)
         true
       }
     }
 
     private[tlarea] def scrollHorizontal(deltaPixels: Float, width: Float): Unit = {
-      startTime = Math.max(startTime + (xToTime(deltaPixels, width) - xToTime(0, width)), 0)
+      startTime = Instant.Zero.max(startTime + durationTime * (deltaPixels.toDouble / width))
     }
 
     private[tlarea] def scrollVertical(delta: Float): Unit = {

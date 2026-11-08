@@ -17,11 +17,18 @@ class TrackTransitionTest extends GdxTestBase {
 
   private def newSegment(duration: Long): Content = new TestCont(duration)
 
-  private def place(track: Track, segment: Content, interval: Interval, origin: Long = 0L): Unit = {
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  private def span(value: Long): Timespan = Timespan(value)
+
+  extension (lo: Int)
+    private def ~~(hi: Int): Interval = Interval(at(lo), at(hi))
+
+  private def place(track: Track, segment: Content, interval: Interval, origin: Instant = Instant.Zero): Unit = {
     timeline.add(track, segment, interval, origin)
   }
 
-  private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
+  private def transitionOf(track: Track, time: Long): Transition = track.get(at(time)) match {
     case t: Transition => t
     case _ => null
   }
@@ -55,12 +62,12 @@ class TrackTransitionTest extends GdxTestBase {
     val transition = transitionOf(t0, 600)
     assert((transition) != null)
 
-    assert((a) eq (t0.get(499)))
-    assert((transition) eq (t0.get(500)))
-    assert((transition) eq (t0.get(999)))
-    assert((b) eq (t0.get(1000)))
-    assert((b) eq (t0.get(1499)))
-    assert(t0.get(1500).isInstanceOf[Gap])
+    assert((a) eq (t0.get(at(499))))
+    assert((transition) eq (t0.get(at(500))))
+    assert((transition) eq (t0.get(at(999))))
+    assert((b) eq (t0.get(at(1000))))
+    assert((b) eq (t0.get(at(1499))))
+    assert(t0.get(at(1500)).isInstanceOf[Gap])
   }
 
   test("intervalAt 优先返回转场而非覆盖它的内容") {
@@ -70,9 +77,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    assertEquals(t0.intervalAt(100), 0 ~~ 1000)
-    assertEquals(t0.intervalAt(600), 500 ~~ 1000)
-    assertEquals(t0.intervalAt(1200), 500 ~~ 1500)
+    assertEquals(t0.intervalAt(at(100)), 0 ~~ 1000)
+    assertEquals(t0.intervalAt(at(600)), 500 ~~ 1000)
+    assertEquals(t0.intervalAt(at(1200)), 500 ~~ 1500)
   }
 
   test("三方重叠被拒绝") {
@@ -83,7 +90,7 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    assert(!timeline.add(t0, c, 800 ~~ 1800, 0L))
+    assert(!timeline.add(t0, c, 800 ~~ 1800, Instant.Zero))
     assertEquals(t0.size, 3)
   }
 
@@ -94,9 +101,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, a, 0 ~~ 1000)
     place(t0, b, 500 ~~ 1500)
 
-    val applied: Long = timeline.setEnd(Seq(a), 100000)
+    val applied: Timespan = timeline.setEnd(Seq(a), span(100000))
 
-    assertEquals(applied, 499L)
+    assertEquals(applied, span(499))
     assertEquals(t0.interval(a), 0 ~~ 1499)
     assertEquals(t0.interval(b), 500 ~~ 1500)
   }
@@ -110,9 +117,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, b, 500 ~~ 2000)
     place(t0, c, 1500 ~~ 2500)
 
-    val applied: Long = timeline.setEnd(Seq(a), 100000)
+    val applied: Timespan = timeline.setEnd(Seq(a), span(100000))
 
-    assertEquals(applied, 500L)
+    assertEquals(applied, span(500))
     assertEquals(t0.interval(a), 0 ~~ 1500)
   }
 
@@ -127,7 +134,7 @@ class TrackTransitionTest extends GdxTestBase {
     val transition = transitionOf(t0, 600)
     assert((transition) != null)
 
-    timeline.moveTime(Seq(c), 100)
+    timeline.moveTime(Seq(c), span(100))
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(c), 2100 ~~ 3100)
@@ -177,9 +184,9 @@ class TrackTransitionTest extends GdxTestBase {
     place(t0, c, 500 ~~ 2000)
     place(t0, b, 1200 ~~ 2500)
 
-    val applied: Long = timeline.setEnd(Seq(c), -100000)
+    val applied: Timespan = timeline.setEnd(Seq(c), span(-100000))
 
-    assertEquals(applied, -999L)
+    assertEquals(applied, span(-999))
     assertEquals(t0.interval(c), 500 ~~ 1001)
     assertEquals(t0.interval(a), 0 ~~ 1000)
   }
@@ -210,7 +217,7 @@ class TrackTransitionTest extends GdxTestBase {
     val b = new NoTransitionCont(1000)
     place(t0, a, 0 ~~ 1000)
 
-    assert(!timeline.add(t0, b, 500 ~~ 1500, 0L))
+    assert(!timeline.add(t0, b, 500 ~~ 1500, Instant.Zero))
     assertEquals(t0.size, 1)
   }
 }

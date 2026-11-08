@@ -1,6 +1,6 @@
 package com.lomekwi.cave.resource.decoder
 
-import com.lomekwi.cave.util.Units.SECOND
+import com.lomekwi.cave.timeline.Timespan
 import org.bytedeco.ffmpeg.global.avutil.AV_SAMPLE_FMT_FLT
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.resource.media.AudRes
@@ -22,26 +22,26 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     grabber.grabSamples()
   }
 
-  override def seek(time: Long): Unit = {
+  override def seek(time: Timespan): Unit = {
     seek(time, 0)
   }
 
   @tailrec
-  private def seek(time: Long, retry: Int): Unit = {
+  private def seek(time: Timespan, retry: Int): Unit = {
     bufLen = 0
     try {
-      grabber.setAudioTimestamp(time)
+      grabber.setAudioTimestamp(time.value)
     } catch {
       case e: FFmpegFrameGrabber.Exception =>
         if (retry >= 10) {
           throw e
         }
-        seek(time + 1000, retry + 1)
+        seek(time + Timespan(1_000), retry + 1)
     }
   }
 
 
-  override def sync(time: Long): Unit = {
+  override def sync(time: Timespan): Unit = {
     if (!initialized) {
       start()
     }
@@ -49,7 +49,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     seek(validTime)
   }
 
-  override def get(time: Long, frame: AudFrame): Unit = {
+  override def get(time: Timespan, frame: AudFrame): Unit = {
     if (!initialized) {
       start()
     }
@@ -81,7 +81,7 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
           frame.samples = null
           return
         }
-        if (f.timestamp + lengthPerFrame >= time) {
+        if (Timespan(f.timestamp) + lengthPerFrame >= time) {
           val sb = f.samples(0).asInstanceOf[FloatBuffer]
           val remaining = sb.remaining()
           if (remaining <= FRAME_SIZE) {
@@ -150,8 +150,8 @@ class AudDecRes(segment: AudRes) extends DecRes[AudFrame](segment) {
     grabber.getAudioCodec
   }
 
-  override def lengthPerFrame: Long = {
-    FRAME_SIZE / 2 * SECOND / 44100
+  override def lengthPerFrame: Timespan = {
+    Timespan(FRAME_SIZE / 2 * Timespan.SECOND.value / 44100)
   }
 }
 

@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.audio
 import com.lomekwi.cave.app.AppAudioOut
 import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSegmentActor, TlSegmentActor}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
@@ -12,14 +12,14 @@ import com.lomekwi.cave.util.i18n.TransTargetType.given
 @SerialVersionUID(1L)
 class AudSource(var audRes: AudRes) extends Source[AudFrame] {
   addOutPort(new Node.OutPort[Double](("时长".in(Zh) | "Duration".in(En)).str(), classOf[Double]) {
-    override def getData: Double = getDuration.toDouble
+    override def getData: Double = getDuration.value
   })
 
-  override def sync(time: Long, track: Track, segment: Segment): Unit = {
+  override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
     audRes.sync(segment, time)
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment): AudFrame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): AudFrame = {
     if (frame == null || frame.trackIndex != track.index) {
       frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track.index, segment.id)
     }
@@ -33,15 +33,15 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
     }
   }
 
-  override def getLengthPerExportFrame: Long = {
+  override def getLengthPerExportFrame: Timespan = {
     audRes.frameLength
   }
 
-  override def getDuration: Long = {
+  override def getDuration: Timespan = {
     audRes.duration
   }
 
-  override def getDefaultDuration: Option[Long] = {
+  override def getDefaultDuration: Option[Timespan] = {
     Some(audRes.duration)
   }
 

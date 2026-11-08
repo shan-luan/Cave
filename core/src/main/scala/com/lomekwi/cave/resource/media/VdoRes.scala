@@ -1,6 +1,6 @@
 package com.lomekwi.cave.resource.media
 
-import com.lomekwi.cave.util.Units.SECOND
+import com.lomekwi.cave.timeline.Timespan
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
@@ -22,7 +22,7 @@ import scala.compiletime.uninitialized
 class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   var width: Int = scala.compiletime.uninitialized
   var height: Int = scala.compiletime.uninitialized
-  var frameLength: Long = scala.compiletime.uninitialized
+  var frameLength: Timespan = scala.compiletime.uninitialized
 
   @transient private lazy val thumbnailer: Thumbnailer = new Thumbnailer()
 
@@ -41,7 +41,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     new VdoDecRes(this)
   }
 
-  override def getPreview(time: Long): Texture = {
+  override def getPreview(time: Timespan): Texture = {
     thumbnailer.get(time)
   }
 
@@ -49,15 +49,15 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     thumbnailer.get(duration / 2)
   }
 
-  override def getPreviewInterval: Long = {
+  override def getPreviewInterval: Timespan = {
     thumbnailer.interval
   }
 
-  def getThumbnail(srcTime: Long): Texture = {
+  def getThumbnail(srcTime: Timespan): Texture = {
     thumbnailer.get(srcTime)
   }
 
-  def getThumbInterval: Long = {
+  def getThumbInterval: Timespan = {
     thumbnailer.interval
   }
 
@@ -70,7 +70,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
   private class Thumbnailer {
     import com.lomekwi.cave.resource.media.Thumbnailer.*
 
-    private[media] final val interval: Long = SECOND
+    private[media] final val interval: Timespan = Timespan.SECOND
     private[media] final val slotCount: Int = (duration / interval).toInt + 1
     private final val cache: IntMap[Texture] = new IntMap[Texture]()
     private final val queued: Array[Boolean] = new Array[Boolean](slotCount)
@@ -85,7 +85,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
     private final val batchPixmaps: Array[Pixmap] = new Array[Pixmap](BATCH_SIZE)
     private var batchCount: Int = 0
 
-    private[media] def get(srcTime: Long): Texture = {
+    private[media] def get(srcTime: Timespan): Texture = {
       var idx = (srcTime / interval).toInt
       if (idx < 0) {
         idx = 0
@@ -127,7 +127,7 @@ class VdoRes(path: String) extends MedRes(path) with Previewable with Showable {
             running = false
           } else {
             try {
-              val t = idx.toLong * interval
+              val t = interval * idx.toLong
               dec.sync(t)
               val f: Frame = dec.grab()
               if (f != null && f.image != null && f.image(0).isInstanceOf[ByteBuffer]) {

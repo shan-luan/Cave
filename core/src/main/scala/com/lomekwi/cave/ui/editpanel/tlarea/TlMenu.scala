@@ -8,7 +8,7 @@ import com.kotcrab.vis.ui.widget.PopupMenu
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
-import com.lomekwi.cave.timeline.{Boundless, Content, Interval, Segment}
+import com.lomekwi.cave.timeline.{Boundless, Content, Instant, Interval, Segment, Timespan}
 import com.lomekwi.cave.timeline.~~
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
@@ -27,7 +27,7 @@ import scala.collection.mutable
 import scala.compiletime.uninitialized
 
 class TlMenu private[tlarea] (private final val timelineView: TimelineView) extends PopupMenu {
-  private var time: Long = 0L
+  private var time: Instant = Instant.Zero
 
   {
     val addMenu: PopupMenu = new PopupMenu()
@@ -38,7 +38,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     this.addItem(addItem)
   }
 
-  def setContext(time: Long): Unit = {
+  def setContext(time: Instant): Unit = {
     this.time = time
   }
 
@@ -69,7 +69,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
   private def onAddText(): Unit = {
     val segment: Content = new Boundless(timelineView.session.idGenerator.genId, new TextSource())
-    val duration: Long = segment.getDefaultDuration
+    val duration: Timespan = segment.getDefaultDuration
 
     val session = timelineView.session
     val interval: Interval = time ~~ (time + duration)
@@ -101,8 +101,8 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
 
         session.snapshot()
         for (segment <- segments) {
-          val duration: Long = segment.getDefaultDuration
-          if (duration > 0) {
+          val duration: Timespan = segment.getDefaultDuration
+          if (duration > Timespan.Zero) {
             var targetTrack: Int = baseTrack + trackOffset
             val interval: Interval = time ~~ (time + duration)
             var placed = false

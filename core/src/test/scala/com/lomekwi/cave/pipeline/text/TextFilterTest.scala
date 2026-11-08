@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.lomekwi.cave.pipeline.{Frame, Source}
 import com.lomekwi.cave.project.TestIds
-import com.lomekwi.cave.timeline.{Boundless, Segment, Track}
+import com.lomekwi.cave.timeline.{Boundless, Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 import TextFilterTest.*
@@ -18,7 +18,7 @@ class TextFilterTest extends munit.FunSuite {
     val segment = new TxtCont
     segment.attach(new TextFilter())
 
-    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
+    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
   test("全部替换时重写所有匹配") {
@@ -28,7 +28,7 @@ class TextFilterTest extends munit.FunSuite {
     filter.setReplacement("0")
     segment.attach(filter)
 
-    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, "hell0 w0rld")
+    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, "hell0 w0rld")
   }
 
   test("无匹配时保留原文") {
@@ -38,7 +38,7 @@ class TextFilterTest extends munit.FunSuite {
     filter.setReplacement("!")
     segment.attach(filter)
 
-    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
+    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
   test("正则非法时保留原文") {
@@ -48,7 +48,7 @@ class TextFilterTest extends munit.FunSuite {
     filter.setReplacement("!")
     segment.attach(filter)
 
-    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, ORIGIN)
+    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, ORIGIN)
   }
 
   test("正则变化使已编译模式失效") {
@@ -57,12 +57,12 @@ class TextFilterTest extends munit.FunSuite {
     filter.setRegex("o")
     filter.setReplacement("0")
     segment.attach(filter)
-    segment.get(0, null)
+    segment.get(Timespan.Zero, null)
 
     filter.setRegex("l")
     filter.setReplacement("L")
 
-    assertEquals(segment.get(0, null).asInstanceOf[TextFrame].getText, "heLLo worLd")
+    assertEquals(segment.get(Timespan.Zero, null).asInstanceOf[TextFrame].getText, "heLLo worLd")
   }
 }
 
@@ -72,7 +72,7 @@ object TextFilterTest {
   private final class TxtCont extends Boundless(TestIds.nextId(), new TxtSource)
 
   private final class TxtSource extends Source[TextFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): TextFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): TextFrame = {
       if (frame == null) {
         frame = new TextFrame(-1)
       }
@@ -80,15 +80,15 @@ object TextFilterTest {
       frame
     }
 
-    override def getLengthPerExportFrame: Long = {
-      1
+    override def getLengthPerExportFrame: Timespan = {
+      Timespan(1)
     }
 
-    override def getDuration: Long = {
-      Long.MaxValue
+    override def getDuration: Timespan = {
+      Timespan.MaxValue
     }
 
-    override def getDefaultDuration: Option[Long] = {
+    override def getDefaultDuration: Option[Timespan] = {
       None
     }
 
@@ -110,22 +110,22 @@ object TextFilterTest {
   private final class RendCont extends Boundless(TestIds.nextId(), new RendSource)
 
   private final class RendSource extends Source[RendFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): RendFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): RendFrame = {
       if (frame == null) {
         frame = new RendFrame
       }
       frame
     }
 
-    override def getLengthPerExportFrame: Long = {
-      1
+    override def getLengthPerExportFrame: Timespan = {
+      Timespan(1)
     }
 
-    override def getDuration: Long = {
-      Long.MaxValue
+    override def getDuration: Timespan = {
+      Timespan.MaxValue
     }
 
-    override def getDefaultDuration: Option[Long] = {
+    override def getDefaultDuration: Option[Timespan] = {
       None
     }
 

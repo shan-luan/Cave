@@ -10,7 +10,6 @@ import com.lomekwi.cave.project.{Project, ProjectSession}
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.task.{ExportOptions, ExportOptionsSet, ExportPresetsChangedEvent, VideoExportTask}
 import com.lomekwi.cave.ui.widget.FileChooserField
-import com.lomekwi.cave.util.Units.MEGA
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -164,13 +163,15 @@ class ExportDialog(private val session: ProjectSession) extends VisDialog(("导�
   }
 
   private def collectOptions(): ExportOptions = {
-    new ExportOptions(
+    val options = new ExportOptions(
       fileChooserField.getPath,
       widthModel.getValue,
       heightModel.getValue,
       fpsModel.getValue,
-      (bitrateModel.getValue * MEGA).toInt
+      0
     )
+    options.setBitrateMbps(bitrateModel.getValue)
+    options
   }
 
   private def applyOptions(opts: ExportOptions): Unit = {
@@ -193,14 +194,15 @@ class ExportDialog(private val session: ProjectSession) extends VisDialog(("导�
       val width: Int = widthModel.getValue
       val height: Int = heightModel.getValue
       val fps: Double = fpsModel.getValue.toDouble
-      val bitrate: Int = (bitrateModel.getValue * MEGA).toInt
+      val opts = new ExportOptions(path, width, height, fps, 0)
+      opts.setBitrateMbps(bitrateModel.getValue)
 
       val snapshot: Project = Project.dump(session.project)
       val task = new VideoExportTask(
         snapshot.timeline,
         snapshot,
         new java.io.File(path),
-        width, height, fps, bitrate
+        width, height, fps, opts.bitrate
       )
       App.taskPool.submit(task)
       App.root.toastManager.show(("开始导出：".in(Zh) | "Starting export: ".in(En)).str() + new java.io.File(path).getName, 2f)

@@ -14,13 +14,15 @@ class AudTransitionTrackTest extends GdxTestBase {
 
   private var timeline: TestTimeline = null
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
   override def beforeEach(context: BeforeEach): Unit = {
     timeline = new TestProject().timeline
   }
 
   /** 产出固定填充值帧的音频探针源。 */
   private class AudProbeSource(fill: Float) extends Source[AudFrame] {
-    override protected def produce(time: Long, track: Track, segment: Segment): AudFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): AudFrame = {
       if (frame == null || frame.trackIndex != track.index) {
         frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track.index)
       }
@@ -28,11 +30,11 @@ class AudTransitionTrackTest extends GdxTestBase {
       frame
     }
 
-    override def getLengthPerExportFrame: Long = 1
+    override def getLengthPerExportFrame: Timespan = Timespan(1)
 
-    override def getDuration: Long = 1000L
+    override def getDuration: Timespan = Timespan(1000)
 
-    override def getDefaultDuration: Option[Long] = Some(1000L)
+    override def getDefaultDuration: Option[Timespan] = Some(Timespan(1000))
 
     override def displayName: String = "aud-probe"
 
@@ -49,17 +51,17 @@ class AudTransitionTrackTest extends GdxTestBase {
 
   test("重叠的音频片段推导出交叉淡化转场") {
     val track = timeline.getTrackOrCreate(0)
-    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(0.5f)), 0L ~~ 1000L, 0L)
-    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(-0.25f)), 500L ~~ 1500L, 500L)
+    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(0.5f)), at(0) ~~ at(1000), Instant.Zero)
+    timeline.add(track, new Clip(TestIds.nextId(), new AudProbeSource(-0.25f)), at(500) ~~ at(1500), at(500))
     val current = timeline.getTrackOrCreate(0)
 
-    val transition = current.get(600L) match {
+    val transition = current.get(at(600)) match {
       case t: Transition => t
       case other => fail("重叠处应是转场，实际: " + other)
     }
     assert(transition.source.isInstanceOf[AudCrossfadeSource])
 
-    val mixed = current.frameAt(transition, 600L).asInstanceOf[AudFrame]
+    val mixed = current.frameAt(transition, at(600)).asInstanceOf[AudFrame]
     val expected = 0.5f * math.cos(0.2f * math.Pi / 2).toFloat - 0.25f * math.sin(0.2f * math.Pi / 2).toFloat
     assertEqualsFloat(mixed.samples(0), expected, 1e-5f)
   }

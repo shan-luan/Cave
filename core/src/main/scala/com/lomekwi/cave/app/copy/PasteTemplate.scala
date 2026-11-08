@@ -1,7 +1,7 @@
 package com.lomekwi.cave.app.copy
 
 import com.lomekwi.cave.project.Id
-import com.lomekwi.cave.timeline.{Content, Interval, Segment, SegmentGroup, Timeline, Transition}
+import com.lomekwi.cave.timeline.{Content, Instant, Interval, Segment, SegmentGroup, Timeline, Transition}
 
 import scala.collection.mutable
 
@@ -18,7 +18,7 @@ class PasteTemplate private (val entries: mutable.ArrayBuffer[PasteTemplate.Entr
 }
 
 object PasteTemplate {
-  case class Entry(trackIndex: Int, segment: Content, interval: Interval, origin: Long, group: Option[SegmentGroup])
+  case class Entry(trackIndex: Int, segment: Content, interval: Interval, origin: Instant, group: Option[SegmentGroup])
 
   /** 把时间线上的一批片段抓成模板。 */
   def of(segments: Iterable[Segment], timeline: Timeline): PasteTemplate = {

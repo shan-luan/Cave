@@ -2,6 +2,7 @@ package com.lomekwi.cave.resource.decoder
 
 import com.lomekwi.cave.pipeline.image.ImgFrame
 import com.lomekwi.cave.resource.media.ImgRes
+import com.lomekwi.cave.timeline.Timespan
 import org.bytedeco.javacv.Frame
 
 import java.nio.ByteBuffer
@@ -39,17 +40,17 @@ class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
     grabber.getImageHeight
   }
 
-  override def lengthPerFrame: Long = {
-    0
+  override def lengthPerFrame: Timespan = {
+    Timespan.Zero
   }
 
-  override def sync(time: Long): Unit = {
+  override def sync(time: Timespan): Unit = {
     if (!initialized) {
       start()
     }
   }
 
-  override def get(time: Long, frame: ImgFrame): Unit = {
+  override def get(time: Timespan, frame: ImgFrame): Unit = {
     if (!initialized) {
       start()
     }
@@ -72,7 +73,7 @@ class ImgDecRes(segment: ImgRes) extends DecRes[ImgFrame](segment) {
     }
   }
 
-  override def seek(time: Long): Unit = {
+  override def seek(time: Timespan): Unit = {
   }
 
   override def codecName: String = {

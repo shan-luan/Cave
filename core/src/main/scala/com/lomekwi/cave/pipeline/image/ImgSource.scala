@@ -1,6 +1,5 @@
 package com.lomekwi.cave.pipeline.image
 
-import com.lomekwi.cave.util.Units.SECOND
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -10,7 +9,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.ImgRes
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlImgSegmentActor, TlSegmentActor}
 
 import java.util.concurrent.CountDownLatch
@@ -27,11 +26,11 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     override def getData: Double = imgRes.height.toDouble
   })
 
-  override def sync(time: Long, track: Track, segment: Segment): Unit = {
+  override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
     imgRes.sync(segment, time)
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment): ImgFrame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): ImgFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -64,16 +63,16 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
     frame
   }
 
-  override def getLengthPerExportFrame: Long = {
+  override def getLengthPerExportFrame: Timespan = {
     imgRes.frameLength
   }
 
-  override def getDuration: Long = {
-    Long.MaxValue
+  override def getDuration: Timespan = {
+    Timespan.MaxValue
   }
 
-  override def getDefaultDuration: Option[Long] = {
-    Some(5 * SECOND)
+  override def getDefaultDuration: Option[Timespan] = {
+    Some(Timespan.SECOND * 5)
   }
 
   override def displayName: String = {

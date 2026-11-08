@@ -7,6 +7,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.resource.decoder.DecRes
+import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.ui.Colors
 
 import java.io.ObjectInputStream
@@ -17,7 +18,7 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
-  var frameLength: Long = scala.compiletime.uninitialized
+  var frameLength: Timespan = scala.compiletime.uninitialized
 
   @transient private var waveformerRef: Waveformer = uninitialized
   @transient private var singleWaveform: SingleWaveform = uninitialized
@@ -44,12 +45,12 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
     getWaveformer
   }
 
-  override def getPreview(time: Long): Texture = {
+  override def getPreview(time: Timespan): Texture = {
     getWaveformer.queueSlot(time)
     getWaveformer.waveTex
   }
 
-  override def getPreviewInterval: Long = {
+  override def getPreviewInterval: Timespan = {
     getWaveformer.bucketDuration
   }
 
@@ -104,11 +105,11 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
         val frame = new AudFrame(44100, -1)
         val peaks = new Array[Float](W)
         val frameLen = dec.lengthPerFrame
-        var t = 0L
+        var t = Timespan.Zero
         var col = 0
         var continueLoop = true
         while (col < W && continueLoop) {
-          val colEnd = (col + 1) * duration / W
+          val colEnd = duration * (col + 1).toLong / W
           dec.get(t, frame)
           val samples = frame.samples
           if (samples == null) {
@@ -165,8 +166,8 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
   class Waveformer private[media] {
     import com.lomekwi.cave.resource.media.Waveformer.*
 
-    final val bucketDuration: Long = 1_000_000L / DECIMATED_RATE
-    final val totalBuckets: Int = Math.max(1, (duration / 1_000_000L * DECIMATED_RATE).toInt)
+    final val bucketDuration: Timespan = Timespan.SECOND / DECIMATED_RATE
+    final val totalBuckets: Int = Math.max(1, (duration / Timespan.SECOND * DECIMATED_RATE).toInt)
     final val texWidth: Int = 512
     final val texHeight: Int = (totalBuckets + texWidth - 1) / texWidth
 
@@ -194,7 +195,7 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
       waveTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
     })
 
-    private[media] def queueSlot(time: Long): Unit = {
+    private[media] def queueSlot(time: Timespan): Unit = {
       var idx = (time / bucketDuration).toInt
       if (idx < 0) {
         idx = 0
@@ -243,11 +244,11 @@ class AudRes(path: String) extends MedRes(path) with Previewable with Showable {
             running = false
           } else {
             util.Arrays.sort(slots, 0, count)
-            dec.sync(slots(0).toLong * bucketDuration)
+            dec.sync(bucketDuration * slots(0).toLong)
 
             for (i <- 0 until count) {
               try {
-                val t = slots(i).toLong * bucketDuration
+                val t = bucketDuration * slots(i).toLong
                 dec.get(t, frame)
                 val samples = frame.samples
                 if (samples != null) {

@@ -2,12 +2,14 @@ package com.lomekwi.cave.ui.editpanel.tlarea
 
 import com.lomekwi.cave.app.selection.SegmentSet
 import com.lomekwi.cave.project.TestProject
-import com.lomekwi.cave.timeline.{Content, GdxTestBase, Segment, TestCont, TestTimeline, Timeline, Track, Transition}
+import com.lomekwi.cave.timeline.{Content, GdxTestBase, Instant, Interval, Segment, TestCont, TestTimeline, Timespan, Timeline, Track, Transition}
 import com.lomekwi.cave.timeline.~~
 
 import org.objenesis.ObjenesisStd
 
 import java.lang.reflect.Field
+
+import scala.annotation.targetName
 
 import TimelineViewDragSimTest.*
 
@@ -33,28 +35,38 @@ class TimelineViewDragSimTest extends GdxTestBase {
     setField(tl, "dirty", true)
 
     view = new TimelineView.ViewState()
-    view.startTime = 0
-    view.durationTime = DURATION_US
+    view.startTime = Instant.Zero
+    view.durationTime = Timespan(DURATION_US)
     view.trackHeight = TRACK_H
     view.trackYShift = 0
     setField(tl, "view", view)
   }
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  private def span(value: Long): Timespan = Timespan(value)
+
+  extension (lo: Long)
+    private def ~~(hi: Long): Interval = Interval(at(lo), at(hi))
+
   private def newSegment(duration: Long): Content = {
     new TestCont(duration)
   }
 
-  private def absX(time: Long): Float = {
+  private def absX(time: Instant): Float = {
     view.timeToX(time, tl.getWidth)
   }
+
+  @targetName("absXLong")
+  private def absX(time: Long): Float = absX(at(time))
 
   private def trackTopY(index: Int): Float = {
     tl.getHeight + view.trackYShift - (index + 1) * view.trackHeight
   }
 
   /** 在模型上放置一个片段，并按 [[TimelineView.act]] 的重建逻辑摆好 Actor。 */
-  private def place(track: Track, segment: Content, start: Long, end: Long, origin: Long): TlSegmentActor = {
-    timeline.add(track, segment, start ~~ end, origin)
+  private def place(track: Track, segment: Content, start: Instant, end: Instant, origin: Instant): TlSegmentActor = {
+    timeline.add(track, segment, Interval(start, end), origin)
     val current = timeline.findTrackOf(segment).getOrElse(track)
     val actor = segment.getTlSegmentActor
     actor.tl = tl
@@ -63,6 +75,10 @@ class TimelineViewDragSimTest extends GdxTestBase {
     actor.setSize(absX(end) - absX(start), view.trackHeight)
     actor
   }
+
+  @targetName("placeLong")
+  private def place(track: Track, segment: Content, start: Long, end: Long, origin: Long): TlSegmentActor =
+    place(track, segment, at(start), at(end), at(origin))
 
   /** 模拟 [[TimelineView.act]] 重建。 */
   private def rebuildFromModel(actor: TlSegmentActor): Unit = {
@@ -95,7 +111,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     while (i < 5) {
       rebuildFromModel(actor)
       assertEquals(t0.interval(s), 100_000L ~~ (1000_000L + 100_000L))
-      assertEquals(t0.getOrigin(s), 5_000_000L + 100_000L)
+      assertEquals(t0.getOrigin(s), at(5_000_000L + 100_000L))
       i += 1
     }
 
@@ -103,7 +119,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     project.undo.undo()
     assertEquals(t0.interval(s), 0L ~~ 1000_000L)
-    assertEquals(t0.getOrigin(s), 5_000_000L)
+    assertEquals(t0.getOrigin(s), at(5_000_000L))
   }
 
   test("中部拖拽竖直落到鼠标所在轨道且稳定") {
@@ -142,13 +158,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val newFrontLocalX = 50f
     actor.dragTo(newFrontLocalX, view.trackHeight / 2)
     assertEquals(t0.interval(s), 50_000L ~~ 1000_000L)
-    assertEquals(t0.getOrigin(s), 0L)
+    assertEquals(t0.getOrigin(s), at(0L))
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
       assertEquals(t0.interval(s), 50_000L ~~ 1000_000L)
-      assertEquals(t0.getOrigin(s), 0L)
+      assertEquals(t0.getOrigin(s), at(0L))
       i += 1
     }
   }
@@ -164,13 +180,13 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val newWidth = actor.getWidth + 60f
     actor.dragTo(newWidth, view.trackHeight / 2)
     assertEquals(t0.interval(s), 0L ~~ (1000_000L + 60_000L))
-    assertEquals(t0.getOrigin(s), 5_000_000L)
+    assertEquals(t0.getOrigin(s), at(5_000_000L))
 
     var i = 0
     while (i < 5) {
       rebuildFromModel(actor)
       assertEquals(t0.interval(s), 0L ~~ (1000_000L + 60_000L))
-      assertEquals(t0.getOrigin(s), 5_000_000L)
+      assertEquals(t0.getOrigin(s), at(5_000_000L))
       i += 1
     }
   }
@@ -183,7 +199,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -223,7 +239,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(2000_000L)
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -273,8 +289,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
 
     aActor.dragTo(absX(495_000L) + firstX, aActor.getY + firstY)
 
-    assertEquals(tl.snapIndicatorTime, 500_000L)
-    assert(math.abs((t0.interval(a).lo) - (500_000L)) <= (1L))
+    assertEquals(tl.snapIndicatorTime, Some(at(500_000)))
+    assert((t0.interval(a).lo - at(500_000)).abs <= span(1))
   }
 
   test("后缘拖拽越过转场删除后仍继续跟随") {
@@ -283,7 +299,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     val b = newSegment(1000_000L)
     place(t0, a, 0, 1000_000L, 0L)
     place(t0, b, 500_000L, 1500_000L, 500_000L)
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -300,7 +316,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(t0.interval(a), 0L ~~ 400_000L)
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
-    val rebuilt: Segment = t0.get(600_000L) match {
+    val rebuilt: Segment = t0.get(at(600_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -308,7 +324,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(t0.interval(rebuilt), 500_000L ~~ 900_000L)
 
     tActor.dragTo(absX(896_000L), view.trackHeight / 2)
-    assertEquals(t0.interval(a).hi, 896_000L)
+    assertEquals(t0.interval(a).hi, at(896_000))
     assertEquals(t0.interval(rebuilt), 500_000L ~~ 896_000L)
   }
 
@@ -322,7 +338,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assertEquals(t0.interval(b), 500_000L ~~ 1500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -340,8 +356,8 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assert(timeline.findTrackOf(transition).isEmpty)
     assertEquals(t0.interval(a), 0L ~~ 1000_000L)
     val bInterval = t0.interval(b)
-    assertEquals(bInterval.hi, 1500_000L)
-    assert(Math.abs(bInterval.lo - 1200_000L) <= 1000L, "b 起点应跟手到约 1200000，实际 " + bInterval.lo)
+    assertEquals(bInterval.hi, at(1500_000))
+    assert((bInterval.lo - at(1200_000)).abs <= span(1000), "b 起点应跟手到约 1200000，实际 " + bInterval.lo)
 
     tActor.finishDrag()
     project.undo.undo()
@@ -358,7 +374,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }
@@ -372,7 +388,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     assert(timeline.findTrackOf(transition).isEmpty)
 
     tActor.dragTo(absX(900_000L), view.trackHeight / 2)
-    assert(t0.get(900_000L).isInstanceOf[Transition])
+    assert(t0.get(at(900_000)).isInstanceOf[Transition])
     assertEquals(t0.interval(a), 0L ~~ 1000_000L)
     assertEquals(t0.interval(b), 900_000L ~~ 1500_000L)
   }
@@ -385,7 +401,7 @@ class TimelineViewDragSimTest extends GdxTestBase {
     place(t0, b, 500_000L, 1500_000L, 500_000L)
     rebuildFromModel(aActor)
 
-    val transition: Segment = t0.get(500_000L) match {
+    val transition: Segment = t0.get(at(500_000)) match {
       case s: Segment => s
       case _ => null
     }

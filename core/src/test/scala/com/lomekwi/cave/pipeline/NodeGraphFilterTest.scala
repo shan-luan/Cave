@@ -1,6 +1,7 @@
 package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.pipeline.FilterListTest.{AddFilter, FpCont}
+import com.lomekwi.cave.timeline.Timespan
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 import scala.util.Using
@@ -49,7 +50,7 @@ class NodeGraphFilterTest extends munit.FunSuite {
     val sinkIn = sink(ngf).inPorts(0).asInstanceOf[Node.InPort[Object]]
     sinkIn.linkFrom(add.filterOut)
 
-    assertEqualsDouble(segment.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
+    assertEqualsDouble(segment.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
   }
 
   test("序列化往返保留图输入") {
@@ -65,7 +66,7 @@ class NodeGraphFilterTest extends munit.FunSuite {
 
     val copyNgf = copy.filters(0).asInstanceOf[NodeGraphFilter]
     assert((graphIn(copyNgf)) != null)
-    assertEqualsDouble(copy.get(0, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
+    assertEqualsDouble(copy.get(Timespan.Zero, null).asInstanceOf[FilterListTest.Fpable].`val`, 15.0, 0)
   }
 
   test("序列化修复缺失的图输入") {

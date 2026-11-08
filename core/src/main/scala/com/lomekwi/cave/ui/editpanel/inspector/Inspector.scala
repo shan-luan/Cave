@@ -16,7 +16,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Instant, Segment}
 import com.lomekwi.cave.project.{Id, UndoManager}
 
 
@@ -115,8 +115,8 @@ class Inspector extends VisTable {
       if (c != 0) {
         c < 0
       } else {
-        val ra = ta.map(_.interval(a).lo).getOrElse(Long.MaxValue)
-        val rb = tb.map(_.interval(b).lo).getOrElse(Long.MaxValue)
+        val ra = ta.map(_.interval(a).lo).getOrElse(Instant.MaxValue)
+        val rb = tb.map(_.interval(b).lo).getOrElse(Instant.MaxValue)
         ra < rb
       }
     })

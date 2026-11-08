@@ -2,6 +2,7 @@ package com.lomekwi.cave.resource.media
 
 import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.resource.decoder.DecRes
+import com.lomekwi.cave.timeline.Timespan
 
 class DecoderPoolTest extends munit.FunSuite {
 
@@ -12,18 +13,18 @@ class DecoderPoolTest extends munit.FunSuite {
 
   private class FakeDecRes(segment: MedRes) extends DecRes[AudFrame](segment) {
     var closed = false
-    var position: Long = 0
+    var position: Timespan = Timespan.Zero
     override def start(): Unit = initialized = true
     override def close(): Unit = closed = true
     override protected def configure(): Unit = {}
     override def grab() = null
-    override def sync(time: Long): Unit = position = time
-    override def get(time: Long, frame: AudFrame): Unit = position = time
-    override def seek(time: Long): Unit = position = time
+    override def sync(time: Timespan): Unit = position = time
+    override def get(time: Timespan, frame: AudFrame): Unit = position = time
+    override def seek(time: Timespan): Unit = position = time
     override def codecName: String = "fake"
     override def codec: Int = 0
-    override def lengthPerFrame: Long = 1
-    override def getLengthInTime: Long = 0
+    override def lengthPerFrame: Timespan = Timespan(1)
+    override def getLengthInTime: Timespan = Timespan.Zero
   }
 
   private def newPool(weight: Double): DecoderPool =
@@ -55,15 +56,15 @@ class DecoderPoolTest extends munit.FunSuite {
     val keyA = new Object
     val keyB = new Object
     val la = pool.acquire(keyA)
-    la.dec.asInstanceOf[FakeDecRes].position = 100
+    la.dec.asInstanceOf[FakeDecRes].position = Timespan(100)
     la.close()
     val lb = pool.acquire(keyB)
-    lb.dec.asInstanceOf[FakeDecRes].position = 200
+    lb.dec.asInstanceOf[FakeDecRes].position = Timespan(200)
     lb.close()
     val la2 = pool.acquire(keyA)
-    assertEquals(la2.dec.asInstanceOf[FakeDecRes].position, 100L)
+    assertEquals(la2.dec.asInstanceOf[FakeDecRes].position, Timespan(100))
     val lb2 = pool.acquire(keyB)
-    assertEquals(lb2.dec.asInstanceOf[FakeDecRes].position, 200L)
+    assertEquals(lb2.dec.asInstanceOf[FakeDecRes].position, Timespan(200))
     la2.close()
     lb2.close()
     pool.disposeAll()

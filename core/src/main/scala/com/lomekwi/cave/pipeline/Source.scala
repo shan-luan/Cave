@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
@@ -33,7 +33,7 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * @param time 片段内时间
    * @param segment 宿主片段
    */
-  final def generate(time: Long, track: Track, segment: Segment): T = {
+  final def generate(time: Timespan, track: Track, segment: Segment): T = {
     frame = produce(time, track, segment)
     frame
   }
@@ -43,26 +43,26 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
    * @param time 片段内时间
    * @param segment 宿主片段
    */
-  protected def produce(time: Long, track: Track, segment: Segment): T
+  protected def produce(time: Timespan, track: Track, segment: Segment): T
 
   /**
    * 同步到指定时间
    * @param time 片段内时间
    * @param segment 宿主片段
    */
-  def sync(time: Long, track: Track, segment: Segment): Unit = {}
+  def sync(time: Timespan, track: Track, segment: Segment): Unit = {}
 
   def prefetch(): Unit = {}
 
-  def getLengthPerExportFrame: Long
+  def getLengthPerExportFrame: Timespan
 
   /** 源的总时长（微秒） */
-  def getDuration: Long
+  def getDuration: Timespan
 
   /**
    * 插入时间轴时源使用的默认时长。
    */
-  def getDefaultDuration: Option[Long]
+  def getDefaultDuration: Option[Timespan]
 
   def displayName: String
 

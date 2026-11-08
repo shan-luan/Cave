@@ -11,6 +11,11 @@ import scala.collection.mutable
  */
 class TrackTransitionFuzzTest extends GdxTestBase {
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  extension (lo: Long)
+    private def ~~(hi: Long): Interval = Interval(at(lo), at(hi))
+
   test("在随机布局上删除转场") {
     for (seed <- 1 to 16) {
       runRandomLayout(seed)
@@ -67,7 +72,7 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     val lo = rnd.nextLong(TrackTransitionFuzzTest.SPAN)
     val segment = new TestCont(duration)
     val added = timeline.add(timeline.getTrackOrCreate(0), segment,
-      lo ~~ (lo + duration), rnd.nextLong(TrackTransitionFuzzTest.SPAN))
+      lo ~~ (lo + duration), at(rnd.nextLong(TrackTransitionFuzzTest.SPAN)))
     if (added) segment else null
   }
 
@@ -98,10 +103,10 @@ class TrackTransitionFuzzTest extends GdxTestBase {
     val rnEnd = rnStart + rDur
 
     val tl = timeline
-    tl.add(tl.getTrackOrCreate(0), p, pStart ~~ (pStart + pDur), origin)
-    tl.add(tl.getTrackOrCreate(0), a, aStart ~~ aEnd, origin)
-    tl.add(tl.getTrackOrCreate(0), b, bStart ~~ bEnd, origin)
-    tl.add(tl.getTrackOrCreate(0), rn, rnStart ~~ rnEnd, origin)
+    tl.add(tl.getTrackOrCreate(0), p, pStart ~~ (pStart + pDur), at(origin))
+    tl.add(tl.getTrackOrCreate(0), a, aStart ~~ aEnd, at(origin))
+    tl.add(tl.getTrackOrCreate(0), b, bStart ~~ bEnd, at(origin))
+    tl.add(tl.getTrackOrCreate(0), rn, rnStart ~~ rnEnd, at(origin))
 
     val track = tl.getTrackOrCreate(0)
     val transition = track.transitionBetween(a.asInstanceOf[Content], b.asInstanceOf[Content])

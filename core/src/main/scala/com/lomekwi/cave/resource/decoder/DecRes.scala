@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.lomekwi.cave.pipeline.Frame
 import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.resource.media.MedRes
+import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -50,40 +51,40 @@ abstract class DecRes[F <: Frame] protected (protected val segment: MedRes) exte
    * 同步到指定时间
    * @param time 局部时间
    */
-  def sync(time: Long): Unit
+  def sync(time: Timespan): Unit
 
   /**
    * 解码指定时间的数据并更新到提供的帧对象中。
    * @param time  局部时间
    * @param frame 要更新的帧对象
    */
-  def get(time: Long, frame: F): Unit
+  def get(time: Timespan, frame: F): Unit
 
-  def seek(time: Long): Unit
-  protected def toValidTime(time: Long): Long = {
-    Math.min(Math.max(0, time), getLengthInTime)
+  def seek(time: Timespan): Unit
+  protected def toValidTime(time: Timespan): Timespan = {
+    time.max(Timespan.Zero).min(getLengthInTime)
   }
-  protected def isTimeLegal(time: Long): Boolean = {
+  protected def isTimeLegal(time: Timespan): Boolean = {
     toValidTime(time) == time
   }
-  def getLengthInTime: Long = {
+  def getLengthInTime: Timespan = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    Math.max(grabber.getLengthInTime, 0)
+    Timespan(Math.max(grabber.getLengthInTime, 0))
   }
-  def getTimestamp: Long = {
+  def getTimestamp: Timespan = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    grabber.getTimestamp
+    Timespan(grabber.getTimestamp)
   }
   def codecName: String
 
   def codec: Int
 
-  def lengthPerFrame: Long
-  def getLastFrameTime: Long = {
+  def lengthPerFrame: Timespan
+  def getLastFrameTime: Timespan = {
     getTimestamp - getTimestamp % lengthPerFrame
   }
 }

@@ -16,7 +16,7 @@ import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.task.{ExportOptionsSet, ExportPresetsChangedEvent}
 import com.lomekwi.cave.ui.{Colors, Focusable}
 import com.lomekwi.cave.ui.widget.PanZoomCanvas
-import com.lomekwi.cave.util.Units
+import com.lomekwi.cave.util.niceInterval
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
@@ -200,7 +200,7 @@ class PreviewArea(private final val session: ProjectSession) extends Group with 
     drawer.line(ox, y0, ox, y1, Colors.PREVIEW_GUIDE)
 
     val tickHalf = 4f
-    val interval = Units.niceInterval(PreviewArea.TICK_PIXEL_TARGET / canvas.getScaleX)
+    val interval = niceInterval(PreviewArea.TICK_PIXEL_TARGET / canvas.getScaleX)
 
     var startV = (x0 - ox) / canvas.getScaleX
     var endV = (x1 - ox) / canvas.getScaleX

@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
 import com.lomekwi.cave.resource.media.VdoRes
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlVdoSegmentActor}
 
 import com.lomekwi.cave.util.i18n.*
@@ -26,14 +26,14 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
     override def getData: Double = vdoRes.height.toDouble
   })
   addOutPort(new Node.OutPort[Double](("时长".in(Zh) | "Duration".in(En)).str(), classOf[Double]) {
-    override def getData: Double = getDuration.toDouble
+    override def getData: Double = getDuration.value
   })
 
-  override def sync(time: Long, track: Track, segment: Segment): Unit = {
+  override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
     vdoRes.sync(segment, time)
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment): ImgFrame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): ImgFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -66,15 +66,15 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
     frame
   }
 
-  override def getLengthPerExportFrame: Long = {
+  override def getLengthPerExportFrame: Timespan = {
     vdoRes.frameLength
   }
 
-  override def getDuration: Long = {
+  override def getDuration: Timespan = {
     vdoRes.duration
   }
 
-  override def getDefaultDuration: Option[Long] = {
+  override def getDefaultDuration: Option[Timespan] = {
     Some(vdoRes.duration)
   }
 

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSegmentActor, TlSegmentActor}
 
 /**
@@ -9,15 +9,15 @@ import com.lomekwi.cave.ui.editpanel.tlarea.{TlBlockSegmentActor, TlSegmentActor
 @SerialVersionUID(1L)
 class BlockSource extends Source[Frame] {
 
-  override protected def produce(time: Long, track: Track, segment: Segment): Frame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): Frame = {
     new GapFrame(track.index)
   }
 
-  override def getLengthPerExportFrame: Long = 0L
+  override def getLengthPerExportFrame: Timespan = Timespan.Zero
 
-  override def getDuration: Long = Long.MaxValue
+  override def getDuration: Timespan = Timespan.MaxValue
 
-  override def getDefaultDuration: Option[Long] = None
+  override def getDefaultDuration: Option[Timespan] = None
 
   override def displayName: String = ""
 

@@ -11,36 +11,40 @@ class TransitionSourceTest extends GdxTestBase {
 
   private var timeline: TestTimeline = null
 
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  private def span(value: Long): Timespan = Timespan(value)
+
   override def beforeEach(context: BeforeEach): Unit = {
     timeline = new TestProject().timeline
   }
 
   /** 帧上带产出时间。 */
-  class TimedFrame(trackIndex: Int, val producedAt: Long) extends Frame(trackIndex)
+  class TimedFrame(trackIndex: Int, val producedAt: Timespan) extends Frame(trackIndex)
 
-  private class ProbeSource(duration: Long, nullAt: Long => Boolean) extends Source[TimedFrame] {
-    var lastSync: Long = -1L
+  private class ProbeSource(duration: Long, nullAt: Timespan => Boolean) extends Source[TimedFrame] {
+    var lastSync: Timespan = Timespan.MinValue
 
-    override def sync(time: Long, track: Track, segment: Segment): Unit = {
+    override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
       lastSync = time
     }
 
-    override protected def produce(time: Long, track: Track, segment: Segment): TimedFrame = {
+    override protected def produce(time: Timespan, track: Track, segment: Segment): TimedFrame = {
       if (nullAt(time)) null else new TimedFrame(track.index, time)
     }
 
-    override def getLengthPerExportFrame: Long = 1
+    override def getLengthPerExportFrame: Timespan = Timespan(1)
 
-    override def getDuration: Long = duration
+    override def getDuration: Timespan = Timespan(duration)
 
-    override def getDefaultDuration: Option[Long] = Some(duration)
+    override def getDefaultDuration: Option[Timespan] = Some(Timespan(duration))
 
     override def displayName: String = "probe"
 
     override def createTlSegmentActor(segment: Segment): TlSegmentActor = null
   }
 
-  private class ProbeContent(duration: Long, canLead: Boolean, nullAt: Long => Boolean)
+  private class ProbeContent(duration: Long, canLead: Boolean, nullAt: Timespan => Boolean)
     extends Clip(TestIds.nextId(), new ProbeSource(duration, nullAt)) {
 
     def this(duration: Long, canLead: Boolean) = this(duration, canLead, _ => false)
@@ -65,7 +69,7 @@ class TransitionSourceTest extends GdxTestBase {
       lastFrom = fromFrame
       lastTo = toFrame
       lastProgress = progress
-      new TimedFrame((if (fromFrame != null) fromFrame else toFrame).trackIndex, -1L)
+      new TimedFrame((if (fromFrame != null) fromFrame else toFrame).trackIndex, Timespan.MinValue)
     }
 
     override def displayName: String = "probe-transition"
@@ -90,15 +94,15 @@ class TransitionSourceTest extends GdxTestBase {
   }
 
   /** 左右两块内容重叠出转场。 */
-  private def placedTrack(leftLead: Boolean, leftNullAt: Long => Boolean, rightNullAt: Long => Boolean)
+  private def placedTrack(leftLead: Boolean, leftNullAt: Timespan => Boolean, rightNullAt: Timespan => Boolean)
   : (Track, Transition, ProbeTransitionSource) = {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, leftLead, leftNullAt)
     val right = new ProbeContent(1000, canLead = true, rightNullAt)
-    timeline.add(track, left, 0L ~~ 1000L, 0L)
-    timeline.add(track, right, 500L ~~ 1500L, 500L)
+    timeline.add(track, left, at(0) ~~ at(1000), Instant.Zero)
+    timeline.add(track, right, at(500) ~~ at(1500), at(500))
     val current = timeline.getTrackOrCreate(0)
-    val transition = current.get(600L) match {
+    val transition = current.get(at(600)) match {
       case t: Transition => t
       case other => fail("重叠处应是转场，实际: " + other + "；轨道: " + current)
     }
@@ -108,14 +112,14 @@ class TransitionSourceTest extends GdxTestBase {
   test("mix 收到两侧各自的时间与进度") {
     val (track, transition, source) = placedTrack(leftLead = true, _ => false, _ => false)
 
-    track.frameAt(transition, 600L)
-    assertEquals(source.lastFrom.producedAt, 600L)
-    assertEquals(source.lastTo.producedAt, 100L)
+    track.frameAt(transition, at(600))
+    assertEquals(source.lastFrom.producedAt, span(600))
+    assertEquals(source.lastTo.producedAt, span(100))
     assertEqualsFloat(source.lastProgress, 0.2f, 1e-6f)
 
-    track.frameAt(transition, 999L)
-    assertEquals(source.lastFrom.producedAt, 999L)
-    assertEquals(source.lastTo.producedAt, 499L)
+    track.frameAt(transition, at(999))
+    assertEquals(source.lastFrom.producedAt, span(999))
+    assertEquals(source.lastTo.producedAt, span(499))
     assertEqualsFloat(source.lastProgress, 499f / 500f, 1e-6f)
   }
 
@@ -123,10 +127,10 @@ class TransitionSourceTest extends GdxTestBase {
     val track = timeline.getTrackOrCreate(0)
     val left = new ProbeContent(1000, canLead = true)
     val right = new ProbeContent(1000, canLead = true)
-    timeline.add(track, left, 0L ~~ 1000L, 0L)
-    timeline.add(track, right, 500L ~~ 1500L, 500L)
+    timeline.add(track, left, at(0) ~~ at(1000), Instant.Zero)
+    timeline.add(track, right, at(500) ~~ at(1500), at(500))
     val current = timeline.getTrackOrCreate(0)
-    val transition = current.get(600L) match {
+    val transition = current.get(at(600)) match {
       case t: Transition => t
       case other => fail("重叠处应是转场，实际: " + other + "；轨道: " + current)
     }
@@ -134,7 +138,7 @@ class TransitionSourceTest extends GdxTestBase {
 
     val filter = new CountingFilter
     left.attach(filter)
-    current.frameAt(transition, 600L)
+    current.frameAt(transition, at(600))
 
     assertEquals(filter.count, 1)
     assert((filter.lastFrame) eq (source.lastFrom))
@@ -142,50 +146,50 @@ class TransitionSourceTest extends GdxTestBase {
 
   test("翻转转场恢复两侧并反转进度") {
     val (track, transition, source) = placedTrack(leftLead = false, _ => false, _ => false)
-    val right = track.get(1200L) match {
+    val right = track.get(at(1200)) match {
       case c: Content => c
       case _ => fail("转场终点之外应是右内容")
     }
     assert(source.from eq right.source)
 
-    track.frameAt(transition, 600L)
-    assertEquals(source.lastFrom.producedAt, 600L)
-    assertEquals(source.lastTo.producedAt, 100L)
+    track.frameAt(transition, at(600))
+    assertEquals(source.lastFrom.producedAt, span(600))
+    assertEquals(source.lastTo.producedAt, span(100))
     assertEqualsFloat(source.lastProgress, 0.8f, 1e-6f)
   }
 
   test("一侧无帧时向 mix 传入空侧") {
-    val (track, transition, source) = placedTrack(leftLead = true, _ == 600L, _ => false)
+    val (track, transition, source) = placedTrack(leftLead = true, _ == span(600), _ => false)
 
-    track.frameAt(transition, 600L)
+    track.frameAt(transition, at(600))
     assert((source.lastFrom) == null)
-    assertEquals(source.lastTo.producedAt, 100L)
+    assertEquals(source.lastTo.producedAt, span(100))
     assertEqualsFloat(source.lastProgress, 0.2f, 1e-6f)
   }
 
   test("sync 用换算后的时间到达两侧") {
     val (track, transition, _) = placedTrack(leftLead = true, _ => false, _ => false)
-    val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
-    val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val leftSource = track.get(at(200)).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val rightSource = track.get(at(1200)).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
 
-    track.syncAt(transition, 600L)
-    assertEquals(leftSource.lastSync, 600L)
-    assertEquals(rightSource.lastSync, 100L)
+    track.syncAt(transition, at(600))
+    assertEquals(leftSource.lastSync, span(600))
+    assertEquals(rightSource.lastSync, span(100))
   }
 
   test("翻转后 sync 正确转发") {
     val (track, transition, _) = placedTrack(leftLead = false, _ => false, _ => false)
-    val leftSource = track.get(200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
-    val rightSource = track.get(1200L).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val leftSource = track.get(at(200)).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
+    val rightSource = track.get(at(1200)).asInstanceOf[Content].source.asInstanceOf[ProbeSource]
 
-    track.syncAt(transition, 600L)
-    assertEquals(leftSource.lastSync, 600L)
-    assertEquals(rightSource.lastSync, 100L)
+    track.syncAt(transition, at(600))
+    assertEquals(leftSource.lastSync, span(600))
+    assertEquals(rightSource.lastSync, span(100))
   }
 
   test("两侧都无帧时不产出帧") {
-    val (track, transition, _) = placedTrack(leftLead = true, _ == 600L, _ == 100L)
+    val (track, transition, _) = placedTrack(leftLead = true, _ == span(600), _ == span(100))
 
-    assert((track.frameAt(transition, 600L)) == null)
+    assert((track.frameAt(transition, at(600))) == null)
   }
 }

@@ -1,6 +1,5 @@
 package com.lomekwi.cave.pipeline.text
 
-import com.lomekwi.cave.util.Units.SECOND
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -10,7 +9,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.lomekwi.cave.pipeline.{Source, Node}
 import com.lomekwi.cave.pipeline.image.Transform
 import com.lomekwi.cave.resource.media.FontRes
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTextSegmentActor}
 
 import java.util.concurrent.CountDownLatch
@@ -79,7 +78,7 @@ class TextSource(text: String) extends Source[TextFrame] {
     initialized = false
   }
 
-  override protected def produce(time: Long, track: Track, segment: Segment): TextFrame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): TextFrame = {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
@@ -114,16 +113,16 @@ class TextSource(text: String) extends Source[TextFrame] {
     frame
   }
 
-  override def getLengthPerExportFrame: Long = {
-    SECOND
+  override def getLengthPerExportFrame: Timespan = {
+    Timespan.SECOND
   }
 
-  override def getDuration: Long = {
-    Long.MaxValue
+  override def getDuration: Timespan = {
+    Timespan.MaxValue
   }
 
-  override def getDefaultDuration: Option[Long] = {
-    Some(5 * SECOND)
+  override def getDefaultDuration: Option[Timespan] = {
+    Some(Timespan.SECOND * 5)
   }
 
   override def displayName: String = {

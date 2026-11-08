@@ -19,11 +19,19 @@ class TrackRemoveTest extends GdxTestBase {
 
   private def newContent(duration: Long): Content = new TestCont(duration)
 
-  private def place(track: Track, segment: Content, interval: Interval, origin: Long = 0L): Unit = {
+  private def at(value: Long): Instant = Instant.At(Timespan(value))
+
+  extension (lo: Int)
+    private def ~~(hi: Int): Interval = Interval(at(lo), at(hi))
+
+  extension (lo: Long)
+    private def ~~(hi: Long): Interval = Interval(at(lo), at(hi))
+
+  private def place(track: Track, segment: Content, interval: Interval, origin: Instant = Instant.Zero): Unit = {
     timeline.add(track, segment, interval, origin)
   }
 
-  private def transitionOf(track: Track, time: Long): Transition = track.get(time) match {
+  private def transitionOf(track: Track, time: Long): Transition = track.get(at(time)) match {
     case t: Transition => t
     case _ => null
   }
@@ -41,7 +49,7 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(b), 500 ~~ 1500)
     assert((transitionOf(after, 700)) == null)
-    assert(after.get(300).isInstanceOf[Gap])
+    assert(after.get(at(300)).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
@@ -56,9 +64,9 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(a), 0 ~~ 1000)
-    assertEquals(after.length, 1000L)
+    assertEquals(after.length, at(1000))
     assert((transitionOf(after, 700)) == null)
-    assert(after.get(1200).isInstanceOf[Gap])
+    assert(after.get(at(1200)).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
@@ -73,7 +81,7 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     assert(after.transitionAfter(a).isEmpty)
-    assertEquals(after.soloEndOf(a), 1000L)
+    assertEquals(after.soloEndOf(a), at(1000))
   }
 
   test("最后内容删除后转场在回归时可复用") {
@@ -105,7 +113,7 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     assert(after.isEmpty)
-    assertEquals(after.length, 0L)
+    assertEquals(after.length, Instant.Zero)
     assert(after.isEmpty)
   }
 
@@ -125,8 +133,8 @@ class TrackRemoveTest extends GdxTestBase {
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(a), 0 ~~ 1000)
     assertEquals(after.interval(c), 1000 ~~ 2000)
-    assert((a) eq (after.get(700)))
-    assert((c) eq (after.get(1200)))
+    assert((a) eq (after.get(at(700))))
+    assert((c) eq (after.get(at(1200))))
     assert(after.transitionBetween(a, c).isEmpty)
     TrackLayout.assertValid(after)
   }
@@ -172,7 +180,7 @@ class TrackRemoveTest extends GdxTestBase {
 
     val after = timeline.getTrackOrCreate(0)
     assertEquals(after.interval(c), 500 ~~ 1500)
-    assert(after.get(100).isInstanceOf[Gap])
+    assert(after.get(at(100)).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
@@ -192,7 +200,7 @@ class TrackRemoveTest extends GdxTestBase {
     assertEquals(remaining.size, 1)
     assert((b) eq (remaining.head))
     assertEquals(after.interval(b), 500 ~~ 1500)
-    assert(after.get(2500).isInstanceOf[Gap])
+    assert(after.get(at(2500)).isInstanceOf[Gap])
     TrackLayout.assertValid(after)
   }
 
@@ -306,11 +314,11 @@ class TrackRemoveTest extends GdxTestBase {
       val a = newContent(1000)
       val b = newContent(1000)
       val rn = newContent(1000)
-      tl.add(tl.getTrackOrCreate(0), p, 800 ~~ 1100, 0L)
-      tl.add(tl.getTrackOrCreate(0), a, 1000 ~~ 1101, 0L)
-      tl.add(tl.getTrackOrCreate(0), b, 1100 ~~ 1500, 0L)
-      tl.add(tl.getTrackOrCreate(0), rn, rnLo ~~ (rnLo + 1000), 0L)
-      val transition = tl.getTrackOrCreate(0).get(1100) match {
+      tl.add(tl.getTrackOrCreate(0), p, 800 ~~ 1100, Instant.Zero)
+      tl.add(tl.getTrackOrCreate(0), a, 1000 ~~ 1101, Instant.Zero)
+      tl.add(tl.getTrackOrCreate(0), b, 1100 ~~ 1500, Instant.Zero)
+      tl.add(tl.getTrackOrCreate(0), rn, rnLo ~~ (rnLo + 1000), Instant.Zero)
+      val transition = tl.getTrackOrCreate(0).get(at(1100)) match {
         case t: Transition => t
         case _ => null
       }

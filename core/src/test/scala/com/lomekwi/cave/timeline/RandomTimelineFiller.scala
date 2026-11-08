@@ -42,7 +42,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
       if (interval == null) {
       } else {
         val segment = segmentFactory(duration)
-        timeline.add(timeline.getTrackOrCreate(trackIndex), segment, interval, rnd.nextLong(span * 2))
+        timeline.add(timeline.getTrackOrCreate(trackIndex), segment, interval, Instant.At(Timespan(rnd.nextLong(span * 2))))
       }
       i += 1
     }
@@ -55,11 +55,11 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     var attempt = 0
     while (attempt < 30) {
       val start = rnd.nextLong(Math.max(1, span - duration))
-      val interval: Interval = start ~~ (start + duration)
+      val interval: Interval = Instant.At(Timespan(start)) ~~ Instant.At(Timespan(start + duration))
       if (track.isFree(interval, Set.empty)) {
         val segment = segmentFactory(duration)
         timeline.snapshot()
-        timeline.add(track, segment, interval, rnd.nextLong(span))
+        timeline.add(track, segment, interval, Instant.At(Timespan(rnd.nextLong(span))))
         return true
       }
       attempt += 1
@@ -144,7 +144,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     if (minIdx + trackDelta < 0) trackDelta = 0
     val deltaTime = rnd.nextLong(span / 2) - span / 4
     timeline.snapshot()
-    timeline.moveTime(members, deltaTime)
+    timeline.moveTime(members, Timespan(deltaTime))
     timeline.moveTrack(members, trackDelta)
   }
 
@@ -153,7 +153,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
     timeline.snapshot()
-    timeline.setStart(members, delta)
+    timeline.setStart(members, Timespan(delta))
   }
 
   private def behindResizeOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
@@ -161,7 +161,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     val members = dragMembers(placed(rnd.nextInt(placed.size)))
     val delta = rnd.nextLong(maxDuration) - maxDuration / 2
     timeline.snapshot()
-    timeline.setEnd(members, delta)
+    timeline.setEnd(members, Timespan(delta))
   }
 
   private def splitOp(placed: mutable.ArrayBuffer[Segment]): Unit = {
@@ -169,10 +169,11 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     val segment = placed(rnd.nextInt(placed.size))
     timeline.findTrackOf(segment).foreach { track =>
       val r = track.interval(segment)
-      val lo: Long = r.lo
-      val hi: Long = r.hi
-      if (hi - lo > 1) {
-        val time = lo + 1 + rnd.nextLong(hi - lo - 1)
+      val lo: Instant = r.lo
+      val hi: Instant = r.hi
+      val len = hi - lo
+      if (len > Timespan(1)) {
+        val time = lo + Timespan(1) + Timespan(rnd.nextLong((len - Timespan(1)).value))
         timeline.snapshot()
         timeline.split(track, time)
       }
@@ -203,7 +204,7 @@ class RandomTimelineFiller(final val timeline: TestTimeline,
     var attempt = 0
     while (attempt < 50) {
       val start = rnd.nextLong(span - duration + 1)
-      val interval: Interval = start ~~ (start + duration)
+      val interval: Interval = Instant.At(Timespan(start)) ~~ Instant.At(Timespan(start + duration))
       var free = true
       val it = occupied.iterator
       while (it.hasNext && free) {

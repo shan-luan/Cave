@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.timeline.{Content, Interval, Segment}
+import com.lomekwi.cave.timeline.{Content, Instant, Interval, Segment, Timespan}
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
@@ -32,14 +32,14 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
     try {
       val file: File = payload.getObject.asInstanceOf[File]
       val segments: Vector[Content] = timelineView.session.sourceFactory.getAll(file)
-      val startTime: Long = timelineView.xToAbsoluteTime(x)
+      val startTime: Instant = timelineView.xToAbsoluteTime(x)
       val baseTrack: Int = timelineView.yToTrackIndex(y)
       var trackOffset: Int = 0
       val added = mutable.ArrayBuffer.empty[Segment]
       timelineView.session.snapshot()
       for (segment <- segments) {
-        val duration: Long = segment.getDefaultDuration
-        if (duration > 0) {
+        val duration: Timespan = segment.getDefaultDuration
+        if (duration > Timespan.Zero) {
           var targetTrack: Int = baseTrack + trackOffset
           val interval: Interval = startTime ~~ (startTime + duration)
           var placed = false

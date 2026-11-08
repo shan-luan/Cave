@@ -2,7 +2,6 @@ package com.lomekwi.cave.task
 
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
-import com.lomekwi.cave.util.Units
 import scala.compiletime.uninitialized
 
 /**
@@ -34,11 +33,11 @@ class ExportOptions extends Json.Serializable {
 
   /** 以 Mbps 为单位读写 [[bitrate]]。 */
   def getBitrateMbps: Double = {
-    bitrate / Units.MEGA.toDouble
+    bitrate / 1_000_000.0
   }
 
-  private def setBitrateMbps(mbps: Double): Unit = {
-    this.bitrate = (mbps * Units.MEGA).toInt
+  def setBitrateMbps(mbps: Double): Unit = {
+    this.bitrate = (mbps * 1_000_000).toInt
   }
 
   override def write(json: Json): Unit = {

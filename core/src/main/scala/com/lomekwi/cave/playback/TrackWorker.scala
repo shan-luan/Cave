@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.Subscribe
 import com.lomekwi.cave.pipeline.GapFrame
 import com.lomekwi.cave.project.ProjectSession
-import com.lomekwi.cave.timeline.{Gap, Segment, Timeline}
+import com.lomekwi.cave.timeline.{Gap, Instant, Segment, Timeline}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -34,7 +34,7 @@ class TrackWorker(private val session: ProjectSession, private val index: Int) e
       val p = session.playhead
       while (!Thread.currentThread().isInterrupted) {
         val track = timeline.getTrackOrCreate(index)
-        var t: Long = p.getTime
+        var t: Instant = p.getTime
         val current: Segment = track.get(t) match {
           case s: Segment => s
           case _: Gap => null
@@ -59,7 +59,7 @@ class TrackWorker(private val session: ProjectSession, private val index: Int) e
             val s = current
             Gdx.app.debug("Track" + index, ("找到源: ".in(Zh) | "Found source: ".in(En)).str() + s)
             track.syncAt(s, t)
-            val end: Long = track.soloEndOf(s)
+            val end: Instant = track.soloEndOf(s)
             var owns: Boolean = true
             while (t < end && owns && !updateNeeded && !Thread.currentThread().isInterrupted) {
               t = session.playhead.getTime
@@ -82,8 +82,8 @@ class TrackWorker(private val session: ProjectSession, private val index: Int) e
             }
           } else {
             session.bus.post(gapFrame)
-            val gapEnd: Long = track.intervalAt(t).hi
-            val parkTime: Long = if (gapEnd == Long.MaxValue) Long.MaxValue else Math.max((gapEnd - t) * 1000, 1)
+            val gapEnd: Instant = track.intervalAt(t).hi
+            val parkTime: Long = if (gapEnd == Instant.MaxValue) Long.MaxValue else Math.max(((gapEnd - t) * 1000).value, 1)
             Gdx.app.debug("Track" + index, ("轨道线程等待: ".in(Zh) | "Track thread waiting: ".in(En)).str() + parkTime / 1e9 + ("秒".in(Zh) | "s".in(En)).str())
             LockSupport.parkNanos(parkTime)
           }

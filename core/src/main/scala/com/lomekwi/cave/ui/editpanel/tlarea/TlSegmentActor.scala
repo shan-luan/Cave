@@ -38,8 +38,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
   }
 
   /** 片段的 0 秒在时间轴中的位置。 */
-  private[tlarea] def origin: Long = {
-    if (track == null) 0L else track.getOrigin(id)
+  private[tlarea] def origin: Instant = {
+    if (track == null) Instant.Zero else track.getOrigin(id)
   }
 
   /** 本片段所属的组。 */
@@ -183,15 +183,15 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
   private[tlarea] def dragTo(viewX: Float, viewY: Float): Unit = {
     if (tl == null || dragSide == DragSide.NONE) return
 
-    tl.snapIndicatorTime = -1
+    tl.snapIndicatorTime = None
 
     dragSide match {
       case DragSide.FRONT =>
         var target: Float = viewX
-        target = Math.max(target, tl.absoluteTimeToX(0))
-        handleFrontResize(snapResizeTime(Math.max(tl.xToAbsoluteTime(target), 0)))
+        target = Math.max(target, tl.absoluteTimeToX(Instant.Zero))
+        handleFrontResize(snapResizeTime(tl.xToAbsoluteTime(target).max(Instant.Zero)))
       case DragSide.BEHIND =>
-        val rawUpper: Long = Math.max(tl.xToAbsoluteTime(viewX), 0)
+        val rawUpper: Instant = tl.xToAbsoluteTime(viewX).max(Instant.Zero)
         handleBehindResize(snapResizeTime(rawUpper))
       case DragSide.MIDDLE =>
         val r = interval
@@ -199,9 +199,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
         val targetX: Float = viewX - firstX
         val targetY: Float = viewY - firstY
 
-        val duration: Long = r.len
-        var target: Long = tl.xToAbsoluteTime(targetX)
-        if (target < 0) target = 0
+        val duration: Timespan = r.len
+        var target: Instant = tl.xToAbsoluteTime(targetX).max(Instant.Zero)
         target = snapMoveTarget(target, duration)
 
         val newTrack: Track = tl.timeline.getTrackOrCreate(Math.max(0, tl.yToTrackIndex(targetY + tl.view.trackHeight / 2)))
@@ -218,8 +217,8 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     tl.dirty = true
   }
 
-  private def snapThreshold(): Long = {
-    Math.max(1, (TlSegmentActor.SNAP_THRESHOLD_PX / tl.getWidth * tl.view.durationTime).toLong)
+  private def snapThreshold(): Timespan = {
+    Timespan(1).max(tl.view.durationTime * (TlSegmentActor.SNAP_THRESHOLD_PX.toDouble / tl.getWidth))
   }
 
   private def snapDisabled(): Boolean = {
@@ -227,7 +226,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
   }
 
   /** 裁切吸附，返回吸附后的时间。 */
-  private def snapResizeTime(rawTime: Long): Long = {
+  private def snapResizeTime(rawTime: Instant): Instant = {
     if (snapDisabled()) {
       rawTime
     } else {
@@ -237,16 +236,16 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
           ignore ++= t.iterator
         }
       }
-      val snapped: Long = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
+      val snapped: Instant = tl.timeline.snapTime(rawTime, snapThreshold(), ignore)
       if (snapped != rawTime) {
-        tl.snapIndicatorTime = snapped
+        tl.snapIndicatorTime = Some(snapped)
       }
       snapped
     }
   }
 
   /** 整体移动吸附，起点与终点各求吸附点并取更近者。 */
-  private def snapMoveTarget(target: Long, duration: Long): Long = {
+  private def snapMoveTarget(target: Instant, duration: Timespan): Instant = {
     if (snapDisabled()) {
       target
     } else {
@@ -264,25 +263,25 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
           }
         }
       }
-      val srcEnd: Long = target + duration
-      val snappedStart: Long = tl.timeline.snapTime(target, snapThreshold(), ignore)
-      var snappedEnd: Long = tl.timeline.snapTime(srcEnd, snapThreshold(), ignore) - duration
-      if (snappedEnd < 0) snappedEnd = 0
+      val srcEnd: Instant = target + duration
+      val snappedStart: Instant = tl.timeline.snapTime(target, snapThreshold(), ignore)
+      var snappedEnd: Instant = tl.timeline.snapTime(srcEnd, snapThreshold(), ignore) - duration
+      if (snappedEnd < Instant.Zero) snappedEnd = Instant.Zero
       val startMoved: Boolean = snappedStart != target
       val endMoved: Boolean = snappedEnd != target
       if (startMoved && endMoved) {
-        if (Math.abs(snappedStart - target) <= Math.abs(snappedEnd - target)) {
-          tl.snapIndicatorTime = snappedStart
+        if ((snappedStart - target).abs <= (snappedEnd - target).abs) {
+          tl.snapIndicatorTime = Some(snappedStart)
           snappedStart
         } else {
-          tl.snapIndicatorTime = snappedEnd + duration
+          tl.snapIndicatorTime = Some(snappedEnd + duration)
           snappedEnd
         }
       } else if (startMoved) {
-        tl.snapIndicatorTime = snappedStart
+        tl.snapIndicatorTime = Some(snappedStart)
         snappedStart
       } else if (endMoved) {
-        tl.snapIndicatorTime = snappedEnd + duration
+        tl.snapIndicatorTime = Some(snappedEnd + duration)
         snappedEnd
       } else {
         target
@@ -306,7 +305,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     if (tl != null) {
       tl.draggingActor = null
       tl.dirty = true
-      tl.snapIndicatorTime = -1
+      tl.snapIndicatorTime = None
       dragMembers = null
     }
   }
@@ -352,7 +351,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
   }
 
   /** 整体移动一步，返回实际应用的轨道偏移。 */
-  private def handleMiddleDrag(target: Long, newTrack: Track): Int = {
+  private def handleMiddleDrag(target: Instant, newTrack: Track): Int = {
     val placed: mutable.ArrayBuffer[(Id, Track)] = mutable.ArrayBuffer.empty
     for (memberId <- dragMembers) {
       tl.timeline.findTrackOf(memberId).foreach(t => placed += ((memberId, t)))
@@ -366,7 +365,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     var appliedTracks: Int = 0
     val minIdx: Int = placed.iterator.map(_._2.index).min
     if (minIdx + trackDelta >= 0) {
-      val currentStart0: Long = firstTrack.interval(members.head).lo
+      val currentStart0: Instant = firstTrack.interval(members.head).lo
       val (moved, _) = tl.timeline.moveTime(members, target - currentStart0)(using tl.session.idSource)
       tl.session.applyProject(_.withTimeline(moved))
 
@@ -379,7 +378,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     appliedTracks
   }
 
-  private def handleFrontResize(newStart: Long): Unit = {
+  private def handleFrontResize(newStart: Instant): Unit = {
     if (dragMembers.isEmpty) return
     val members: mutable.ArrayBuffer[Id] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head
@@ -390,7 +389,7 @@ abstract class TlSegmentActor(initial: Segment) extends Actor {
     }
   }
 
-  private def handleBehindResize(newEnd: Long): Unit = {
+  private def handleBehindResize(newEnd: Instant): Unit = {
     if (dragMembers.isEmpty) return
     val members: mutable.ArrayBuffer[Id] = mutable.ArrayBuffer.from(dragMembers)
     val first = members.head

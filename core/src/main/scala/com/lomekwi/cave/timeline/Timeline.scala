@@ -36,7 +36,7 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
   private def ensureTrack(index: Int): Timeline = {
     if (tracks.size > index) this else Timeline(grownTo(tracks, index), groups)
   }
-  def add(trackIndex: Int, segment: Content, interval: Interval, origin: Long)(using ids: IdSource): Timeline = {
+  def add(trackIndex: Int, segment: Content, interval: Interval, origin: Instant)(using ids: IdSource): Timeline = {
     val grown = ensureTrack(trackIndex)
     val current = grown.tracks(trackIndex)
     val next = current.add(segment, interval, origin)
@@ -69,31 +69,31 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     if (working.isEmpty) t else t.withTracks(working.toSeq)
   }
 
-  def split(track: Track, time: Long): Timeline = {
+  def split(track: Track, time: Instant): Timeline = {
     val current = getTrackOrCreate(track.index)
     if (current.canSplit(time)) withTrack(track.index, current.split(time)) else this
   }
 
-  def setStart(ids: Iterable[Id], deltaTime: Long)(using source: IdSource): (Timeline, Long) = {
+  def setStart(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): (Timeline, Timespan) = {
     applyPerTrack(ids, deltaTime, false)
   }
 
-  def setEnd(ids: Iterable[Id], deltaTime: Long)(using source: IdSource): (Timeline, Long) = {
+  def setEnd(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): (Timeline, Timespan) = {
     applyPerTrack(ids, deltaTime, true)
   }
 
-  private def applyPerTrack(ids: Iterable[Id], deltaTime: Long, end: Boolean)(using source: IdSource): (Timeline, Long) = {
-    if (deltaTime == 0 || ids.isEmpty) return (this, 0L)
-    val forward = deltaTime > 0
+  private def applyPerTrack(ids: Iterable[Id], deltaTime: Timespan, end: Boolean)(using source: IdSource): (Timeline, Timespan) = {
+    if (deltaTime == Timespan.Zero || ids.isEmpty) return (this, Timespan.Zero)
+    val forward = deltaTime > Timespan.Zero
     val indices = trackIndicesOf(ids)
-    if (indices.isEmpty) return (this, 0L)
+    if (indices.isEmpty) return (this, Timespan.Zero)
 
     val bounds = indices
       .map((i: Int) => { val t = tracks(i); if (end) t.endLimit(ids, forward) else t.startLimit(ids, forward) })
-    val bound: Long = if (forward) bounds.min else bounds.max
-    val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
-                  else Math.max(deltaTime, Math.min(bound, 0))
-    if (applied == 0) return (this, 0L)
+    val bound: Timespan = if (forward) bounds.min else bounds.max
+    val applied = if (forward) deltaTime.min(bound.max(Timespan.Zero))
+                  else deltaTime.max(bound.min(Timespan.Zero))
+    if (applied == Timespan.Zero) return (this, Timespan.Zero)
 
     val edits = mutable.ArrayBuffer.empty[(Int, Track)]
     for (i <- indices) {
@@ -104,17 +104,17 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     (withTracks(edits.toSeq), applied)
   }
 
-  def moveTime(ids: Iterable[Id], deltaTime: Long)(using source: IdSource): (Timeline, Long) = {
-    if (deltaTime == 0 || ids.isEmpty) return (this, 0L)
-    val forward = deltaTime > 0
+  def moveTime(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): (Timeline, Timespan) = {
+    if (deltaTime == Timespan.Zero || ids.isEmpty) return (this, Timespan.Zero)
+    val forward = deltaTime > Timespan.Zero
     val indices = trackIndicesOf(ids)
-    if (indices.isEmpty) return (this, 0L)
+    if (indices.isEmpty) return (this, Timespan.Zero)
 
     val bounds = indices.map((i: Int) => tracks(i).moveLimit(ids, forward))
-    val bound: Long = if (forward) bounds.min else bounds.max
-    val applied = if (forward) Math.min(deltaTime, Math.max(bound, 0))
-                  else Math.max(deltaTime, Math.min(bound, 0))
-    if (applied == 0) return (this, 0L)
+    val bound: Timespan = if (forward) bounds.min else bounds.max
+    val applied = if (forward) deltaTime.min(bound.max(Timespan.Zero))
+                  else deltaTime.max(bound.min(Timespan.Zero))
+    if (applied == Timespan.Zero) return (this, Timespan.Zero)
 
     val idsVector = ids.toVector
     val idSet = idsVector.toSet
@@ -168,7 +168,7 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     val applied = findPlaceableTrack(idsVector, deltaTrack)
     if (applied == 0) return (this, 0)
 
-    val moves = mutable.ArrayBuffer.empty[(Content, Int, Int, Interval, Long)]
+    val moves = mutable.ArrayBuffer.empty[(Content, Int, Int, Interval, Instant)]
     for (id <- idsVector) {
       findTrackOf(id).foreach { from =>
         val c = from.segment(id).asInstanceOf[Content]
@@ -252,23 +252,23 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
   }
 
   /** 在 [time±threshold] 内扫描所有轨道条目，返回最近的起点/终点。 */
-  def snapTime(time: Long, threshold: Long, ignore: scala.collection.Set[Id]): Long = {
+  def snapTime(time: Instant, threshold: Timespan, ignore: scala.collection.Set[Id]): Instant = {
     var best = time
     var bestDist = threshold
-    val searchStart: Long = Math.max(0, time - threshold)
-    val searchEnd: Long = time + threshold
+    val searchStart: Instant = Instant.Zero.max(time - threshold)
+    val searchEnd: Instant = time + threshold
     if (searchEnd <= searchStart) return time
     val searchInterval: Interval = searchStart ~~ searchEnd
     for (track <- tracks) {
       for (s <- track.getIntersecting(searchInterval)) {
         if (!ignore.contains(s.id)) {
           val r = track.interval(s.id)
-          var dist = Math.abs(r.lo - time)
+          var dist = (r.lo - time).abs
           if (dist < bestDist) {
             best = r.lo
             bestDist = dist
           }
-          dist = Math.abs(r.hi - time)
+          dist = (r.hi - time).abs
           if (dist < bestDist) {
             best = r.hi
             bestDist = dist
@@ -276,8 +276,9 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
         }
       }
     }
-    if (time < threshold && time < bestDist) {
-      best = 0
+    val zeroDist = time - Instant.Zero
+    if (zeroDist < threshold && zeroDist < bestDist) {
+      best = Instant.Zero
     }
     best
   }
@@ -327,8 +328,8 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
       .mkString
     "Timeline:" + body
   }
-  def getLength: Long = {
-    if (tracks.isEmpty) 0L else tracks.iterator.map(_.length).max
+  def getLength: Instant = {
+    if (tracks.isEmpty) Instant.Zero else tracks.iterator.map(_.length).max
   }
   def getTracks: Seq[Track] = {
     tracks

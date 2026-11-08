@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.timeline.{Content, Segment, Track, Transition}
+import com.lomekwi.cave.timeline.{Content, Instant, Segment, Timespan, Track, Transition}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlTransitionActor}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
@@ -45,21 +45,21 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     if (left.source eq from) (left, right, false) else (right, left, true)
   }
 
-  final override protected def produce(time: Long, track: Track, segment: Segment): O = {
+  final override protected def produce(time: Timespan, track: Track, segment: Segment): O = {
     val (fromSeg, toSeg, flipped) = rawSides(segment, track)
-    val abs = track.getOrigin(segment) + time
+    val abs: Instant = track.getOrigin(segment) + time
     val a = fromSeg.get(abs - track.getOrigin(fromSeg), track).asInstanceOf[I]
     val b = toSeg.get(abs - track.getOrigin(toSeg), track).asInstanceOf[I]
     if (a == null && b == null) null.asInstanceOf[O]
     else {
-      val progress = time.toFloat / track.interval(segment).len
+      val progress = time.value.toFloat / track.interval(segment).len.value
       if (flipped) mix(b, a, 1f - progress) else mix(a, b, progress)
     }
   }
 
-  override def sync(time: Long, track: Track, segment: Segment): Unit = {
+  override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
     val (fromSeg, toSeg, _) = rawSides(segment, track)
-    val abs = track.getOrigin(segment) + time
+    val abs: Instant = track.getOrigin(segment) + time
     fromSeg.sync(abs - track.getOrigin(fromSeg), track)
     toSeg.sync(abs - track.getOrigin(toSeg), track)
   }
@@ -69,11 +69,11 @@ abstract class TransitionSource[I <: Frame, O <: Frame](val from: Source[? <: I]
     to.prefetch()
   }
 
-  override def getLengthPerExportFrame: Long = 1
+  override def getLengthPerExportFrame: Timespan = Timespan(1)
 
-  override def getDuration: Long = Long.MaxValue
+  override def getDuration: Timespan = Timespan.MaxValue
 
-  override def getDefaultDuration: Option[Long] = None
+  override def getDefaultDuration: Option[Timespan] = None
 
   override def createTlSegmentActor(segment: Segment): TlSegmentActor = new TlTransitionActor(segment)
 }

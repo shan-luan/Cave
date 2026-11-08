@@ -1,6 +1,5 @@
 package com.lomekwi.cave.task
 
-import com.lomekwi.cave.util.Units.SECOND
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -17,7 +16,7 @@ import com.lomekwi.cave.pipeline.audio.AudFrame
 import com.lomekwi.cave.pipeline.image.Renderable
 import com.lomekwi.cave.project.Project
 import com.lomekwi.cave.resource.decoder.AudDecRes
-import com.lomekwi.cave.timeline.{Gap, Segment, Timeline, Track}
+import com.lomekwi.cave.timeline.{Gap, Instant, Segment, Timeline, Timespan, Track}
 
 import org.bytedeco.javacv.FFmpegFrameRecorder
 
@@ -35,8 +34,8 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
   private var activeSegments: Array[Segment] = uninitialized
   private var fb: FrameBuffer = uninitialized
   private var batch: SpriteBatch = uninitialized
-  @volatile private var t: Long = 0
-  private var frameLen: Long = 0
+  @volatile private var t: Instant = Instant.Zero
+  private var frameLen: Timespan = Timespan.Zero
   private var cvFrame: org.bytedeco.javacv.Frame = uninitialized
   private final val queue: SynchronousQueue[org.bytedeco.javacv.Frame] = new SynchronousQueue[org.bytedeco.javacv.Frame]()
   private var projMatrix: Matrix4 = uninitialized
@@ -53,12 +52,12 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
   }
   fb = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, true)
   batch = new SpriteBatch()
-  frameLen = (SECOND / fps).toLong
+  frameLen = Timespan.SECOND / fps
   cvFrame = new org.bytedeco.javacv.Frame(width, height, org.bytedeco.javacv.Frame.DEPTH_UBYTE, 4)
   projMatrix = new Matrix4().setToOrtho(0, fb.getWidth.toFloat, fb.getHeight.toFloat, 0, 0, 1)
 
   override def getProgress: Float = {
-    t.toFloat / timeline.getLength
+    t.value.toFloat / timeline.getLength.value
   }
 
   override def run(): Unit = {
@@ -107,13 +106,13 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
     val active: Array[Segment] = new Array[Segment](tracks.length)
     val mixBuf: Array[Float] = new Array[Float](VideoExportTask.AUDIO_FRAME_SIZE)
 
-    var audioT: Long = 0
+    var audioT: Instant = Instant.Zero
     while (audioT < timeline.getLength) {
       util.Arrays.fill(mixBuf, 0f)
 
       var i = 0
       while (i < tracks.length) {
-        if (tracks(i).length != 0) {
+        if (tracks(i).length != Instant.Zero) {
           val segment = tracks(i).get(audioT) match {
             case s: Segment => s
             case _: Gap => null
@@ -148,7 +147,7 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
         j += 1
       }
 
-      recorder.setTimestamp(audioT)
+      recorder.setTimestamp(audioT.value)
       recorder.recordSamples(FloatBuffer.wrap(mixBuf))
       audioT += VideoExportTask.AUDIO_FRAME_DURATION
     }
@@ -176,7 +175,7 @@ class VideoExportTask(private val timeline: Timeline, private val project: Proje
     Gdx.gl.glReadPixels(0, 0, fb.getWidth, fb.getHeight, GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, cvFrame.image(0))
 
     fb.end()
-    cvFrame.timestamp = t
+    cvFrame.timestamp = t.value
     try {
       queue.put(cvFrame)
     } catch {
@@ -201,5 +200,5 @@ object VideoExportTask {
   private val AUDIO_FRAME_SIZE = AudDecRes.FRAME_SIZE
   private val AUDIO_SAMPLE_RATE = 44100
   private val AUDIO_CHANNELS = 2
-  private val AUDIO_FRAME_DURATION = AUDIO_FRAME_SIZE * SECOND / AUDIO_SAMPLE_RATE / AUDIO_CHANNELS
+  private val AUDIO_FRAME_DURATION: Timespan = Timespan(AUDIO_FRAME_SIZE.toLong * Timespan.SECOND.value / AUDIO_SAMPLE_RATE / AUDIO_CHANNELS)
 }

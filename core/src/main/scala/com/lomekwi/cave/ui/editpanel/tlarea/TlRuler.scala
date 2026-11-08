@@ -8,7 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.{InputEvent, InputListener}
 import com.badlogic.gdx.scenes.scene2d.ui.Widget
 import com.kotcrab.vis.ui.VisUI
 import com.lomekwi.cave.app.App
-import com.lomekwi.cave.util.Units.{SECOND, niceScale}
+import com.lomekwi.cave.timeline.{Instant, Timespan}
+import com.lomekwi.cave.util.niceScale
 
 class TlRuler(private final val timelineView: TimelineView) extends Widget {
   private final val font: BitmapFont = VisUI.getSkin.getFont("default-font")
@@ -68,8 +69,9 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
     super.draw(batch, parentAlpha)
     App.root.shapeDrawer.filledRectangle(getX, getY, getWidth, getHeight, Color.DARK_GRAY)
 
-    val interval: Long = niceScale((timelineView.view.durationTime * TlRuler.PIXELS_PER_TICK / getWidth).toLong)
-    val start: Long = (timelineView.view.startTime / interval) * interval
+    val rawInterval = timelineView.view.durationTime * (TlRuler.PIXELS_PER_TICK / getWidth)
+    val interval = Timespan(niceScale(rawInterval.value))
+    val start = timelineView.view.startTime.floorTo(interval)
 
     var t = start
     while (t < timelineView.view.startTime + timelineView.view.durationTime) {
@@ -82,8 +84,9 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
     }
   }
 
-  private def formatTime(t: Long, interval: Long): Unit = {
-    var seconds: Long = t / SECOND
+  private def formatTime(t: Instant, interval: Timespan): Unit = {
+    val sinceZero = t - Instant.Zero
+    var seconds: Long = sinceZero / Timespan.SECOND
     val minutes: Long = seconds / 60
     seconds = seconds % 60
     sb.setLength(0)
@@ -91,8 +94,8 @@ class TlRuler(private final val timelineView: TimelineView) extends Widget {
     sb.append(minutes).append(':')
     if (seconds < 10) sb.append('0')
     sb.append(seconds)
-    if (interval < SECOND) {
-      val cs: Long = (t % SECOND) / 10000
+    if (interval < Timespan.SECOND) {
+      val cs: Long = (sinceZero % Timespan.SECOND).value / 10000
       sb.append('.')
       if (cs < 10) sb.append('0')
       sb.append(cs)

@@ -1,33 +1,32 @@
 package com.lomekwi.cave.pipeline.num
 
-import com.lomekwi.cave.util.Units.SECOND
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
 import com.lomekwi.cave.pipeline.Source
-import com.lomekwi.cave.timeline.{Segment, Track}
+import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
 //TODO:WIP
 @SerialVersionUID(1L)
 class NumSource extends Source[NumFrame] {
-  override protected def produce(time: Long, track: Track, segment: Segment): NumFrame = {
+  override protected def produce(time: Timespan, track: Track, segment: Segment): NumFrame = {
     if (frame == null || frame.trackIndex != track.index) {
       frame = new NumFrame(track.index, segment.id)
     }
     frame
   }
 
-  override def getLengthPerExportFrame: Long = {
-    SECOND
+  override def getLengthPerExportFrame: Timespan = {
+    Timespan.SECOND
   }
 
-  override def getDuration: Long = {
-    Long.MaxValue
+  override def getDuration: Timespan = {
+    Timespan.MaxValue
   }
 
-  override def getDefaultDuration: Option[Long] = {
-    Some(5 * SECOND)
+  override def getDefaultDuration: Option[Timespan] = {
+    Some(Timespan.SECOND * 5)
   }
 
   override def displayName: String = {

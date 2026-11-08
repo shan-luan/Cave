@@ -2,6 +2,7 @@ package com.lomekwi.cave.playback
 
 import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.EventBus
+import com.lomekwi.cave.timeline.{Instant, Timespan}
 
 import scala.collection.mutable
 
@@ -33,8 +34,8 @@ class Playhead(@transient private val projEventBus: EventBus) {
 
   def getSeekVersion: Long = seekVersion
 
-  def seek(time: Long): Unit = {
-    var t = time
+  def seek(time: Instant): Unit = {
+    var t = time.value
     t *= 1000
 
     frozenTime = t
@@ -86,7 +87,7 @@ class Playhead(@transient private val projEventBus: EventBus) {
     }
   }
 
-  def getTime: Long = getNanoTime / 1000
+  def getTime: Instant = Instant.At(Timespan(getNanoTime / 1000))
 
   private def getNanoTime: Long = {
     if (playState == PlayState.Playing) {

@@ -23,7 +23,7 @@ sealed abstract class Segment(val id: Id, val source: Source[? <: Frame])
   @transient private lazy val segmentActor: TlSegmentActor = createTlSegmentActor()
 
   /** 获取指定时间的产品。 */
-  final def get(time: Long, track: Track): Frame = this.synchronized {
+  final def get(time: Timespan, track: Track): Frame = this.synchronized {
     val generated = source.generate(time, track, this)
     if (filters.isEmpty) generated        else filters.last.filterOut.getData.asInstanceOf[Frame]
   }
@@ -32,7 +32,7 @@ sealed abstract class Segment(val id: Id, val source: Source[? <: Frame])
    * 同步到指定时间。
    * @param time 片段内时间
    */
-  def sync(time: Long, track: Track): Unit = this.synchronized {
+  def sync(time: Timespan, track: Track): Unit = this.synchronized {
     source.sync(time, track, this)
   }
 
@@ -53,17 +53,17 @@ sealed abstract class Segment(val id: Id, val source: Source[? <: Frame])
     source.getType
   }
 
-  def getLengthPerExportFrame: Long = {
+  def getLengthPerExportFrame: Timespan = {
     source.getLengthPerExportFrame
   }
 
   /** 片段的总时长（微秒） */
-  def getDuration: Long = {
+  def getDuration: Timespan = {
     source.getDuration
   }
 
   /** 插入时间轴时片段使用的默认时长。 */
-  final def getDefaultDuration: Long = {
+  final def getDefaultDuration: Timespan = {
     source.getDefaultDuration.getOrElse(throw new IllegalStateException(("该源没有可放置的默认时长: ".in(Zh) | "This source has no default duration to place: ".in(En)).str() + displayName))
   }
 
@@ -107,14 +107,14 @@ abstract class Content(id: Id, source: Source[? <: Frame]) extends Segment(id, s
 /** 有界素材内容。 */
 @SerialVersionUID(1L)
 class Clip(id: Id, source: Source[? <: Frame]) extends Content(id, source) {
-  require(source.getDuration != Long.MaxValue,
+  require(source.getDuration != Timespan.MaxValue,
     ("有界片段的源时长必须有限: ".in(Zh) | "The source duration of a bounded segment must be finite: ".in(En)).str() + source.displayName)
 }
 
 /** 时长无界的内容，没有素材起点。 */
 @SerialVersionUID(1L)
 class Boundless(id: Id, source: Source[? <: Frame]) extends Content(id, source) {
-  require(source.getDuration == Long.MaxValue,
+  require(source.getDuration == Timespan.MaxValue,
     ("无界片段的源时长必须无界: ".in(Zh) | "The source duration of an unbounded segment must be unbounded: ".in(En)).str() + source.displayName)
 }
 

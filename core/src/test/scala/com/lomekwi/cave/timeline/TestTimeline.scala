@@ -11,7 +11,7 @@ final class TestTimeline(val session: ProjectSession) {
 
   def project: Project = session.project
 
-  def add(track: Track, segment: Content, interval: Interval, origin: Long): Boolean = {
+  def add(track: Track, segment: Content, interval: Interval, origin: Instant): Boolean = {
     val before = timeline
     val next = before.add(track.index, segment, interval, origin)
     session.applyProject(_.withTimeline(next))
@@ -22,21 +22,21 @@ final class TestTimeline(val session: ProjectSession) {
 
   def remove(segments: Iterable[Segment]): Unit = session.applyProject(p => p.withTimeline(p.timeline.remove(segments.map(_.id))))
 
-  def split(track: Track, time: Long): Unit = session.applyProject(p => p.withTimeline(p.timeline.split(track, time)))
+  def split(track: Track, time: Instant): Unit = session.applyProject(p => p.withTimeline(p.timeline.split(track, time)))
 
-  def setStart(segments: Iterable[Segment], deltaTime: Long): Long = {
+  def setStart(segments: Iterable[Segment], deltaTime: Timespan): Timespan = {
     val (next, applied) = timeline.setStart(segments.map(_.id), deltaTime)
     session.applyProject(_.withTimeline(next))
     applied
   }
 
-  def setEnd(segments: Iterable[Segment], deltaTime: Long): Long = {
+  def setEnd(segments: Iterable[Segment], deltaTime: Timespan): Timespan = {
     val (next, applied) = timeline.setEnd(segments.map(_.id), deltaTime)
     session.applyProject(_.withTimeline(next))
     applied
   }
 
-  def moveTime(segments: Iterable[Segment], deltaTime: Long): Long = {
+  def moveTime(segments: Iterable[Segment], deltaTime: Timespan): Timespan = {
     val (next, applied) = timeline.moveTime(segments.map(_.id), deltaTime)
     session.applyProject(_.withTimeline(next))
     applied
@@ -66,7 +66,7 @@ final class TestTimeline(val session: ProjectSession) {
 
   def snapshot(): Unit = session.snapshot()
 
-  def snapTime(time: Long, threshold: Long, ignore: Set[Segment]): Long = timeline.snapTime(time, threshold, ignore.map(_.id))
+  def snapTime(time: Instant, threshold: Timespan, ignore: Set[Segment]): Instant = timeline.snapTime(time, threshold, ignore.map(_.id))
 
   def findTrackOf(segment: Segment): Option[Track] = timeline.findTrackOf(segment.id)
 
@@ -78,5 +78,5 @@ final class TestTimeline(val session: ProjectSession) {
 
   def getTracks: Seq[Track] = timeline.getTracks
 
-  def getLength: Long = timeline.getLength
+  def getLength: Instant = timeline.getLength
 }

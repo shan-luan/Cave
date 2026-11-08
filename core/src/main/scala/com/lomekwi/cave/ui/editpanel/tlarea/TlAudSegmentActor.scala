@@ -6,7 +6,8 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.lomekwi.cave.pipeline.audio.AudSource
 import com.lomekwi.cave.resource.media.AudRes
-import com.lomekwi.cave.timeline.Segment
+import com.lomekwi.cave.timeline.{Segment, Timespan}
+import com.lomekwi.cave.timeline.Timespan.*
 import com.lomekwi.cave.ui.Colors
 
 class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
@@ -21,20 +22,20 @@ class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
 
     val contentInterval = interval
     val contentOrigin = origin
-    val srcLocalStart: Long = contentInterval.lo - contentOrigin
-    val srcLocalEnd: Long = contentInterval.hi - contentOrigin
-    val srcDuration: Long = srcLocalEnd - srcLocalStart
-    if (srcDuration <= 0) return
+    val srcLocalStart: Timespan = contentInterval.lo - contentOrigin
+    val srcLocalEnd: Timespan = contentInterval.hi - contentOrigin
+    val srcDuration: Timespan = srcLocalEnd - srcLocalStart
+    if (srcDuration <= Timespan.Zero) return
 
-    val step: Long = wf.bucketDuration
-    val pxPerUs: Float = getWidth / srcDuration.toFloat
-    val gridOrigin: Long = (srcLocalStart / step) * step
-    val absVisibleStart: Long = srcLocalStart + (visibleStartX / pxPerUs).toLong
-    val absVisibleEnd: Long = srcLocalStart + (visibleEndX / pxPerUs).toLong
-    var firstT: Long = ((absVisibleStart - gridOrigin) / step) * step + gridOrigin
-    firstT = Math.max(gridOrigin, firstT)
-    val lastT: Long = Math.min(srcLocalEnd, absVisibleEnd)
-    var t: Long = firstT
+    val step: Timespan = wf.bucketDuration
+    val pxPerUs: Float = getWidth / srcDuration.value.toFloat
+    val gridOrigin: Timespan = srcLocalStart.floorTo(step)
+    val absVisibleStart: Timespan = srcLocalStart + (visibleStartX / pxPerUs).micros
+    val absVisibleEnd: Timespan = srcLocalStart + (visibleEndX / pxPerUs).micros
+    var firstT: Timespan = (absVisibleStart - gridOrigin).floorTo(step) + gridOrigin
+    firstT = gridOrigin.max(firstT)
+    val lastT: Timespan = srcLocalEnd.min(absVisibleEnd)
+    var t: Timespan = firstT
     while (t < lastT) {
       res.getPreview(t)
       t += step
@@ -45,12 +46,12 @@ class TlAudSegmentActor(segment: Segment) extends TlSegmentActor(segment) {
       wf.dirty = false
     }
 
-    val bucketUs: Long = wf.bucketDuration
+    val bucketUs: Timespan = wf.bucketDuration
     val totalBuckets: Int = wf.totalBuckets
     if (totalBuckets <= 0) return
 
-    val startBucket: Float = srcLocalStart.toFloat / bucketUs
-    val endBucket: Float = startBucket + srcDuration.toFloat / bucketUs
+    val startBucket: Float = srcLocalStart.value.toFloat / bucketUs.value
+    val endBucket: Float = startBucket + srcDuration.value.toFloat / bucketUs.value
 
     val shader: ShaderProgram = TlAudSegmentActor.waveShader
     if (!shader.isCompiled) return

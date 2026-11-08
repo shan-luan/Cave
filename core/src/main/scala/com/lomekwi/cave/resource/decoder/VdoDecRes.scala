@@ -1,6 +1,6 @@
 package com.lomekwi.cave.resource.decoder
 
-import com.lomekwi.cave.util.Units.SECOND
+import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
@@ -65,11 +65,11 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     grabber.getVideoCodec
   }
 
-  override def lengthPerFrame: Long = {
+  override def lengthPerFrame: Timespan = {
     if (!initialized) {
       throw new IllegalStateException("Not initialized")
     }
-    Math.round(SECOND / grabber.getFrameRate)
+    Timespan(Math.round(Timespan.SECOND.value / grabber.getFrameRate))
   }
 
   override protected def configure(): Unit = {
@@ -81,7 +81,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     super.close()
   }
 
-  override def sync(time: Long): Unit = {
+  override def sync(time: Timespan): Unit = {
     if (!initialized) {
       start()
     }
@@ -89,11 +89,11 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     val validTime = toValidTime(time)
     val diff = validTime - getLastFrameTime
 
-    if (diff < 0 || diff > 2 * lengthPerFrame) {
+    if (diff < Timespan.Zero || diff > lengthPerFrame * 2) {
       seek(validTime)
       bufferedPixels = null
     }
-    Gdx.app.debug(("视频解码".in(Zh) | "Video Decode".in(En)).str(), hashCode().toString + ("同步到".in(Zh) | "Synchronized to ".in(En)).str() + (validTime / SECOND).toString + ("秒".in(Zh) | "s".in(En)).str())
+    Gdx.app.debug(("视频解码".in(Zh) | "Video Decode".in(En)).str(), hashCode().toString + ("同步到".in(Zh) | "Synchronized to ".in(En)).str() + (validTime / Timespan.SECOND).toString + ("秒".in(Zh) | "s".in(En)).str())
   }
 
   /**
@@ -102,7 +102,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
    * @param time  目标时间
    * @param frame 要更新的帧对象
    */
-  override def get(time: Long, frame: ImgFrame): Unit = {
+  override def get(time: Timespan, frame: ImgFrame): Unit = {
     if (!initialized) {
       start()
     }
@@ -131,7 +131,7 @@ class VdoDecRes(segment: VdoRes) extends DecRes[ImgFrame](segment) {
     }
   }
 
-  override def seek(time: Long): Unit = {
-    grabber.setVideoTimestamp(time)
+  override def seek(time: Timespan): Unit = {
+    grabber.setVideoTimestamp(time.value)
   }
 }

@@ -3,6 +3,7 @@ package com.lomekwi.cave.timeline
 import com.lomekwi.cave.collection.BiMap
 import com.lomekwi.cave.pipeline.{BlockSource, EvalClock, Frame}
 import com.lomekwi.cave.project.{Id, IdSource}
+import com.lomekwi.cave.timeline.Timespan.*
 
 import java.io.Serializable
 import scala.collection.immutable
@@ -13,7 +14,7 @@ import scala.collection.immutable.TreeMap
 case class Track private (index: Int,
                           private val segments: Map[Id, Segment],
                           private val layout: Track.Layout,
-                          private val segToOrigin: Map[Id, Long],//TODO:很多人似乎没法理解这是啥，也许应该改成更常见的入点概念。顺便，可以并入Segment?
+                          private val segToOrigin: Map[Id, Instant],//TODO:很多人似乎没法理解这是啥，也许应该改成更常见的入点概念。顺便，可以并入Segment?
                           private val transitions: Track.TransitionIndex) extends Serializable with Iterable[Id] {
 
   private def isBlock(id: Id): Boolean = id == Id.noId()
@@ -34,8 +35,8 @@ case class Track private (index: Int,
     def interval: Interval = e match {
       case s: Segment => s.id.interval
       case Gap(before, after) =>
-        val lo = before.map(id => id.interval.hi).getOrElse(0L)
-        val hi = after.map(id => id.interval.lo).getOrElse(Long.MaxValue)
+        val lo = before.map(id => id.interval.hi).getOrElse(Instant.Zero)
+        val hi = after.map(id => id.interval.lo).getOrElse(Instant.MaxValue)
         lo ~~ hi
     }
 
@@ -46,9 +47,9 @@ case class Track private (index: Int,
     }
 
   /** 片段的 0 秒在时间轴中的位置。 */
-  def getOrigin(segment: Segment): Long = getOrigin(segment.id)
+  def getOrigin(segment: Segment): Instant = getOrigin(segment.id)
 
-  def getOrigin(id: Id): Long = segment(id) match {
+  def getOrigin(id: Id): Instant = segment(id) match {
     case _: Clip =>
       require(segToOrigin.contains(id))
       segToOrigin(id)
@@ -60,10 +61,10 @@ case class Track private (index: Int,
 
   def contains(id: Id): Boolean = layout.containsValue(id)
 
-  def length: Long = intervalToSeg.last._1.hi
+  def length: Instant = intervalToSeg.last._1.hi
 
   /** 按起点顺序的下一个内容片段。 */
-  private[timeline] def nextContent(c: Content): Option[Content] = contentAtOrAfter(c.id.interval.lo + 1, Set.empty)
+  private[timeline] def nextContent(c: Content): Option[Content] = contentAtOrAfter(c.id.interval.lo + 1.micros, Set.empty)
 
   /** 按起点顺序的上一个内容片段。 */
   private[timeline] def prevContent(c: Content): Option[Content] = contentBefore(c.id.interval.lo, Set.empty)
@@ -82,11 +83,11 @@ case class Track private (index: Int,
     transitions.get(c.id).filter(id => contains(id)).map(transitionOf)
 
   /** 带有后接转场的片段，其后接转场的起点。 */
-  def soloEndOf(segment: Segment): Long = segment match {
+  def soloEndOf(segment: Segment): Instant = segment match {
     case c: Content =>
       val r = c.id.interval
       placedTransitionAfter(c) match {
-        case Some(t) => Math.min(r.hi, t.interval.lo)
+        case Some(t) => r.hi.min(t.interval.lo)
         case None => r.hi
       }
     case _ => segment.interval.hi
@@ -95,15 +96,15 @@ case class Track private (index: Int,
   /** 转场两侧的内容，左前右后。 */
   def transitionSides(t: Transition): Option[(Content, Content)] =
     transitions.getKey(t.id).filter(id => contains(id)).flatMap { leftId =>
-      contentAtOrAfter(leftId.interval.lo + 1, Set.empty).map { right =>
+      contentAtOrAfter(leftId.interval.lo + 1.micros, Set.empty).map { right =>
         (segment(leftId).asInstanceOf[Content], right)
       }
     }
 
-  protected[timeline] def add(c: Content, r: Interval, origin: Long)(using ids: IdSource): Track =
+  protected[timeline] def add(c: Content, r: Interval, origin: Instant)(using ids: IdSource): Track =
     if (canPlaceAt(c, r)) put(c, r, origin).syncAround(c) else this
 
-  private def put(element: Segment, r: Interval, origin: Long): Track = {
+  private def put(element: Segment, r: Interval, origin: Instant): Track = {
     val id = element.id
     val origins = element match {
       case _: Clip => segToOrigin.updated(id, origin)
@@ -133,7 +134,7 @@ case class Track private (index: Int,
     val rightOk = right.forall { x =>
       val rr = x.id.interval
       val crosses = r.hi <= rr.lo || (r.lo < rr.lo && r.hi < rr.hi && canTransition(c, x))
-      crosses && contentAtOrAfter(rr.lo + 1, skip).forall(rn => r.hi <= rn.id.interval.lo)
+      crosses && contentAtOrAfter(rr.lo + 1.micros, skip).forall(rn => r.hi <= rn.id.interval.lo)
     }
     if (!rightOk) return false
     (left, right) match {
@@ -143,8 +144,8 @@ case class Track private (index: Int,
   }
 
   /** 起点小于 time 的最后一个内容片段，跳过 skip 里的条目。 */
-  private def contentBefore(time: Long, skip: Set[Id]): Option[Content] = {
-    var bound = Interval.at(time)
+  private def contentBefore(time: Instant, skip: Set[Id]): Option[Content] = {
+    var bound = Interval.singleton(time)
     var entry = intervalToSeg.rangeUntil(bound).lastOption
     while (entry.isDefined) {
       val current = entry.get
@@ -162,8 +163,8 @@ case class Track private (index: Int,
   }
 
   /** 起点不小于 time 的第一个内容片段，跳过 skip 里的条目。 */
-  private def contentAtOrAfter(time: Long, skip: Set[Id]): Option[Content] = {
-    intervalToSeg.rangeFrom(Interval.at(time)).iterator
+  private def contentAtOrAfter(time: Instant, skip: Set[Id]): Option[Content] = {
+    intervalToSeg.rangeFrom(Interval.singleton(time)).iterator
       .map(_._2)
       .filter(id => !isBlock(id) && !skip.contains(id))
       .map(segment)
@@ -241,7 +242,7 @@ case class Track private (index: Int,
         val pr = t.interval(left)
         val nr = t.interval(right)
         if (nr.lo < pr.hi && !(pr.lo < nr.lo && pr.hi < nr.hi)) {
-          val target = Math.max(nr.lo, pr.hi)
+          val target = nr.lo.max(pr.hi)
           if (target < nr.hi) {
             t = t.put(right, target ~~ nr.hi, t.getOrigin(right))
           }
@@ -260,11 +261,11 @@ case class Track private (index: Int,
     val lr = left.interval
     val rr = right.interval
     val half = tr.len / 2
-    val lower = Math.max(Math.max(lr.lo + 1, minStartOf(right)), endLower(left))
+    val lower = (lr.lo + 1.micros).max(minStartOf(right)).max(endLower(left))
     var boundary = lr.hi - half
-    boundary = Math.max(boundary, lower)
-    boundary = Math.min(boundary, rr.hi - 1)
-    nextContent(right).foreach(rn => boundary = Math.min(boundary, rn.interval.lo - 1))
+    boundary = boundary.max(lower)
+    boundary = boundary.min(rr.hi - 1.micros)
+    nextContent(right).foreach(rn => boundary = boundary.min(rn.interval.lo - 1.micros))
     if (boundary < lower || boundary <= lr.lo || boundary >= rr.hi) return this
     val next = dropFromLayout(t.id)
       .put(left, lr.lo ~~ boundary, getOrigin(left))
@@ -282,10 +283,10 @@ case class Track private (index: Int,
   }
 
   /** 在 time 处把内容片段一分为二。 */
-  protected[timeline] def split(time: Long): Track = ???
+  protected[timeline] def split(time: Instant): Track = ???
 
   /** 裁切一组片段的起始边缘（各自终点不变）。 */
-  protected[timeline] def setStart(ids: Iterable[Id], deltaTime: Long)(using source: IdSource): Track = {
+  protected[timeline] def setStart(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): Track = {
     var t = this
     for (id <- ids) {
       if (t.contains(id)) t = t.setStart(id, deltaTime)
@@ -293,13 +294,13 @@ case class Track private (index: Int,
     t
   }
 
-  protected[timeline] def setStart(id: Id, deltaTime: Long)(using ids: IdSource): Track = segment(id) match {
+  protected[timeline] def setStart(id: Id, deltaTime: Timespan)(using ids: IdSource): Track = segment(id) match {
     case t: Transition => setTransitionStart(t, deltaTime)
     case c: Content => setContentStart(c, deltaTime)
   }
 
   /** 裁切一组片段的结束边缘（各自起点不变）。 */
-  protected[timeline] def setEnd(ids: Iterable[Id], deltaTime: Long)(using source: IdSource): Track = {
+  protected[timeline] def setEnd(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): Track = {
     var t = this
     for (id <- ids) {
       if (t.contains(id)) t = t.setEnd(id, deltaTime)
@@ -307,87 +308,87 @@ case class Track private (index: Int,
     t
   }
 
-  protected[timeline] def setEnd(id: Id, deltaTime: Long)(using ids: IdSource): Track = segment(id) match {
+  protected[timeline] def setEnd(id: Id, deltaTime: Timespan)(using ids: IdSource): Track = segment(id) match {
     case t: Transition => setTransitionEnd(t, deltaTime)
     case c: Content => setContentEnd(c, deltaTime)
   }
 
-  private def setContentStart(c: Content, deltaTime: Long)(using ids: IdSource): Track = {
+  private def setContentStart(c: Content, deltaTime: Timespan)(using ids: IdSource): Track = {
     val r = c.id.interval
     val lower = startLower(c)
     val upper = startUpper(c)
     if (lower > upper) return this
-    val target = Math.max(lower, Math.min(upper, r.lo + deltaTime))
+    val target = (r.lo + deltaTime).max(lower).min(upper)
     if (target == r.lo) return this
     put(c, target ~~ r.hi, getOrigin(c)).syncAround(c)
   }
 
-  private def setContentEnd(c: Content, deltaTime: Long)(using ids: IdSource): Track = {
+  private def setContentEnd(c: Content, deltaTime: Timespan)(using ids: IdSource): Track = {
     val r = c.id.interval
     val lower = endLower(c)
     val upper = endUpper(c)
     if (lower > upper) return this
-    val target = Math.max(lower, Math.min(upper, r.hi + deltaTime))
+    val target = (r.hi + deltaTime).max(lower).min(upper)
     if (target == r.hi) return this
     put(c, r.lo ~~ target, getOrigin(c)).syncAround(c)
   }
 
-  private def setTransitionStart(t: Transition, deltaTime: Long)(using ids: IdSource): Track = transitionSides(t) match {
+  private def setTransitionStart(t: Transition, deltaTime: Timespan)(using ids: IdSource): Track = transitionSides(t) match {
     case Some((_, right)) => setContentStart(right, deltaTime)
     case None => this
   }
 
-  private def setTransitionEnd(t: Transition, deltaTime: Long)(using ids: IdSource): Track = transitionSides(t) match {
+  private def setTransitionEnd(t: Transition, deltaTime: Timespan)(using ids: IdSource): Track = transitionSides(t) match {
     case Some((left, _)) => setContentEnd(left, deltaTime)
     case None => this
   }
 
-  private def startLower(c: Content): Long = {
+  private def startLower(c: Content): Instant = {
     val r = c.id.interval
-    var lower = Math.max(0L, minStartOf(c))
+    var lower = Instant.Zero.max(minStartOf(c))
     prevContent(c) match {
       case Some(p) =>
         val pr = p.id.interval
-        val cap = if (canTransition(p, c) && r.hi > pr.hi) pr.lo + 1 else pr.hi
-        lower = Math.max(lower, cap)
-        prevContent(p).foreach(pp => lower = Math.max(lower, pp.id.interval.hi))
+        val cap = if (canTransition(p, c) && r.hi > pr.hi) pr.lo + 1.micros else pr.hi
+        lower = lower.max(cap)
+        prevContent(p).foreach(pp => lower = lower.max(pp.id.interval.hi))
       case None =>
     }
     lower
   }
 
-  private def startUpper(c: Content): Long = {
+  private def startUpper(c: Content): Instant = {
     val r = c.id.interval
-    var upper = r.hi - 1
+    var upper = r.hi - 1.micros
     nextContent(c).foreach { n =>
       val nr = n.id.interval
       if (nr.lo > r.lo && r.hi > nr.lo) {
-        upper = Math.min(upper, nr.lo - 1)
+        upper = upper.min(nr.lo - 1.micros)
       }
     }
     upper
   }
 
-  private def endLower(c: Content): Long = {
+  private def endLower(c: Content): Instant = {
     val r = c.id.interval
-    var lower = r.lo + 1
+    var lower = r.lo + 1.micros
     prevContent(c).foreach { p =>
       val pr = p.id.interval
       if (pr.hi > r.lo) {
-        lower = Math.max(lower, pr.hi + 1)
+        lower = lower.max(pr.hi + 1.micros)
       }
     }
     lower
   }
 
-  private def endUpper(c: Content): Long = {
+  private def endUpper(c: Content): Instant = {
     val r = c.id.interval
     var upper = maxEndOf(c)
     nextContent(c).foreach { n =>
       val nr = n.id.interval
-      val cap = if (canTransition(c, n)) nr.hi - 1 else nr.lo
-      upper = Math.min(upper, cap)
-      nextContent(n).foreach(nn => upper = Math.min(upper, nn.id.interval.lo))
+      val cap = if (canTransition(c, n)) nr.hi - 1.micros else nr.lo
+      upper = upper.min(cap)
+      nextContent(n).foreach(nn => upper = upper.min(nn.id.interval.lo))
     }
     upper
   }
@@ -401,28 +402,29 @@ case class Track private (index: Int,
   }
 
   /** 整条转场刚性平移，转场宽度不变。 */
-  protected[timeline] def shiftTransition(t: Transition, delta: Long)(using ids: IdSource): Track = {
-    if (delta == 0 || !contains(t)) return this
+  protected[timeline] def shiftTransition(t: Transition, delta: Timespan)(using ids: IdSource): Track = {
+    if (delta == Timespan.Zero || !contains(t)) return this
     val sides = transitionSides(t)
     if (sides.isEmpty) return this
     val (left, right) = sides.get
     val lr = left.id.interval
     val rr = right.id.interval
-    val minShift = Math.max(
-      Math.max(Math.max(minStartOf(right) - rr.lo, lr.lo + 1 - rr.lo), endLower(left) - lr.hi),
-      lr.lo + 1 - lr.hi)
-    var maxShift = Math.min(maxEndOf(left) - lr.hi, rr.hi - lr.hi - 1)
-    nextContent(right).foreach(rn => maxShift = Math.min(maxShift, rn.id.interval.lo - 1 - rr.lo))
+    val minShift = (minStartOf(right) - rr.lo)
+      .max((lr.lo + 1.micros) - rr.lo)
+      .max(endLower(left) - lr.hi)
+      .max((lr.lo + 1.micros) - lr.hi)
+    var maxShift = (maxEndOf(left) - lr.hi).min((rr.hi - lr.hi) - 1.micros)
+    nextContent(right).foreach(rn => maxShift = maxShift.min((rn.id.interval.lo - 1.micros) - rr.lo))
     if (minShift > maxShift) return this
-    val applied = Math.max(minShift, Math.min(maxShift, delta))
-    if (applied == 0) return this
+    val applied = delta.max(minShift).min(maxShift)
+    if (applied == Timespan.Zero) return this
     put(left, lr.lo ~~ (lr.hi + applied), getOrigin(left))
       .put(right, (rr.lo + applied) ~~ rr.hi, getOrigin(right))
       .syncAround(left)
   }
 
   private def derived(layout: Track.Layout,
-                      segToOrigin: Map[Id, Long],
+                      segToOrigin: Map[Id, Instant],
                       segments: Map[Id, Segment]): Track =
     new Track(index, segments, layout, segToOrigin, transitions)
 
@@ -437,7 +439,7 @@ case class Track private (index: Int,
     intersectingEntries(intervalToSeg, interval).forall { case (_, id) => ignore.contains(id) }
   }
 
-  protected[timeline] def startLimit(ids: Iterable[Id], forward: Boolean): Long = {
+  protected[timeline] def startLimit(ids: Iterable[Id], forward: Boolean): Timespan = {
     val offsets = ids.iterator
       .filter(id => contains(id))
       .map { id =>
@@ -446,10 +448,10 @@ case class Track private (index: Int,
           case c: Content => startLimit(c, forward)
         }
       }
-    if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
+    if (forward) offsets.minOption.getOrElse(Timespan.MaxValue) else offsets.maxOption.getOrElse(Timespan.MinValue)
   }
 
-  protected[timeline] def endLimit(ids: Iterable[Id], forward: Boolean): Long = {
+  protected[timeline] def endLimit(ids: Iterable[Id], forward: Boolean): Timespan = {
     val offsets = ids.iterator
       .filter(id => contains(id))
       .map { id =>
@@ -458,39 +460,39 @@ case class Track private (index: Int,
           case c: Content => endLimit(c, forward)
         }
       }
-    if (forward) offsets.minOption.getOrElse(Long.MaxValue) else offsets.maxOption.getOrElse(Long.MinValue)
+    if (forward) offsets.minOption.getOrElse(Timespan.MaxValue) else offsets.maxOption.getOrElse(Timespan.MinValue)
   }
 
-  private def startLimit(c: Content, forward: Boolean): Long = {
+  private def startLimit(c: Content, forward: Boolean): Timespan = {
     val r = c.id.interval
-    if (forward) Math.max(startUpper(c) - r.lo, 0) else Math.min(startLower(c) - r.lo, 0)
+    if (forward) (startUpper(c) - r.lo).max(Timespan.Zero) else (startLower(c) - r.lo).min(Timespan.Zero)
   }
 
-  private def endLimit(c: Content, forward: Boolean): Long = {
+  private def endLimit(c: Content, forward: Boolean): Timespan = {
     val r = c.id.interval
-    if (forward) Math.max(endUpper(c) - r.hi, 0) else Math.min(endLower(c) - r.hi, 0)
+    if (forward) (endUpper(c) - r.hi).max(Timespan.Zero) else (endLower(c) - r.hi).min(Timespan.Zero)
   }
 
-  private def startLimit(t: Transition, forward: Boolean): Long =
-    transitionSides(t).map(s => startLimit(s._2, forward)).getOrElse(0L)
+  private def startLimit(t: Transition, forward: Boolean): Timespan =
+    transitionSides(t).map(s => startLimit(s._2, forward)).getOrElse(Timespan.Zero)
 
-  private def endLimit(t: Transition, forward: Boolean): Long =
-    transitionSides(t).map(s => endLimit(s._1, forward)).getOrElse(0L)
+  private def endLimit(t: Transition, forward: Boolean): Timespan =
+    transitionSides(t).map(s => endLimit(s._1, forward)).getOrElse(Timespan.Zero)
 
   /** 素材起点。 */
-  private def minStartOf(segment: Segment): Long = segment match {
-    case _: Clip => Math.max(0, getOrigin(segment))
-    case _ => 0L
+  private def minStartOf(segment: Segment): Instant = segment match {
+    case _: Clip => Instant.Zero.max(getOrigin(segment))
+    case _ => Instant.Zero
   }
 
   /** 素材终点。 */
-  private def maxEndOf(segment: Segment): Long = segment match {
+  private def maxEndOf(segment: Segment): Instant = segment match {
     case c: Clip => getOrigin(c) + c.getDuration
-    case _ => Long.MaxValue
+    case _ => Instant.MaxValue
   }
 
-  protected[timeline] def moveLimit(ids: Iterable[Id], forward: Boolean)(using source: IdSource): Long = {
-    val noBlock: Long = if (forward) Long.MaxValue else Long.MinValue
+  protected[timeline] def moveLimit(ids: Iterable[Id], forward: Boolean)(using source: IdSource): Timespan = {
+    val noBlock: Timespan = if (forward) Timespan.MaxValue else Timespan.MinValue
     val moving: Set[Id] = ids.toSet
     lazy val bare: Track = removeAll(moving)
     val offsets = moving.iterator
@@ -511,66 +513,66 @@ case class Track private (index: Int,
     if (forward) offsets.minOption.getOrElse(noBlock) else offsets.maxOption.getOrElse(noBlock)
   }
 
-  private def moveLimit(c: Content, r: Interval, moving: Set[Id], forward: Boolean): Long = {
+  private def moveLimit(c: Content, r: Interval, moving: Set[Id], forward: Boolean): Timespan = {
     if (forward) {
-      var bound = Long.MaxValue
+      var bound = Timespan.MaxValue
       nextContent(c).foreach { n =>
         val nr = n.id.interval
         if (!moving.contains(n.id)) {
-          bound = Math.min(bound,
-            if (canTransition(c, n)) Math.min(nr.lo - 1 - r.lo, nr.hi - 1 - r.hi) else nr.lo - r.hi)
+          bound = bound.min(
+            if (canTransition(c, n)) (nr.lo - 1.micros - r.lo).min(nr.hi - 1.micros - r.hi) else nr.lo - r.hi)
         }
-        nextContent(n).foreach(nn => if (!moving.contains(nn.id)) bound = Math.min(bound, nn.id.interval.lo - r.hi))
+        nextContent(n).foreach(nn => if (!moving.contains(nn.id)) bound = bound.min(nn.id.interval.lo - r.hi))
       }
-      Math.max(bound, 0)
+      bound.max(Timespan.Zero)
     } else {
-      var bound = -r.lo
+      var bound = Instant.Zero - r.lo
       prevContent(c).foreach { p =>
         val pr = p.id.interval
         if (!moving.contains(p.id)) {
           val reach =
-            if (canTransition(p, c)) Math.min(pr.hi - r.lo, Math.max(pr.lo + 1 - r.lo, pr.hi + 1 - r.hi))
+            if (canTransition(p, c)) (pr.hi - r.lo).min((pr.lo + 1.micros - r.lo).max(pr.hi + 1.micros - r.hi))
             else pr.hi - r.lo
-          bound = Math.max(bound, reach)
+          bound = bound.max(reach)
         }
-        prevContent(p).foreach(pp => if (!moving.contains(pp.id)) bound = Math.max(bound, pp.id.interval.hi - r.lo))
+        prevContent(p).foreach(pp => if (!moving.contains(pp.id)) bound = bound.max(pp.id.interval.hi - r.lo))
       }
-      Math.min(bound, 0)
+      bound.min(Timespan.Zero)
     }
   }
 
   private def moveLimit(leftId: Id, rightId: Id, lr: Interval, rr: Interval,
-                        hiCap: Long, loCap: Long, forward: Boolean): Long = {
+                        hiCap: Instant, loCap: Instant, forward: Boolean): Timespan = {
     def skip(id: Id): Boolean = id == leftId || id == rightId
     if (forward) {
       var bound = hiCap - lr.hi
-      val n = intervalToSeg.rangeFrom(Interval.at(rr.lo)).iterator.map(_._2)
+      val n = intervalToSeg.rangeFrom(Interval.singleton(rr.lo)).iterator.map(_._2)
         .filter(id => !isBlock(id) && !skip(id))
         .map(segment)
         .collectFirst { case x: Content => x }
-      n.foreach(x => bound = Math.min(bound, x.id.interval.lo - rr.hi))
-      Math.max(bound, 0)
+      n.foreach(x => bound = bound.min(x.id.interval.lo - rr.hi))
+      bound.max(Timespan.Zero)
     } else {
-      var bound = Math.max(loCap - rr.lo, lr.lo + 1 - lr.hi)
-      val p = intervalToSeg.rangeUntil(Interval.at(lr.lo)).iterator.map(_._2)
+      var bound = (loCap - rr.lo).max((lr.lo + 1.micros) - lr.hi)
+      val p = intervalToSeg.rangeUntil(Interval.singleton(lr.lo)).iterator.map(_._2)
         .filter(id => !isBlock(id) && !skip(id))
         .map(segment)
         .collect { case x: Content => x }
         .toSeq.lastOption
-      p.foreach(x => bound = Math.max(bound, x.id.interval.hi - lr.lo))
-      Math.min(bound, 0)
+      p.foreach(x => bound = bound.max(x.id.interval.hi - lr.lo))
+      bound.min(Timespan.Zero)
     }
   }
 
   /** 包含 time 的条目。 */
-  def get(time: Long): Element = segmentAt(time).map(segment).getOrElse(
+  def get(time: Instant): Element = segmentAt(time).map(segment).getOrElse(
     Gap(contentBefore(time, Set.empty).map(_.id), contentAtOrAfter(time, Set.empty).map(_.id)))
 
   /** time 所在条目（片段、转场或空隙）的区间。 */
-  def intervalAt(time: Long): Interval = get(time).interval
+  def intervalAt(time: Instant): Interval = get(time).interval
 
   /** time 是否落在某个内容片段的区间内部，即能否在此分割。 */
-  def canSplit(time: Long): Boolean = segmentAt(time) match {
+  def canSplit(time: Instant): Boolean = segmentAt(time) match {
     case Some(id) =>
       segment(id) match {
         case _: Content =>
@@ -582,11 +584,11 @@ case class Track private (index: Int,
   }
 
   /** 起点不小于 time 的首个片段。 */
-  private[timeline] def sourceAtOrAfter(time: Long): Option[Segment] =
-    intervalToSeg.rangeFrom(Interval.at(time)).iterator.map(_._2).nextOption().map(segment)
+  private[timeline] def sourceAtOrAfter(time: Instant): Option[Segment] =
+    intervalToSeg.rangeFrom(Interval.singleton(time)).iterator.map(_._2).nextOption().map(segment)
 
   /** 起点小于 time 的最后一个片段。 */
-  private[timeline] def sourceBefore(time: Long): Option[Segment] =
+  private[timeline] def sourceBefore(time: Instant): Option[Segment] =
     lastBefore(intervalToSeg, time).map(_._2).map(segment)
 
   /** 与 interval 有公共点的用户片段，按区间升序。 */
@@ -595,7 +597,7 @@ case class Track private (index: Int,
   }
 
   /** 生成片段在绝对时间 time 的帧 */
-  def frameAt(segment: Segment, time: Long): Frame = {
+  def frameAt(segment: Segment, time: Instant): Frame = {
     val relative = time - getOrigin(segment)
     val f = EvalClock.withTime(time, relative) {
       segment.get(relative, this)
@@ -604,7 +606,7 @@ case class Track private (index: Int,
   }
 
   /** 把片段同步到绝对时间 time。 */
-  def syncAt(segment: Segment, time: Long): Unit = {
+  def syncAt(segment: Segment, time: Instant): Unit = {
     segment.sync(time - getOrigin(segment), this)
   }
 
@@ -627,9 +629,9 @@ case class Track private (index: Int,
   }
 
   /** 包含 time 的片段。 */
-  private def segmentAt(time: Long): Option[Id] = {
+  private def segmentAt(time: Instant): Option[Id] = {
     var best: Option[Id] = None
-    var bestLen = Long.MaxValue
+    var bestLen = Timespan.MaxValue
     var current = lastAtOrBefore(Interval.upTo(time))
     while (current.isDefined) {
       val (r, id) = current.get
@@ -648,13 +650,13 @@ case class Track private (index: Int,
     if (interval.isEmpty) {
       Iterator.empty
     } else {
-      bt.rangeUntil(Interval.at(interval.hi)).iterator
+      bt.rangeUntil(Interval.singleton(interval.hi)).iterator
         .dropWhile(_._1.hi <= interval.lo)
     }
   }
 
-  private def lastBefore(bt: immutable.TreeMap[Interval, Id], time: Long): Option[(Interval, Id)] =
-    bt.maxBefore(Interval.at(time))
+  private def lastBefore(bt: immutable.TreeMap[Interval, Id], time: Instant): Option[(Interval, Id)] =
+    bt.maxBefore(Interval.singleton(time))
 
   /** 键不大于 bound 的最后一个条目。 */
   private def lastAtOrBefore(bound: Interval): Option[(Interval, Id)] =
@@ -673,14 +675,14 @@ object Track {
   private[timeline] def apply(index: Int): Track = {
     val blockSegment: Segment = new Boundless(Id.noId(), new BlockSource)
     val layout = BiMap(TreeMap.empty[Interval, Id], Map.empty[Id, Interval])
-      .updated(Long.MinValue ~~ 0L, Id.noId())
+      .updated(Instant.MinValue ~~ Instant.Zero, Id.noId())
     new Track(index, Map(Id.noId() -> blockSegment), layout,
-      Map.empty[Id, Long],
+      Map.empty[Id, Instant],
       BiMap(Map.empty[Id, Id], Map.empty[Id, Id]))
   }
 
-  private def timeText(time: Long): String = {
-    if (time == Long.MaxValue) "∞" else time.toString
+  private def timeText(time: Instant): String = {
+    if (time == Instant.MaxValue) "∞" else time.value.toString
   }
 
 }
