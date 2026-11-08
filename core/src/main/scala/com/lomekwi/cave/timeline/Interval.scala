@@ -29,8 +29,7 @@ case class Interval(lo: Instant, hi: Instant) extends Serializable {
     Option.when(later < earlier)(Interval(later, earlier))
   }
 
-  def span(other: Interval): Interval =
-    Interval(if (lo <= other.lo) lo else other.lo, if (hi >= other.hi) hi else other.hi)
+  def +(other: Interval): Interval = Interval(lo.min(other.lo), hi.max(other.hi))
 
   /** 相邻（如 [0,10) 与 [10,20)）也算相连。 */
   def isConnected(other: Interval): Boolean = lo <= other.hi && other.lo <= hi
@@ -41,7 +40,7 @@ case class Interval(lo: Instant, hi: Instant) extends Serializable {
 object Interval {
   given Ordering[Interval] = Ordering.by(i => (i.lo, i.hi))
 
-  def singleton(time: Instant): Interval = Interval(time, time + 1.micros)
+  def singleton(time: Instant): Interval = time ~+ 1.micros
 
   def upTo(time: Instant): Interval = Interval(time, Instant.MaxValue)
 }
@@ -49,3 +48,10 @@ object Interval {
 /** 区间字面量的语法糖。 */
 extension (lo: Instant)
   def ~~(hi: Instant): Interval = Interval(lo, hi)
+
+  def ~+(span: Timespan): Interval = {
+    val end = lo + span
+    Interval(lo.min(end), lo.max(end))
+  }
+
+  def ~-(span: Timespan): Interval = lo ~+ (-span)

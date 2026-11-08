@@ -526,7 +526,7 @@ object TimelineView {
     }
 
     private[tlarea] def visibleInterval(): Interval = {
-      startTime ~~ (startTime + durationTime)
+      startTime ~+ durationTime
     }
 
     private[tlarea] def zoom(amountY: Float, anchorXRatio: Float): Boolean = {

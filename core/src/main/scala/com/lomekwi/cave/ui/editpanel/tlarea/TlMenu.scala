@@ -9,7 +9,7 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.pipeline.text.{TextFrame, TextSource}
 import com.lomekwi.cave.timeline.{Boundless, Content, Instant, Interval, Segment, Timespan}
-import com.lomekwi.cave.timeline.~~
+import com.lomekwi.cave.timeline.~+
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.util.i18n.*
@@ -72,7 +72,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
     val duration: Timespan = segment.getDefaultDuration
 
     val session = timelineView.session
-    val interval: Interval = time ~~ (time + duration)
+    val interval: Interval = time ~+ duration
     session.snapshot()
     var targetTrack: Int = 0
     var placed = false
@@ -104,7 +104,7 @@ class TlMenu private[tlarea] (private final val timelineView: TimelineView) exte
           val duration: Timespan = segment.getDefaultDuration
           if (duration > Timespan.Zero) {
             var targetTrack: Int = baseTrack + trackOffset
-            val interval: Interval = time ~~ (time + duration)
+            val interval: Interval = time ~+ duration
             var placed = false
             while (!placed) {
               val before = session.timeline

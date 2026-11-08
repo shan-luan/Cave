@@ -9,7 +9,7 @@ import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.lomekwi.cave.util.i18n.TransTargetType.given
-import com.lomekwi.cave.timeline.~~
+import com.lomekwi.cave.timeline.~+
 
 import java.io.File
 import java.io.IOException
@@ -41,7 +41,7 @@ class TlDropTarget(private final val timelineView: TimelineView) extends DragAnd
         val duration: Timespan = segment.getDefaultDuration
         if (duration > Timespan.Zero) {
           var targetTrack: Int = baseTrack + trackOffset
-          val interval: Interval = startTime ~~ (startTime + duration)
+          val interval: Interval = startTime ~+ duration
           var placed = false
           while (!placed) {
             val before = timelineView.session.timeline

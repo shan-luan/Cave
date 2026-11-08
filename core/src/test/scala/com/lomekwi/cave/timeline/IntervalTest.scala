@@ -55,6 +55,26 @@ class IntervalTest extends munit.FunSuite {
     assertEquals((at(100) ~~ at(200)).shift(Timespan(-10)), at(90) ~~ at(190))
   }
 
+  test("+ 返回两个区间的凸包") {
+    assertEquals((at(0) ~~ at(10)) + (at(5) ~~ at(15)), at(0) ~~ at(15))
+    assertEquals((at(0) ~~ at(10)) + (at(20) ~~ at(30)), at(0) ~~ at(30))
+    assertEquals((at(20) ~~ at(30)) + (at(0) ~~ at(10)), at(0) ~~ at(30))
+    assertEquals((at(0) ~~ at(10)) + (at(2) ~~ at(8)), at(0) ~~ at(10))
+    assertEquals((at(2) ~~ at(8)) + (at(0) ~~ at(10)), at(0) ~~ at(10))
+  }
+
+  test("~+ 从起点向后构造区间") {
+    assertEquals(at(100) ~+ Timespan(30), at(100) ~~ at(130))
+    assertEquals(at(100) ~+ Timespan.Zero, at(100) ~~ at(100))
+    assertEquals(at(100) ~+ Timespan(-30), at(70) ~~ at(100))
+  }
+
+  test("~- 从起点向前构造区间") {
+    assertEquals(at(100) ~- Timespan(30), at(70) ~~ at(100))
+    assertEquals(at(100) ~- Timespan.Zero, at(100) ~~ at(100))
+    assertEquals(at(100) ~- Timespan(-30), at(100) ~~ at(130))
+  }
+
   test("排序按字典序") {
     val sorted = List(at(10) ~~ at(20), at(0) ~~ at(5), at(0) ~~ at(3)).sorted
     assertEquals(sorted, List(at(0) ~~ at(3), at(0) ~~ at(5), at(10) ~~ at(20)))
