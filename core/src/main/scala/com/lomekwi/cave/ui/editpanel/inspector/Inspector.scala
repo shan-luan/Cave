@@ -135,9 +135,9 @@ class Inspector extends VisTable {
     if (c != null) {
       for (fi <- 0 until compatibleCount) {
         val idx = fi
-        //FIXME：为了菜单项 createCompatible 会真的建节点，NGF 会消耗 id；应提供只取名字的接口。
-        val created: Node = App.nodeRegistry.createCompatible(segment, idx)(using c.idSource)
-        filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
+        val name = App.nodeRegistry.compatibleNameOf(segment, idx)
+        filterMenu.addItem(new MenuItem(name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
+          val created: Node = App.nodeRegistry.createCompatible(segment, idx)(using c.idSource)
           c.updateSegment(segment.id)(_.addFilter(created.asInstanceOf[Filter[?]])(using c.idSource))
           rebuildContent()
         }))

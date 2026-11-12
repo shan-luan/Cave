@@ -52,7 +52,7 @@ object NodeGraphFilter {
   final case class InChain(segmentId: Id, filterId: Id) extends Owner
   final case class InGraph(nodeId: Id) extends Owner
 
-  private object NoIds extends IdSource {
+  private[pipeline] object NoIds extends IdSource {
     override def nextId(): Id = Id.noId()
   }
 }

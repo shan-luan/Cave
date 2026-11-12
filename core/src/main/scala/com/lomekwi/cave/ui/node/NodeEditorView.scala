@@ -177,13 +177,12 @@ class NodeEditorView(initial: NodeGraphFilter, val path: Vector[NodeGraphFilter.
     })
   }
 
-  //FIXME：为了取名字 create(i) 会真的建节点，NGF 会顺带消耗 id；应提供只取名字的接口。
   private def buildNodeMenu(): Unit = {
     val c = App.root.getFrontendSession
     if (c != null) {
       val ids: IdSource = c.idSource
       for (i <- 0 until App.nodeRegistry.getCount) {
-        val name: String = App.nodeRegistry.create(i)(using ids).name
+        val name: String = App.nodeRegistry.nameOf(i)
         nodeMenu.addItem(new MenuItem(name, new ChangeListenerX(() => addNode(App.nodeRegistry.create(i)(using ids))(using ids))))
       }
     }

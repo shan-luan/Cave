@@ -22,7 +22,7 @@ import scala.collection.mutable
  * 始终视为不兼容，因为兼容节点只会被挂到片段的滤镜链上。
  */
 class NodeRegistry {
-  private case class Entry(nodeClass: Class[? <: Node], factory: IdSource => Node)
+  private case class Entry(nodeClass: Class[? <: Node], factory: IdSource => Node, displayName: () => String)
 
   private final val entries: mutable.ArrayBuffer[Entry] = mutable.ArrayBuffer.empty[Entry]
 
@@ -39,11 +39,11 @@ class NodeRegistry {
   register(classOf[DivNode])
 
   def register(nodeClass: Class[? <: Node]): Unit = {
-    entries += Entry(nodeClass, _ => NodeRegistry.createByReflection(nodeClass))
+    register(nodeClass, _ => NodeRegistry.createByReflection(nodeClass))
   }
 
   def register(nodeClass: Class[? <: Node], factory: IdSource => Node): Unit = {
-    entries += Entry(nodeClass, factory)
+    entries += Entry(nodeClass, factory, () => factory(NodeGraphFilter.NoIds).name)
   }
 
   /** 已注册节点的数量（不做帧类型过滤）。 */
@@ -56,13 +56,12 @@ class NodeRegistry {
     entries(index).factory(ids)
   }
 
+  def nameOf(index: Int): String = {
+    entries(index).displayName()
+  }
+
   def getCompatibleCount(segment: Segment): Int = {
-    val frameType: Class[?] = segment.getType
-    var count = 0
-    for (entry <- entries) {
-      if (NodeRegistry.isCompatible(entry.nodeClass, frameType)) count += 1
-    }
-    count
+    compatibleEntries(segment).size
   }
 
   /**
@@ -70,12 +69,22 @@ class NodeRegistry {
    * 非 Filter 的图内节点不参与匹配。
    */
   def createCompatible(segment: Segment, index: Int)(using ids: IdSource): Node = {
-    val frameType: Class[?] = segment.getType
-    entries.iterator
-      .filter(entry => NodeRegistry.isCompatible(entry.nodeClass, frameType))
+    compatibleEntries(segment)
       .zipWithIndex
       .collectFirst { case (entry, i) if i == index => entry.factory(ids) }
       .orNull
+  }
+
+  def compatibleNameOf(segment: Segment, index: Int): String = {
+    compatibleEntries(segment)
+      .zipWithIndex
+      .collectFirst { case (entry, i) if i == index => entry.displayName() }
+      .orNull
+  }
+
+  private def compatibleEntries(segment: Segment): Iterator[Entry] = {
+    val frameType: Class[?] = segment.getType
+    entries.iterator.filter(entry => NodeRegistry.isCompatible(entry.nodeClass, frameType))
   }
 }
 
