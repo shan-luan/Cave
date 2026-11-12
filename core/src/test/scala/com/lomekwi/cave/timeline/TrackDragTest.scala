@@ -620,7 +620,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(timeline.snapTime(at(5), span(10), Set.empty), Instant.Zero)
   }
 
-  test("分割把片段切成区间正确的两半".ignore) {
+  test("分割把片段切成区间正确的两半") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
     placeAt(t0, s, TrackDragTest.interval(0, 100), at(1000))
@@ -676,7 +676,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
   }
 
-  test("撤销/重做分割恢复状态".ignore) {
+  test("撤销/重做分割恢复状态") {
     def t0: Track = timeline.getTrackOrCreate(0)
     val s: Content = newSegment(100)
     val interval = TrackDragTest.interval(0, 100)
