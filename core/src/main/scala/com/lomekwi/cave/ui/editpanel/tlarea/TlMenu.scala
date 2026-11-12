@@ -14,7 +14,6 @@ import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.File
 import java.io.IOException

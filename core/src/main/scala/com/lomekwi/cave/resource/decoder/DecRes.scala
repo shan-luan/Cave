@@ -7,7 +7,6 @@ import com.lomekwi.cave.resource.media.MedRes
 import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import org.bytedeco.javacv.FFmpegFrameGrabber
 

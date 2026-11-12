@@ -5,7 +5,6 @@ import TopBar.*
 import com.lomekwi.cave.app.App.fileChooser
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx

@@ -3,7 +3,6 @@ package com.lomekwi.cave.pipeline.num
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /** 输出端口每次求值返回 [0,1) 的随机数。 */
 @SerialVersionUID(1L)

@@ -5,7 +5,6 @@ import com.lomekwi.cave.timeline.Instant
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 import scala.compiletime.uninitialized
 
 class TlSegmentMenu private[tlarea] (private val timelineView: TimelineView) extends PopupMenu {

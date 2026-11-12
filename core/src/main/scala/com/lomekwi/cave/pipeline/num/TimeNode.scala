@@ -5,7 +5,6 @@ import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /** 输出当前求值时刻，单位秒。 */
 @SerialVersionUID(1L)

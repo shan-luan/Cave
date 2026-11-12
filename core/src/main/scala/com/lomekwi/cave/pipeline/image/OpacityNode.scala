@@ -4,7 +4,6 @@ import com.lomekwi.cave.pipeline.Filter
 import com.lomekwi.cave.pipeline.Node
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 @SerialVersionUID(1L)
 class OpacityNode extends Filter[Renderable] {

@@ -6,7 +6,6 @@ import com.lomekwi.cave.timeline.Timeline
 import com.lomekwi.cave.util.FileNameUtil
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

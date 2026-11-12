@@ -6,7 +6,6 @@ import com.lomekwi.cave.app.App
 import com.lomekwi.cave.ui.listeners.ChangeListenerX
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 class LanguageSettingsTable extends EntryTable {
   {

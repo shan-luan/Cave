@@ -8,7 +8,6 @@ import com.lomekwi.cave.timeline.{Content, Instant, Interval, Segment, Timespan}
 import com.lomekwi.cave.util.MimeType
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 import com.lomekwi.cave.timeline.~+
 
 import java.io.File

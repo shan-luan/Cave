@@ -4,7 +4,6 @@ import com.lomekwi.cave.project.{Id, IdSource}
 import com.lomekwi.cave.util.Duplicatable
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.Serializable
 

@@ -2,7 +2,6 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.Serializable
 

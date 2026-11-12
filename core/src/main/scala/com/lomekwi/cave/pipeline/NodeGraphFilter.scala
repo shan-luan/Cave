@@ -3,7 +3,6 @@ package com.lomekwi.cave.pipeline
 import com.badlogic.gdx.math.Vector2
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.ObjectInputStream
 import scala.compiletime.uninitialized

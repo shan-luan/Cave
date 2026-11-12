@@ -2,7 +2,6 @@ package com.lomekwi.cave.pipeline
 
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * 节点图的入口节点，把图外连入上游的帧提供给图内节点。

@@ -3,7 +3,6 @@ package com.lomekwi.cave.resource.decoder
 import com.lomekwi.cave.timeline.Timespan
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 
 import com.badlogic.gdx.Gdx

@@ -6,7 +6,6 @@ import com.lomekwi.cave.pipeline.TransitionSource
 import com.lomekwi.cave.resource.decoder.AudDecRes
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * 声音叠化转场。

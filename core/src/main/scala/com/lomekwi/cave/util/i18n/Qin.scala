@@ -39,6 +39,8 @@ trait Target[L <: Lang]
 object Target {
   @deprecated("Translation missing. This will fall back to English or random language at runtime.")
   given fallback[L <: Lang]: Target[L] = new Target[L] {}
+
+  given target[L <: En.type & Zh.type]: Target[L] = new Target[L] {}
 }
 
 case class Localized[L <: Lang] private (supported: immutable.Map[Lang, String]) {

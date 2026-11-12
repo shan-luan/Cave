@@ -3,7 +3,6 @@ package com.lomekwi.cave.resource.media
 import com.lomekwi.cave.resource.decoder.DecRes
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors

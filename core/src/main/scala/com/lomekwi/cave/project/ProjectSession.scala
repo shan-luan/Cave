@@ -9,7 +9,6 @@ import com.lomekwi.cave.resource.Resource
 import com.lomekwi.cave.timeline.{SegmentFactory, Timeline}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.File
 import java.nio.file.Path

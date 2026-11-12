@@ -7,7 +7,6 @@ import com.lomekwi.cave.pipeline.text.TextFilter
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.lang.{IllegalAccessException, InstantiationException}
 import java.lang.reflect.{Constructor, InvocationTargetException, ParameterizedType, Type}

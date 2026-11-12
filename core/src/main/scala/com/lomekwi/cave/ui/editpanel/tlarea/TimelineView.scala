@@ -18,7 +18,6 @@ import com.lomekwi.cave.ui.{Colors, Focusable}
 import com.lomekwi.cave.util.niceScale
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 import space.earlygrey.shapedrawer.ShapeDrawer
 
 import scala.collection.mutable

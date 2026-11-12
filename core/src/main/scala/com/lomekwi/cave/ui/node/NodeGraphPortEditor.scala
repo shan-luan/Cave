@@ -13,7 +13,6 @@ import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.ui.editpanel.EditPanel
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 /**
  * [[NodeGraph]] 输入端口编辑 widget，端口名标签加一个按钮，按下后在项目的内部标签栏打开绑定到该端口当前默认值节点图的编辑器。

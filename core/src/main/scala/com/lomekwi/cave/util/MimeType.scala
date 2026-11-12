@@ -2,7 +2,6 @@ package com.lomekwi.cave.util
 
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.io.File
 import java.nio.file.Files

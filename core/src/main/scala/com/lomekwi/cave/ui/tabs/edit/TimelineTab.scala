@@ -8,7 +8,6 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TimelineView
 import com.lomekwi.cave.ui.editpanel.tlarea.TlRuler
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 class TimelineTab(tlMain: Container[TimelineView]) extends Tab(false, false) {
   private final val content: Table = new VisTable()

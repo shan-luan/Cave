@@ -7,7 +7,6 @@ import com.lomekwi.cave.project.ProjectSession
 import com.lomekwi.cave.timeline.{Gap, Instant, Segment, Timeline}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.{Future, Phaser}

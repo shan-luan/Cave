@@ -12,7 +12,6 @@ import com.lomekwi.cave.task.{ExportOptions, ExportOptionsSet, ExportPresetsChan
 import com.lomekwi.cave.ui.widget.FileChooserField
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 import games.spooky.gdx.nativefilechooser.NativeFileChooserIntent
 
 import scala.compiletime.uninitialized

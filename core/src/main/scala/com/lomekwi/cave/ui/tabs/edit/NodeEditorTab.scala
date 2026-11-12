@@ -6,7 +6,6 @@ import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.node.NodeEditorView
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 
 class NodeEditorTab(nodeGraph0: NodeGraph) extends Tab(false, true) {
   final val nodeGraph: NodeGraph = nodeGraph0

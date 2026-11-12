@@ -15,7 +15,6 @@ import com.lomekwi.cave.ui.editpanel.inspector.Inspector
 import com.lomekwi.cave.ui.editpanel.filetree.FileTree
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
-import com.lomekwi.cave.util.i18n.TransTargetType.given
 import scala.compiletime.uninitialized
 
 class EditPanelFrame private extends VisTable {
