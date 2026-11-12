@@ -1,5 +1,7 @@
 package com.lomekwi.cave.timeline
 
+import com.lomekwi.cave.project.TestIds
+
 /**
  * 片段的 [[com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor]] 随取随建。
  */
@@ -10,7 +12,7 @@ class SegmentActorTest extends GdxTestBase {
     val originalActor = original.getTlSegmentActor
     assert((originalActor) != null)
 
-    val copy = original.duplicate()
+    val copy = original.withId(TestIds.nextId())
     assert((copy.getTlSegmentActor) != null)
     assert(!((originalActor) eq (copy.getTlSegmentActor)))
   }

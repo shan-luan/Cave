@@ -3,10 +3,11 @@ package com.lomekwi.cave.project
 import com.badlogic.gdx.Gdx
 import com.google.common.eventbus.{EventBus, Subscribe}
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.pipeline.NodeGraphFilter
 import com.lomekwi.cave.pipeline.audio.AudioFrameSink
 import com.lomekwi.cave.playback.{Playhead, TrackWorker}
 import com.lomekwi.cave.resource.Resource
-import com.lomekwi.cave.timeline.{SegmentFactory, Timeline}
+import com.lomekwi.cave.timeline.{Segment, SegmentFactory, Timeline}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
@@ -49,6 +50,83 @@ final class ProjectSession(initial: Project) {
 
   def markSaved(): Unit = {
     savedVersion = version
+  }
+
+  def applyTimeline(next: Timeline): Unit = {
+    if (next ne project.timeline) {
+      applyProject(_.withTimeline(next))
+    }
+  }
+
+  def updateSegment(id: Id)(f: Segment => Segment): Unit = {
+    applyTimeline(timeline.updateSegment(id)(f))
+    touch()
+  }
+
+  def commitGraph(path: Vector[NodeGraphFilter.Owner], target: NodeGraphFilter): Unit = {
+    if (path.isEmpty) return
+    val before = project
+    path.head match {
+      case NodeGraphFilter.InChain(segmentId, filterId) =>
+        timeline.segment(segmentId).foreach { segment =>
+          segment.chain.filterById(filterId) match {
+            case top: NodeGraphFilter =>
+              val updated = substituteGraph(top, path.tail, target)
+              updateSegment(segmentId)(s => s.withFilterChain(s.chain.replaceFilterById(filterId, updated)))
+            case _ =>
+          }
+        }
+      case _: NodeGraphFilter.InGraph =>
+    }
+    if (project ne before) {
+      undo.push(before)
+    }
+  }
+
+  def graphFor(path: Vector[NodeGraphFilter.Owner]): NodeGraphFilter = {
+    if (path.isEmpty) {
+      null
+    } else {
+      val root: NodeGraphFilter = path.head match {
+        case NodeGraphFilter.InChain(segmentId, filterId) =>
+          timeline.segment(segmentId).map(_.chain.filterById(filterId)).collect { case filter: NodeGraphFilter => filter }.orNull
+        case _ => null
+      }
+      if (root == null) {
+        null
+      } else {
+        var current: NodeGraphFilter = root
+        var valid: Boolean = true
+        val steps = path.tail.iterator
+        while (valid && steps.hasNext) {
+          steps.next() match {
+            case NodeGraphFilter.InGraph(nodeId) =>
+              current.innerNodes.nodes.get(nodeId) match {
+                case Some(filter: NodeGraphFilter) => current = filter
+                case _ => valid = false
+              }
+            case _ => valid = false
+          }
+        }
+        if (valid) current else null
+      }
+    }
+  }
+
+  private def substituteGraph(current: NodeGraphFilter,
+                              steps: Vector[NodeGraphFilter.Owner],
+                              target: NodeGraphFilter): NodeGraphFilter = {
+    steps match {
+      case Vector() => target
+      case (step: NodeGraphFilter.InGraph) +: rest =>
+        current.innerNodes.nodes.get(step.nodeId) match {
+          case Some(child: NodeGraphFilter) =>
+            val child2 = substituteGraph(child, rest, target)
+            current.withInnerNodes(current.innerNodes.updateNode(step.nodeId)(_ => child2))
+          case _ => current
+        }
+      case _ => current
+    }
   }
 
   def applyProject(f: Project => Project): Unit = {

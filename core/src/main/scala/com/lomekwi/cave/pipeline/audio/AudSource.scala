@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.audio
 
 import com.lomekwi.cave.app.AppAudioOut
-import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource, FilterChain, NodeGraph}
 import com.lomekwi.cave.resource.media.AudRes
 import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlAudSegmentActor, TlSegmentActor}
@@ -11,7 +11,7 @@ import com.lomekwi.cave.util.i18n.BasicLang.*
 @SerialVersionUID(1L)
 class AudSource(var audRes: AudRes) extends Source[AudFrame] {
   addOutPort(new Node.OutPort[Double](("时长".in(Zh) | "Duration".in(En)).str(), classOf[Double]) {
-    override def getData: Double = getDuration.value
+    override def getData(context: FilterChain | NodeGraph): Double = getDuration.value.toDouble
   })
 
   override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
@@ -19,6 +19,7 @@ class AudSource(var audRes: AudRes) extends Source[AudFrame] {
   }
 
   override protected def produce(time: Timespan, track: Track, segment: Segment): AudFrame = {
+    // 轨道按索引唯一，帧携带的轨道只要索引相同就仍然对应当前的轨道线程，可以接着用
     if (frame == null || frame.trackIndex != track.index) {
       frame = new AudFrame(AppAudioOut.SAMPLE_RATE, track.index, segment.id)
     }

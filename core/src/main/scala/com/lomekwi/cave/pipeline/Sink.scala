@@ -8,8 +8,8 @@ final class Sink extends Node {
 
   override val name: String = ("总输出".in(Zh) | "Master Output".in(En)).str()
 
-  def get(): Object = {
-    in.getData
+  def get(graph: NodeGraph): Object = {
+    in.getData(graph)
   }
 
   override def canRemove: Boolean = false

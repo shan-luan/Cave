@@ -16,48 +16,40 @@ import scala.compiletime.uninitialized
 
 @SerialVersionUID(1L)
 class TextSource(text: String) extends Source[TextFrame] {
-  private final val textIn: Node.InPort[String] = addInPort(
-    new Node.InPort[String](("文本".in(Zh) | "Text".in(En)).str(), ("请输入文本".in(Zh) | "Enter text".in(En)).str(), classOf[String]) {})
-  private final val fontSizeIn: Node.InPort[Double] = addInPort(
+  private[text] final val textIn: Node.InPort[String] = addInPort(
+    new Node.InPort[String](("文本".in(Zh) | "Text".in(En)).str(), text, classOf[String]) {})
+  private[text] final val fontSizeIn: Node.InPort[Double] = addInPort(
     new Node.InPort[Double](("字号".in(Zh) | "Font Size".in(En)).str(), 48.0, classOf[Double]) {})
   @transient private var fontRes: FontRes = uninitialized
   @transient private var font: BitmapFont = uninitialized
+  // 已生成的字体字号，用于检测端口字号被外部修改后需要重建字体
   @transient private var generatedFontSize: Int = 0
   @volatile @transient private var initialized: Boolean = false
 
-  textIn.defaultData = text
   fontRes = new FontRes("font/noto.otf")
 
   def this() = {
     this(("请输入文本".in(Zh) | "Enter text".in(En)).str())
   }
 
-  def getText: String = {
-    textIn.defaultData
+  def getText(segment: Segment): String = {
+    segment.filterChain.defaultOf(textIn).asInstanceOf[String]
   }
 
-  def setText(text: String): Unit = {
-    textIn.defaultData = text
+  private def getFontSize(segment: Segment): Int = {
+    segment.filterChain.defaultOf(fontSizeIn).asInstanceOf[Double].toInt
   }
 
   def getFontRes: FontRes = {
     fontRes
   }
 
+  //FIXME：原地改资源且不标脏/不进 undo；目前没有调用点，若启用需改成 withX 并回写片段。
   def setFontRes(fontRes: FontRes): Unit = {
     if (this.fontRes != null && (this.fontRes ne fontRes)) {
       this.fontRes.close()
     }
     this.fontRes = fontRes
-  }
-
-  private def getFontSize: Int = {
-    fontSizeIn.defaultData.toInt
-  }
-
-  def setFontSize(fontSize: Int): Unit = {
-    fontSizeIn.defaultData = fontSize.toDouble
-    invalidateFont()
   }
 
   def getFontPath: String = {
@@ -81,7 +73,9 @@ class TextSource(text: String) extends Source[TextFrame] {
     if (frame != null && frame.trackIndex != track.index) {
       initialized = false
     }
-    if (font != null && generatedFontSize != getFontSize) {
+    val fontSize = getFontSize(segment)
+    if (font != null && generatedFontSize != fontSize) {
+      // spinner 等外部直接改了端口值，丢弃旧字体并重建帧
       font = null
       initialized = false
     }
@@ -89,8 +83,8 @@ class TextSource(text: String) extends Source[TextFrame] {
     if (!initialized) {
       Gdx.app.postRunnable(() => {
         if (font == null) {
-          font = fontRes.getFont(getFontSize)
-          generatedFontSize = getFontSize
+          font = fontRes.getFont(fontSize)
+          generatedFontSize = fontSize
         }
         frame = new TextFrame(track.index, segment.id)
         frame.setFont(font)
@@ -106,7 +100,7 @@ class TextSource(text: String) extends Source[TextFrame] {
           return null
       }
     }
-    frame.setText(getText)
+    frame.setText(getText(segment))
     frame.transform.reset(0, 0)
     frame.opacity = 1f
     frame
@@ -134,8 +128,6 @@ class TextSource(text: String) extends Source[TextFrame] {
 
   override def onDuplicate(original: Source[?]): Unit = {
     val source = original.asInstanceOf[TextSource]
-    this.textIn.defaultData = source.getText
-    this.fontSizeIn.defaultData = source.getFontSize.toDouble
     this.fontRes = new FontRes(source.fontRes.path)
   }
 }

@@ -13,7 +13,8 @@ import com.lomekwi.cave.timeline.Segment
 import java.util
 
 /**
- * 数值输入端口编辑 widget，[[Spinner]] 行。
+ * 数值输入端口编辑 widget，[[Spinner]] 行。模型值保存在所属容器里，修改回写容器并记 undo，
+ * 并在自身的 [[act]] 中把模型值回显到 widget（undo、gizmo 等外部修改后同步）。
  */
 final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTable with PortEditor {
   override val port: Node.InPort[?] = port0
@@ -26,12 +27,7 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
       val newVal: Double = model.getValue.toDouble
       val oldVal: Double = defaultValue
       if (oldVal != newVal) {
-        val c = App.root.getFrontendSession
         setDefaultValue(newVal)
-        if (c != null) {
-          c.touch()
-          c.bus.post(RefreshRequestEvent)
-        }
       }
     }
   })
@@ -44,6 +40,7 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
 
   override def act(delta: Float): Unit = {
     super.act(delta)
+    // 用户正在输入时不覆盖，避免打断编辑
     if (!spinner.getTextField.hasKeyboardFocus) {
       val modelVal: Double = defaultValue
       val current: Float = model.getValue
@@ -55,11 +52,52 @@ final class NumPortEditor(port0: Node.InPort[?], segment: Segment) extends VisTa
     }
   }
 
+  private def currentSegment: Segment = {
+    if (segment == null) {
+      null
+    } else {
+      val c = App.root.getFrontendSession
+      if (c == null) segment else c.timeline.segment(segment.id).orNull
+    }
+  }
+
+  private def editorView: NodeEditorView = {
+    var current: Actor = getParent
+    while (current != null) {
+      current match {
+        case view: NodeEditorView => return view
+        case _ => current = current.getParent
+      }
+    }
+    null
+  }
+
   private def defaultValue: Double = {
-    port.defaultData.asInstanceOf[Double]
+    val current = currentSegment
+    if (current != null) {
+      current.defaultOf(port).asInstanceOf[Double]
+    } else {
+      val view = editorView
+      if (view == null) port.defaultData.asInstanceOf[Double] else view.defaultOf(port).asInstanceOf[Double]
+    }
   }
 
   private def setDefaultValue(v: Double): Unit = {
-    port.asInstanceOf[Node.InPort[Double]].defaultData = v
+    val current = currentSegment
+    val c = App.root.getFrontendSession
+    if (current != null) {
+      if (c != null) {
+        c.updateSegment(current.id)(_.setFilterDefault(port, v))
+        c.bus.post(RefreshRequestEvent)
+      }
+    } else {
+      val view = editorView
+      if (view != null) {
+        view.setDefault(port, v)
+      }
+      if (c != null) {
+        c.bus.post(RefreshRequestEvent)
+      }
+    }
   }
 }

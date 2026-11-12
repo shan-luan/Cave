@@ -4,7 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.kotcrab.vis.ui.widget.tabbedpane.Tab
 import com.kotcrab.vis.ui.widget.tabbedpane.TabbedPaneListener
-import com.lomekwi.cave.pipeline.NodeGraph
+import com.lomekwi.cave.pipeline.NodeGraphFilter
 import com.lomekwi.cave.ui.widget.AutoHideTabbedPane
 
 class EditTabbedPane extends AutoHideTabbedPane {
@@ -40,17 +40,17 @@ class EditTabbedPane extends AutoHideTabbedPane {
     })
   }
 
-  /** 打开绑定到指定节点图的编辑器标签页。 */
-  def openNodeEditor(nodeGraph: NodeGraph): Unit = {
+  /** 打开绑定到指定节点图的编辑器标签页；已为同一个节点图打开过则直接切换过去。 */
+  def openNodeEditor(nodeGraphFilter: NodeGraphFilter, path: Vector[NodeGraphFilter.Owner]): Unit = {
     val tabs = getTabs
     val existing = (0 until tabs.size).map(i => tabs.get(i)).collectFirst {
-      case editor: NodeEditorTab if editor.nodeGraph eq nodeGraph => editor
+      case editor: NodeEditorTab if editor.path == path => editor
     }
     existing match {
       case Some(editor) =>
         switchTab(editor)
       case None =>
-        val editor = new NodeEditorTab(nodeGraph)
+        val editor = new NodeEditorTab(nodeGraphFilter, path)
         add(editor)
         switchTab(editor)
     }

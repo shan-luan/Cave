@@ -1,12 +1,14 @@
 package com.lomekwi.cave.pipeline
 
-import com.lomekwi.cave.pipeline.FilterListTest.FpCont
+import com.lomekwi.cave.pipeline.FilterChainTest.FpCont
 import com.lomekwi.cave.pipeline.num.RandomNode
+import com.lomekwi.cave.project.{IdSource, TestIds}
 
 /**
  * 验证节点注册表的滤镜链菜单只列 Filter。
  */
 class NodeRegistryTest extends munit.FunSuite {
+  given IdSource = TestIds
 
   test("滤镜菜单排除非滤镜节点") {
     val registry = new NodeRegistry()

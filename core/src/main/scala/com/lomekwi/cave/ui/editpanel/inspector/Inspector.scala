@@ -96,15 +96,15 @@ class Inspector extends VisTable {
   }
 
   private def resolve(id: Id): Segment = {
-    val session = App.root.getFrontendSession
-    if (session == null) null else session.timeline.segment(id).orNull
+    val context = App.root.getFrontendSession
+    if (context == null) null else context.timeline.segment(id).orNull
   }
 
   /** 按所在轨道、再按时间轴起点排序，让列表顺序与时间线一致。 */
   private def sortByPlacement(ids: mutable.ArrayBuffer[Id]): Unit = {
-    val session = App.root.getFrontendSession
-    if (session == null) return
-    val timeline = session.timeline
+    val context = App.root.getFrontendSession
+    if (context == null) return
+    val timeline = context.timeline
     ids.sortInPlaceWith((a: Id, b: Id) => {
       val ta = timeline.findTrackOf(a)
       val tb = timeline.findTrackOf(b)
@@ -131,15 +131,17 @@ class Inspector extends VisTable {
     val addBtn = new VisTextButton(("+添加滤镜".in(Zh) | "+ Add Filter".in(En)).str())
     val filterMenu = new PopupMenu()
     val compatibleCount = App.nodeRegistry.getCompatibleCount(segment)
-    for (fi <- 0 until compatibleCount) {
-      val idx = fi
-      val created: Node = App.nodeRegistry.createCompatible(segment, idx)
-      filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
-        segment.filters += created.asInstanceOf[Filter[?]]
-        val c = App.root.getFrontendSession
-        if (c != null) c.touch()
-        rebuildContent()
-      }))
+    val c = App.root.getFrontendSession
+    if (c != null) {
+      for (fi <- 0 until compatibleCount) {
+        val idx = fi
+        //FIXME：为了菜单项 createCompatible 会真的建节点，NGF 会消耗 id；应提供只取名字的接口。
+        val created: Node = App.nodeRegistry.createCompatible(segment, idx)(using c.idSource)
+        filterMenu.addItem(new MenuItem(created.name, (event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor) => {
+          c.updateSegment(segment.id)(_.addFilter(created.asInstanceOf[Filter[?]])(using c.idSource))
+          rebuildContent()
+        }))
+      }
     }
     addBtn.addListener(new ChangeListener {
       override def changed(event: ChangeListener.ChangeEvent, actor: com.badlogic.gdx.scenes.scene2d.Actor): Unit = {

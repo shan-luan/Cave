@@ -4,6 +4,7 @@ import com.lomekwi.cave.pipeline.audio.GainNode
 import com.lomekwi.cave.pipeline.image.{OpacityNode, TransNode}
 import com.lomekwi.cave.pipeline.num.{AddNode, DivNode, MulNode, RandomNode, SubNode, TimeNode}
 import com.lomekwi.cave.pipeline.text.TextFilter
+import com.lomekwi.cave.project.IdSource
 import com.lomekwi.cave.timeline.Segment
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
@@ -15,15 +16,21 @@ import scala.collection.mutable
 
 /**
  * 通用节点注册表，注册任意 [[Node]] 子类，并按目标帧类型动态匹配可用的节点。
+ *
+ * 兼容性规则是，节点为 [[Filter]] 时，看其泛型声明的目标帧类型是否
+ * `isAssignableFrom` 该片段的帧类型；非 Filter 的图内节点不参与帧类型匹配，
+ * 始终视为不兼容，因为兼容节点只会被挂到片段的滤镜链上。
  */
 class NodeRegistry {
-  private final val entries: mutable.ArrayBuffer[Class[? <: Node]] = mutable.ArrayBuffer.empty[Class[? <: Node]]
+  private case class Entry(nodeClass: Class[? <: Node], factory: IdSource => Node)
+
+  private final val entries: mutable.ArrayBuffer[Entry] = mutable.ArrayBuffer.empty[Entry]
 
   register(classOf[TransNode])
   register(classOf[OpacityNode])
   register(classOf[TextFilter])
   register(classOf[GainNode])
-  register(classOf[NodeGraphFilter])
+  register(classOf[NodeGraphFilter], ids => NodeGraphFilter()(using ids))
   register(classOf[RandomNode])
   register(classOf[TimeNode])
   register(classOf[AddNode])
@@ -32,43 +39,48 @@ class NodeRegistry {
   register(classOf[DivNode])
 
   def register(nodeClass: Class[? <: Node]): Unit = {
-    entries += nodeClass
+    entries += Entry(nodeClass, _ => NodeRegistry.createByReflection(nodeClass))
   }
 
-  /** 已注册节点的数量。 */
+  def register(nodeClass: Class[? <: Node], factory: IdSource => Node): Unit = {
+    entries += Entry(nodeClass, factory)
+  }
+
+  /** 已注册节点的数量（不做帧类型过滤）。 */
   def getCount: Int = {
     entries.size
   }
 
-  /** 按注册顺序创建第 `index` 个节点。 */
-  def create(index: Int): Node = {
-    NodeRegistry.create(entries(index))
+  /** 按注册顺序创建第 `index` 个节点（不做帧类型过滤）。 */
+  def create(index: Int)(using ids: IdSource): Node = {
+    entries(index).factory(ids)
   }
 
   def getCompatibleCount(segment: Segment): Int = {
     val frameType: Class[?] = segment.getType
     var count = 0
-    for (nodeClass <- entries) {
-      if (NodeRegistry.isCompatible(nodeClass, frameType)) count += 1
+    for (entry <- entries) {
+      if (NodeRegistry.isCompatible(entry.nodeClass, frameType)) count += 1
     }
     count
   }
 
   /**
-   * 创建第 `index` 个兼容节点。
+   * 创建第 `index` 个兼容节点。只会返回可挂到片段滤镜链上的 [[Filter]] 节点，
+   * 非 Filter 的图内节点不参与匹配。
    */
-  def createCompatible(segment: Segment, index: Int): Node = {
+  def createCompatible(segment: Segment, index: Int)(using ids: IdSource): Node = {
     val frameType: Class[?] = segment.getType
     entries.iterator
-      .filter(nodeClass => NodeRegistry.isCompatible(nodeClass, frameType))
+      .filter(entry => NodeRegistry.isCompatible(entry.nodeClass, frameType))
       .zipWithIndex
-      .collectFirst { case (nodeClass, i) if i == index => NodeRegistry.create(nodeClass) }
+      .collectFirst { case (entry, i) if i == index => entry.factory(ids) }
       .orNull
   }
 }
 
 object NodeRegistry {
-  private def create(nodeClass: Class[? <: Node]): Node = {
+  private def createByReflection(nodeClass: Class[? <: Node]): Node = {
     try {
       val ctor: Constructor[?] = nodeClass.getConstructor()
       val node: Node = ctor.newInstance().asInstanceOf[Node]

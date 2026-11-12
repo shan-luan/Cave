@@ -13,22 +13,22 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.io.Serializable
 import java.util.UUID
 
 import scala.util.Using
 
+// 结构相等会深比较 timeline/resources，避免当 Map key 或频繁 ==。
 @SerialVersionUID(3L)
-final class Project(val name: String,
-                    val timeline: Timeline,
-                    val resources: Map[File, Vector[Resource]],
-                    val uuid: UUID) extends Serializable {
+final case class Project(name: String,
+                         timeline: Timeline,
+                         resources: Map[File, Vector[Resource]],
+                         uuid: UUID) {
 
-  def withName(name: String): Project = new Project(name, timeline, resources, uuid)
+  def withName(name: String): Project = copy(name = name)
 
-  def withTimeline(timeline: Timeline): Project = new Project(name, timeline, resources, uuid)
+  def withTimeline(timeline: Timeline): Project = copy(timeline = timeline)
 
-  def withResources(resources: Map[File, Vector[Resource]]): Project = new Project(name, timeline, resources, uuid)
+  def withResources(resources: Map[File, Vector[Resource]]): Project = copy(resources = resources)
 
   lazy val maxId: Id = timeline.maxId
 }
@@ -36,7 +36,7 @@ final class Project(val name: String,
 object Project {
   private val PROJECT_EXTENSION = ".cave"
 
-  def create(): Project = new Project(
+  def create(): Project = Project(
     ("未命名".in(Zh) | "Untitled".in(En)).str(),
     Timeline.empty,
     Map.empty[File, Vector[Resource]],

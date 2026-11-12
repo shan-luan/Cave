@@ -1,59 +1,58 @@
 package com.lomekwi.cave.pipeline
 
-import com.badlogic.gdx.math.Vector2
+import com.lomekwi.cave.project.{Id, IdSource}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
-import java.io.ObjectInputStream
-import scala.compiletime.uninitialized
-
 @SerialVersionUID(1L)
-class NodeGraphFilter extends Filter[Object] {
-  private final val innerSink: Sink = new Sink()
-  final val innerNodes: NodeGraph = new NodeGraph()
-  private var innerIn: GraphInNode = uninitialized
+class NodeGraphFilter private (
+    existingGraph: NodeGraph,
+    oldInnerIn: GraphInNode,
+    existingSink: Sink
+)(using ids: IdSource) extends Filter[Object] {
 
-  innerNodes.add(innerSink)
+  private final val innerSink: Sink = if (existingSink == null) new Sink() else existingSink
 
   addInPort(new FilterIn())
-  addInPort(new Node.InPort[NodeGraph](("节点图".in(Zh) | "Node Graph".in(En)).str(), innerNodes, classOf[NodeGraph]))
+  addInPort(new Node.InPort[NodeGraph](("节点图".in(Zh) | "Node Graph".in(En)).str(), classOf[NodeGraph]))
 
-  ensureInnerIn()
+  private final val innerIn: GraphInNode = new GraphInNode(filterIn)
 
-  innerSink.in.linkFrom(innerIn.out)
-
-  addOutPort(new FilterOut {
-    override def getData: Object = {
-      innerSink.get()
+  val innerNodes: NodeGraph = {
+    if (existingGraph == null) {
+      NodeGraph.empty.add(innerSink).add(innerIn).link(innerSink.in, innerIn.out)
+    } else {
+      val oldId = existingGraph.idOf(oldInnerIn)
+      //FIXME：找不到旧入口时会原样返回图，但 innerIn 已指向新 filterIn，求值会用错上游；应断言或兜底。
+      if (oldId == Id.noId()) existingGraph else existingGraph.updateNode(oldId)(_ => innerIn)
     }
-  })
-
-  private def readObject(in: ObjectInputStream): Unit = {
-    in.defaultReadObject()
-    ensureInnerIn()
   }
 
-  /**
-   * 创建图入口节点。
-   */
-  private def ensureInnerIn(): Unit = {
-    if (innerIn != null) {
-      return
-    }
-    val node: GraphInNode = new GraphInNode(filterIn)
-    innerIn = node
-    innerNodes.add(node)
-    innerNodes.setPosition(node, 0f, 0f)
-    val sinkPos: Vector2 = innerNodes.getPosition(innerSink)
-    if (sinkPos.x == 0f && sinkPos.y == 0f) {
-      innerNodes.setPosition(innerSink, NodeGraphFilter.SINK_OFFSET_X, 0f)
-    }
+  addOutPort(new FilterOut {
+    override def getData(context: FilterChain | NodeGraph): Object = evalInner(context)
+  })
+
+  private def evalInner(context: FilterChain | NodeGraph): Object = {
+    val up: Node.OutPort[?] = filterIn.prev(context)
+    innerIn.bind(filterIn.getData(context), if (up == null) null else up.getType(context))
+    innerSink.get(innerNodes)
+  }
+
+  def withInnerNodes(nextGraph: NodeGraph): NodeGraphFilter = {
+    new NodeGraphFilter(nextGraph, innerIn, innerSink)(using NodeGraphFilter.NoIds)
   }
 
   override val name: String = ("节点图".in(Zh) | "Node Graph".in(En)).str()
 }
 
 object NodeGraphFilter {
-  /** 新建节点图中总输出节点相对入口节点的水平偏移 */
-  private val SINK_OFFSET_X: Float = 240f
+  def apply()(using ids: IdSource): NodeGraphFilter = new NodeGraphFilter(null, null, null)(using ids)
+
+  sealed trait Owner
+  final case class InChain(segmentId: Id, filterId: Id) extends Owner
+  final case class InGraph(nodeId: Id) extends Owner
+
+  private object NoIds extends IdSource {
+    override def nextId(): Id = Id.noId()
+  }
 }

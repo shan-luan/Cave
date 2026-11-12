@@ -1,6 +1,6 @@
 package com.lomekwi.cave.pipeline.num
 
-import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.pipeline.{FilterChain, Node, NodeGraph}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
@@ -8,7 +8,7 @@ import com.lomekwi.cave.util.i18n.BasicLang.*
 @SerialVersionUID(1L)
 final class RandomNode extends Node {
   val out: Node.OutPort[Double] = addOutPort(new Node.OutPort[Double](("输出".in(Zh) | "Output".in(En)).str(), classOf[Double]) {
-    override def getData: Double = Math.random()
+    override def getData(context: FilterChain | NodeGraph): Double = Math.random()
   })
 
   override val name: String = ("随机数".in(Zh) | "Random Number".in(En)).str()

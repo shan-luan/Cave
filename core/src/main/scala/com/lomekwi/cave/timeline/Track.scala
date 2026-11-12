@@ -104,6 +104,11 @@ case class Track private (index: Int,
   protected[timeline] def add(c: Content, r: Interval, origin: Instant)(using ids: IdSource): Track =
     if (canPlaceAt(c, r)) put(c, r, origin).syncAround(c) else this
 
+  /** 用同 Id 的新片段值替换现有片段，布局与 origin 不变。 */
+  protected[timeline] def updateSegment(segment: Segment): Track = {
+    if (!contains(segment.id)) this else put(segment, segment.id.interval, getOrigin(segment.id))
+  }
+
   private def put(element: Segment, r: Interval, origin: Instant): Track = {
     val id = element.id
     val origins = element match {
@@ -283,7 +288,28 @@ case class Track private (index: Int,
   }
 
   /** 在 time 处把内容片段一分为二。 */
-  protected[timeline] def split(time: Instant): Track = ???
+  protected[timeline] def split(time: Instant)(using ids: IdSource): Track = {
+    segmentAt(time) match {
+      case Some(id) =>
+        segment(id) match {
+          case c: Content =>
+            val r = id.interval
+            if (time <= r.lo || time >= r.hi) {
+              this
+            } else {
+              val origin = getOrigin(c)
+              val right: Content = c.withId(ids.nextId()).asInstanceOf[Content]
+              removeSegment(c.id)
+                .put(c, r.lo ~~ time, origin)
+                .put(right, time ~~ r.hi, origin)
+                .syncAround(c)
+                .syncTransition(right)
+            }
+          case _ => this
+        }
+      case None => this
+    }
+  }
 
   /** 裁切一组片段的起始边缘（各自终点不变）。 */
   protected[timeline] def setStart(ids: Iterable[Id], deltaTime: Timespan)(using source: IdSource): Track = {
@@ -596,18 +622,19 @@ case class Track private (index: Int,
     intersectingEntries(intervalToSeg, interval).map(_._2).filter(id => !isBlock(id)).map(segment).toList
   }
 
-  /** 生成片段在绝对时间 time 的帧 */
-  def frameAt(segment: Segment, time: Instant): Frame = {
-    val relative = time - getOrigin(segment)
+  /** 生成片段在绝对时间 time 的帧。片段值可能已被替换，按 Id 取当前值。 */
+  def frameAt(s: Segment, time: Instant): Frame = {
+    val current = segment(s.id)
+    val relative = time - getOrigin(s.id)
     val f = EvalClock.withTime(time, relative) {
-      segment.get(relative, this)
+      current.get(relative, this)
     }
     if (f == null) null else f.withTime(time)
   }
 
-  /** 把片段同步到绝对时间 time。 */
-  def syncAt(segment: Segment, time: Instant): Unit = {
-    segment.sync(time - getOrigin(segment), this)
+  /** 把片段同步到绝对时间 time。片段值可能已被替换，按 Id 取当前值。 */
+  def syncAt(s: Segment, time: Instant): Unit = {
+    segment(s.id).sync(time - getOrigin(s.id), this)
   }
 
   /** 轨道上的用户片段 id。 */

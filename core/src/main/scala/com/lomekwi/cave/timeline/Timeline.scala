@@ -1,7 +1,6 @@
 package com.lomekwi.cave.timeline
 
 import com.lomekwi.cave.project.{Id, IdSource}
-import com.lomekwi.cave.util.Duplicatable
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
@@ -10,7 +9,7 @@ import java.io.Serializable
 import scala.collection.mutable
 
 @SerialVersionUID(1L)
-case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends Serializable with Iterable[Track] with Duplicatable[Timeline] {
+case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends Serializable with Iterable[Track] {
 
   private def grownTo(ts: Vector[Track], index: Int): Vector[Track] = {
     var out = ts
@@ -42,6 +41,20 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     if (next eq current) this else grown.withTrack(trackIndex, next)
   }
 
+  def updateSegment(segment: Segment): Timeline = {
+    findTrackOf(segment.id) match {
+      case None => this
+      case Some(track) => withTrack(track.index, track.updateSegment(segment))
+    }
+  }
+
+  def updateSegment(id: Id)(f: Segment => Segment): Timeline = {
+    segment(id) match {
+      case Some(current) => updateSegment(f(current))
+      case None => this
+    }
+  }
+
   def remove(id: Id)(using ids: IdSource): Timeline = {
     findTrackOf(id) match {
       case None => this
@@ -68,7 +81,7 @@ case class Timeline(tracks: Vector[Track], groups: Vector[SegmentGroup]) extends
     if (working.isEmpty) t else t.withTracks(working.toSeq)
   }
 
-  def split(track: Track, time: Instant): Timeline = {
+  def split(track: Track, time: Instant)(using ids: IdSource): Timeline = {
     val current = getTrackOrCreate(track.index)
     if (current.canSplit(time)) withTrack(track.index, current.split(time)) else this
   }

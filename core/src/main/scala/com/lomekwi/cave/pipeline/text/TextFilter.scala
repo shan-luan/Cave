@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.text
 
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.pipeline.{FilterChain, Node, NodeGraph}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
@@ -14,9 +14,9 @@ import scala.compiletime.uninitialized
  */
 @SerialVersionUID(1L)
 class TextFilter extends Filter[TextFrame] {
-  private final val regexIn: Node.InPort[String] = addInPort(
+  private[text] final val regexIn: Node.InPort[String] = addInPort(
     new Node.InPort[String](("正则".in(Zh) | "Regex".in(En)).str(), "", classOf[String]))
-  private final val replaceIn: Node.InPort[String] = addInPort(
+  private[text] final val replaceIn: Node.InPort[String] = addInPort(
     new Node.InPort[String](("替换".in(Zh) | "Replace".in(En)).str(), "", classOf[String]))
 
   @transient private var compiled: Pattern = uninitialized
@@ -25,12 +25,12 @@ class TextFilter extends Filter[TextFrame] {
   private final val in: FilterIn = addInPort(new FilterIn(("输入".in(Zh) | "Input".in(En)).str()))
 
   private final val out: FilterOut = addOutPort(new FilterOut(("输出".in(Zh) | "Output".in(En)).str()) {
-    override def getData: TextFrame = {
-      val frame: TextFrame = filterIn.getData
+    override def getData(context: FilterChain | NodeGraph): TextFrame = {
+      val frame: TextFrame = filterIn.getData(context)
       if (frame != null) {
         val text = frame.getText
-        val regex = regexIn.getData
-        val replacement = replaceIn.getData
+        val regex = regexIn.getData(context)
+        val replacement = replaceIn.getData(context)
         if (text != null && regex != null && replacement != null) {
           try {
             val replaced = patternFor(regex).matcher(text).replaceAll(replacement)
@@ -55,17 +55,9 @@ class TextFilter extends Filter[TextFrame] {
     compiled
   }
 
-  def getRegex: String = regexIn.getData
+  def getRegex: String = regexIn.defaultData
 
-  def setRegex(v: String): Unit = {
-    regexIn.defaultData = v
-  }
-
-  def getReplacement: String = replaceIn.getData
-
-  def setReplacement(v: String): Unit = {
-    replaceIn.defaultData = v
-  }
+  def getReplacement: String = replaceIn.defaultData
 
   override val name: String = ("文本替换".in(Zh) | "Text Replace".in(En)).str()
 }

@@ -22,7 +22,7 @@ final class TestTimeline(val session: ProjectSession) {
 
   def remove(segments: Iterable[Segment]): Unit = session.applyProject(p => p.withTimeline(p.timeline.remove(segments.map(_.id))))
 
-  def split(track: Track, time: Instant): Unit = session.applyProject(p => p.withTimeline(p.timeline.split(track, time)))
+  def split(track: Track, time: Instant): Unit = session.applyProject(p => p.withTimeline(p.timeline.split(track, time)(using idSource)))
 
   def setStart(segments: Iterable[Segment], deltaTime: Timespan): Timespan = {
     val (next, applied) = timeline.setStart(segments.map(_.id), deltaTime)

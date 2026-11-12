@@ -1,6 +1,6 @@
 package com.lomekwi.cave.app.selection
 
-import com.lomekwi.cave.app.copy.Copyable
+import com.lomekwi.cave.app.copy.{Copyable, PasteTemplate}
 import com.lomekwi.cave.project.{Id, ProjectSession}
 import com.lomekwi.cave.timeline.Timeline
 
@@ -13,5 +13,8 @@ class SegmentSet(@transient private val session: ProjectSession) extends mutable
 
   def timeline: Timeline = session.timeline
 
-  override def copy(): Copyable = ???
+  override def copy(): Copyable = {
+    val segments = iterator.flatMap(id => timeline.segment(id)).toVector
+    PasteTemplate.of(segments, timeline)(using session.idSource)
+  }
 }

@@ -1,7 +1,7 @@
 package com.lomekwi.cave.pipeline.image
 
 import com.lomekwi.cave.pipeline.Filter
-import com.lomekwi.cave.pipeline.Node
+import com.lomekwi.cave.pipeline.{FilterChain, Node, NodeGraph}
 import com.lomekwi.cave.util.i18n.*
 import com.lomekwi.cave.util.i18n.BasicLang.*
 
@@ -13,21 +13,17 @@ class OpacityNode extends Filter[Renderable] {
   private final val in: FilterIn = addInPort(new FilterIn(("输入".in(Zh) | "Input".in(En)).str()))
 
   private final val out: FilterOut = addOutPort(new FilterOut(("输出".in(Zh) | "Output".in(En)).str()) {
-    override def getData: Renderable = {
-      val frame: Renderable = filterIn.getData
+    override def getData(context: FilterChain | NodeGraph): Renderable = {
+      val frame: Renderable = filterIn.getData(context)
       if (frame != null) {
-        frame.opacity *= opacity.getData.toFloat
+        frame.opacity *= opacity.getData(context).toFloat
       }
       frame
     }
   })
 
   def getOpacity: Double = {
-    opacity.getData
-  }
-
-  def setOpacity(v: Double): Unit = {
-    opacity.defaultData = v
+    opacity.defaultData
   }
 
   override val name: String = ("透明度".in(Zh) | "Opacity".in(En)).str()

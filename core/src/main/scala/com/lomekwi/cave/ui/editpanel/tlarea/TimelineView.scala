@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.badlogic.gdx.scenes.scene2d.{Group, InputEvent}
 import com.badlogic.gdx.{Gdx, Input}
 import com.lomekwi.cave.app.App
+import com.lomekwi.cave.app.copy.PasteTemplate
 import com.lomekwi.cave.app.selection.{SegmentSet, SegmentSetSelectedEvent}
 import com.lomekwi.cave.app.shortcut.ShortcutAction
 import com.lomekwi.cave.playback.Playhead
@@ -295,6 +296,27 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
     dirty = true
   }
 
+  /** 快捷键粘贴入口，按当前鼠标位置定位落点，粘贴后选中新片段并刷新剪贴板。 */
+  private[tlarea] def pasteAtCursor(): Unit = {
+    val stage = getStage
+    if (stage == null) return
+    App.copyManager.clipboard match {
+      case template: PasteTemplate =>
+        val local = stageToLocalCoordinates(
+          stage.screenToStageCoordinates(pointer.set(Gdx.input.getX.toFloat, Gdx.input.getY.toFloat)))
+        val baseTime = xToAbsoluteTime(local.x).max(Instant.Zero)
+        val baseTrack = Math.max(yToTrackIndex(local.y), 0)
+        session.snapshot()
+        val pasted = template.paste(session, baseTrack, baseTime)
+        if (pasted.nonEmpty) {
+          selectSegments(pasted)
+        }
+        App.copyManager.refreshClipboard()
+        markTimelineDirty()
+      case _ =>
+    }
+  }
+
   /** 快捷键分割入口，按当前鼠标位置定位分割点。 */
   private[tlarea] def splitAtCursor(): Unit = {
     val stage = getStage
@@ -325,7 +347,7 @@ class TimelineView(private[tlarea] final val session: ProjectSession) extends Gr
         val start: Instant = interval.lo
         val end: Instant = interval.hi
         if (time > start && time < end) {
-          session.applyProject(p => p.withTimeline(p.timeline.split(memberTrack, time)))
+          session.applyProject(p => p.withTimeline(p.timeline.split(memberTrack, time)(using session.idSource)))
           beforeSegments += memberId
           session.timeline.getTrackOrCreate(memberTrack.index).get(time) match {
             case s: Segment => afterSegments += s.id

@@ -11,16 +11,26 @@ import com.lomekwi.cave.pipeline.Node
 
 class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Container[Actor] with PortActor {
   override final val port: Node.InPort[?] = port0
-  private var linked: Boolean = port.isLinked
+  private var linked: Boolean = isLinkedNow
 
   setActor(editor)
   syncControl(animate = false)
 
   /** 输入端口只有一条连接，拖动即把它从原地提起。 */
   override protected def detachForDrag(): PortActor = {
-    val prev: Node.OutPort[?] = port.prev
-    port.unlink()
-    if (prev == null) null else findPortActor(prev)
+    val view = editorView
+    if (view == null) {
+      null
+    } else {
+      val up: Node.OutPort[?] = view.prev(port)
+      view.unlink(port)
+      if (up == null) null else findPortActor(up)
+    }
+  }
+
+  private def isLinkedNow: Boolean = {
+    val view = editorView
+    view != null && view.prev(port) != null
   }
 
   override def getAnchor(out: Vector2): Vector2 = {
@@ -30,7 +40,7 @@ class InPortActor(port0: Node.InPort[?], editor: PortEditor & Actor) extends Con
   /** 连接状态改变后编辑控件淡出或淡入。 */
   override def act(delta: Float): Unit = {
     super.act(delta)
-    val now: Boolean = port.isLinked
+    val now: Boolean = isLinkedNow
     if (now != linked) {
       linked = now
       syncControl(animate = true)

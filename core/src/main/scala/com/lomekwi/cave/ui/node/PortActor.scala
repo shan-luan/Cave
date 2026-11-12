@@ -149,21 +149,19 @@ trait PortActor extends Actor with PortHolder {
     if (owner == null) {
       return null
     }
-    owner.getParent match {
-      case canvas: Group =>
-        for (child <- canvas.getChildren.asScala) {
-          child match {
-            case card: NodeActor =>
-              val actor: PortActor = card.getPortActor(port)
-              if (actor != null) {
-                return actor
-              }
-            case _ =>
-          }
-        }
-      case _ =>
+    val canvas = owner.getParent
+    if (canvas == null) {
+      return null
     }
-    null
+    canvas.getChildren.asScala.iterator
+      .collect { case card: NodeActor => card.getPortActor(port) }
+      .find(_ != null)
+      .orNull
+  }
+
+  protected def editorView: NodeEditorView = {
+    val owner: NodeActor = findNodeActor
+    if (owner == null) null else owner.nodeEditorView
   }
 
   private def findNodeActor: NodeActor = {
@@ -208,10 +206,15 @@ trait PortActor extends Actor with PortHolder {
 
   private def dropLink(stageX: Float, stageY: Float): Unit = {
     val stage = getStage
-    if (stage != null) {
+    val view: NodeEditorView = editorView
+    if (stage != null && view != null) {
       val target: PortActor = portActorAt(stage.hit(stageX, stageY, true))
       if (target != null) {
-        port.link(target.port)
+        (port, target.port) match {
+          case (in: Node.InPort[?], out: Node.OutPort[?]) => view.link(in, out)
+          case (out: Node.OutPort[?], in: Node.InPort[?]) => view.link(in, out)
+          case _ =>
+        }
       }
     }
   }

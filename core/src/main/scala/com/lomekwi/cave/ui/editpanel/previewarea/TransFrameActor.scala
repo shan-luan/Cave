@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.{Matrix4, Rectangle, Vector2}
 import com.badlogic.gdx.scenes.scene2d.{Actor, InputEvent, InputListener}
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.app.selection.Selectable
-import com.lomekwi.cave.pipeline.{Filter, Frame}
+import com.lomekwi.cave.pipeline.{Filter, Frame, Node}
 import com.lomekwi.cave.pipeline.image.{TransNode, Transform, Transformable}
 import com.lomekwi.cave.playback.RefreshRequestEvent
 import com.lomekwi.cave.task.ExportOptionsSet
@@ -88,8 +88,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
 
       dragModifier = TransFrameActor.findTransNode(segment)
       if (dragModifier != null) {
-        startNodeDx = dragModifier.getDx.toFloat
-        startNodeDy = dragModifier.getDy.toFloat
+        startNodeDx = transValue(segment, dragModifier.dx).toFloat
+        startNodeDy = transValue(segment, dragModifier.dy).toFloat
         computeDragContext()
       }
       val p = getParent
@@ -108,8 +108,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
           val segment = frameSegment
           if (segment != null) {
             dragModifier = TransFrameActor.findOrCreateTransNode(segment)
-            startNodeDx = dragModifier.getDx.toFloat
-            startNodeDy = dragModifier.getDy.toFloat
+            startNodeDx = transValue(segment, dragModifier.dx).toFloat
+            startNodeDy = transValue(segment, dragModifier.dy).toFloat
             computeDragContext()
           }
         }
@@ -314,11 +314,11 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     dragModifier = TransFrameActor.findOrCreateTransNode(segment)
     gizmoStartW = getWidth
     gizmoStartH = getHeight
-    gizmoStartDx = dragModifier.getDx.toFloat
-    gizmoStartDy = dragModifier.getDy.toFloat
-    gizmoStartScaleX = dragModifier.getScaleX.toFloat
-    gizmoStartScaleY = dragModifier.getScaleY.toFloat
-    gizmoStartRotation = dragModifier.getDRotation.toFloat
+    gizmoStartDx = transValue(segment, dragModifier.dx).toFloat
+    gizmoStartDy = transValue(segment, dragModifier.dy).toFloat
+    gizmoStartScaleX = transValue(segment, dragModifier.scaleX).toFloat
+    gizmoStartScaleY = transValue(segment, dragModifier.scaleY).toFloat
+    gizmoStartRotation = transValue(segment, dragModifier.dRotation).toFloat
 
     computeDragContext()
 
@@ -429,8 +429,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       case Gizmo.Handle.ROTATE =>
     }
 
-    dragModifier.setScaleX(newScaleX)
-    dragModifier.setScaleY(newScaleY)
+    val segment = frameSegment
+    setTransValue(segment, dragModifier.scaleX, newScaleX)
+    setTransValue(segment, dragModifier.scaleY, newScaleY)
 
     val scaleChangeW = newScaleX / gizmoStartScaleX
     val scaleChangeH = newScaleY / gizmoStartScaleY
@@ -451,8 +452,8 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     if (dragFlipX) ddx = -ddx
     if (dragFlipY) ddy = -ddy
 
-    dragModifier.setDx(gizmoStartDx + ddx)
-    dragModifier.setDy(gizmoStartDy + ddy)
+    setTransValue(segment, dragModifier.dx, gizmoStartDx + ddx)
+    setTransValue(segment, dragModifier.dy, gizmoStartDy + ddy)
 
     requestRefresh()
   }
@@ -472,7 +473,7 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       delta = Math.round(delta / 15f) * 15f
     }
 
-    dragModifier.setDRotation(gizmoStartRotation + delta)
+    setTransValue(frameSegment, dragModifier.dRotation, gizmoStartRotation + delta)
     requestRefresh()
   }
 
@@ -502,8 +503,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     var localDy = (-dx * dragSin + dy * dragCos) / dragScaleY
     if (dragFlipX) localDx = -localDx
     if (dragFlipY) localDy = -localDy
-    dragModifier.setDx(startNodeDx + localDx)
-    dragModifier.setDy(startNodeDy + localDy)
+    val segment = frameSegment
+    setTransValue(segment, dragModifier.dx, startNodeDx + localDx)
+    setTransValue(segment, dragModifier.dy, startNodeDy + localDy)
     requestRefresh()
   }
 
@@ -520,9 +522,9 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
       val filters = segment.filters
       filters.takeWhile(f => !(f eq dragModifier)).foreach {
         case tf: TransNode =>
-          t.applyLocal(tf.getDx.toFloat, tf.getDy.toFloat,
-            tf.getScaleX.toFloat, tf.getScaleY.toFloat,
-            tf.getDRotation.toFloat, tf.flipX(), tf.flipY())
+          t.applyLocal(transValue(segment, tf.dx).toFloat, transValue(segment, tf.dy).toFloat,
+            transValue(segment, tf.scaleX).toFloat, transValue(segment, tf.scaleY).toFloat,
+            transValue(segment, tf.dRotation).toFloat, tf.flipX(), tf.flipY())
         case _ =>
       }
     }
@@ -540,14 +542,13 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
   private def captureSnapData(): Unit = {
     myStartBBox = computeCanvasBBox()
     siblingBBoxes = mutable.ArrayBuffer.empty[Array[Float]]
-    getParent match {
-      case g: com.badlogic.gdx.scenes.scene2d.Group =>
-        g.getChildren.asScala.foreach {
-          case other: TransFrameActor if other ne this =>
-            siblingBBoxes += other.computeCanvasBBox()
-          case _ =>
-        }
-      case _ =>
+    val parent = getParent
+    if (parent != null) {
+      parent.getChildren.asScala.foreach {
+        case other: TransFrameActor if other ne this =>
+          siblingBBoxes += other.computeCanvasBBox()
+        case _ =>
+      }
     }
     val set = ExportOptionsSet.load()
     for (opts <- set.presets.asScala) {
@@ -925,6 +926,17 @@ class TransFrameActor(frame0: Frame & Transformable) extends Actor with Selectab
     }
   }
 
+  private def transValue(segment: Segment, port: Node.InPort[Double]): Double = {
+    segment.defaultOf(port).asInstanceOf[Double]
+  }
+
+  private def setTransValue(segment: Segment, port: Node.InPort[Double], value: Double): Unit = {
+    if (segment != null) {
+      val c = App.root.getFrontendSession
+      if (c != null) c.updateSegment(segment.id)(_.setFilterDefault(port, value))
+    }
+  }
+
   protected object Gizmo {
     private[TransFrameActor] val HANDLE_HIT_RADIUS: Float = 18f
 
@@ -964,7 +976,10 @@ object TransFrameActor {
     findTransNode(segment) match {
       case null =>
         val tf = new TransNode(0, 0, 1, 1, 0)
-        segment.attach(tf)
+        val c = App.root.getFrontendSession
+        if (c != null) {
+          c.updateSegment(segment.id)(_.attach(tf)(using c.idSource))
+        }
         tf
       case tf => tf
     }

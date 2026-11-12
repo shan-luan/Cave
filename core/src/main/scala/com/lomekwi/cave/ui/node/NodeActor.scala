@@ -9,7 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener
 import com.kotcrab.vis.ui.widget.VisTable
 import com.lomekwi.cave.app.App
 import com.lomekwi.cave.pipeline.Node
-import com.lomekwi.cave.pipeline.NodeGraph
 import com.lomekwi.cave.ui.TextInputs
 import com.lomekwi.cave.ui.widget.Card
 
@@ -29,7 +28,7 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   add(outTable).top().right().growX()
 
   for (in <- node.inPorts) {
-    val editor: Actor = App.cardWidgetsRegistry.createEditor(in, null)
+    val editor: Actor = App.cardWidgetsRegistry.createEditor(in, null, node)
     val portActor = new InPortActor(in, editor.asInstanceOf[PortEditor & Actor])
     portActors.put(in, portActor)
     inTable.add(portActor).growX().row()
@@ -41,7 +40,7 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     outTable.add(portActor).row()
   }
 
-  /** 本卡片中承载指定端口的端口圆点。 */
+  /** 本卡片中承载指定端口的端口圆点，没有则返回 null。 */
   def getPortActor(port: Node.Port): PortActor = {
     portActors.getOrElse(port, null)
   }
@@ -51,6 +50,7 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
 
   private final val dragPos: Vector2 = new Vector2()
+  // 按下时鼠标在卡片本地坐标系中的位置，拖拽目标是鼠标回到这个偏移
   private var grabX: Float = 0f
   private var grabY: Float = 0f
 
@@ -58,7 +58,8 @@ class NodeActor(node0: Node) extends Card(node0.name) {
     setButton(Input.Buttons.LEFT)
 
     override def touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean = {
-      if (nodeGraph.isEmpty || TextInputs.contains(event.getTarget) || !super.touchDown(event, x, y, pointer, button)) {
+      // 在端口编辑器的文本框上拖拽是在选字，不该把节点一起拖走
+      if (nodeEditorView == null || TextInputs.contains(event.getTarget) || !super.touchDown(event, x, y, pointer, button)) {
         false
       } else {
         grabX = x
@@ -73,13 +74,12 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
   addListener(dragListener)
 
-  /** 把卡片贴到鼠标下。 */
+  /** 把卡片贴到鼠标下；x/y 是鼠标在卡片本地坐标系中的位置。 */
   private def applyDrag(x: Float, y: Float): Unit = {
     moveBy(x - grabX, y - grabY)
-    nodeGraph.foreach(graph => graph.setPosition(node, getX, getY))
   }
 
-  /** 拖拽中每帧重算鼠标位置。 */
+  /** 拖拽中每帧重算鼠标位置，画布在拖拽期间平移缩放后卡片仍跟手。 */
   override def act(delta: Float): Unit = {
     super.act(delta)
     if (dragListener.isDragging && getStage != null) {
@@ -91,14 +91,18 @@ class NodeActor(node0: Node) extends Card(node0.name) {
   }
 
   override protected def close(): Unit = {
-    nodeGraph.foreach(graph => graph.remove(node))
+    val view: NodeEditorView = nodeEditorView
+    if (view != null) {
+      view.removeNode(node)
+    }
     remove()
   }
 
-  private def nodeGraph: Option[NodeGraph] = {
+  def nodeEditorView: NodeEditorView = {
     Option(getParent)
       .flatMap(parent => Option(parent.getParent))
       .flatMap(parent => Option(parent.getParent))
-      .collect { case view: NodeEditorView if view.nodeGraph.contains(node) => view.nodeGraph }
+      .collect { case view: NodeEditorView => view }
+      .orNull
   }
 }

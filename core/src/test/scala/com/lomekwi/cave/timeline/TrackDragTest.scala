@@ -650,12 +650,12 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(timeline.findTrackOf(s).orNull, timeline.getTrackOrCreate(1))
 
     project.undo.undo()
-    assertEquals(timeline.timeline, before)
+    assert(timeline.timeline eq before)
     assertEquals(timeline.findTrackOf(s), Some(t0))
     assertEquals(t0.getOrigin(s), at(1000))
 
     project.undo.redo()
-    assertEquals(timeline.timeline, after)
+    assert(timeline.timeline eq after)
   }
 
   test("撤销/重做缩放恢复状态") {
@@ -669,7 +669,7 @@ class TrackDragTest extends GdxTestBase {
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 70))
 
     project.undo.undo()
-    assertEquals(timeline.timeline, before)
+    assert(timeline.timeline eq before)
     assertEquals(t0.interval(s), TrackDragTest.interval(0, 100))
 
     project.undo.redo()
@@ -681,14 +681,14 @@ class TrackDragTest extends GdxTestBase {
     val s: Content = newSegment(100)
     val interval = TrackDragTest.interval(0, 100)
     place(t0, s, interval)
-    val before = timeline.timeline.duplicate()
+    val before = timeline.timeline
 
     timeline.snapshot()
     timeline.split(t0, interval.lo + span(40))
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 2)
 
     project.undo.undo()
-    assertEquals(timeline.timeline, before)
+    assert(timeline.timeline eq before)
     assertEquals(countOn(timeline.getTrackOrCreate(0)), 1)
     assert((s) eq (srcAt(timeline.getTrackOrCreate(0), 50)))
 

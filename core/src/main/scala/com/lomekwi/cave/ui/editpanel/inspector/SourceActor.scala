@@ -14,7 +14,11 @@ object SourceActor {
   }
 }
 
-/** 源信息卡，显示源名称与输入、输出端口。 */
+/**
+ * 源信息卡，显示源名称与输入端口、信息输出端口（不含参与过滤器链的 [[FilterOut]]）。
+ * 一个片段的信息由这张卡与紧随其后的各 [[FilterActor]] 共同呈现。
+ * 类型 → widget 的映射由 [[CardWidgetsRegistry]] 维护。
+ */
 final class SourceActor(private val id: Id) extends Card(SourceActor.displayName(id)) {
   private def segment: Segment = SegmentLookup.resolve(id)
 
@@ -23,13 +27,15 @@ final class SourceActor(private val id: Id) extends Card(SourceActor.displayName
   align(Align.top | Align.left)
   defaults().left()
   for (in <- source.inPorts) {
-    val widget = App.cardWidgetsRegistry.createEditor(in, segment)
+    val widget = App.cardWidgetsRegistry.createEditor(in, segment, source)
+    // 未注册该端口类型的 widget，不显示
     if (widget != null) {
       add(widget).growX().pad(2).row()
     }
   }
   for (out <- source.outPorts) {
     val row = App.cardWidgetsRegistry.createOutputRow(out)
+    // [[FilterOut]] 与未知类型的输出端口不显示
     if (row != null) {
       add(row).pad(2).left().row()
     }

@@ -1,6 +1,6 @@
 package com.lomekwi.cave.timeline
 
-import com.lomekwi.cave.pipeline.{Filter, Frame, Source, TransitionSource}
+import com.lomekwi.cave.pipeline.{Filter, FilterChain, Frame, NodeGraph, Source, TransitionSource}
 import com.lomekwi.cave.project.{IdSource, TestIds, TestProject}
 import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
 
@@ -8,6 +8,7 @@ import com.lomekwi.cave.ui.editpanel.tlarea.TlSegmentActor
  * 转场源框架的模型级测试。
  */
 class TransitionSourceTest extends GdxTestBase {
+  given IdSource = TestIds
 
   private var timeline: TestTimeline = null
 
@@ -82,8 +83,8 @@ class TransitionSourceTest extends GdxTestBase {
 
     addInPort(new FilterIn("输入"))
     addOutPort(new FilterOut("输出") {
-      override def getData: Frame = {
-        val frame = filterIn.getData
+      override def getData(context: FilterChain | NodeGraph): Frame = {
+        val frame = filterIn.getData(context)
         count += 1
         lastFrame = frame
         frame
@@ -137,8 +138,8 @@ class TransitionSourceTest extends GdxTestBase {
     val source = transition.source.asInstanceOf[ProbeTransitionSource]
 
     val filter = new CountingFilter
-    left.attach(filter)
-    current.frameAt(transition, at(600))
+    timeline.session.updateSegment(left.id)(_.attach(filter))
+    timeline.getTrackOrCreate(0).frameAt(transition, at(600))
 
     assertEquals(filter.count, 1)
     assert((filter.lastFrame) eq (source.lastFrom))

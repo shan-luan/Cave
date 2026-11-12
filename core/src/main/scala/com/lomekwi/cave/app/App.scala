@@ -29,6 +29,7 @@ object App {
   val shortcutManager = new ShortcutManager()
   val languageManager = new LanguageManager()
   val copyManager = new CopyManager()
+  appEventBus.register(copyManager)
   val mediaFactory = new MediaFactory()
   val nodeRegistry = new NodeRegistry()
   val cardWidgetsRegistry = new CardWidgetsRegistry()

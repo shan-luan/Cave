@@ -18,11 +18,11 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
   @transient protected var frame: T = null.asInstanceOf[T]
 
   final val headOut: FilterOut = addOutPort(new FilterOut {
-    override def getData: T = {
+    override def getData(context: FilterChain | NodeGraph): T = {
       frame
     }
 
-    override def getType: Class[? <: T] = {
+    override def getType(context: FilterChain | NodeGraph): Class[? <: T] = {
       classTag.runtimeClass.asInstanceOf[Class[? <: T]]
     }
   })
@@ -82,5 +82,6 @@ abstract class Source[T <: Frame](using ClassTag[T]) extends Filter[T] with Seri
     throw new UnsupportedOperationException(("本源不支持构造转场: ".in(Zh) | "This source does not support creating transitions: ".in(En)).str() + displayName)
   }
 
+  // 目前没有调用点（duplicate 已移除）。
   def onDuplicate(original: Source[?]): Unit = {}
 }

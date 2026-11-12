@@ -80,6 +80,10 @@ class TlInputListener(private final val timelineView: TimelineView) extends Inpu
       timelineView.deleteSelected()
     } else if (App.shortcutManager.isActive(TimelineView.Actions.GROUP)) {
       timelineView.groupSelectedSegments()
+    } else if (App.shortcutManager.isActive(TimelineView.Actions.COPY)) {
+      App.copyManager.copy()
+    } else if (App.shortcutManager.isActive(TimelineView.Actions.PASTE)) {
+      timelineView.pasteAtCursor()
     }
     true
   }

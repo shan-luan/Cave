@@ -16,10 +16,13 @@ class OutPortActor(port0: Node.OutPort[?]) extends Actor with PortActor {
   override def draw(batch: Batch, parentAlpha: Float): Unit = {
     super.draw(batch, parentAlpha)
     val drawer = App.root.shapeDrawer
-    for (in <- port.next) {
-      val peer: PortActor = findPortActor(in)
-      if (peer != null) {
-        drawLink(drawer, peer)
+    val view = editorView
+    if (view != null) {
+      for (in <- view.next(port)) {
+        val peer: PortActor = findPortActor(in)
+        if (peer != null) {
+          drawLink(drawer, peer)
+        }
       }
     }
     drawPendingLink(drawer)

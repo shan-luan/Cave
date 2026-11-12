@@ -3,7 +3,7 @@ package com.lomekwi.cave.pipeline.image
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource, FilterChain, NodeGraph}
 import com.lomekwi.cave.resource.media.VdoRes
 import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlSegmentActor, TlVdoSegmentActor}
@@ -19,13 +19,13 @@ class VdoSource(var vdoRes: VdoRes) extends Source[ImgFrame] {
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double](("宽度".in(Zh) | "Width".in(En)).str(), classOf[Double]) {
-    override def getData: Double = vdoRes.width.toDouble
+    override def getData(context: FilterChain | NodeGraph): Double = vdoRes.width.toDouble
   })
   addOutPort(new Node.OutPort[Double](("高度".in(Zh) | "Height".in(En)).str(), classOf[Double]) {
-    override def getData: Double = vdoRes.height.toDouble
+    override def getData(context: FilterChain | NodeGraph): Double = vdoRes.height.toDouble
   })
   addOutPort(new Node.OutPort[Double](("时长".in(Zh) | "Duration".in(En)).str(), classOf[Double]) {
-    override def getData: Double = getDuration.value
+    override def getData(context: FilterChain | NodeGraph): Double = getDuration.value.toDouble
   })
 
   override def sync(time: Timespan, track: Track, segment: Segment): Unit = {

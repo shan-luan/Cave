@@ -6,7 +6,7 @@ import com.lomekwi.cave.util.i18n.BasicLang.*
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource}
+import com.lomekwi.cave.pipeline.{Source, Node, TransitionSource, FilterChain, NodeGraph}
 import com.lomekwi.cave.resource.media.ImgRes
 import com.lomekwi.cave.timeline.{Segment, Timespan, Track}
 import com.lomekwi.cave.ui.editpanel.tlarea.{TlImgSegmentActor, TlSegmentActor}
@@ -19,10 +19,10 @@ class ImgSource(var imgRes: ImgRes) extends Source[ImgFrame] {
   @volatile @transient private var initialized: Boolean = false
 
   addOutPort(new Node.OutPort[Double](("宽度".in(Zh) | "Width".in(En)).str(), classOf[Double]) {
-    override def getData: Double = imgRes.width.toDouble
+    override def getData(context: FilterChain | NodeGraph): Double = imgRes.width.toDouble
   })
   addOutPort(new Node.OutPort[Double](("高度".in(Zh) | "Height".in(En)).str(), classOf[Double]) {
-    override def getData: Double = imgRes.height.toDouble
+    override def getData(context: FilterChain | NodeGraph): Double = imgRes.height.toDouble
   })
 
   override def sync(time: Timespan, track: Track, segment: Segment): Unit = {
