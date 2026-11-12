@@ -4,9 +4,21 @@ import com.lomekwi.cave.project.{Id, IdSource}
 
 @SerialVersionUID(1L)
 final case class NodeGraph(nodes: Map[Id, Node], edges: Map[(Id, Int), (Id, Int)], defaults: Map[(Id, Int), Any]) extends Iterable[Node] {
-  @transient @volatile private var portKeysCache: Map[Node.Port, (Id, Int, Boolean)] = null
-  @transient @volatile private var nodeIdsCache: Map[Node, Id] = null
-  @transient @volatile private var nextIndexCache: Map[(Id, Int), Vector[Node.InPort[?]]] = null
+  @transient @volatile private var indexCache: NodeGraph.Index = null
+
+  private def index: NodeGraph.Index = {
+    val cached = indexCache
+    if (cached != null) {
+      cached
+    } else {
+      synchronized {
+        if (indexCache == null) {
+          indexCache = NodeGraph.buildIndex(nodes, edges)
+        }
+        indexCache
+      }
+    }
+  }
 
   def add(node: Node)(using ids: IdSource): NodeGraph = {
     if (contains(node)) this else copy(nodes = nodes.updated(ids.nextId(), node))
@@ -24,9 +36,7 @@ final case class NodeGraph(nodes: Map[Id, Node], edges: Map[(Id, Int), (Id, Int)
     }
   }
 
-  def idOf(node: Node): Id = {
-    nodeIds.getOrElse(node, Id.noId())
-  }
+  def idOf(node: Node): Id = index.nodeIds.getOrElse(node, Id.noId())
 
   def node(id: Id): Node = nodes(id)
 
@@ -76,7 +86,7 @@ final case class NodeGraph(nodes: Map[Id, Node], edges: Map[(Id, Int), (Id, Int)
 
   def next(out: Node.OutPort[?]): Vector[Node.InPort[?]] = {
     outKey(out) match {
-      case Some(key) => nextIndex.getOrElse(key, Vector.empty)
+      case Some(key) => index.next.getOrElse(key, Vector.empty)
       case None => Vector.empty
     }
   }
@@ -90,64 +100,32 @@ final case class NodeGraph(nodes: Map[Id, Node], edges: Map[(Id, Int), (Id, Int)
   def clear: NodeGraph = NodeGraph.empty
 
   private def inKey(in: Node.InPort[?]): Option[(Id, Int)] = {
-    portKeys.get(in).collect { case (id, index, true) => (id, index) }
+    index.portKeys.get(in).collect { case (id, portIndex, true) => (id, portIndex) }
   }
 
   private def outKey(out: Node.OutPort[?]): Option[(Id, Int)] = {
-    portKeys.get(out).collect { case (id, index, false) => (id, index) }
-  }
-
-  private def inPortAt(key: (Id, Int)): Node.InPort[?] = nodes(key._1).inPorts(key._2)
-
-  private def portKeys: Map[Node.Port, (Id, Int, Boolean)] = {
-    val cached = portKeysCache
-    if (cached != null) {
-      cached
-    } else {
-      synchronized {
-        if (portKeysCache == null) {
-          portKeysCache = nodes.iterator.flatMap { case (id, node) =>
-            node.inPorts.iterator.zipWithIndex.map { case (port, index) => (port: Node.Port) -> (id, index, true) } ++
-              node.outPorts.iterator.zipWithIndex.map { case (port, index) => (port: Node.Port) -> (id, index, false) }
-          }.toMap
-        }
-        portKeysCache
-      }
-    }
-  }
-
-  private def nodeIds: Map[Node, Id] = {
-    val cached = nodeIdsCache
-    if (cached != null) {
-      cached
-    } else {
-      synchronized {
-        if (nodeIdsCache == null) {
-          nodeIdsCache = nodes.iterator.map { case (id, node) => node -> id }.toMap
-        }
-        nodeIdsCache
-      }
-    }
-  }
-
-  private def nextIndex: Map[(Id, Int), Vector[Node.InPort[?]]] = {
-    val cached = nextIndexCache
-    if (cached != null) {
-      cached
-    } else {
-      synchronized {
-        if (nextIndexCache == null) {
-          nextIndexCache = edges.iterator
-            .map { case (inKey, outKey) => outKey -> inPortAt(inKey) }
-            .toVector
-            .groupMap(_._1)(_._2)
-        }
-        nextIndexCache
-      }
-    }
+    index.portKeys.get(out).collect { case (id, portIndex, false) => (id, portIndex) }
   }
 }
 
 object NodeGraph {
+  private[pipeline] final class Index(
+      val portKeys: Map[Node.Port, (Id, Int, Boolean)],
+      val nodeIds: Map[Node, Id],
+      val next: Map[(Id, Int), Vector[Node.InPort[?]]])
+
+  private def buildIndex(nodes: Map[Id, Node], edges: Map[(Id, Int), (Id, Int)]): Index = {
+    val portKeys = nodes.iterator.flatMap { case (id, node) =>
+      node.inPorts.iterator.zipWithIndex.map { case (port, portIndex) => (port: Node.Port) -> (id, portIndex, true) } ++
+        node.outPorts.iterator.zipWithIndex.map { case (port, portIndex) => (port: Node.Port) -> (id, portIndex, false) }
+    }.toMap
+    val nodeIds = nodes.iterator.map { case (id, node) => node -> id }.toMap
+    val next = edges.iterator
+      .map { case ((id, portIndex), outKey) => outKey -> nodes(id).inPorts(portIndex) }
+      .toVector
+      .groupMap(_._1)(_._2)
+    new Index(portKeys, nodeIds, next)
+  }
+
   val empty: NodeGraph = NodeGraph(Map.empty, Map.empty, Map.empty)
 }
